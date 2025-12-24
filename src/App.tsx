@@ -21,6 +21,20 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import AccountTypeSelection from "./pages/AccountTypeSelection";
 
+// Organization Dashboard Pages
+import OrgDashboard from "./pages/org/OrgDashboard";
+import CreateContest from "./pages/org/CreateContest";
+import CreateEvent from "./pages/org/CreateEvent";
+import ManageContests from "./pages/org/ManageContests";
+import ManageEvents from "./pages/org/ManageEvents";
+import ContestManagement from "./pages/org/ContestManagement";
+import EventManagement from "./pages/org/EventManagement";
+import OrgWallet from "./pages/org/OrgWallet";
+import Payouts from "./pages/org/Payouts";
+import Marketing from "./pages/org/Marketing";
+import Support from "./pages/org/Support";
+import OrgSettings from "./pages/org/OrgSettings";
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -73,6 +87,21 @@ const AppRoutes = () => (
     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/account-setup" element={<ProtectedRoute><AccountTypeSelection /></ProtectedRoute>} />
+    
+    {/* Organization Dashboard Routes */}
+    <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
+    <Route path="/org/contests/create" element={<ProtectedRoute><CreateContest /></ProtectedRoute>} />
+    <Route path="/org/events/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+    <Route path="/org/contests" element={<ProtectedRoute><ManageContests /></ProtectedRoute>} />
+    <Route path="/org/events" element={<ProtectedRoute><ManageEvents /></ProtectedRoute>} />
+    <Route path="/org/contests/:id" element={<ProtectedRoute><ContestManagement /></ProtectedRoute>} />
+    <Route path="/org/events/:id" element={<ProtectedRoute><EventManagement /></ProtectedRoute>} />
+    <Route path="/org/wallet" element={<ProtectedRoute><OrgWallet /></ProtectedRoute>} />
+    <Route path="/org/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
+    <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
+    <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+    <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
+    
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
