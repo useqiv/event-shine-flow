@@ -36,6 +36,7 @@ import Payouts from "./pages/org/Payouts";
 import Marketing from "./pages/org/Marketing";
 import Support from "./pages/org/Support";
 import OrgSettings from "./pages/org/OrgSettings";
+import TicketScanner from "./pages/org/TicketScanner";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +118,7 @@ const AppRoutes = () => (
     <Route path="/org/events" element={<ProtectedRoute><ManageEvents /></ProtectedRoute>} />
     <Route path="/org/contests/:id" element={<ProtectedRoute><ContestManagement /></ProtectedRoute>} />
     <Route path="/org/events/:id" element={<ProtectedRoute><EventManagement /></ProtectedRoute>} />
+    <Route path="/org/events/:id/scan" element={<ProtectedRoute><TicketScanner /></ProtectedRoute>} />
     <Route path="/org/wallet" element={<ProtectedRoute><OrgWallet /></ProtectedRoute>} />
     <Route path="/org/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
     <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
