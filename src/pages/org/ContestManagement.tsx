@@ -15,6 +15,7 @@ import { useUpdateContest, useCreateContestant, useContestContestants } from '@/
 import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
 
 const ContestManagement = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,6 +59,56 @@ const ContestManagement = () => {
       id: contest.id,
       is_active: !contest.is_active,
     });
+  };
+
+  const handleExportContestants = () => {
+    if (!contestants || contestants.length === 0) {
+      toast.error('No contestants to export');
+      return;
+    }
+
+    const headers = [
+      { key: 'name', label: 'Name' },
+      { key: 'bio', label: 'Bio' },
+      { key: 'performance', label: 'Performance' },
+      { key: 'vote_count', label: 'Votes' },
+      { key: 'created_at', label: 'Added Date' },
+    ];
+
+    const exportData = contestants.map((c: any, index: number) => ({
+      ...c,
+      created_at: formatDateForExport(c.created_at),
+      rank: index + 1,
+    }));
+
+    exportToCsv(exportData, `${contest?.title || 'contest'}-results-${format(new Date(), 'yyyy-MM-dd')}`, headers);
+    toast.success('Contest results exported successfully');
+  };
+
+  const handleExportLeaderboard = () => {
+    if (!contestants || contestants.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const headers = [
+      { key: 'rank', label: 'Rank' },
+      { key: 'name', label: 'Contestant Name' },
+      { key: 'vote_count', label: 'Total Votes' },
+      { key: 'percentage', label: 'Vote Percentage' },
+    ];
+
+    const totalVotes = contestants.reduce((sum: number, c: any) => sum + c.vote_count, 0);
+    
+    const exportData = contestants.map((c: any, index: number) => ({
+      rank: index + 1,
+      name: c.name,
+      vote_count: c.vote_count,
+      percentage: totalVotes > 0 ? `${((c.vote_count / totalVotes) * 100).toFixed(2)}%` : '0%',
+    }));
+
+    exportToCsv(exportData, `${contest?.title || 'contest'}-leaderboard-${format(new Date(), 'yyyy-MM-dd')}`, headers);
+    toast.success('Leaderboard exported successfully');
   };
 
   if (isLoading) {
@@ -275,9 +326,9 @@ const ContestManagement = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Leaderboard</CardTitle>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleExportLeaderboard}>
                     <Download className="mr-2 h-4 w-4" />
-                    Export
+                    Export CSV
                   </Button>
                 </div>
               </CardHeader>

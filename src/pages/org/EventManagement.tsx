@@ -15,6 +15,7 @@ import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTicke
 import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 
 const EventManagement = () => {
   const { id } = useParams<{ id: string }>();
@@ -63,6 +64,55 @@ const EventManagement = () => {
       id: event.id,
       is_active: !event.is_active,
     });
+  };
+
+  const handleExportAttendees = () => {
+    if (!tickets || tickets.length === 0) {
+      toast.error('No attendees to export');
+      return;
+    }
+
+    const headers = [
+      { key: 'profiles.full_name', label: 'Name' },
+      { key: 'profiles.email', label: 'Email' },
+      { key: 'ticket_types.name', label: 'Ticket Type' },
+      { key: 'quantity', label: 'Quantity' },
+      { key: 'amount_paid', label: 'Amount Paid (₦)' },
+      { key: 'payment_method', label: 'Payment Method' },
+      { key: 'status', label: 'Status' },
+      { key: 'created_at', label: 'Purchase Date' },
+      { key: 'qr_code', label: 'QR Code' },
+    ];
+
+    const exportData = tickets.map((t: any) => ({
+      ...t,
+      amount_paid: formatCurrencyForExport(t.amount_paid),
+      created_at: formatDateForExport(t.created_at),
+    }));
+
+    exportToCsv(exportData, `${event?.title || 'event'}-attendees-${format(new Date(), 'yyyy-MM-dd')}`, headers);
+    toast.success('Attendee list exported successfully');
+  };
+
+  const handleExportScanLogs = () => {
+    if (!scanLogs || scanLogs.length === 0) {
+      toast.error('No scan logs to export');
+      return;
+    }
+
+    const headers = [
+      { key: 'tickets.ticket_types.name', label: 'Ticket Type' },
+      { key: 'scan_result', label: 'Result' },
+      { key: 'scanned_at', label: 'Scanned At' },
+    ];
+
+    const exportData = scanLogs.map((log: any) => ({
+      ...log,
+      scanned_at: formatDateForExport(log.scanned_at),
+    }));
+
+    exportToCsv(exportData, `${event?.title || 'event'}-scan-logs-${format(new Date(), 'yyyy-MM-dd')}`, headers);
+    toast.success('Scan logs exported successfully');
   };
 
   const totalTicketsSold = ticketTypes?.reduce((sum: number, t: any) => sum + (t.quantity_sold || 0), 0) || 0;
@@ -285,7 +335,7 @@ const EventManagement = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Attendees ({tickets?.length || 0})</CardTitle>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleExportAttendees}>
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
                   </Button>
@@ -335,8 +385,16 @@ const EventManagement = () => {
           <TabsContent value="scans">
             <Card>
               <CardHeader>
-                <CardTitle>QR Scan Logs</CardTitle>
-                <CardDescription>Track check-ins at your event</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>QR Scan Logs</CardTitle>
+                    <CardDescription>Track check-ins at your event</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleExportScanLogs}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {scanLogs && scanLogs.length > 0 ? (
