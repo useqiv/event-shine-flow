@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useContestContestants } from '@/hooks/useOrganization';
+import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -23,6 +24,9 @@ const ContestManagement = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
+
+  // Enable real-time vote updates
+  useRealtimeVotes(id);
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [newContestant, setNewContestant] = useState({
