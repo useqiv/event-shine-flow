@@ -21,6 +21,7 @@ import MyVotes from "./pages/MyVotes";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import AccountTypeSelection from "./pages/AccountTypeSelection";
+import Unauthorized from "./pages/Unauthorized";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -63,9 +64,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/org/dashboard" replace />;
   }
 
-  // Redirect regular users away from org routes
+  // Block regular users from org routes - show unauthorized page
   if (!isOrganization && location.pathname.startsWith('/org/')) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // Block organization users from regular user dashboard
+  if (isOrganization && ['/dashboard', '/my-tickets', '/my-votes', '/wallet'].includes(location.pathname)) {
+    return <Navigate to="/org/dashboard" replace />;
   }
   
   return <>{children}</>;
@@ -117,6 +123,7 @@ const AppRoutes = () => (
     <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
     <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
     
+    <Route path="/unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
