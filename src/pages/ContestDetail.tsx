@@ -8,9 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 import LiveVoteIndicator, { VotePulse, LiveVoteCounter } from '@/components/LiveVoteIndicator';
+import AnimatedLeaderboard from '@/components/AnimatedLeaderboard';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +25,8 @@ import {
   Wallet,
   CreditCard,
   Building2,
-  Coins
+  Coins,
+  BarChart3
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -39,7 +42,7 @@ const ContestDetail = () => {
   const vote = useVote();
 
   // Enable real-time vote updates
-  const { lastVoteEvent, clearVoteEvent, isContestantUpdated } = useRealtimeVotes(id);
+  const { lastVoteEvent, clearVoteEvent, isContestantUpdated, recentlyUpdatedContestants } = useRealtimeVotes(id);
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
@@ -185,72 +188,93 @@ const ContestDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Contestants */}
-        <div>
-          <h2 className="text-xl font-bold mb-4">Contestants</h2>
-          {contestantsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-64 w-full" />
-              ))}
-            </div>
-          ) : contestants && contestants.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contestants.map((contestant, index) => (
-                <VotePulse key={contestant.id} isActive={isContestantUpdated(contestant.id)}>
-                  <Card className="overflow-hidden h-full">
-                    <div className="relative h-48 bg-secondary">
-                      {contestant.photo_url ? (
-                        <img 
-                          src={contestant.photo_url} 
-                          alt={contestant.name} 
-                          className="h-full w-full object-cover" 
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                          <User className="h-16 w-16 text-muted-foreground" />
-                        </div>
-                      )}
-                      {index < 3 && (
-                        <div className="absolute top-2 left-2">
-                          <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
-                            #{index + 1}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg">{contestant.name}</h3>
-                      {contestant.bio && (
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
-                      )}
-                      <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                        <Vote className="h-4 w-4" />
-                        <span>
-                          {contestant.is_public_votes 
-                            ? <><LiveVoteCounter count={contestant.vote_count} isUpdating={isContestantUpdated(contestant.id)} /> votes</>
-                            : 'Votes hidden'}
-                        </span>
+        {/* Contestants and Leaderboard Tabs */}
+        <Tabs defaultValue="contestants" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="contestants" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Contestants
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Leaderboard
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="contestants">
+            {contestantsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-64 w-full" />
+                ))}
+              </div>
+            ) : contestants && contestants.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {contestants.map((contestant, index) => (
+                  <VotePulse key={contestant.id} isActive={isContestantUpdated(contestant.id)}>
+                    <Card className="overflow-hidden h-full">
+                      <div className="relative h-48 bg-secondary">
+                        {contestant.photo_url ? (
+                          <img 
+                            src={contestant.photo_url} 
+                            alt={contestant.name} 
+                            className="h-full w-full object-cover" 
+                          />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <User className="h-16 w-16 text-muted-foreground" />
+                          </div>
+                        )}
+                        {index < 3 && (
+                          <div className="absolute top-2 left-2">
+                            <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
+                              #{index + 1}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                      <Button 
-                        className="w-full mt-4" 
-                        onClick={() => handleVoteClick(contestant)}
-                        disabled={isEnded}
-                      >
-                        {isEnded ? 'Voting Ended' : 'Vote Now'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </VotePulse>
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">No contestants yet</p>
-            </Card>
-          )}
-        </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-lg">{contestant.name}</h3>
+                        {contestant.bio && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                          <Vote className="h-4 w-4" />
+                          <span>
+                            {contestant.is_public_votes 
+                              ? <><LiveVoteCounter count={contestant.vote_count} isUpdating={isContestantUpdated(contestant.id)} /> votes</>
+                              : 'Votes hidden'}
+                          </span>
+                        </div>
+                        <Button 
+                          className="w-full mt-4" 
+                          onClick={() => handleVoteClick(contestant)}
+                          disabled={isEnded}
+                        >
+                          {isEnded ? 'Voting Ended' : 'Vote Now'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </VotePulse>
+                ))}
+              </div>
+            ) : (
+              <Card className="p-8 text-center">
+                <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No contestants yet</p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="leaderboard">
+            <AnimatedLeaderboard
+              contestants={contestants || []}
+              updatedContestantIds={recentlyUpdatedContestants}
+              showExport={false}
+              title="Live Leaderboard"
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Vote Modal */}
