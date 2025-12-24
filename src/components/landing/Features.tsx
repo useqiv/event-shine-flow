@@ -14,7 +14,8 @@ import {
   Sparkles,
   CreditCard,
   Smartphone,
-  Lock
+  Lock,
+  ArrowRight
 } from "lucide-react";
 
 const Features = () => {
@@ -22,33 +23,33 @@ const Features = () => {
     {
       icon: Shield,
       title: "AI Anti-Fraud Engine",
-      description: "Machine learning detects vote manipulation, duplicate accounts, and suspicious patterns in real-time.",
+      description: "Machine learning detects vote manipulation and suspicious patterns in real-time.",
       highlight: true
     },
     {
       icon: QrCode,
       title: "QR Code Tickets",
-      description: "Generate secure QR tickets with built-in scanner app for seamless venue check-ins."
+      description: "Generate secure QR tickets with built-in scanner app for seamless check-ins."
     },
     {
       icon: BarChart3,
       title: "Live Analytics Dashboard",
-      description: "Track votes, ticket sales, revenue, and engagement with beautiful real-time visualizations."
+      description: "Track votes, ticket sales, and engagement with real-time visualizations."
     },
     {
       icon: Share2,
       title: "Auto-Generated Share Links",
-      description: "Each contestant gets unique shareable links for easy social media promotion."
+      description: "Each contestant gets unique shareable links for social media promotion."
     },
     {
       icon: Palette,
       title: "Custom Branding",
-      description: "White-label your voting pages with your company's logo, colors, and domain."
+      description: "White-label your voting pages with your company's logo and colors."
     },
     {
       icon: CreditCard,
       title: "Automated Payouts",
-      description: "Automatic commission calculation and instant payouts to your bank account."
+      description: "Automatic commission calculation and instant payouts to your bank."
     }
   ];
 
@@ -56,109 +57,113 @@ const Features = () => {
     {
       icon: Wallet,
       title: "Digital Wallet",
-      description: "Pre-load credits for instant voting and ticket purchases. Multiple top-up options available."
+      description: "Pre-load credits for instant voting and ticket purchases."
     },
     {
       icon: Smartphone,
       title: "One-Tap Voting",
-      description: "Vote for your favorites instantly with a single tap. No complicated forms."
+      description: "Vote for your favorites instantly with a single tap."
     },
     {
       icon: Award,
       title: "Earn Rewards & Badges",
-      description: "Get points for participation, referrals, and activity. Redeem for discounts."
+      description: "Get points for participation and redeem for discounts."
     },
     {
       icon: Bell,
       title: "Smart Notifications",
-      description: "Real-time alerts when your favorite contestant needs votes or events go live."
+      description: "Real-time alerts when events go live or votes are needed."
     },
     {
       icon: Users,
       title: "Referral Bonuses",
-      description: "Invite friends and earn bonus credits for each successful signup."
+      description: "Invite friends and earn bonus credits for each signup."
     },
     {
       icon: Sparkles,
       title: "Fast Checkout",
-      description: "Buy event tickets in seconds with saved payment methods and wallet balance."
+      description: "Buy tickets in seconds with saved payment methods."
     }
   ];
 
   return (
-    <section id="features" className="py-16 bg-card relative overflow-hidden">
+    <section id="features" className="py-14 lg:py-20 bg-muted relative overflow-hidden">
       {/* Background Decorations */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-6">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm text-foreground font-medium">Powerful Features</span>
+      <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full mb-6">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm text-foreground font-medium">Powerful Features</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Everything You Need to Run{" "}
+              <span className="text-primary">World-Class Events</span>
+            </h2>
+            <p className="text-muted-foreground text-base lg:text-lg">
+              A comprehensive platform packed with features for organizers and participants alike.
+            </p>
           </div>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
-            Everything You Need to Run{" "}
-            <span className="text-primary">World-Class Events</span>
-          </h2>
-          <p className="text-muted-foreground">
-            A comprehensive platform packed with features for organizers and participants alike.
-          </p>
-        </div>
 
-        {/* Organizer Features */}
-        <div id="organizers" className="mb-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-foreground">For Organizers</h3>
-              <p className="text-muted-foreground text-sm">Tools to run successful contests and events</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {organizerFeatures.map((feature, index) => (
-              <FeatureCard key={index} {...feature} />
-            ))}
-          </div>
-        </div>
-
-        {/* User Features */}
-        <div id="users">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-2xl bg-accent/20 flex items-center justify-center">
-              <Vote className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-foreground">For Participants</h3>
-              <p className="text-muted-foreground text-sm">Seamless voting and ticket buying experience</p>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userFeatures.map((feature, index) => (
-              <FeatureCard key={index} {...feature} />
-            ))}
-          </div>
-        </div>
-
-        {/* Platform Highlights */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
-            { icon: Globe, title: "Multi-Currency", desc: "50+ currencies" },
-            { icon: Smartphone, title: "Mobile-First", desc: "All devices" },
-            { icon: BarChart3, title: "API Ready", desc: "RESTful APIs" },
-          ].map((item, i) => (
-            <div key={i} className="text-center p-5 bg-muted border border-border rounded-2xl hover:border-primary/30 transition-colors">
-              <div className="h-10 w-10 rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-3">
-                <item.icon className="h-5 w-5 text-primary" />
+          {/* Organizer Features */}
+          <div id="organizers" className="mb-14 lg:mb-20">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Users className="h-6 w-6 text-primary" />
               </div>
-              <h4 className="font-semibold text-foreground text-sm mb-1">{item.title}</h4>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
+              <div>
+                <h3 className="text-xl lg:text-2xl font-bold text-foreground">For Organizers</h3>
+                <p className="text-muted-foreground text-sm">Tools to run successful contests and events</p>
+              </div>
             </div>
-          ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {organizerFeatures.map((feature, index) => (
+                <FeatureCard key={index} {...feature} />
+              ))}
+            </div>
+          </div>
+
+          {/* User Features */}
+          <div id="users" className="mb-14 lg:mb-20">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-12 w-12 rounded-2xl bg-accent/20 flex items-center justify-center">
+                <Vote className="h-6 w-6 text-accent" />
+              </div>
+              <div>
+                <h3 className="text-xl lg:text-2xl font-bold text-foreground">For Participants</h3>
+                <p className="text-muted-foreground text-sm">Seamless voting and ticket buying experience</p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {userFeatures.map((feature, index) => (
+                <FeatureCard key={index} {...feature} />
+              ))}
+            </div>
+          </div>
+
+          {/* Platform Highlights */}
+          <div className="bg-card border border-border rounded-3xl p-6 lg:p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
+              {[
+                { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
+                { icon: Globe, title: "Multi-Currency", desc: "50+ currencies supported" },
+                { icon: Smartphone, title: "Mobile-First", desc: "All devices optimized" },
+                { icon: BarChart3, title: "API Ready", desc: "RESTful APIs available" },
+              ].map((item, i) => (
+                <div key={i} className="text-center p-5 lg:p-6 bg-muted rounded-2xl hover:bg-primary/5 transition-colors group">
+                  <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-4 group-hover:border-primary/50 transition-colors">
+                    <item.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
+                  <p className="text-sm text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -174,18 +179,18 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description, highlight }: FeatureCardProps) => {
   return (
-    <div className={`group relative p-5 bg-muted border rounded-2xl hover:shadow-lg transition-all duration-300 ${highlight ? 'border-primary/50 shadow-md' : 'border-border hover:border-primary/30'}`}>
+    <div className={`group relative p-6 bg-card border rounded-2xl hover:shadow-xl transition-all duration-300 ${highlight ? 'border-primary/50 shadow-lg ring-1 ring-primary/10' : 'border-border hover:border-primary/30'}`}>
       {highlight && (
-        <div className="absolute -top-2.5 left-4">
-          <span className="px-2.5 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+        <div className="absolute -top-3 left-5">
+          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-md">
             Popular
           </span>
         </div>
       )}
-      <div className="h-10 w-10 rounded-xl bg-card border border-border flex items-center justify-center mb-4 group-hover:border-primary/50 group-hover:scale-105 transition-all">
-        <Icon className="h-5 w-5 text-primary" />
+      <div className="h-12 w-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-5 group-hover:border-primary/50 group-hover:scale-110 transition-all">
+        <Icon className="h-6 w-6 text-primary" />
       </div>
-      <h4 className="text-base font-semibold text-foreground mb-2">{title}</h4>
+      <h4 className="text-lg font-semibold text-foreground mb-2">{title}</h4>
       <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
     </div>
   );
