@@ -32,7 +32,7 @@ const AccountTypeSelection = () => {
       // Mark that user has completed account setup
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ account_type_selected: true })
+        .update({ account_type_selected: true } as any)
         .eq("id", user.id);
 
       if (profileError) throw profileError;

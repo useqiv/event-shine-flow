@@ -10,6 +10,7 @@ export interface Profile {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  account_type_selected: boolean;
 }
 
 export const useProfile = () => {

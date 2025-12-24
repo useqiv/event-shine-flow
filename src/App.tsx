@@ -2,9 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -18,18 +19,26 @@ import MyTickets from "./pages/MyTickets";
 import MyVotes from "./pages/MyVotes";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import AccountTypeSelection from "./pages/AccountTypeSelection";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const location = useLocation();
   
-  if (loading) {
+  if (loading || profileLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+  
+  // Redirect to account setup if not completed (except if already on that page)
+  if (profile && !profile.account_type_selected && location.pathname !== "/account-setup") {
+    return <Navigate to="/account-setup" replace />;
   }
   
   return <>{children}</>;
@@ -63,6 +72,7 @@ const AppRoutes = () => (
     <Route path="/my-votes" element={<ProtectedRoute><MyVotes /></ProtectedRoute>} />
     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    <Route path="/account-setup" element={<ProtectedRoute><AccountTypeSelection /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
