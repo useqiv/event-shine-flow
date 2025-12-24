@@ -1,47 +1,42 @@
 import { Helmet } from "react-helmet-async";
-import Navbar from "@/components/landing/Navbar";
-import Hero from "@/components/landing/Hero";
-import Showcase from "@/components/landing/Showcase";
-import Features from "@/components/landing/Features";
-import Stats from "@/components/landing/Stats";
-import HowItWorks from "@/components/landing/HowItWorks";
-import CTA from "@/components/landing/CTA";
-import Footer from "@/components/landing/Footer";
+import Sidebar from "@/components/dashboard/Sidebar";
+import Header from "@/components/dashboard/Header";
+import HeroCards from "@/components/dashboard/HeroCards";
+import Categories from "@/components/dashboard/Categories";
+import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
 
 const Index = () => {
   return (
     <>
       <Helmet>
-        <title>VotePass - Modern Contest Voting & Event Ticketing Platform</title>
+        <title>EventSphere - Event Management & E-Ticketing Platform</title>
         <meta 
           name="description" 
-          content="Secure, scalable platform for contest voting, event ticketing, and payout automation. Power pageants, music competitions, awards shows, and fashion events with anti-fraud voting and QR tickets." 
+          content="Discover and book tickets for music, tech, fashion, and nightlife events. Plan events, manage vendors, and experience seamless e-voting and e-ticketing." 
         />
-        <meta name="keywords" content="contest voting, event ticketing, pageant voting, competition platform, QR tickets, voting platform, awards voting, music competition" />
-        <link rel="canonical" href="https://votepass.com" />
-        
-        {/* Open Graph */}
-        <meta property="og:title" content="VotePass - Modern Contest Voting & Event Ticketing Platform" />
-        <meta property="og:description" content="Secure, scalable platform for contest voting and event ticketing. Power pageants, competitions, and award shows." />
+        <meta name="keywords" content="events, tickets, e-voting, event planning, concerts, tech events, nightlife" />
+        <meta property="og:title" content="EventSphere - Event Management & E-Ticketing Platform" />
+        <meta property="og:description" content="Discover and book tickets for music, tech, fashion, and nightlife events." />
         <meta property="og:type" content="website" />
-        
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="VotePass - Contest Voting & Event Ticketing" />
-        <meta name="twitter:description" content="The all-in-one platform for secure contest voting and event ticketing." />
+        <meta name="twitter:title" content="EventSphere - Event Management & E-Ticketing Platform" />
+        <meta name="twitter:description" content="Discover and book tickets for music, tech, fashion, and nightlife events." />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main>
-          <Hero />
-          <Showcase />
-          <Features />
-          <Stats />
-          <HowItWorks />
-          <CTA />
+      <div className="min-h-screen bg-gradient-to-br from-accent/5 via-background to-primary/5">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main Content */}
+        <main className="ml-64 min-h-screen">
+          <Header />
+          
+          <div className="px-6 pb-8">
+            <HeroCards />
+            <Categories />
+            <UpcomingEvents />
+          </div>
         </main>
-        <Footer />
       </div>
     </>
   );
