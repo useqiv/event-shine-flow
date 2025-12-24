@@ -1,4 +1,4 @@
-import { Building2, Users, Vote, Ticket, DollarSign, CheckCircle, ArrowRight } from "lucide-react";
+import { Building2, Users, Vote, Ticket, DollarSign, CheckCircle, ArrowRight, Sparkles } from "lucide-react";
 
 const HowItWorks = () => {
   const organizerSteps = [
@@ -31,7 +31,7 @@ const HowItWorks = () => {
     },
     {
       step: 2,
-      icon: Vote,
+      icon: Ticket,
       title: "Vote & Buy Tickets",
       description: "Support your favorite contestants with one-tap voting. Purchase event tickets instantly."
     },
@@ -44,51 +44,53 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-16 bg-muted relative overflow-hidden">
+    <section id="how-it-works" className="py-14 lg:py-20 bg-card relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full mb-6">
-            <ArrowRight className="h-4 w-4 text-primary" />
-            <span className="text-sm text-foreground font-medium">Quick Start Guide</span>
-          </div>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
-            Get Started in{" "}
-            <span className="text-primary">3 Simple Steps</span>
-          </h2>
-          <p className="text-muted-foreground">
-            Whether you're an organizer or participant, getting started takes just minutes.
-          </p>
-        </div>
-
-        {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
-          {/* Organizer Flow */}
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full mb-8 shadow-md">
-              <Building2 className="h-4 w-4" />
-              <span className="text-sm font-semibold">For Organizers</span>
+      <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-6">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm text-foreground font-medium">Quick Start Guide</span>
             </div>
-            <div className="space-y-0">
-              {organizerSteps.map((item, index) => (
-                <StepCard key={index} {...item} isLast={index === organizerSteps.length - 1} variant="primary" />
-              ))}
-            </div>
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Get Started in{" "}
+              <span className="text-primary">3 Simple Steps</span>
+            </h2>
+            <p className="text-muted-foreground text-base lg:text-lg">
+              Whether you're an organizer or participant, getting started takes just minutes.
+            </p>
           </div>
 
-          {/* User Flow */}
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-full mb-8 shadow-md">
-              <Users className="h-4 w-4" />
-              <span className="text-sm font-semibold">For Participants</span>
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            {/* Organizer Flow */}
+            <div className="bg-muted border border-border rounded-3xl p-6 lg:p-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full mb-8 shadow-md">
+                <Building2 className="h-4 w-4" />
+                <span className="text-sm font-semibold">For Organizers</span>
+              </div>
+              <div className="space-y-0">
+                {organizerSteps.map((item, index) => (
+                  <StepCard key={index} {...item} isLast={index === organizerSteps.length - 1} variant="primary" />
+                ))}
+              </div>
             </div>
-            <div className="space-y-0">
-              {userSteps.map((item, index) => (
-                <StepCard key={index} {...item} isLast={index === userSteps.length - 1} variant="accent" />
-              ))}
+
+            {/* User Flow */}
+            <div className="bg-muted border border-border rounded-3xl p-6 lg:p-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-full mb-8 shadow-md">
+                <Users className="h-4 w-4" />
+                <span className="text-sm font-semibold">For Participants</span>
+              </div>
+              <div className="space-y-0">
+                {userSteps.map((item, index) => (
+                  <StepCard key={index} {...item} isLast={index === userSteps.length - 1} variant="accent" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -113,7 +115,7 @@ const StepCard = ({ step, icon: Icon, title, description, isLast, variant }: Ste
     <div className="relative flex gap-5 group">
       {/* Step Number & Line */}
       <div className="flex flex-col items-center">
-        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-lg shrink-0 shadow-md group-hover:scale-105 transition-transform ${
+        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform ${
           isPrimary 
             ? 'bg-primary text-primary-foreground' 
             : 'bg-accent text-accent-foreground'
@@ -121,17 +123,17 @@ const StepCard = ({ step, icon: Icon, title, description, isLast, variant }: Ste
           {step}
         </div>
         {!isLast && (
-          <div className={`w-0.5 h-full min-h-[50px] mt-2 ${isPrimary ? 'bg-primary/20' : 'bg-accent/20'}`} />
+          <div className={`w-0.5 h-full min-h-[60px] mt-3 ${isPrimary ? 'bg-primary/20' : 'bg-accent/20'}`} />
         )}
       </div>
 
       {/* Content */}
-      <div className="pb-10">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon className={`h-4 w-4 ${isPrimary ? 'text-primary' : 'text-accent'}`} />
+      <div className="pb-10 pt-1">
+        <div className="flex items-center gap-2.5 mb-2">
+          <Icon className={`h-5 w-5 ${isPrimary ? 'text-primary' : 'text-accent'}`} />
           <h4 className="text-lg font-bold text-foreground">{title}</h4>
         </div>
-        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   );
