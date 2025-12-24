@@ -14,6 +14,8 @@ import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 import LiveVoteIndicator, { VotePulse, LiveVoteCounter } from '@/components/LiveVoteIndicator';
 import AnimatedLeaderboard from '@/components/AnimatedLeaderboard';
 import ContestCountdown from '@/components/ContestCountdown';
+import ContestantShareButton from '@/components/ContestantShareButton';
+import VoteHistoryChart from '@/components/VoteHistoryChart';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +29,8 @@ import {
   CreditCard,
   Building2,
   Coins,
-  BarChart3
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -205,6 +208,10 @@ const ContestDetail = () => {
               <BarChart3 className="h-4 w-4" />
               Leaderboard
             </TabsTrigger>
+            <TabsTrigger value="trends" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Vote Trends
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="contestants">
@@ -252,13 +259,21 @@ const ContestDetail = () => {
                               : 'Votes hidden'}
                           </span>
                         </div>
-                        <Button 
-                          className="w-full mt-4" 
-                          onClick={() => handleVoteClick(contestant)}
-                          disabled={isEnded}
-                        >
-                          {isEnded ? 'Voting Ended' : 'Vote Now'}
-                        </Button>
+                        <div className="flex items-center gap-2 mt-4">
+                          <Button 
+                            className="flex-1" 
+                            onClick={() => handleVoteClick(contestant)}
+                            disabled={isEnded}
+                          >
+                            {isEnded ? 'Voting Ended' : 'Vote Now'}
+                          </Button>
+                          <ContestantShareButton
+                            contestantId={contestant.id}
+                            contestantName={contestant.name}
+                            contestId={contest.id}
+                            contestTitle={contest.title}
+                          />
+                        </div>
                       </CardContent>
                     </Card>
                   </VotePulse>
@@ -278,6 +293,13 @@ const ContestDetail = () => {
               updatedContestantIds={recentlyUpdatedContestants}
               showExport={false}
               title="Live Leaderboard"
+            />
+          </TabsContent>
+
+          <TabsContent value="trends">
+            <VoteHistoryChart
+              contestId={contest.id}
+              contestants={contestants || []}
             />
           </TabsContent>
         </Tabs>
