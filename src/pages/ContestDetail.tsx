@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
+import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,9 @@ const ContestDetail = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const { data: wallet } = useWallet();
   const vote = useVote();
+
+  // Enable real-time vote updates
+  useRealtimeVotes(id);
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
