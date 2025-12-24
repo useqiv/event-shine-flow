@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,36 @@ const AnimatedLeaderboard = ({
   const previousRanksRef = useRef<Map<string, number>>(new Map());
   const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
 
+  // Fire confetti celebration
+  const fireConfetti = useCallback(() => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        return;
+      }
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#FFD700', '#FFA500', '#FF6347', '#9400D3', '#00CED1'],
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#FFD700', '#FFA500', '#FF6347', '#9400D3', '#00CED1'],
+      });
+    }, 250);
+  }, []);
+
   // Track rank changes when contestants order changes
   useEffect(() => {
     if (!contestants || contestants.length === 0) return;
@@ -48,6 +79,7 @@ const AnimatedLeaderboard = ({
     const currentRanks = new Map<string, number>();
     const newRankChanges = new Map<string, RankChange>();
     const newAnimatingIds = new Set<string>();
+    let someoneMovedToFirst = false;
 
     contestants.forEach((c, index) => {
       const currentRank = index + 1;
@@ -62,12 +94,22 @@ const AnimatedLeaderboard = ({
           change,
         });
         newAnimatingIds.add(c.id);
+
+        // Check if this contestant moved to first place
+        if (currentRank === 1 && previousRank > 1) {
+          someoneMovedToFirst = true;
+        }
       }
     });
 
     if (newRankChanges.size > 0) {
       setRankChanges(newRankChanges);
       setAnimatingIds(newAnimatingIds);
+
+      // Fire confetti if someone moved to first place
+      if (someoneMovedToFirst) {
+        fireConfetti();
+      }
 
       // Clear rank change indicators after animation
       setTimeout(() => {
@@ -77,7 +119,7 @@ const AnimatedLeaderboard = ({
     }
 
     previousRanksRef.current = currentRanks;
-  }, [contestants]);
+  }, [contestants, fireConfetti]);
 
   const getRankBadge = (index: number) => {
     if (index === 0) {
