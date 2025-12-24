@@ -1,0 +1,368 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useWallet } from '@/hooks/useWallet';
+import { useFeaturedContests } from '@/hooks/useContests';
+import { useFeaturedEvents } from '@/hooks/useEvents';
+import { useMyTickets } from '@/hooks/useEvents';
+import { useMyVotes } from '@/hooks/useContests';
+import { useNotifications } from '@/hooks/useNotifications';
+import { 
+  Wallet, 
+  Trophy, 
+  Calendar, 
+  Ticket, 
+  Vote, 
+  Bell, 
+  ArrowRight,
+  TrendingUp,
+  Clock
+} from 'lucide-react';
+import { format } from 'date-fns';
+
+const Dashboard = () => {
+  const { data: wallet, isLoading: walletLoading } = useWallet();
+  const { data: featuredContests, isLoading: contestsLoading } = useFeaturedContests();
+  const { data: featuredEvents, isLoading: eventsLoading } = useFeaturedEvents();
+  const { data: myTickets, isLoading: ticketsLoading } = useMyTickets();
+  const { data: myVotes, isLoading: votesLoading } = useMyVotes();
+  const { data: notifications } = useNotifications();
+
+  const unreadNotifications = notifications?.filter(n => !n.is_read) || [];
+  const recentNotifications = unreadNotifications.slice(0, 3);
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Wallet Balance */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Wallet Balance</p>
+                  {walletLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      ₦{wallet?.balance?.toLocaleString() || '0.00'}
+                    </p>
+                  )}
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wallet className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <Link to="/wallet">
+                <Button variant="link" className="px-0 mt-2">
+                  Fund Wallet <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Active Contests */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Contests</p>
+                  {contestsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {featuredContests?.length || 0}
+                    </p>
+                  )}
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <Trophy className="h-6 w-6 text-accent" />
+                </div>
+              </div>
+              <Link to="/contests">
+                <Button variant="link" className="px-0 mt-2">
+                  View All <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Events */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Upcoming Events</p>
+                  {eventsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {featuredEvents?.length || 0}
+                    </p>
+                  )}
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-chart-3/10 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-chart-3" />
+                </div>
+              </div>
+              <Link to="/events">
+                <Button variant="link" className="px-0 mt-2">
+                  Browse Events <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* My Tickets */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">My Tickets</p>
+                  {ticketsLoading ? (
+                    <Skeleton className="h-8 w-16 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {myTickets?.length || 0}
+                    </p>
+                  )}
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-chart-4/10 flex items-center justify-center">
+                  <Ticket className="h-6 w-6 text-chart-4" />
+                </div>
+              </div>
+              <Link to="/my-tickets">
+                <Button variant="link" className="px-0 mt-2">
+                  View Tickets <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Notifications */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Notifications
+                </CardTitle>
+                {unreadNotifications.length > 0 && (
+                  <Badge>{unreadNotifications.length} new</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {recentNotifications.length > 0 ? (
+                <div className="space-y-3">
+                  {recentNotifications.map((notification) => (
+                    <div key={notification.id} className="flex gap-3 p-2 rounded-lg bg-secondary/50">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{notification.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <Link to="/notifications">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View All Notifications
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No new notifications
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Trending Contests */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Trending Contests
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {contestsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : featuredContests && featuredContests.length > 0 ? (
+                <div className="space-y-3">
+                  {featuredContests.slice(0, 3).map((contest) => (
+                    <Link key={contest.id} to={`/contests/${contest.id}`}>
+                      <div className="flex gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                        <div className="h-12 w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                          {contest.image_url ? (
+                            <img src={contest.image_url} alt={contest.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Trophy className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{contest.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {contest.total_votes.toLocaleString()} votes
+                          </p>
+                        </div>
+                        <Badge variant="secondary">{contest.category}</Badge>
+                      </div>
+                    </Link>
+                  ))}
+                  <Link to="/contests">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View All Contests
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No active contests
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Upcoming Events */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Upcoming Events
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {eventsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : featuredEvents && featuredEvents.length > 0 ? (
+                <div className="space-y-3">
+                  {featuredEvents.slice(0, 3).map((event) => (
+                    <Link key={event.id} to={`/events/${event.id}`}>
+                      <div className="flex gap-3 p-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                        <div className="h-12 w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                          {event.image_url ? (
+                            <img src={event.image_url} alt={event.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Calendar className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{event.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(event.event_date), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  <Link to="/events">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View All Events
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No upcoming events
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Vote className="h-5 w-5" />
+              My Recent Votes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {votesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : myVotes && myVotes.length > 0 ? (
+              <div className="space-y-3">
+                {myVotes.slice(0, 5).map((vote: any) => (
+                  <div key={vote.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Vote className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        Voted for {vote.contestant?.name || 'Contestant'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {vote.contest?.title || 'Contest'} • {vote.quantity} vote(s)
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">₦{vote.amount_paid.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(vote.created_at), 'MMM d, HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <Link to="/my-votes">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View All Votes
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Vote className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No votes yet</p>
+                <Link to="/contests">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    Browse Contests
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default Dashboard;
