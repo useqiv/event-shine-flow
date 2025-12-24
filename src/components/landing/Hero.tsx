@@ -21,8 +21,8 @@ const Hero = () => {
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
       
-      {/* Floating Elements */}
-      <div className="absolute top-32 right-[15%] hidden xl:flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-2xl shadow-lg animate-fade-in">
+      {/* Floating Elements - Hidden to avoid overlap, shown only on 2xl screens */}
+      <div className="absolute top-32 right-[12%] hidden 2xl:flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-2xl shadow-lg animate-fade-in z-20">
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
           <Vote className="h-4 w-4 text-primary" />
         </div>
@@ -32,7 +32,7 @@ const Hero = () => {
         </div>
       </div>
       
-      <div className="absolute top-48 left-[10%] hidden xl:flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-2xl shadow-lg animate-fade-in">
+      <div className="absolute bottom-32 left-[5%] hidden 2xl:flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-2xl shadow-lg animate-fade-in z-20">
         <div className="h-8 w-8 rounded-lg bg-accent/20 flex items-center justify-center">
           <Ticket className="h-4 w-4 text-accent" />
         </div>
