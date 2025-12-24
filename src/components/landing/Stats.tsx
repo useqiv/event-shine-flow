@@ -29,7 +29,7 @@ const Stats = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-r from-primary via-primary to-secondary relative overflow-hidden">
+    <section className="py-16 bg-gradient-to-r from-primary via-primary to-accent relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -38,7 +38,7 @@ const Stats = () => {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-2">
             Trusted by Organizers Worldwide
           </h2>
@@ -47,21 +47,23 @@ const Stats = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
             <div key={index} className="text-center group">
-              <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-2 group-hover:scale-105 transition-transform">
-                {stat.value}
-              </div>
-              <div className="text-lg font-medium text-primary-foreground/90 mb-1">
-                {stat.label}
-              </div>
-              <div className="text-sm text-primary-foreground/70 mb-2">
-                {stat.description}
-              </div>
-              <div className="inline-flex items-center gap-1 px-2 py-1 bg-primary-foreground/10 rounded-full">
-                <TrendingUp className="h-3 w-3 text-primary-foreground/80" />
-                <span className="text-xs text-primary-foreground/80">{stat.growth}</span>
+              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl p-5 hover:bg-primary-foreground/15 transition-colors">
+                <div className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-1 group-hover:scale-105 transition-transform">
+                  {stat.value}
+                </div>
+                <div className="text-base font-medium text-primary-foreground/90 mb-1">
+                  {stat.label}
+                </div>
+                <div className="text-sm text-primary-foreground/70 mb-2">
+                  {stat.description}
+                </div>
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-primary-foreground/10 rounded-full">
+                  <TrendingUp className="h-3 w-3 text-primary-foreground/80" />
+                  <span className="text-xs text-primary-foreground/80">{stat.growth}</span>
+                </div>
               </div>
             </div>
           ))}

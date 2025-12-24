@@ -44,31 +44,31 @@ const HowItWorks = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-background relative overflow-hidden">
+    <section id="how-it-works" className="py-16 bg-muted relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full mb-6">
             <ArrowRight className="h-4 w-4 text-primary" />
             <span className="text-sm text-foreground font-medium">Quick Start Guide</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
             Get Started in{" "}
             <span className="text-primary">3 Simple Steps</span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-muted-foreground">
             Whether you're an organizer or participant, getting started takes just minutes.
           </p>
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Organizer Flow */}
           <div className="relative">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-full mb-10 shadow-lg">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full mb-8 shadow-md">
               <Building2 className="h-4 w-4" />
               <span className="text-sm font-semibold">For Organizers</span>
             </div>
@@ -81,13 +81,13 @@ const HowItWorks = () => {
 
           {/* User Flow */}
           <div className="relative">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-secondary text-secondary-foreground rounded-full mb-10 shadow-lg">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-full mb-8 shadow-md">
               <Users className="h-4 w-4" />
               <span className="text-sm font-semibold">For Participants</span>
             </div>
             <div className="space-y-0">
               {userSteps.map((item, index) => (
-                <StepCard key={index} {...item} isLast={index === userSteps.length - 1} variant="secondary" />
+                <StepCard key={index} {...item} isLast={index === userSteps.length - 1} variant="accent" />
               ))}
             </div>
           </div>
@@ -103,35 +103,35 @@ interface StepCardProps {
   title: string;
   description: string;
   isLast: boolean;
-  variant: "primary" | "secondary";
+  variant: "primary" | "accent";
 }
 
 const StepCard = ({ step, icon: Icon, title, description, isLast, variant }: StepCardProps) => {
   const isPrimary = variant === "primary";
   
   return (
-    <div className="relative flex gap-6 group">
+    <div className="relative flex gap-5 group">
       {/* Step Number & Line */}
       <div className="flex flex-col items-center">
-        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform ${
+        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-lg shrink-0 shadow-md group-hover:scale-105 transition-transform ${
           isPrimary 
             ? 'bg-primary text-primary-foreground' 
-            : 'bg-secondary text-secondary-foreground'
+            : 'bg-accent text-accent-foreground'
         }`}>
           {step}
         </div>
         {!isLast && (
-          <div className={`w-0.5 h-full min-h-[60px] mt-3 ${isPrimary ? 'bg-primary/20' : 'bg-secondary/20'}`} />
+          <div className={`w-0.5 h-full min-h-[50px] mt-2 ${isPrimary ? 'bg-primary/20' : 'bg-accent/20'}`} />
         )}
       </div>
 
       {/* Content */}
-      <div className="pb-12">
-        <div className="flex items-center gap-3 mb-2">
-          <Icon className={`h-5 w-5 ${isPrimary ? 'text-primary' : 'text-secondary'}`} />
-          <h4 className="text-xl font-bold text-foreground">{title}</h4>
+      <div className="pb-10">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon className={`h-4 w-4 ${isPrimary ? 'text-primary' : 'text-accent'}`} />
+          <h4 className="text-lg font-bold text-foreground">{title}</h4>
         </div>
-        <p className="text-muted-foreground leading-relaxed">{description}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
       </div>
     </div>
   );
