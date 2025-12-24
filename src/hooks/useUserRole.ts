@@ -12,8 +12,10 @@ export const useUserRole = () => {
       
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, created_at')
         .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       
       if (error) throw error;
