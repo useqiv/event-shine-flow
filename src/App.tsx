@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserRole } from "@/hooks/useUserRole";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -40,9 +41,10 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: role, isLoading: roleLoading } = useUserRole();
   const location = useLocation();
   
-  if (loading || profileLoading) {
+  if (loading || profileLoading || roleLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
@@ -54,19 +56,32 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (profile && !profile.account_type_selected && location.pathname !== "/account-setup") {
     return <Navigate to="/account-setup" replace />;
   }
+
+  // Redirect organization users to org dashboard if they try to access regular dashboard
+  const isOrganization = role === 'organization';
+  if (isOrganization && location.pathname === '/dashboard') {
+    return <Navigate to="/org/dashboard" replace />;
+  }
+
+  // Redirect regular users away from org routes
+  if (!isOrganization && location.pathname.startsWith('/org/')) {
+    return <Navigate to="/dashboard" replace />;
+  }
   
   return <>{children}</>;
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const { data: role, isLoading: roleLoading } = useUserRole();
   
-  if (loading) {
+  if (loading || (user && roleLoading)) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const isOrganization = role === 'organization';
+    return <Navigate to={isOrganization ? "/org/dashboard" : "/dashboard"} replace />;
   }
   
   return <>{children}</>;
