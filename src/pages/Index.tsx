@@ -1,6 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
+import Categories from "@/components/landing/Categories";
+import UpcomingEvents from "@/components/landing/UpcomingEvents";
 import Showcase from "@/components/landing/Showcase";
 import Features from "@/components/landing/Features";
 import Stats from "@/components/landing/Stats";
@@ -31,10 +33,12 @@ const Index = () => {
         <meta name="twitter:description" content="The all-in-one platform for secure contest voting and event ticketing." />
       </Helmet>
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-muted">
         <Navbar />
         <main>
           <Hero />
+          <Categories />
+          <UpcomingEvents />
           <Showcase />
           <Features />
           <Stats />

@@ -86,39 +86,39 @@ const Features = () => {
   ];
 
   return (
-    <section id="features" className="py-24 bg-card relative overflow-hidden">
+    <section id="features" className="py-16 bg-card relative overflow-hidden">
       {/* Background Decorations */}
       <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-6">
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm text-foreground font-medium">Powerful Features</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-4">
             Everything You Need to Run{" "}
             <span className="text-primary">World-Class Events</span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-muted-foreground">
             A comprehensive platform packed with features for organizers and participants alike.
           </p>
         </div>
 
         {/* Organizer Features */}
-        <div id="organizers" className="mb-24">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-primary" />
+        <div id="organizers" className="mb-16">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-foreground">For Organizers</h3>
+              <h3 className="text-xl font-bold text-foreground">For Organizers</h3>
               <p className="text-muted-foreground text-sm">Tools to run successful contests and events</p>
             </div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {organizerFeatures.map((feature, index) => (
               <FeatureCard key={index} {...feature} />
             ))}
@@ -127,16 +127,16 @@ const Features = () => {
 
         {/* User Features */}
         <div id="users">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="h-12 w-12 rounded-xl bg-secondary/20 flex items-center justify-center">
-              <Vote className="h-6 w-6 text-secondary" />
+          <div className="flex items-center gap-3 mb-8">
+            <div className="h-10 w-10 rounded-2xl bg-accent/20 flex items-center justify-center">
+              <Vote className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-foreground">For Participants</h3>
+              <h3 className="text-xl font-bold text-foreground">For Participants</h3>
               <p className="text-muted-foreground text-sm">Seamless voting and ticket buying experience</p>
             </div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userFeatures.map((feature, index) => (
               <FeatureCard key={index} {...feature} />
             ))}
@@ -144,19 +144,19 @@ const Features = () => {
         </div>
 
         {/* Platform Highlights */}
-        <div className="mt-24 grid md:grid-cols-4 gap-6">
+        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption & secure voting ledger" },
-            { icon: Globe, title: "Multi-Currency", desc: "Accept payments in 50+ currencies" },
-            { icon: Smartphone, title: "Mobile-First", desc: "Optimized for all devices" },
-            { icon: BarChart3, title: "API Ready", desc: "RESTful APIs for integrations" },
+            { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
+            { icon: Globe, title: "Multi-Currency", desc: "50+ currencies" },
+            { icon: Smartphone, title: "Mobile-First", desc: "All devices" },
+            { icon: BarChart3, title: "API Ready", desc: "RESTful APIs" },
           ].map((item, i) => (
-            <div key={i} className="text-center p-6 bg-background/50 border border-border rounded-xl hover:border-primary/30 transition-colors">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <item.icon className="h-6 w-6 text-primary" />
+            <div key={i} className="text-center p-5 bg-muted border border-border rounded-2xl hover:border-primary/30 transition-colors">
+              <div className="h-10 w-10 rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-3">
+                <item.icon className="h-5 w-5 text-primary" />
               </div>
-              <h4 className="font-semibold text-foreground mb-1">{item.title}</h4>
-              <p className="text-sm text-muted-foreground">{item.desc}</p>
+              <h4 className="font-semibold text-foreground text-sm mb-1">{item.title}</h4>
+              <p className="text-xs text-muted-foreground">{item.desc}</p>
             </div>
           ))}
         </div>
@@ -174,18 +174,18 @@ interface FeatureCardProps {
 
 const FeatureCard = ({ icon: Icon, title, description, highlight }: FeatureCardProps) => {
   return (
-    <div className={`group relative p-6 bg-background border rounded-xl hover:shadow-xl transition-all duration-300 ${highlight ? 'border-primary/50 shadow-lg' : 'border-border hover:border-primary/30'}`}>
+    <div className={`group relative p-5 bg-muted border rounded-2xl hover:shadow-lg transition-all duration-300 ${highlight ? 'border-primary/50 shadow-md' : 'border-border hover:border-primary/30'}`}>
       {highlight && (
-        <div className="absolute -top-3 left-4">
-          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+        <div className="absolute -top-2.5 left-4">
+          <span className="px-2.5 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
             Popular
           </span>
         </div>
       )}
-      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
-        <Icon className="h-6 w-6 text-primary" />
+      <div className="h-10 w-10 rounded-xl bg-card border border-border flex items-center justify-center mb-4 group-hover:border-primary/50 group-hover:scale-105 transition-all">
+        <Icon className="h-5 w-5 text-primary" />
       </div>
-      <h4 className="text-lg font-semibold text-foreground mb-2">{title}</h4>
+      <h4 className="text-base font-semibold text-foreground mb-2">{title}</h4>
       <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
     </div>
   );
