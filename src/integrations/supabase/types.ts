@@ -71,6 +71,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          organization_id: string | null
           start_date: string
           title: string
           total_votes: number
@@ -86,6 +87,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          organization_id?: string | null
           start_date: string
           title: string
           total_votes?: number
@@ -101,13 +103,22 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          organization_id?: string | null
           start_date?: string
           title?: string
           total_votes?: number
           updated_at?: string
           vote_price?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -120,6 +131,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          organization_id: string | null
           title: string
           updated_at: string
           venue: string
@@ -134,6 +146,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          organization_id?: string | null
           title: string
           updated_at?: string
           venue: string
@@ -148,11 +161,20 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          organization_id?: string | null
           title?: string
           updated_at?: string
           venue?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "events_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -187,6 +209,118 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_settings: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          company_address: string | null
+          company_email: string | null
+          company_name: string | null
+          company_phone: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          preferred_payout_method: string | null
+          updated_at: string
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          preferred_payout_method?: string | null
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          preferred_payout_method?: string | null
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          organization_id: string
+          payment_method: string
+          processed_at: string | null
+          reference_id: string | null
+          status: string
+          updated_at: string
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          organization_id: string
+          payment_method?: string
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          organization_id?: string
+          payment_method?: string
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           account_type_selected: boolean
@@ -220,6 +354,131 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          applicable_to: string
+          code: string
+          contest_id: string | null
+          created_at: string
+          current_uses: number
+          discount_type: string
+          discount_value: number
+          event_id: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          organization_id: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_to?: string
+          code: string
+          contest_id?: string | null
+          created_at?: string
+          current_uses?: number
+          discount_type?: string
+          discount_value: number
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_to?: string
+          code?: string
+          contest_id?: string | null
+          created_at?: string
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          organization_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_scan_logs: {
+        Row: {
+          event_id: string
+          id: string
+          scan_result: string
+          scanned_at: string
+          scanned_by: string | null
+          ticket_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          scan_result?: string
+          scanned_at?: string
+          scanned_by?: string | null
+          ticket_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          scan_result?: string
+          scanned_at?: string
+          scanned_by?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_scan_logs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_scan_logs_scanned_by_fkey"
+            columns: ["scanned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qr_scan_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_items: {
         Row: {
           created_at: string
@@ -243,6 +502,105 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      support_ticket_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_staff_reply: boolean
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_staff_reply?: boolean
+          message: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_staff_reply?: boolean
+          message?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ticket_types: {
         Row: {
