@@ -21,15 +21,18 @@ const AccountTypeSelection = () => {
 
     setIsLoading(true);
     try {
-      // Update user role from default 'user' to 'organization' if selected
-      if (selectedType === "organization") {
-        const { error } = await supabase
-          .from("user_roles")
-          .update({ role: "organization" })
-          .eq("user_id", user.id);
+      // First delete any existing role for the user
+      await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user.id);
 
-        if (error) throw error;
-      }
+      // Then insert the selected role
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: user.id, role: selectedType });
+
+      if (error) throw error;
 
       // Mark that user has completed account setup
       const { error: profileError } = await supabase
@@ -39,8 +42,9 @@ const AccountTypeSelection = () => {
 
       if (profileError) throw profileError;
 
-      // Invalidate profile cache to ensure fresh data
+      // Invalidate profile and role caches to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-role'] });
 
       toast({
         title: "Account setup complete!",
@@ -49,7 +53,9 @@ const AccountTypeSelection = () => {
           : "Start exploring events and contests!",
       });
 
-      navigate("/dashboard", { replace: true });
+      // Navigate to appropriate dashboard based on selected type
+      const targetPath = selectedType === "organization" ? "/org/dashboard" : "/dashboard";
+      navigate(targetPath, { replace: true });
     } catch (error: any) {
       toast({
         title: "Error",
