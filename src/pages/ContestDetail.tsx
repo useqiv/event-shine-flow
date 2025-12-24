@@ -13,6 +13,7 @@ import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
 import LiveVoteIndicator, { VotePulse, LiveVoteCounter } from '@/components/LiveVoteIndicator';
 import AnimatedLeaderboard from '@/components/AnimatedLeaderboard';
+import ContestCountdown from '@/components/ContestCountdown';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -187,6 +188,11 @@ const ContestDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Countdown Timer */}
+        {!isEnded && (
+          <ContestCountdown endDate={contest.end_date} />
+        )}
 
         {/* Contestants and Leaderboard Tabs */}
         <Tabs defaultValue="contestants" className="space-y-4">
