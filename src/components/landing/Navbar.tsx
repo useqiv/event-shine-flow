@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Vote, Bell, Search, SlidersHorizontal } from "lucide-react";
+import { Menu, X, Vote, Search, SlidersHorizontal } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,17 +55,12 @@ const Navbar = () => {
 
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            <button className="relative p-2 hover:bg-muted rounded-full transition-colors">
-              <Bell className="h-5 w-5 text-foreground" />
-              <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                2
-              </span>
-            </button>
-            <div className="h-10 w-10 rounded-full bg-muted border-2 border-border overflow-hidden">
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground font-semibold text-sm">
-                VP
-              </div>
-            </div>
+            <Link to="/auth">
+              <Button variant="ghost">Sign In</Button>
+            </Link>
+            <Link to="/auth">
+              <Button>Get Started</Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -108,8 +104,12 @@ const Navbar = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
-                <Button variant="ghost" className="w-full justify-center">Sign In</Button>
-                <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                <Link to="/auth" onClick={() => setIsOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-center">Sign In</Button>
+                </Link>
+                <Link to="/auth" onClick={() => setIsOpen(false)}>
+                  <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                </Link>
               </div>
             </div>
           </div>
