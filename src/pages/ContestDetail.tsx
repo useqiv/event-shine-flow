@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
+import LiveVoteIndicator, { VotePulse, LiveVoteCounter } from '@/components/LiveVoteIndicator';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +39,7 @@ const ContestDetail = () => {
   const vote = useVote();
 
   // Enable real-time vote updates
-  useRealtimeVotes(id);
+  const { lastVoteEvent, clearVoteEvent, isContestantUpdated } = useRealtimeVotes(id);
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
@@ -196,49 +197,51 @@ const ContestDetail = () => {
           ) : contestants && contestants.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {contestants.map((contestant, index) => (
-                <Card key={contestant.id} className="overflow-hidden">
-                  <div className="relative h-48 bg-secondary">
-                    {contestant.photo_url ? (
-                      <img 
-                        src={contestant.photo_url} 
-                        alt={contestant.name} 
-                        className="h-full w-full object-cover" 
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center">
-                        <User className="h-16 w-16 text-muted-foreground" />
-                      </div>
-                    )}
-                    {index < 3 && (
-                      <div className="absolute top-2 left-2">
-                        <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
-                          #{index + 1}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg">{contestant.name}</h3>
-                    {contestant.bio && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                      <Vote className="h-4 w-4" />
-                      <span>
-                        {contestant.is_public_votes 
-                          ? `${contestant.vote_count.toLocaleString()} votes`
-                          : 'Votes hidden'}
-                      </span>
+                <VotePulse key={contestant.id} isActive={isContestantUpdated(contestant.id)}>
+                  <Card className="overflow-hidden h-full">
+                    <div className="relative h-48 bg-secondary">
+                      {contestant.photo_url ? (
+                        <img 
+                          src={contestant.photo_url} 
+                          alt={contestant.name} 
+                          className="h-full w-full object-cover" 
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <User className="h-16 w-16 text-muted-foreground" />
+                        </div>
+                      )}
+                      {index < 3 && (
+                        <div className="absolute top-2 left-2">
+                          <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
+                            #{index + 1}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
-                    <Button 
-                      className="w-full mt-4" 
-                      onClick={() => handleVoteClick(contestant)}
-                      disabled={isEnded}
-                    >
-                      {isEnded ? 'Voting Ended' : 'Vote Now'}
-                    </Button>
-                  </CardContent>
-                </Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg">{contestant.name}</h3>
+                      {contestant.bio && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                        <Vote className="h-4 w-4" />
+                        <span>
+                          {contestant.is_public_votes 
+                            ? <><LiveVoteCounter count={contestant.vote_count} isUpdating={isContestantUpdated(contestant.id)} /> votes</>
+                            : 'Votes hidden'}
+                        </span>
+                      </div>
+                      <Button 
+                        className="w-full mt-4" 
+                        onClick={() => handleVoteClick(contestant)}
+                        disabled={isEnded}
+                      >
+                        {isEnded ? 'Voting Ended' : 'Vote Now'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </VotePulse>
               ))}
             </div>
           ) : (
@@ -338,6 +341,9 @@ const ContestDetail = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Live Vote Indicator */}
+      <LiveVoteIndicator voteEvent={lastVoteEvent} onDismiss={clearVoteEvent} />
     </DashboardLayout>
   );
 };

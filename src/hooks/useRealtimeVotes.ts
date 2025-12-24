@@ -1,9 +1,22 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface VoteEvent {
+  contestantId: string;
+  contestantName: string;
+  newVoteCount: number;
+  timestamp: number;
+}
+
 export const useRealtimeVotes = (contestId: string | undefined) => {
   const queryClient = useQueryClient();
+  const [lastVoteEvent, setLastVoteEvent] = useState<VoteEvent | null>(null);
+  const [recentlyUpdatedContestants, setRecentlyUpdatedContestants] = useState<Set<string>>(new Set());
+
+  const clearVoteEvent = useCallback(() => {
+    setLastVoteEvent(null);
+  }, []);
 
   useEffect(() => {
     if (!contestId) return;
@@ -21,6 +34,32 @@ export const useRealtimeVotes = (contestId: string | undefined) => {
         },
         (payload) => {
           console.log('Contestant updated:', payload);
+          
+          const newData = payload.new as any;
+          const oldData = payload.old as any;
+          
+          // Check if vote_count changed
+          if (newData.vote_count !== oldData.vote_count) {
+            setLastVoteEvent({
+              contestantId: newData.id,
+              contestantName: newData.name,
+              newVoteCount: newData.vote_count,
+              timestamp: Date.now(),
+            });
+
+            // Add to recently updated set
+            setRecentlyUpdatedContestants(prev => new Set(prev).add(newData.id));
+            
+            // Remove from recently updated after animation
+            setTimeout(() => {
+              setRecentlyUpdatedContestants(prev => {
+                const next = new Set(prev);
+                next.delete(newData.id);
+                return next;
+              });
+            }, 2000);
+          }
+          
           // Invalidate contestants query to refetch
           queryClient.invalidateQueries({ queryKey: ['contestants', contestId] });
         }
@@ -52,6 +91,13 @@ export const useRealtimeVotes = (contestId: string | undefined) => {
       supabase.removeChannel(contestChannel);
     };
   }, [contestId, queryClient]);
+
+  return {
+    lastVoteEvent,
+    clearVoteEvent,
+    recentlyUpdatedContestants,
+    isContestantUpdated: (id: string) => recentlyUpdatedContestants.has(id),
+  };
 };
 
 export const useRealtimeContestants = (contestId: string | undefined) => {
