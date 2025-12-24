@@ -1,9 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
+import Showcase from "@/components/landing/Showcase";
 import Features from "@/components/landing/Features";
-import HowItWorks from "@/components/landing/HowItWorks";
 import Stats from "@/components/landing/Stats";
+import HowItWorks from "@/components/landing/HowItWorks";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 
@@ -14,16 +15,27 @@ const Index = () => {
         <title>VotePass - Modern Contest Voting & Event Ticketing Platform</title>
         <meta 
           name="description" 
-          content="Secure, scalable platform for contest voting, event ticketing, and payout automation. Power pageants, competitions, awards shows, and events with anti-fraud voting and QR tickets." 
+          content="Secure, scalable platform for contest voting, event ticketing, and payout automation. Power pageants, music competitions, awards shows, and fashion events with anti-fraud voting and QR tickets." 
         />
-        <meta name="keywords" content="contest voting, event ticketing, pageant voting, competition platform, QR tickets, voting platform" />
+        <meta name="keywords" content="contest voting, event ticketing, pageant voting, competition platform, QR tickets, voting platform, awards voting, music competition" />
         <link rel="canonical" href="https://votepass.com" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="VotePass - Modern Contest Voting & Event Ticketing Platform" />
+        <meta property="og:description" content="Secure, scalable platform for contest voting and event ticketing. Power pageants, competitions, and award shows." />
+        <meta property="og:type" content="website" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="VotePass - Contest Voting & Event Ticketing" />
+        <meta name="twitter:description" content="The all-in-one platform for secure contest voting and event ticketing." />
       </Helmet>
 
       <div className="min-h-screen bg-background">
         <Navbar />
         <main>
           <Hero />
+          <Showcase />
           <Features />
           <Stats />
           <HowItWorks />
