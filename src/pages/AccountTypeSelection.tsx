@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AccountTypeSelection = () => {
   const [selectedType, setSelectedType] = useState<"user" | "organization" | null>(null);
@@ -13,6 +14,7 @@ const AccountTypeSelection = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleContinue = async () => {
     if (!selectedType || !user) return;
@@ -37,6 +39,9 @@ const AccountTypeSelection = () => {
 
       if (profileError) throw profileError;
 
+      // Invalidate profile cache to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
+
       toast({
         title: "Account setup complete!",
         description: selectedType === "organization" 
@@ -44,7 +49,7 @@ const AccountTypeSelection = () => {
           : "Start exploring events and contests!",
       });
 
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error: any) {
       toast({
         title: "Error",
