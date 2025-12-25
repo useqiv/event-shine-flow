@@ -32,6 +32,86 @@ const AdminSettings: React.FC = () => {
     test_mode?: boolean;
   } | null>(null);
 
+  // Flutterwave form state
+  const [flutterwaveForm, setFlutterwaveForm] = useState({
+    public_key: '',
+    secret_key: '',
+    encryption_key: '',
+    webhook_secret: '',
+    currencies: '',
+    default_currency: '',
+  });
+  const [flutterwaveFormDirty, setFlutterwaveFormDirty] = useState(false);
+  const [isSavingFlutterwave, setIsSavingFlutterwave] = useState(false);
+  const [flutterwaveErrors, setFlutterwaveErrors] = useState<Record<string, string>>({});
+
+  // Initialize Flutterwave form when settings load
+  React.useEffect(() => {
+    if (settings) {
+      setFlutterwaveForm({
+        public_key: settings.find(s => s.setting_key === 'flutterwave_public_key')?.setting_value || '',
+        secret_key: settings.find(s => s.setting_key === 'flutterwave_secret_key')?.setting_value || '',
+        encryption_key: settings.find(s => s.setting_key === 'flutterwave_encryption_key')?.setting_value || '',
+        webhook_secret: settings.find(s => s.setting_key === 'flutterwave_webhook_secret')?.setting_value || '',
+        currencies: settings.find(s => s.setting_key === 'flutterwave_currencies')?.setting_value || 'NGN, USD',
+        default_currency: settings.find(s => s.setting_key === 'flutterwave_default_currency')?.setting_value || 'NGN',
+      });
+      setFlutterwaveFormDirty(false);
+    }
+  }, [settings]);
+
+  // Validate Flutterwave API keys
+  const validateFlutterwaveKeys = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    // Public key validation - should start with FLWPUBK or FLWPUBK_TEST
+    if (flutterwaveForm.public_key && !/^FLWPUBK[_-]?[A-Za-z0-9]+$/i.test(flutterwaveForm.public_key)) {
+      errors.public_key = 'Invalid format. Should start with FLWPUBK (e.g., FLWPUBK-xxxxxxxx-X)';
+    }
+    
+    // Secret key validation - should start with FLWSECK or FLWSECK_TEST
+    if (flutterwaveForm.secret_key && !/^FLWSECK[_-]?[A-Za-z0-9]+$/i.test(flutterwaveForm.secret_key)) {
+      errors.secret_key = 'Invalid format. Should start with FLWSECK (e.g., FLWSECK-xxxxxxxx-X)';
+    }
+    
+    setFlutterwaveErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleFlutterwaveFormChange = (field: string, value: string) => {
+    setFlutterwaveForm(prev => ({ ...prev, [field]: value }));
+    setFlutterwaveFormDirty(true);
+    // Clear error for this field when user types
+    if (flutterwaveErrors[field]) {
+      setFlutterwaveErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const saveFlutterwaveSettings = async () => {
+    if (!validateFlutterwaveKeys()) {
+      toast.error('Please fix the validation errors before saving');
+      return;
+    }
+
+    setIsSavingFlutterwave(true);
+    try {
+      await Promise.all([
+        updateSetting.mutateAsync({ key: 'flutterwave_public_key', value: flutterwaveForm.public_key }),
+        updateSetting.mutateAsync({ key: 'flutterwave_secret_key', value: flutterwaveForm.secret_key }),
+        updateSetting.mutateAsync({ key: 'flutterwave_encryption_key', value: flutterwaveForm.encryption_key }),
+        updateSetting.mutateAsync({ key: 'flutterwave_webhook_secret', value: flutterwaveForm.webhook_secret }),
+        updateSetting.mutateAsync({ key: 'flutterwave_currencies', value: flutterwaveForm.currencies }),
+        updateSetting.mutateAsync({ key: 'flutterwave_default_currency', value: flutterwaveForm.default_currency }),
+      ]);
+      toast.success('Flutterwave settings saved successfully');
+      setFlutterwaveFormDirty(false);
+    } catch (error) {
+      toast.error('Failed to save Flutterwave settings');
+    } finally {
+      setIsSavingFlutterwave(false);
+    }
+  };
+
   // Date range state for transaction filter
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: subDays(new Date(), 30),
@@ -231,31 +311,39 @@ const AdminSettings: React.FC = () => {
                     <Input 
                       type="password"
                       placeholder="FLWPUBK-xxxxxxxxxxxx-X" 
-                      defaultValue={getSetting('flutterwave_public_key')} 
-                      onBlur={(e) => handleUpdate('flutterwave_public_key', e.target.value)} 
-                      className="mt-2 font-mono text-sm" 
+                      value={flutterwaveForm.public_key}
+                      onChange={(e) => handleFlutterwaveFormChange('public_key', e.target.value)}
+                      className={cn("mt-2 font-mono text-sm", flutterwaveErrors.public_key && "border-destructive")}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Your Flutterwave public key</p>
+                    {flutterwaveErrors.public_key ? (
+                      <p className="text-xs text-destructive mt-1">{flutterwaveErrors.public_key}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Your Flutterwave public key</p>
+                    )}
                   </div>
                   <div>
                     <Label>Secret Key</Label>
                     <Input 
                       type="password"
                       placeholder="FLWSECK-xxxxxxxxxxxx-X" 
-                      defaultValue={getSetting('flutterwave_secret_key')} 
-                      onBlur={(e) => handleUpdate('flutterwave_secret_key', e.target.value)} 
-                      className="mt-2 font-mono text-sm" 
+                      value={flutterwaveForm.secret_key}
+                      onChange={(e) => handleFlutterwaveFormChange('secret_key', e.target.value)}
+                      className={cn("mt-2 font-mono text-sm", flutterwaveErrors.secret_key && "border-destructive")}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">Your Flutterwave secret key (keep this secure)</p>
+                    {flutterwaveErrors.secret_key ? (
+                      <p className="text-xs text-destructive mt-1">{flutterwaveErrors.secret_key}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Your Flutterwave secret key (keep this secure)</p>
+                    )}
                   </div>
                   <div>
                     <Label>Encryption Key</Label>
                     <Input 
                       type="password"
                       placeholder="Your encryption key" 
-                      defaultValue={getSetting('flutterwave_encryption_key')} 
-                      onBlur={(e) => handleUpdate('flutterwave_encryption_key', e.target.value)} 
-                      className="mt-2 font-mono text-sm" 
+                      value={flutterwaveForm.encryption_key}
+                      onChange={(e) => handleFlutterwaveFormChange('encryption_key', e.target.value)}
+                      className="mt-2 font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground mt-1">Used for encrypting payment data</p>
                   </div>
@@ -280,9 +368,9 @@ const AdminSettings: React.FC = () => {
                     <Input 
                       type="password"
                       placeholder="Your webhook secret hash" 
-                      defaultValue={getSetting('flutterwave_webhook_secret')} 
-                      onBlur={(e) => handleUpdate('flutterwave_webhook_secret', e.target.value)} 
-                      className="mt-2 font-mono text-sm" 
+                      value={flutterwaveForm.webhook_secret}
+                      onChange={(e) => handleFlutterwaveFormChange('webhook_secret', e.target.value)}
+                      className="mt-2 font-mono text-sm"
                     />
                     <p className="text-xs text-muted-foreground mt-1">For verifying webhook authenticity</p>
                   </div>
@@ -292,9 +380,9 @@ const AdminSettings: React.FC = () => {
                   <Label>Supported Currencies</Label>
                   <Input 
                     placeholder="NGN, USD, GHS, KES" 
-                    defaultValue={getSetting('flutterwave_currencies') || 'NGN, USD'} 
-                    onBlur={(e) => handleUpdate('flutterwave_currencies', e.target.value)} 
-                    className="mt-2" 
+                    value={flutterwaveForm.currencies}
+                    onChange={(e) => handleFlutterwaveFormChange('currencies', e.target.value)}
+                    className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Comma-separated list of accepted currencies</p>
                 </div>
@@ -303,10 +391,27 @@ const AdminSettings: React.FC = () => {
                   <Label>Default Currency</Label>
                   <Input 
                     placeholder="NGN" 
-                    defaultValue={getSetting('flutterwave_default_currency') || 'NGN'} 
-                    onBlur={(e) => handleUpdate('flutterwave_default_currency', e.target.value)} 
-                    className="mt-2" 
+                    value={flutterwaveForm.default_currency}
+                    onChange={(e) => handleFlutterwaveFormChange('default_currency', e.target.value)}
+                    className="mt-2"
                   />
+                </div>
+
+                {/* Save Button */}
+                <div className="flex items-center gap-3 pt-2">
+                  <Button 
+                    onClick={saveFlutterwaveSettings}
+                    disabled={!flutterwaveFormDirty || isSavingFlutterwave}
+                  >
+                    {isSavingFlutterwave ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      <><CheckCircle className="h-4 w-4 mr-2" /> Save Configuration</>
+                    )}
+                  </Button>
+                  {flutterwaveFormDirty && (
+                    <span className="text-sm text-muted-foreground">You have unsaved changes</span>
+                  )}
                 </div>
 
                 <div className="p-4 bg-muted rounded-lg">
