@@ -87,6 +87,30 @@ function generateLeaderboardMessage(contest: any, contestants: any[]): string {
   return message;
 }
 
+function generateEventMessage(event: any, postType: string): string {
+  const eventDate = new Date(event.event_date);
+  const now = new Date();
+  const daysUntil = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  
+  switch (postType) {
+    case 'event_countdown':
+      if (daysUntil <= 0) {
+        return `🎉 ${event.title} is happening TODAY!\n\n📍 ${event.venue}\n\n🎟️ Get your tickets now!`;
+      }
+      return `⏰ Only ${daysUntil} day${daysUntil === 1 ? '' : 's'} until ${event.title}!\n\n📍 ${event.venue}\n📅 ${eventDate.toLocaleDateString()}\n\n🎟️ Get your tickets before they sell out!`;
+    
+    case 'tickets_selling':
+      return `🔥 Tickets are selling fast for ${event.title}!\n\n📍 ${event.venue}\n📅 ${eventDate.toLocaleDateString()}\n\n🎟️ Don't miss out - grab yours now!`;
+    
+    case 'event_reminder':
+      return `📢 Reminder: ${event.title} is coming up!\n\n📍 ${event.venue}\n📅 ${eventDate.toLocaleDateString()}\n\n🎟️ Have you got your tickets yet?`;
+    
+    case 'event_announcement':
+    default:
+      return `🎉 Join us for ${event.title}!\n\n📍 ${event.venue}\n📅 ${eventDate.toLocaleDateString()}\n\n🎟️ Get your tickets now!`;
+  }
+}
+
 function calculateNextPostTime(interval: string): Date {
   const now = new Date();
   switch (interval) {
@@ -112,10 +136,11 @@ Deno.serve(async (req) => {
 
   try {
     console.log("Starting scheduled social post check...");
-
-    // Find all auto-posts that are due
     const now = new Date().toISOString();
-    const { data: duePosts, error: fetchError } = await supabase
+    const results = [];
+
+    // Process contest auto-posts
+    const { data: contestPosts, error: contestFetchError } = await supabase
       .from('contest_auto_posts')
       .select(`
         *,
@@ -130,26 +155,21 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .lte('next_post_at', now);
 
-    if (fetchError) {
-      console.error("Error fetching due posts:", fetchError);
-      throw fetchError;
+    if (contestFetchError) {
+      console.error("Error fetching contest auto posts:", contestFetchError);
     }
 
-    console.log(`Found ${duePosts?.length || 0} posts due for publishing`);
+    console.log(`Found ${contestPosts?.length || 0} contest posts due for publishing`);
 
-    const results = [];
-
-    for (const autoPost of duePosts || []) {
+    for (const autoPost of contestPosts || []) {
       try {
         const contest = autoPost.contests;
         
-        // Skip if contest is not active or has ended
         if (!contest || !contest.is_active || new Date(contest.end_date) < new Date()) {
           console.log(`Skipping post for inactive/ended contest: ${contest?.id}`);
           continue;
         }
 
-        // Fetch top contestants
         const { data: contestants, error: contestantsError } = await supabase
           .from('contestants')
           .select('id, name, vote_count')
@@ -162,13 +182,11 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Generate message based on post type
         let message = autoPost.custom_message;
         if (!message || autoPost.post_type === 'leaderboard') {
           message = generateLeaderboardMessage(contest, contestants);
         }
 
-        // Post based on platform
         let postResult;
         if (autoPost.platform === 'twitter') {
           postResult = await sendTweet(message);
@@ -178,7 +196,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update the auto-post record
         const nextPostAt = calculateNextPostTime(autoPost.schedule_interval);
         await supabase
           .from('contest_auto_posts')
@@ -189,17 +206,94 @@ Deno.serve(async (req) => {
           .eq('id', autoPost.id);
 
         results.push({
+          type: 'contest',
           autoPostId: autoPost.id,
-          contestId: contest.id,
+          itemId: contest.id,
           platform: autoPost.platform,
           success: true,
         });
 
       } catch (postError: any) {
-        console.error(`Error posting for auto-post ${autoPost.id}:`, postError);
+        console.error(`Error posting for contest auto-post ${autoPost.id}:`, postError);
         results.push({
+          type: 'contest',
           autoPostId: autoPost.id,
-          contestId: autoPost.contest_id,
+          itemId: autoPost.contest_id,
+          platform: autoPost.platform,
+          success: false,
+          error: postError.message,
+        });
+      }
+    }
+
+    // Process event auto-posts
+    const { data: eventPosts, error: eventFetchError } = await supabase
+      .from('event_auto_posts')
+      .select(`
+        *,
+        events (
+          id,
+          title,
+          venue,
+          event_date,
+          is_active
+        )
+      `)
+      .eq('is_active', true)
+      .lte('next_post_at', now);
+
+    if (eventFetchError) {
+      console.error("Error fetching event auto posts:", eventFetchError);
+    }
+
+    console.log(`Found ${eventPosts?.length || 0} event posts due for publishing`);
+
+    for (const autoPost of eventPosts || []) {
+      try {
+        const event = autoPost.events;
+        
+        if (!event || !event.is_active || new Date(event.event_date) < new Date()) {
+          console.log(`Skipping post for inactive/past event: ${event?.id}`);
+          continue;
+        }
+
+        let message = autoPost.custom_message;
+        if (!message) {
+          message = generateEventMessage(event, autoPost.post_type);
+        }
+
+        let postResult;
+        if (autoPost.platform === 'twitter') {
+          postResult = await sendTweet(message);
+          console.log(`Tweet posted for event ${event.id}:`, postResult);
+        } else {
+          console.log(`Unsupported platform: ${autoPost.platform}`);
+          continue;
+        }
+
+        const nextPostAt = calculateNextPostTime(autoPost.schedule_interval);
+        await supabase
+          .from('event_auto_posts')
+          .update({
+            last_posted_at: now,
+            next_post_at: nextPostAt.toISOString(),
+          })
+          .eq('id', autoPost.id);
+
+        results.push({
+          type: 'event',
+          autoPostId: autoPost.id,
+          itemId: event.id,
+          platform: autoPost.platform,
+          success: true,
+        });
+
+      } catch (postError: any) {
+        console.error(`Error posting for event auto-post ${autoPost.id}:`, postError);
+        results.push({
+          type: 'event',
+          autoPostId: autoPost.id,
+          itemId: autoPost.event_id,
           platform: autoPost.platform,
           success: false,
           error: postError.message,
