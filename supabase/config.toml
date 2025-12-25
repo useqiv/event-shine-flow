@@ -1,1 +1,4 @@
 project_id = "tirqmqzgksclsjxfiham"
+
+[functions.social-post]
+verify_jwt = true
