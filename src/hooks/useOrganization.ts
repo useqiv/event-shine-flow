@@ -456,6 +456,10 @@ export const useCreateContest = () => {
       start_date: string;
       end_date: string;
       vote_price: number;
+      custom_slug?: string;
+      brand_primary_color?: string;
+      brand_secondary_color?: string;
+      brand_logo_url?: string;
     }) => {
       const { data, error } = await supabase
         .from('contests')

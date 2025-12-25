@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Vote, LinkIcon, Pencil, Camera, Trash2, GripVertical, QrCode } from 'lucide-react';
+import { Users, Vote, LinkIcon, Pencil, Camera, Trash2, GripVertical, QrCode, ImageIcon } from 'lucide-react';
 import { ContestantQRDialog } from './ContestantQRDialog';
 
 interface Contestant {
@@ -25,6 +25,7 @@ interface SortableContestantCardProps {
   onEdit: (contestant: Contestant) => void;
   onDelete: (contestant: Contestant) => void;
   onCopyLink: (contestantId: string, contestantName: string) => void;
+  onShareCard?: (contestant: Contestant) => void;
 }
 
 export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
@@ -36,6 +37,7 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
   onEdit,
   onDelete,
   onCopyLink,
+  onShareCard,
 }) => {
   const [isQROpen, setIsQROpen] = useState(false);
   const {
@@ -115,25 +117,36 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
             </div>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t flex gap-2">
+        <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 text-xs"
+            className="text-xs"
             onClick={() => onCopyLink(contestant.id, contestant.name)}
           >
             <LinkIcon className="h-3 w-3 mr-1" />
-            Copy Link
+            Link
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 text-xs"
+            className="text-xs"
             onClick={() => setIsQROpen(true)}
           >
             <QrCode className="h-3 w-3 mr-1" />
-            QR Code
+            QR
           </Button>
+          {onShareCard && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => onShareCard(contestant)}
+            >
+              <ImageIcon className="h-3 w-3 mr-1" />
+              Card
+            </Button>
+          )}
         </div>
         
         <ContestantQRDialog
