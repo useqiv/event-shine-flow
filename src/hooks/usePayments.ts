@@ -46,8 +46,30 @@ export const useFlutterwavePayment = () => {
         body: params,
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (error) {
+        // Supabase Functions errors (non-2xx) often include a response body in `context`
+        const maybeBody = (error as any)?.context?.body;
+        const bodyString =
+          typeof maybeBody === 'string'
+            ? maybeBody
+            : maybeBody
+              ? JSON.stringify(maybeBody)
+              : '';
+
+        let message = error.message;
+        if (bodyString) {
+          try {
+            const parsed = JSON.parse(bodyString);
+            message = parsed?.error || parsed?.message || message;
+          } catch {
+            // bodyString wasn't JSON
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      if (data?.error) throw new Error(data.error);
       return data;
     },
     onSuccess: (data) => {
