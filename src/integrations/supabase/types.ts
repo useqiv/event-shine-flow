@@ -571,6 +571,56 @@ export type Database = {
         }
         Relationships: []
       }
+      social_post_logs: {
+        Row: {
+          content: string | null
+          contest_id: string
+          engagement_clicks: number | null
+          engagement_impressions: number | null
+          error_message: string | null
+          id: string
+          organization_id: string
+          platform: string
+          post_type: string
+          posted_at: string
+          status: string
+        }
+        Insert: {
+          content?: string | null
+          contest_id: string
+          engagement_clicks?: number | null
+          engagement_impressions?: number | null
+          error_message?: string | null
+          id?: string
+          organization_id: string
+          platform: string
+          post_type: string
+          posted_at?: string
+          status?: string
+        }
+        Update: {
+          content?: string | null
+          contest_id?: string
+          engagement_clicks?: number | null
+          engagement_impressions?: number | null
+          error_message?: string | null
+          id?: string
+          organization_id?: string
+          platform?: string
+          post_type?: string
+          posted_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_post_logs_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_ticket_messages: {
         Row: {
           created_at: string
