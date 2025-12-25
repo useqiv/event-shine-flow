@@ -242,7 +242,7 @@ async function processSuccessfulPayment(paymentData: any) {
   } = meta;
   const customer = paymentData.customer || {};
 
-  // Flutterwave transaction id – used for idempotency
+  // Flutterwave transaction id (numeric) – useful for logging but NOT a FK to our DB
   const flw_transaction_id = String(paymentData.id || "");
 
   console.log("Payment meta:", JSON.stringify(meta));
@@ -271,15 +271,33 @@ async function processSuccessfulPayment(paymentData: any) {
 
   const payment_method = resolvePaymentMethod(paymentData);
 
-  // Update transaction status
-  const { error: updateError } = await supabase
+  // Find the wallet transaction created during payment initialization
+  const { data: walletTx, error: walletTxError } = await supabase
     .from("wallet_transactions")
-    .update({ status: "completed" })
-    .eq("reference_id", paymentData.tx_ref);
+    .select("id, user_id, wallet_id, status")
+    .eq("reference_id", paymentData.tx_ref)
+    .maybeSingle();
 
-  if (updateError) {
-    console.log("Transaction update error (may not exist):", updateError.message);
+  if (walletTxError) {
+    console.error("Failed to load wallet transaction:", walletTxError.message);
   }
+
+  // Update transaction status (if it exists)
+  if (walletTx?.id) {
+    const { error: updateError } = await supabase
+      .from("wallet_transactions")
+      .update({ status: "completed" })
+      .eq("id", walletTx.id);
+
+    if (updateError) {
+      console.log("Transaction update error:", updateError.message);
+    }
+  } else {
+    console.log("No wallet_transactions row found for tx_ref:", paymentData.tx_ref);
+  }
+
+  // IMPORTANT: votes.transaction_id & tickets.transaction_id reference wallet_transactions.id (UUID)
+  const db_transaction_id: string | null = walletTx?.id ?? null;
 
   if (type === "vote" && contest_id && contestant_id && user_id) {
     console.log("Recording vote...");
@@ -297,7 +315,7 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", contestant_id)
       .single();
 
-    // Record vote – use transaction_id for idempotency (unique index prevents duplicates)
+    // Record vote – use wallet_transactions.id for idempotency/FK
     const { error: voteError } = await supabase.from("votes").insert({
       user_id,
       contest_id,
@@ -305,7 +323,7 @@ async function processSuccessfulPayment(paymentData: any) {
       quantity: toPositiveInt(vote_quantity, 1),
       amount_paid: paymentData.amount,
       payment_method,
-      transaction_id: flw_transaction_id || null,
+      transaction_id: db_transaction_id,
     });
 
     if (voteError) {
@@ -363,7 +381,7 @@ async function processSuccessfulPayment(paymentData: any) {
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Record ticket purchase – use transaction_id for idempotency
+    // Record ticket purchase – use wallet_transactions.id for idempotency/FK
     const { error: ticketError } = await supabase.from("tickets").insert({
       user_id,
       event_id,
@@ -373,7 +391,7 @@ async function processSuccessfulPayment(paymentData: any) {
       payment_method,
       qr_code,
       status: "active",
-      transaction_id: flw_transaction_id || null,
+      transaction_id: db_transaction_id,
     });
 
     if (ticketError) {
