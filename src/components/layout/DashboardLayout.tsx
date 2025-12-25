@@ -27,7 +27,8 @@ import {
   Menu,
   X,
   Settings,
-  HelpCircle
+  HelpCircle,
+  Bookmark
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/my-tickets', label: 'My Tickets', icon: Ticket },
     { path: '/my-votes', label: 'My Votes', icon: Vote },
+    { path: '/saved', label: 'Saved', icon: Bookmark },
   ];
 
   const bottomNavItems = [
@@ -205,6 +207,12 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                       <Link to="/profile" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/saved" className="cursor-pointer">
+                        <Bookmark className="mr-2 h-4 w-4" />
+                        Saved Items
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

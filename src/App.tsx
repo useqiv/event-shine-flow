@@ -23,6 +23,7 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import AccountTypeSelection from "./pages/AccountTypeSelection";
 import PublicContest from "./pages/PublicContest";
+import SavedItems from "./pages/SavedItems";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -106,6 +107,7 @@ const AppRoutes = () => (
     <Route path="/my-votes" element={<ProtectedRoute><MyVotes /></ProtectedRoute>} />
     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    <Route path="/saved" element={<ProtectedRoute><SavedItems /></ProtectedRoute>} />
     <Route path="/account-setup" element={<ProtectedRoute><AccountTypeSelection /></ProtectedRoute>} />
     
     {/* Organization Dashboard Routes */}

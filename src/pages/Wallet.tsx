@@ -10,6 +10,7 @@ import { useWallet, useWalletTransactions, useFundWallet, useRedeemVoucher } fro
 import { useToast } from '@/hooks/use-toast';
 import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
+import ReferralCard from '@/components/ReferralCard';
 
 const WalletPage = () => {
   const { data: wallet, isLoading: walletLoading } = useWallet();
@@ -83,14 +84,7 @@ const WalletPage = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Referral Code</p>
-              <p className="text-xl font-bold font-mono">{wallet?.referral_code || '...'}</p>
-              <p className="text-sm text-muted-foreground mt-2">Referral Earnings</p>
-              <p className="text-lg font-semibold">₦{wallet?.referral_earnings?.toLocaleString() || '0.00'}</p>
-            </CardContent>
-          </Card>
+          <ReferralCard />
         </div>
 
         <Card>

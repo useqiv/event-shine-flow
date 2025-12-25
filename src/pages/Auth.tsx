@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Vote, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Vote, Eye, EyeOff, Mail, Lock, User, Gift } from 'lucide-react';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Invalid email address');
@@ -16,10 +16,12 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const Auth = () => {
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
   
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -30,6 +32,16 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Capture referral code from URL
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+      // Store in localStorage for after signup
+      localStorage.setItem('pendingReferral', ref.toUpperCase());
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,6 +306,24 @@ const Auth = () => {
                         required
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                    <div className="relative">
+                      <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="referral-code"
+                        type="text"
+                        placeholder="Enter referral code"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        className="pl-10"
+                      />
+                    </div>
+                    {referralCode && (
+                      <p className="text-xs text-green-600">You'll get ₦500 bonus when you sign up!</p>
+                    )}
                   </div>
                 </CardContent>
 
