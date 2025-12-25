@@ -26,7 +26,7 @@ const EventCard = ({ event }: { event: any }) => {
     }
   };
 
-  const isPast = new Date(event.event_date) < new Date();
+  const isPast = event.event_date ? new Date(event.event_date) < new Date() : false;
 
   return (
     <Link to={`/events/${event.id}`}>
@@ -68,15 +68,15 @@ const EventCard = ({ event }: { event: any }) => {
           </h3>
           <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{format(new Date(event.event_date), 'EEEE, MMMM d, yyyy')}</span>
+            <span>{event.event_date ? format(new Date(event.event_date), 'EEEE, MMMM d, yyyy') : 'Date TBD'}</span>
           </div>
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>{format(new Date(event.event_date), 'h:mm a')}</span>
+            <span>{event.event_date ? format(new Date(event.event_date), 'h:mm a') : 'Time TBD'}</span>
           </div>
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span className="truncate">{event.venue}</span>
+            <span className="truncate">{event.venue || 'Venue TBD'}</span>
           </div>
           <Button className="w-full mt-4" disabled={isPast}>
             {isPast ? 'Event Passed' : 'Get Tickets'}
@@ -93,12 +93,12 @@ const Events = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const categories = events 
-    ? [...new Set(events.map(e => e.category))]
+    ? [...new Set(events.map(e => e.category).filter(Boolean))]
     : [];
 
   const filteredEvents = events?.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          event.venue.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (event.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+                          (event.venue?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
