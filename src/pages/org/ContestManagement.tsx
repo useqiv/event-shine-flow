@@ -35,7 +35,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -127,6 +127,18 @@ const ContestManagement = () => {
     
     return filtered;
   }, [contestants, searchQuery, sortBy, minVotes, maxVotes]);
+
+  // Statistics for filtered contestants
+  const filteredStats = useMemo(() => {
+    if (filteredContestants.length === 0) {
+      return { totalVotes: 0, averageVotes: 0, topPerformer: null };
+    }
+    const totalVotes = filteredContestants.reduce((sum: number, c: any) => sum + c.vote_count, 0);
+    const averageVotes = totalVotes / filteredContestants.length;
+    const topPerformer = filteredContestants.reduce((top: any, c: any) => 
+      !top || c.vote_count > top.vote_count ? c : top, null);
+    return { totalVotes, averageVotes, topPerformer };
+  }, [filteredContestants]);
 
   // Pagination
   const totalPages = Math.ceil(filteredContestants.length / pageSize);
@@ -654,6 +666,56 @@ const ContestManagement = () => {
                 <p className="text-sm text-muted-foreground">
                   Showing {sortedContestants.length} of {filteredContestants.length} filtered ({contestants?.length || 0} total)
                 </p>
+              )}
+
+              {/* Filtered Statistics Summary */}
+              {filteredContestants.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Vote className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Total Votes (Filtered)</p>
+                          <p className="text-xl font-bold">{filteredStats.totalVotes.toLocaleString()}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Average Votes</p>
+                          <p className="text-xl font-bold">{filteredStats.averageVotes.toFixed(1)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Award className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Top Performer</p>
+                          <p className="text-xl font-bold truncate max-w-[150px]" title={filteredStats.topPerformer?.name}>
+                            {filteredStats.topPerformer?.name || 'N/A'}
+                          </p>
+                          {filteredStats.topPerformer && (
+                            <p className="text-xs text-muted-foreground">{filteredStats.topPerformer.vote_count.toLocaleString()} votes</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               )}
             </div>
 
