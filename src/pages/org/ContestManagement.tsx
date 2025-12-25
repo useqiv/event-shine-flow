@@ -9,15 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { useContest, useContestants } from '@/hooks/useContests';
-import { useUpdateContest, useCreateContestant, useUpdateContestant } from '@/hooks/useOrganization';
+import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -35,6 +36,7 @@ const ContestManagement = () => {
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
   const updateContestant = useUpdateContestant();
+  const deleteContestant = useDeleteContestant();
 
   // Enable real-time updates
   useRealtimeContestants(id || '');
@@ -42,6 +44,8 @@ const ContestManagement = () => {
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [isEditContestantOpen, setIsEditContestantOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [contestantToDelete, setContestantToDelete] = useState<any>(null);
   const [editingContestant, setEditingContestant] = useState<any>(null);
   const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -118,6 +122,17 @@ const ContestManagement = () => {
       setEditingContestant(null);
     } catch (error) {
       console.error('Failed to update contestant:', error);
+    }
+  };
+
+  const handleDeleteContestant = async () => {
+    if (!contestantToDelete) return;
+    try {
+      await deleteContestant.mutateAsync(contestantToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setContestantToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete contestant:', error);
     }
   };
 
@@ -442,16 +457,29 @@ const ContestManagement = () => {
                           </button>
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-1">
                             <h3 className="font-semibold">{contestant.name}</h3>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => handleEditContestant(contestant)}
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </Button>
+                            <div className="flex gap-0.5">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => handleEditContestant(contestant)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  setContestantToDelete(contestant);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{contestant.bio}</p>
                           <div className="flex items-center gap-2 mt-2">
@@ -683,6 +711,30 @@ const ContestManagement = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Contestant</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{contestantToDelete?.name}</strong>? 
+                This action cannot be undone. All votes for this contestant will also be removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setContestantToDelete(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteContestant}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteContestant.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </OrganizationLayout>
   );
