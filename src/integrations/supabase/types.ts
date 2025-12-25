@@ -136,6 +136,7 @@ export type Database = {
           title: string
           total_votes: number
           updated_at: string
+          vote_currency: string
           vote_price: number
         }
         Insert: {
@@ -156,6 +157,7 @@ export type Database = {
           title: string
           total_votes?: number
           updated_at?: string
+          vote_currency?: string
           vote_price?: number
         }
         Update: {
@@ -176,6 +178,7 @@ export type Database = {
           title?: string
           total_votes?: number
           updated_at?: string
+          vote_currency?: string
           vote_price?: number
         }
         Relationships: [
