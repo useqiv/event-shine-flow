@@ -59,6 +59,7 @@ import AdminPaymentAnalytics from "./pages/admin/AdminPaymentAnalytics";
 import AdminRefunds from "./pages/admin/AdminRefunds";
 import AdminContestDetail from "./pages/admin/AdminContestDetail";
 import AdminEventDetail from "./pages/admin/AdminEventDetail";
+import AdminVoteReconciliation from "./pages/admin/AdminVoteReconciliation";
 
 const queryClient = new QueryClient();
 
@@ -170,10 +171,11 @@ const AppRoutes = () => (
     <Route path="/admin/analytics" element={<ProtectedRoute><AdminPaymentAnalytics /></ProtectedRoute>} />
     <Route path="/admin/refunds" element={<ProtectedRoute><AdminRefunds /></ProtectedRoute>} />
     <Route path="/admin/fraud" element={<ProtectedRoute><AdminFraud /></ProtectedRoute>} />
-    <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
-    <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
-    
-    <Route path="*" element={<NotFound />} />
+        <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
+        <Route path="/admin/vote-reconciliation" element={<ProtectedRoute><AdminVoteReconciliation /></ProtectedRoute>} />
+        <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+        
+        <Route path="*" element={<NotFound />} />
   </Routes>
 );
 
