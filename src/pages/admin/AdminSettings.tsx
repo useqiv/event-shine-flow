@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -110,6 +111,161 @@ const AdminSettings: React.FC = () => {
     } finally {
       setIsSavingFlutterwave(false);
     }
+  };
+
+  // Commission form state
+  const [commissionForm, setCommissionForm] = useState({
+    platform_commission_percentage: '',
+    vote_commission_percentage: '',
+    ticket_commission_percentage: '',
+  });
+  const [commissionFormDirty, setCommissionFormDirty] = useState(false);
+  const [isSavingCommission, setIsSavingCommission] = useState(false);
+
+  // Initialize Commission form when settings load
+  useEffect(() => {
+    if (settings) {
+      setCommissionForm({
+        platform_commission_percentage: settings.find(s => s.setting_key === 'platform_commission_percentage')?.setting_value || '',
+        vote_commission_percentage: settings.find(s => s.setting_key === 'vote_commission_percentage')?.setting_value || '',
+        ticket_commission_percentage: settings.find(s => s.setting_key === 'ticket_commission_percentage')?.setting_value || '',
+      });
+      setCommissionFormDirty(false);
+    }
+  }, [settings]);
+
+  const handleCommissionFormChange = (field: string, value: string) => {
+    setCommissionForm(prev => ({ ...prev, [field]: value }));
+    setCommissionFormDirty(true);
+  };
+
+  const saveCommissionSettings = async () => {
+    setIsSavingCommission(true);
+    try {
+      await Promise.all([
+        updateSetting.mutateAsync({ key: 'platform_commission_percentage', value: commissionForm.platform_commission_percentage }),
+        updateSetting.mutateAsync({ key: 'vote_commission_percentage', value: commissionForm.vote_commission_percentage }),
+        updateSetting.mutateAsync({ key: 'ticket_commission_percentage', value: commissionForm.ticket_commission_percentage }),
+      ]);
+      toast.success('Commission settings saved successfully');
+      setCommissionFormDirty(false);
+    } catch (error) {
+      toast.error('Failed to save commission settings');
+    } finally {
+      setIsSavingCommission(false);
+    }
+  };
+
+  // Crypto form state
+  const [cryptoForm, setCryptoForm] = useState({
+    crypto_wallet_bsc_usdt: '',
+    crypto_wallet_bsc_usdc: '',
+    crypto_wallet_ethereum_usdt: '',
+    crypto_wallet_ethereum_usdc: '',
+    crypto_wallet_polygon_usdt: '',
+    crypto_wallet_polygon_usdc: '',
+    crypto_wallet_tron_usdt: '',
+  });
+  const [cryptoFormDirty, setCryptoFormDirty] = useState(false);
+  const [isSavingCrypto, setIsSavingCrypto] = useState(false);
+  const [cryptoErrors, setCryptoErrors] = useState<Record<string, string>>({});
+
+  // Initialize Crypto form when settings load
+  useEffect(() => {
+    if (settings) {
+      setCryptoForm({
+        crypto_wallet_bsc_usdt: settings.find(s => s.setting_key === 'crypto_wallet_bsc_usdt')?.setting_value || '',
+        crypto_wallet_bsc_usdc: settings.find(s => s.setting_key === 'crypto_wallet_bsc_usdc')?.setting_value || '',
+        crypto_wallet_ethereum_usdt: settings.find(s => s.setting_key === 'crypto_wallet_ethereum_usdt')?.setting_value || '',
+        crypto_wallet_ethereum_usdc: settings.find(s => s.setting_key === 'crypto_wallet_ethereum_usdc')?.setting_value || '',
+        crypto_wallet_polygon_usdt: settings.find(s => s.setting_key === 'crypto_wallet_polygon_usdt')?.setting_value || '',
+        crypto_wallet_polygon_usdc: settings.find(s => s.setting_key === 'crypto_wallet_polygon_usdc')?.setting_value || '',
+        crypto_wallet_tron_usdt: settings.find(s => s.setting_key === 'crypto_wallet_tron_usdt')?.setting_value || '',
+      });
+      setCryptoFormDirty(false);
+    }
+  }, [settings]);
+
+  const validateCryptoAddresses = (): boolean => {
+    const errors: Record<string, string> = {};
+    const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    const tronAddressRegex = /^T[a-zA-Z0-9]{33}$/;
+
+    // Validate ETH-based addresses (BSC, Ethereum, Polygon)
+    const ethFields = ['crypto_wallet_bsc_usdt', 'crypto_wallet_bsc_usdc', 'crypto_wallet_ethereum_usdt', 'crypto_wallet_ethereum_usdc', 'crypto_wallet_polygon_usdt', 'crypto_wallet_polygon_usdc'];
+    ethFields.forEach(field => {
+      const value = cryptoForm[field as keyof typeof cryptoForm];
+      if (value && !ethAddressRegex.test(value)) {
+        errors[field] = 'Invalid address format. Should start with 0x followed by 40 hex characters';
+      }
+    });
+
+    // Validate Tron address
+    if (cryptoForm.crypto_wallet_tron_usdt && !tronAddressRegex.test(cryptoForm.crypto_wallet_tron_usdt)) {
+      errors.crypto_wallet_tron_usdt = 'Invalid Tron address format. Should start with T followed by 33 characters';
+    }
+
+    setCryptoErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCryptoFormChange = (field: string, value: string) => {
+    setCryptoForm(prev => ({ ...prev, [field]: value }));
+    setCryptoFormDirty(true);
+    if (cryptoErrors[field]) {
+      setCryptoErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const saveCryptoSettings = async () => {
+    if (!validateCryptoAddresses()) {
+      toast.error('Please fix the validation errors before saving');
+      return;
+    }
+
+    setIsSavingCrypto(true);
+    try {
+      await Promise.all(
+        Object.entries(cryptoForm).map(([key, value]) =>
+          updateSetting.mutateAsync({ key, value })
+        )
+      );
+      toast.success('Crypto wallet settings saved successfully');
+      setCryptoFormDirty(false);
+    } catch (error) {
+      toast.error('Failed to save crypto settings');
+    } finally {
+      setIsSavingCrypto(false);
+    }
+  };
+
+  // Track if any form has unsaved changes
+  const hasUnsavedChanges = flutterwaveFormDirty || commissionFormDirty || cryptoFormDirty;
+
+  // Tab navigation with unsaved changes warning
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [currentTab, setCurrentTab] = useState('commission');
+
+  const handleTabChange = (newTab: string) => {
+    if (hasUnsavedChanges) {
+      setPendingTab(newTab);
+      setShowUnsavedDialog(true);
+    } else {
+      setCurrentTab(newTab);
+    }
+  };
+
+  const confirmTabChange = () => {
+    if (pendingTab) {
+      setCurrentTab(pendingTab);
+      // Reset all dirty states
+      setFlutterwaveFormDirty(false);
+      setCommissionFormDirty(false);
+      setCryptoFormDirty(false);
+    }
+    setShowUnsavedDialog(false);
+    setPendingTab(null);
   };
 
   // Date range state for transaction filter
@@ -224,11 +380,41 @@ const AdminSettings: React.FC = () => {
           <p className="text-muted-foreground">Configure platform-wide settings</p>
         </div>
 
-        <Tabs defaultValue="commission">
+        {/* Unsaved Changes Dialog */}
+        <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Unsaved Changes
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes in the current tab. If you leave now, your changes will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingTab(null)}>Stay & Edit</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmTabChange} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Tabs value={currentTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="commission">Commission</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="crypto">Crypto</TabsTrigger>
+            <TabsTrigger value="commission">
+              Commission
+              {commissionFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
+            </TabsTrigger>
+            <TabsTrigger value="payments">
+              Payments
+              {flutterwaveFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
+            </TabsTrigger>
+            <TabsTrigger value="crypto">
+              Crypto
+              {cryptoFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
+            </TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
@@ -243,16 +429,48 @@ const AdminSettings: React.FC = () => {
                 <div className="grid gap-4 md:grid-cols-3">
                   <div>
                     <Label>Platform Commission (%)</Label>
-                    <Input type="number" defaultValue={getSetting('platform_commission_percentage')} onBlur={(e) => handleUpdate('platform_commission_percentage', e.target.value)} className="mt-2" />
+                    <Input 
+                      type="number" 
+                      value={commissionForm.platform_commission_percentage}
+                      onChange={(e) => handleCommissionFormChange('platform_commission_percentage', e.target.value)}
+                      className="mt-2" 
+                    />
                   </div>
                   <div>
                     <Label>Vote Commission (%)</Label>
-                    <Input type="number" defaultValue={getSetting('vote_commission_percentage')} onBlur={(e) => handleUpdate('vote_commission_percentage', e.target.value)} className="mt-2" />
+                    <Input 
+                      type="number" 
+                      value={commissionForm.vote_commission_percentage}
+                      onChange={(e) => handleCommissionFormChange('vote_commission_percentage', e.target.value)}
+                      className="mt-2" 
+                    />
                   </div>
                   <div>
                     <Label>Ticket Commission (%)</Label>
-                    <Input type="number" defaultValue={getSetting('ticket_commission_percentage')} onBlur={(e) => handleUpdate('ticket_commission_percentage', e.target.value)} className="mt-2" />
+                    <Input 
+                      type="number" 
+                      value={commissionForm.ticket_commission_percentage}
+                      onChange={(e) => handleCommissionFormChange('ticket_commission_percentage', e.target.value)}
+                      className="mt-2" 
+                    />
                   </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex items-center gap-3 pt-4 border-t">
+                  <Button 
+                    onClick={saveCommissionSettings}
+                    disabled={!commissionFormDirty || isSavingCommission}
+                  >
+                    {isSavingCommission ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      <><CheckCircle className="h-4 w-4 mr-2" /> Save Commission Settings</>
+                    )}
+                  </Button>
+                  {commissionFormDirty && (
+                    <span className="text-sm text-muted-foreground">You have unsaved changes</span>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -874,19 +1092,25 @@ const AdminSettings: React.FC = () => {
                       <Label>USDT Wallet (BEP20)</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_bsc_usdt')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_bsc_usdt', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_bsc_usdt}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdt', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdt && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_bsc_usdt && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdt}</p>
+                      )}
                     </div>
                     <div>
                       <Label>USDC Wallet (BEP20)</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_bsc_usdc')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_bsc_usdc', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_bsc_usdc}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdc', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdc && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_bsc_usdc && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdc}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -898,19 +1122,25 @@ const AdminSettings: React.FC = () => {
                       <Label>USDT Wallet (ERC20)</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_ethereum_usdt')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_ethereum_usdt', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_ethereum_usdt}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdt', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdt && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_ethereum_usdt && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdt}</p>
+                      )}
                     </div>
                     <div>
                       <Label>USDC Wallet (ERC20)</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_ethereum_usdc')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_ethereum_usdc', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_ethereum_usdc}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdc', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdc && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_ethereum_usdc && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdc}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -922,19 +1152,25 @@ const AdminSettings: React.FC = () => {
                       <Label>USDT Wallet</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_polygon_usdt')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_polygon_usdt', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_polygon_usdt}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_polygon_usdt', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_polygon_usdt && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_polygon_usdt && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_polygon_usdt}</p>
+                      )}
                     </div>
                     <div>
                       <Label>USDC Wallet</Label>
                       <Input 
                         placeholder="0x..." 
-                        defaultValue={getSetting('crypto_wallet_polygon_usdc')} 
-                        onBlur={(e) => handleUpdate('crypto_wallet_polygon_usdc', e.target.value)} 
-                        className="mt-2 font-mono text-sm" 
+                        value={cryptoForm.crypto_wallet_polygon_usdc}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_polygon_usdc', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_polygon_usdc && "border-destructive")}
                       />
+                      {cryptoErrors.crypto_wallet_polygon_usdc && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_polygon_usdc}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -945,11 +1181,31 @@ const AdminSettings: React.FC = () => {
                     <Label>USDT Wallet (TRC20)</Label>
                     <Input 
                       placeholder="T..." 
-                      defaultValue={getSetting('crypto_wallet_tron_usdt')} 
-                      onBlur={(e) => handleUpdate('crypto_wallet_tron_usdt', e.target.value)} 
-                      className="mt-2 font-mono text-sm" 
+                      value={cryptoForm.crypto_wallet_tron_usdt}
+                      onChange={(e) => handleCryptoFormChange('crypto_wallet_tron_usdt', e.target.value)}
+                      className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_tron_usdt && "border-destructive")}
                     />
+                    {cryptoErrors.crypto_wallet_tron_usdt && (
+                      <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_tron_usdt}</p>
+                    )}
                   </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex items-center gap-3 pt-4 border-t">
+                  <Button 
+                    onClick={saveCryptoSettings}
+                    disabled={!cryptoFormDirty || isSavingCrypto}
+                  >
+                    {isSavingCrypto ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                    ) : (
+                      <><CheckCircle className="h-4 w-4 mr-2" /> Save Wallet Addresses</>
+                    )}
+                  </Button>
+                  {cryptoFormDirty && (
+                    <span className="text-sm text-muted-foreground">You have unsaved changes</span>
+                  )}
                 </div>
               </CardContent>
             </Card>
