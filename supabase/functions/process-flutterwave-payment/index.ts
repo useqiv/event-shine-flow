@@ -33,7 +33,40 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch Flutterwave settings from platform_settings
+    const { data: settings } = await supabase
+      .from("platform_settings")
+      .select("setting_key, setting_value")
+      .in("setting_key", [
+        "flutterwave_enabled",
+        "flutterwave_secret_key",
+        "flutterwave_public_key",
+        "flutterwave_test_mode",
+        "flutterwave_currencies",
+        "flutterwave_default_currency"
+      ]);
+
+    const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || "";
+
+    // Check if Flutterwave is enabled
+    if (getSetting("flutterwave_enabled") !== "true") {
+      console.error("Flutterwave payments are disabled");
+      return new Response(
+        JSON.stringify({ error: "Flutterwave payments are currently disabled." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get secret key from platform settings first, fallback to env
+    let flutterwaveSecretKey = getSetting("flutterwave_secret_key");
+    if (!flutterwaveSecretKey) {
+      flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
+    }
+    
     if (!flutterwaveSecretKey) {
       console.error("FLUTTERWAVE_SECRET_KEY not configured");
       return new Response(
@@ -41,6 +74,8 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const defaultCurrency = getSetting("flutterwave_default_currency") || "NGN";
 
     let payload: PaymentRequest;
     try {
@@ -89,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
     const flutterwavePayload = {
       tx_ref,
       amount: payload.amount,
-      currency: payload.currency || "NGN",
+      currency: payload.currency || defaultCurrency,
       redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
       customer: {
         email: payload.email,
@@ -142,10 +177,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Store pending transaction in database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
       .select("id")

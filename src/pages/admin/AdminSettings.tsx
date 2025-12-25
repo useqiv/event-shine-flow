@@ -96,20 +96,116 @@ const AdminSettings: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Flutterwave API Keys Notice */}
+            {/* Flutterwave Configuration */}
             <Card>
               <CardHeader>
-                <CardTitle>Flutterwave Integration</CardTitle>
-                <CardDescription>API keys for Flutterwave payment processing</CardDescription>
+                <CardTitle>Flutterwave Configuration</CardTitle>
+                <CardDescription>Configure Flutterwave payment gateway settings</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm">Flutterwave API keys are configured as environment secrets for security.</p>
-                  <p className="text-xs text-muted-foreground mt-2">Configured secrets: FLUTTERWAVE_PUBLIC_KEY, FLUTTERWAVE_SECRET_KEY</p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                    <span className="text-sm text-green-600">Connected</span>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Test Mode</p>
+                    <p className="text-sm text-muted-foreground">Use Flutterwave sandbox for testing</p>
                   </div>
+                  <Switch 
+                    checked={getSetting('flutterwave_test_mode') === 'true'} 
+                    onCheckedChange={(checked) => handleUpdate('flutterwave_test_mode', String(checked))} 
+                  />
+                </div>
+
+                <div className="grid gap-4">
+                  <div>
+                    <Label>Public Key</Label>
+                    <Input 
+                      type="password"
+                      placeholder="FLWPUBK-xxxxxxxxxxxx-X" 
+                      defaultValue={getSetting('flutterwave_public_key')} 
+                      onBlur={(e) => handleUpdate('flutterwave_public_key', e.target.value)} 
+                      className="mt-2 font-mono text-sm" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Your Flutterwave public key</p>
+                  </div>
+                  <div>
+                    <Label>Secret Key</Label>
+                    <Input 
+                      type="password"
+                      placeholder="FLWSECK-xxxxxxxxxxxx-X" 
+                      defaultValue={getSetting('flutterwave_secret_key')} 
+                      onBlur={(e) => handleUpdate('flutterwave_secret_key', e.target.value)} 
+                      className="mt-2 font-mono text-sm" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Your Flutterwave secret key (keep this secure)</p>
+                  </div>
+                  <div>
+                    <Label>Encryption Key</Label>
+                    <Input 
+                      type="password"
+                      placeholder="Your encryption key" 
+                      defaultValue={getSetting('flutterwave_encryption_key')} 
+                      onBlur={(e) => handleUpdate('flutterwave_encryption_key', e.target.value)} 
+                      className="mt-2 font-mono text-sm" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Used for encrypting payment data</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <Label>Webhook URL</Label>
+                    <Input 
+                      readOnly
+                      value={`https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook`}
+                      className="mt-2 font-mono text-sm bg-muted cursor-pointer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook`);
+                        toast.success('Webhook URL copied to clipboard');
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Add this URL in your Flutterwave dashboard</p>
+                  </div>
+                  <div>
+                    <Label>Webhook Secret Hash</Label>
+                    <Input 
+                      type="password"
+                      placeholder="Your webhook secret hash" 
+                      defaultValue={getSetting('flutterwave_webhook_secret')} 
+                      onBlur={(e) => handleUpdate('flutterwave_webhook_secret', e.target.value)} 
+                      className="mt-2 font-mono text-sm" 
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">For verifying webhook authenticity</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Supported Currencies</Label>
+                  <Input 
+                    placeholder="NGN, USD, GHS, KES" 
+                    defaultValue={getSetting('flutterwave_currencies') || 'NGN, USD'} 
+                    onBlur={(e) => handleUpdate('flutterwave_currencies', e.target.value)} 
+                    className="mt-2" 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Comma-separated list of accepted currencies</p>
+                </div>
+
+                <div>
+                  <Label>Default Currency</Label>
+                  <Input 
+                    placeholder="NGN" 
+                    defaultValue={getSetting('flutterwave_default_currency') || 'NGN'} 
+                    onBlur={(e) => handleUpdate('flutterwave_default_currency', e.target.value)} 
+                    className="mt-2" 
+                  />
+                </div>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium">Setup Instructions</p>
+                  <ol className="text-xs text-muted-foreground mt-2 space-y-1 list-decimal list-inside">
+                    <li>Log in to your Flutterwave dashboard</li>
+                    <li>Go to Settings → API Keys to get your keys</li>
+                    <li>Copy the Webhook URL above and add it in Settings → Webhooks</li>
+                    <li>Set a secret hash for webhook verification</li>
+                  </ol>
                 </div>
               </CardContent>
             </Card>
