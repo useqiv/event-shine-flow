@@ -28,19 +28,37 @@ const Payouts = () => {
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [isBankSettingsOpen, setIsBankSettingsOpen] = useState(false);
+  const [isUsdtSettingsOpen, setIsUsdtSettingsOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('bank');
 
   const [bankDetails, setBankDetails] = useState({
-    bank_name: settings?.bank_name || '',
-    account_number: settings?.account_number || '',
-    account_name: settings?.account_name || '',
-    usdt_address: settings?.usdt_address || '',
+    bank_name: '',
+    account_number: '',
+    account_name: '',
+    usdt_address: '',
   });
+
+  // Pre-populate bank details when settings load
+  React.useEffect(() => {
+    if (settings) {
+      setBankDetails({
+        bank_name: settings.bank_name || '',
+        account_number: settings.account_number || '',
+        account_name: settings.account_name || '',
+        usdt_address: settings.usdt_address || '',
+      });
+    }
+  }, [settings]);
 
   const handleSaveBankDetails = async () => {
     await updateSettings.mutateAsync(bankDetails);
     setIsBankSettingsOpen(false);
+  };
+
+  const handleSaveUsdtAddress = async () => {
+    await updateSettings.mutateAsync({ usdt_address: bankDetails.usdt_address });
+    setIsUsdtSettingsOpen(false);
   };
 
   const handleRequestPayout = async () => {
@@ -328,12 +346,56 @@ const Payouts = () => {
               ) : hasUsdtSetup ? (
                 <div className="space-y-2">
                   <p className="font-mono text-sm break-all">{settings.usdt_address}</p>
-                  <Button variant="outline" size="sm" className="mt-2">Edit Address</Button>
+                  <Dialog open={isUsdtSettingsOpen} onOpenChange={setIsUsdtSettingsOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="mt-2">Edit Address</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit USDT Address</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>USDT Address (TRC20)</Label>
+                          <Input
+                            placeholder="T..."
+                            value={bankDetails.usdt_address}
+                            onChange={(e) => setBankDetails(prev => ({ ...prev, usdt_address: e.target.value }))}
+                          />
+                        </div>
+                        <Button onClick={handleSaveUsdtAddress} className="w-full" disabled={updateSettings.isPending}>
+                          {updateSettings.isPending ? 'Saving...' : 'Save Address'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-3">No USDT address set up</p>
-                  <Button variant="outline">Add USDT Address</Button>
+                  <Dialog open={isUsdtSettingsOpen} onOpenChange={setIsUsdtSettingsOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">Add USDT Address</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add USDT Address</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>USDT Address (TRC20)</Label>
+                          <Input
+                            placeholder="T..."
+                            value={bankDetails.usdt_address}
+                            onChange={(e) => setBankDetails(prev => ({ ...prev, usdt_address: e.target.value }))}
+                          />
+                        </div>
+                        <Button onClick={handleSaveUsdtAddress} className="w-full" disabled={updateSettings.isPending}>
+                          {updateSettings.isPending ? 'Saving...' : 'Save Address'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
             </CardContent>

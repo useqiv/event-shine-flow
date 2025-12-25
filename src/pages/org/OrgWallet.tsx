@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useOrganizationStats, usePayouts } from '@/hooks/useOrganization';
+import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents } from '@/hooks/useOrganization';
 import { 
   Wallet, 
   ArrowRight, 
@@ -18,10 +18,94 @@ import {
   DollarSign
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const OrgWallet = () => {
   const { data: stats, isLoading: statsLoading } = useOrganizationStats();
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
+  const { data: contests } = useOrganizationContests();
+  const { data: events } = useOrganizationEvents();
+  const { user } = useAuth();
+
+  const handleExportReport = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch all financial data
+      const eventIds = events?.map(e => e.id) || [];
+      const contestIds = contests?.map(c => c.id) || [];
+      
+      let tickets: any[] = [];
+      let votes: any[] = [];
+      
+      if (eventIds.length > 0) {
+        const { data } = await supabase
+          .from('tickets')
+          .select('*, events(title), ticket_types(name)')
+          .in('event_id', eventIds);
+        tickets = data || [];
+      }
+      
+      if (contestIds.length > 0) {
+        const { data } = await supabase
+          .from('votes')
+          .select('*, contests(title), contestants(name)')
+          .in('contest_id', contestIds);
+        votes = data || [];
+      }
+
+      // Prepare comprehensive report data
+      const reportData = [
+        // Summary section
+        { category: 'Summary', item: 'Total Revenue', amount: stats?.totalRevenue || 0, date: '', details: '' },
+        { category: 'Summary', item: 'Ticket Revenue', amount: stats?.ticketRevenue || 0, date: '', details: `${stats?.ticketsSold || 0} tickets sold` },
+        { category: 'Summary', item: 'Vote Revenue', amount: stats?.voteRevenue || 0, date: '', details: `${stats?.totalVotes || 0} votes` },
+        { category: 'Summary', item: 'Available Balance', amount: stats?.availableBalance || 0, date: '', details: '' },
+        { category: 'Summary', item: 'Pending Payouts', amount: stats?.pendingPayouts || 0, date: '', details: '' },
+        { category: 'Summary', item: 'Completed Payouts', amount: stats?.completedPayouts || 0, date: '', details: '' },
+        // Add tickets
+        ...tickets.map(t => ({
+          category: 'Ticket Sale',
+          item: t.events?.title || 'Unknown Event',
+          amount: t.amount_paid,
+          date: formatDateForExport(t.created_at),
+          details: `${t.quantity}x ${t.ticket_types?.name || 'Standard'}`
+        })),
+        // Add votes
+        ...votes.map(v => ({
+          category: 'Vote',
+          item: v.contests?.title || 'Unknown Contest',
+          amount: v.amount_paid,
+          date: formatDateForExport(v.created_at),
+          details: `${v.quantity} votes for ${v.contestants?.name || 'Unknown'}`
+        })),
+        // Add payouts
+        ...(payouts || []).map(p => ({
+          category: 'Payout',
+          item: p.payment_method === 'bank' ? 'Bank Transfer' : 'USDT',
+          amount: -p.amount,
+          date: formatDateForExport(p.created_at),
+          details: `Status: ${p.status}`
+        }))
+      ];
+
+      exportToCsv(reportData, `financial-report-${format(new Date(), 'yyyy-MM-dd')}`, [
+        { key: 'category', label: 'Category' },
+        { key: 'item', label: 'Item' },
+        { key: 'amount', label: 'Amount (₦)' },
+        { key: 'date', label: 'Date' },
+        { key: 'details', label: 'Details' }
+      ]);
+      
+      toast.success('Financial report exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export report');
+    }
+  };
 
   return (
     <OrganizationLayout>
@@ -32,7 +116,7 @@ const OrgWallet = () => {
             <p className="text-muted-foreground">Track your revenue and manage finances.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportReport}>
               <Download className="mr-2 h-4 w-4" />
               Export Report
             </Button>
