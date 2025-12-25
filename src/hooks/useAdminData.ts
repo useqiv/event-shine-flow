@@ -418,12 +418,34 @@ export const useUpdatePlatformSetting = () => {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
-      const { error } = await supabase
+      // First try to update existing setting
+      const { data: existing } = await supabase
         .from('platform_settings')
-        .update({ setting_value: value })
-        .eq('setting_key', key);
+        .select('id')
+        .eq('setting_key', key)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing setting
+        const { error } = await supabase
+          .from('platform_settings')
+          .update({ setting_value: value, updated_at: new Date().toISOString() })
+          .eq('setting_key', key);
+        if (error) throw error;
+      } else {
+        // Insert new setting
+        const { error } = await supabase
+          .from('platform_settings')
+          .insert({ 
+            setting_key: key, 
+            setting_value: value,
+            category: key.startsWith('flutterwave') ? 'payment' : 
+                      key.startsWith('crypto') ? 'crypto' : 
+                      key.includes('commission') ? 'commission' : 'general',
+            setting_type: 'string'
+          });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['platform-settings'] });
