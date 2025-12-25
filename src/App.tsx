@@ -37,6 +37,7 @@ import Payouts from "./pages/org/Payouts";
 import Marketing from "./pages/org/Marketing";
 import Support from "./pages/org/Support";
 import OrgSettings from "./pages/org/OrgSettings";
+import OrgNotifications from "./pages/org/OrgNotifications";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +120,7 @@ const AppRoutes = () => (
     <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
     <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
     <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
+    <Route path="/org/notifications" element={<ProtectedRoute><OrgNotifications /></ProtectedRoute>} />
     
     <Route path="*" element={<NotFound />} />
   </Routes>

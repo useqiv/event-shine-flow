@@ -173,7 +173,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               {/* Right Section */}
               <div className="flex items-center gap-2">
                 {/* Notifications */}
-                <Link to="/notifications">
+                <Link to="/org/notifications">
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     {unreadCount && unreadCount > 0 && (
