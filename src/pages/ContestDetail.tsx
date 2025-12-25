@@ -358,7 +358,35 @@ const ContestDetail = () => {
                 ))}
               </div>
             ) : myVotes && myVotes.length > 0 ? (
-              <Card>
+              <div className="space-y-4">
+                {/* Summary Stats Card */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Total Votes Cast</p>
+                    <p className="text-2xl font-bold">
+                      {myVotes.reduce((sum: number, v: any) => sum + v.quantity, 0).toLocaleString()}
+                    </p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Total Spent</p>
+                    <p className="text-2xl font-bold">
+                      ₦{myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0).toLocaleString()}
+                    </p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Transactions</p>
+                    <p className="text-2xl font-bold">{myVotes.length}</p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Contestants Voted</p>
+                    <p className="text-2xl font-bold">
+                      {new Set(myVotes.map((v: any) => v.contestant_id)).size}
+                    </p>
+                  </Card>
+                </div>
+
+                {/* Vote History List */}
+                <Card>
                 <CardContent className="p-0">
                   <div className="divide-y">
                     {myVotes.map((vote: any) => (
@@ -402,6 +430,7 @@ const ContestDetail = () => {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             ) : (
               <Card className="p-6 text-center">
                 <Vote className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
