@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useWallet } from '@/hooks/useWallet';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Share2, Users, Gift, Check } from 'lucide-react';
+import { Copy, Share2, Users, Gift, Check, Trophy } from 'lucide-react';
 
 const ReferralCard = () => {
   const { data: wallet } = useWallet();
@@ -82,6 +83,11 @@ const ReferralCard = () => {
           <Button onClick={handleShare} className="flex-1" disabled={!wallet?.referral_code}>
             <Share2 className="h-4 w-4 mr-2" />
             Share Link
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/leaderboard">
+              <Trophy className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
 
