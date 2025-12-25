@@ -137,17 +137,22 @@ const Marketing = () => {
                   Auto-Posting Settings
                 </CardTitle>
                 <CardDescription>
-                  Configure automatic posts for your contests in each contest's settings page.
+                  Configure automatic posts for your contests and events in their management pages.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-6">
                   <p className="text-muted-foreground mb-4">
-                    Auto-posting is configured per contest. Go to a contest's management page to set up scheduled posts.
+                    Auto-posting is configured per contest or event. Go to a contest's or event's management page to set up scheduled posts.
                   </p>
-                  <Button variant="outline" onClick={() => window.location.href = '/org/contests'}>
-                    Manage Contests
+                  <div className="flex justify-center gap-3">
+                    <Button variant="outline" onClick={() => window.location.href = '/org/contests'}>
+                      Manage Contests
+                    </Button>
+                    <Button variant="outline" onClick={() => window.location.href = '/org/events'}>
+                      Manage Events
                   </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
