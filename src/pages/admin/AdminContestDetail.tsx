@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -26,14 +26,17 @@ import {
   Building2,
   Eye,
   Pause,
-  Play
+  Play,
+  Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import EditContestDialog from '@/components/admin/EditContestDialog';
 
 const AdminContestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: contest, isLoading: contestLoading } = useQuery({
     queryKey: ['admin-contest-detail', id],
@@ -203,6 +206,10 @@ const AdminContestDetail: React.FC = () => {
                 View Public Page
               </Link>
             </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Details
+            </Button>
             <Button 
               variant={contest.is_active ? "destructive" : "default"}
               onClick={toggleContestStatus}
@@ -220,6 +227,12 @@ const AdminContestDetail: React.FC = () => {
               )}
             </Button>
           </div>
+          
+          <EditContestDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            contest={contest}
+          />
         </div>
 
         {/* Stats Cards */}
