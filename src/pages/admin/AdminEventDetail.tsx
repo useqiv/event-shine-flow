@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import AdminLayout from '@/components/layout/AdminLayout';
@@ -27,14 +27,17 @@ import {
   Pause,
   Play,
   Users,
-  QrCode
+  QrCode,
+  Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import EditEventDialog from '@/components/admin/EditEventDialog';
 
 const AdminEventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const { data: event, isLoading: eventLoading } = useQuery({
     queryKey: ['admin-event-detail', id],
@@ -218,6 +221,10 @@ const AdminEventDetail: React.FC = () => {
                 View Public Page
               </Link>
             </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Details
+            </Button>
             <Button 
               variant={event.is_active ? "destructive" : "default"}
               onClick={toggleEventStatus}
@@ -235,6 +242,12 @@ const AdminEventDetail: React.FC = () => {
               )}
             </Button>
           </div>
+          
+          <EditEventDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            event={event}
+          />
         </div>
 
         {/* Stats Cards */}
