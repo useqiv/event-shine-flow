@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, Trophy, Calendar as CalendarEvent } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,36 +40,6 @@ const AdminSettings: React.FC = () => {
 
   // Transaction type filter
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
-  
-  // Contest/Event filter
-  const [contestFilter, setContestFilter] = useState<string>('all');
-  const [eventFilter, setEventFilter] = useState<string>('all');
-
-  // Fetch contests for filter dropdown
-  const { data: contests } = useQuery({
-    queryKey: ['admin-all-contests'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('contests')
-        .select('id, title')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch events for filter dropdown
-  const { data: events } = useQuery({
-    queryKey: ['admin-all-events'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('events')
-        .select('id, title')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || '';
 
@@ -77,9 +47,9 @@ const AdminSettings: React.FC = () => {
     await updateSetting.mutateAsync({ key, value });
   };
 
-  // Fetch transactions with date, type, contest, and event filter
+  // Fetch transactions with date and type filter
   const { data: recentTransactions, isLoading: loadingTransactions, refetch: refetchTransactions } = useQuery({
-    queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to, transactionTypeFilter, contestFilter, eventFilter],
+    queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to, transactionTypeFilter],
     queryFn: async () => {
       const types = transactionTypeFilter === 'all' 
         ? ['vote_purchase', 'ticket_purchase', 'deposit', 'refund']
@@ -96,37 +66,6 @@ const AdminSettings: React.FC = () => {
       }
       if (dateRange.to) {
         query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
-      }
-
-      // Filter by contest - we need to join with votes table
-      if (contestFilter !== 'all') {
-        // Get vote transaction IDs for this contest
-        const { data: voteData } = await supabase
-          .from('votes')
-          .select('transaction_id')
-          .eq('contest_id', contestFilter);
-        
-        const voteTransactionIds = voteData?.map(v => v.transaction_id).filter(Boolean) || [];
-        if (voteTransactionIds.length > 0) {
-          query = query.in('id', voteTransactionIds);
-        } else {
-          return []; // No transactions for this contest
-        }
-      }
-
-      // Filter by event - we need to join with tickets table
-      if (eventFilter !== 'all') {
-        const { data: ticketData } = await supabase
-          .from('tickets')
-          .select('transaction_id')
-          .eq('event_id', eventFilter);
-        
-        const ticketTransactionIds = ticketData?.map(t => t.transaction_id).filter(Boolean) || [];
-        if (ticketTransactionIds.length > 0) {
-          query = query.in('id', ticketTransactionIds);
-        } else {
-          return []; // No transactions for this event
-        }
       }
 
       const { data, error } = await query.limit(100);
@@ -611,12 +550,7 @@ const AdminSettings: React.FC = () => {
                     <span className="text-sm font-medium">Filters:</span>
                     
                     {/* Type Filter */}
-                    <Select value={transactionTypeFilter} onValueChange={(v) => {
-                      setTransactionTypeFilter(v);
-                      // Reset contest/event filters when type changes
-                      if (v !== 'vote_purchase') setContestFilter('all');
-                      if (v !== 'ticket_purchase') setEventFilter('all');
-                    }}>
+                    <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
                       <SelectTrigger className="w-[160px] h-9">
                         <SelectValue placeholder="All Types" />
                       </SelectTrigger>
@@ -628,42 +562,6 @@ const AdminSettings: React.FC = () => {
                         <SelectItem value="refund">Refunds</SelectItem>
                       </SelectContent>
                     </Select>
-
-                    {/* Contest Filter - only show for vote purchases or all */}
-                    {(transactionTypeFilter === 'all' || transactionTypeFilter === 'vote_purchase') && (
-                      <Select value={contestFilter} onValueChange={setContestFilter}>
-                        <SelectTrigger className="w-[180px] h-9">
-                          <Trophy className="mr-2 h-4 w-4" />
-                          <SelectValue placeholder="All Contests" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Contests</SelectItem>
-                          {contests?.map((contest) => (
-                            <SelectItem key={contest.id} value={contest.id}>
-                              {contest.title.length > 20 ? contest.title.slice(0, 20) + '...' : contest.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {/* Event Filter - only show for ticket purchases or all */}
-                    {(transactionTypeFilter === 'all' || transactionTypeFilter === 'ticket_purchase') && (
-                      <Select value={eventFilter} onValueChange={setEventFilter}>
-                        <SelectTrigger className="w-[180px] h-9">
-                          <CalendarEvent className="mr-2 h-4 w-4" />
-                          <SelectValue placeholder="All Events" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Events</SelectItem>
-                          {events?.map((event) => (
-                            <SelectItem key={event.id} value={event.id}>
-                              {event.title.length > 20 ? event.title.slice(0, 20) + '...' : event.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
 
                     {/* Date Range */}
                     <div className="flex items-center gap-2">
@@ -740,18 +638,6 @@ const AdminSettings: React.FC = () => {
                         onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
                       >
                         90d
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {
-                          setDateRange({ from: undefined, to: undefined });
-                          setContestFilter('all');
-                          setEventFilter('all');
-                          setTransactionTypeFilter('all');
-                        }}
-                      >
-                        Clear All
                       </Button>
                     </div>
                   </div>
