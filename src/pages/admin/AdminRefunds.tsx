@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { RefreshCw, Check, X, Search, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Check, X, Search, DollarSign, Clock, CheckCircle, XCircle, Download } from 'lucide-react';
+import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 
 interface Refund {
   id: string;
@@ -268,8 +269,43 @@ const AdminRefunds = () => {
 
         {/* Refunds Table */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Refund Requests</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                if (!filteredRefunds || filteredRefunds.length === 0) {
+                  toast.error('No data to export');
+                  return;
+                }
+                const exportData = filteredRefunds.map(refund => ({
+                  user_name: users?.get(refund.user_id)?.full_name || 'Unknown',
+                  user_email: users?.get(refund.user_id)?.email || '',
+                  type: refund.original_transaction_type,
+                  amount: formatCurrencyForExport(refund.amount),
+                  reason: refund.reason,
+                  status: refund.status,
+                  rejection_reason: refund.rejection_reason || '',
+                  created_at: formatDateForExport(refund.created_at),
+                  processed_at: refund.processed_at ? formatDateForExport(refund.processed_at) : '',
+                }));
+                exportToCsv(exportData, `refunds-export-${format(new Date(), 'yyyy-MM-dd')}`, [
+                  { key: 'user_name', label: 'User Name' },
+                  { key: 'user_email', label: 'Email' },
+                  { key: 'type', label: 'Transaction Type' },
+                  { key: 'amount', label: 'Amount (NGN)' },
+                  { key: 'reason', label: 'Reason' },
+                  { key: 'status', label: 'Status' },
+                  { key: 'rejection_reason', label: 'Rejection Reason' },
+                  { key: 'created_at', label: 'Requested Date' },
+                  { key: 'processed_at', label: 'Processed Date' },
+                ]);
+                toast.success('Refunds exported to CSV');
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" /> Export CSV
+            </Button>
           </CardHeader>
           <CardContent>
             {isLoading ? (

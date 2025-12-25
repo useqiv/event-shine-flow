@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -445,9 +446,44 @@ const AdminSettings: React.FC = () => {
                     <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Recent Transactions</CardTitle>
                     <CardDescription>Latest payment transactions across the platform</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => refetchTransactions()}>
-                    <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        if (!recentTransactions || recentTransactions.length === 0) {
+                          toast.error('No transactions to export');
+                          return;
+                        }
+                        const exportData = recentTransactions.map((tx: any) => ({
+                          date: formatDateForExport(tx.created_at),
+                          user_name: tx.wallets?.profiles?.full_name || 'Unknown',
+                          user_email: tx.wallets?.profiles?.email || '',
+                          type: tx.type.replace('_', ' '),
+                          amount: formatCurrencyForExport(tx.amount),
+                          status: tx.status,
+                          reference: tx.reference_id || '',
+                          description: tx.description || '',
+                        }));
+                        exportToCsv(exportData, `transactions-export-${format(new Date(), 'yyyy-MM-dd')}`, [
+                          { key: 'date', label: 'Date' },
+                          { key: 'user_name', label: 'User Name' },
+                          { key: 'user_email', label: 'Email' },
+                          { key: 'type', label: 'Type' },
+                          { key: 'amount', label: 'Amount (NGN)' },
+                          { key: 'status', label: 'Status' },
+                          { key: 'reference', label: 'Reference' },
+                          { key: 'description', label: 'Description' },
+                        ]);
+                        toast.success('Transactions exported to CSV');
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export CSV
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => refetchTransactions()}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
