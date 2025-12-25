@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Vote, LinkIcon, Pencil, Camera, Trash2, GripVertical } from 'lucide-react';
+import { Users, Vote, LinkIcon, Pencil, Camera, Trash2, GripVertical, QrCode } from 'lucide-react';
+import { ContestantQRDialog } from './ContestantQRDialog';
 
 interface Contestant {
   id: string;
@@ -18,6 +19,8 @@ interface Contestant {
 interface SortableContestantCardProps {
   contestant: Contestant;
   isSelected: boolean;
+  contestId: string;
+  contestTitle: string;
   onSelect: (id: string, selected: boolean) => void;
   onEdit: (contestant: Contestant) => void;
   onDelete: (contestant: Contestant) => void;
@@ -27,11 +30,14 @@ interface SortableContestantCardProps {
 export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
   contestant,
   isSelected,
+  contestId,
+  contestTitle,
   onSelect,
   onEdit,
   onDelete,
   onCopyLink,
 }) => {
+  const [isQROpen, setIsQROpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -109,17 +115,35 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
             </div>
           </div>
         </div>
-        <div className="mt-3 pt-3 border-t">
+        <div className="mt-3 pt-3 border-t flex gap-2">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full text-xs"
+            className="flex-1 text-xs"
             onClick={() => onCopyLink(contestant.id, contestant.name)}
           >
-            <LinkIcon className="h-3 w-3 mr-2" />
-            Copy Voting Link
+            <LinkIcon className="h-3 w-3 mr-1" />
+            Copy Link
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 text-xs"
+            onClick={() => setIsQROpen(true)}
+          >
+            <QrCode className="h-3 w-3 mr-1" />
+            QR Code
           </Button>
         </div>
+        
+        <ContestantQRDialog
+          open={isQROpen}
+          onOpenChange={setIsQROpen}
+          contestantName={contestant.name}
+          contestantId={contestant.id}
+          contestId={contestId}
+          contestTitle={contestTitle}
+        />
       </CardContent>
     </Card>
   );
