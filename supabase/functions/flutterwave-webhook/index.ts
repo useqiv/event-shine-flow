@@ -55,7 +55,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Redirect params:", { status, tx_ref, transaction_id });
 
-    if (status === "successful" && transaction_id) {
+    // Flutterwave returns either "successful" or "completed" depending on context
+    const isSuccessful = status === "successful" || status === "completed";
+    
+    if (isSuccessful && transaction_id) {
       try {
         const flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY");
         console.log("Verifying transaction:", transaction_id);
@@ -70,14 +73,21 @@ const handler = async (req: Request): Promise<Response> => {
         );
 
         const verifyData = await verifyResponse.json();
-        console.log("Verification response status:", verifyData.status);
+        console.log("Verification response:", JSON.stringify(verifyData));
 
+        // Flutterwave API returns status "success" and data.status "successful"
         if (verifyData.status === "success" && verifyData.data.status === "successful") {
+          console.log("Processing verified payment...");
           await processSuccessfulPayment(verifyData.data);
+          console.log("Payment processing completed");
+        } else {
+          console.log("Payment verification failed:", verifyData.status, verifyData.data?.status);
         }
       } catch (error: any) {
         console.error("Verification error:", error.message);
       }
+    } else {
+      console.log("Payment not successful or missing transaction_id:", { status, transaction_id });
     }
 
     // Redirect to app with payment status
