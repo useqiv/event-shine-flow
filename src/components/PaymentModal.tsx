@@ -43,27 +43,45 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [cryptoPaymentData, setCryptoPaymentData] = useState<any>(null);
   const [txHash, setTxHash] = useState('');
   const [copied, setCopied] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
 
   const flutterwavePayment = useFlutterwavePayment();
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
 
+  const isGuest = !user;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail);
+  const canProceed = !isGuest || (guestEmail && isValidEmail);
+
   const handleFlutterwavePayment = () => {
-    if (!user) return;
+    const email = user?.email || guestEmail;
+    const name = user?.user_metadata?.full_name || guestName || 'Guest';
+    const userId = user?.id || `guest_${Date.now()}`;
+
+    if (!email) {
+      toast.error('Please enter your email address');
+      return;
+    }
 
     flutterwavePayment.mutate({
       type,
       amount,
       currency,
-      email: user.email || '',
-      name: user.user_metadata?.full_name || 'User',
-      user_id: user.id,
+      email,
+      name,
+      user_id: userId,
       ...itemDetails,
     });
   };
 
   const handleCryptoPayment = () => {
-    if (!user) return;
+    const userId = user?.id || `guest_${Date.now()}`;
+    
+    if (isGuest && !guestEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
 
     // Convert NGN to USD (simplified - in production use real rates)
     const amountUsd = currency === 'NGN' ? amount / 1500 : amount;
@@ -74,7 +92,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         crypto_currency: cryptoCurrency,
         network,
         amount_usd: amountUsd,
-        user_id: user.id,
+        user_id: userId,
         ...itemDetails,
       },
       {
@@ -86,12 +104,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const handleVerifyPayment = () => {
-    if (!user || !cryptoPaymentData || !txHash) return;
+    if (!cryptoPaymentData || !txHash) return;
+    
+    const userId = user?.id || `guest_${Date.now()}`;
 
     verifyCrypto.mutate({
       payment_ref: cryptoPaymentData.payment_ref,
       tx_hash: txHash,
-      user_id: user.id,
+      user_id: userId,
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -139,14 +159,43 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
               <TabsContent value="flutterwave" className="space-y-4 mt-4">
                 <Card>
-                  <CardContent className="pt-4">
-                    <p className="text-sm text-muted-foreground mb-4">
+                  <CardContent className="pt-4 space-y-4">
+                    {isGuest && (
+                      <div className="space-y-3 pb-3 border-b">
+                        <div>
+                          <Label htmlFor="guest-email">Email Address *</Label>
+                          <Input
+                            id="guest-email"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={guestEmail}
+                            onChange={(e) => setGuestEmail(e.target.value)}
+                            className="mt-1"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            We'll send your receipt to this email
+                          </p>
+                        </div>
+                        <div>
+                          <Label htmlFor="guest-name">Full Name (optional)</Label>
+                          <Input
+                            id="guest-name"
+                            type="text"
+                            placeholder="John Doe"
+                            value={guestName}
+                            onChange={(e) => setGuestName(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground">
                       Pay with card, bank transfer, or mobile money via Flutterwave
                     </p>
                     <Button 
                       onClick={handleFlutterwavePayment} 
                       className="w-full"
-                      disabled={flutterwavePayment.isPending}
+                      disabled={flutterwavePayment.isPending || !canProceed}
                     >
                       {flutterwavePayment.isPending ? (
                         <>
@@ -163,6 +212,25 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
               <TabsContent value="crypto" className="space-y-4 mt-4">
                 <div className="grid gap-4">
+                  {isGuest && (
+                    <div className="space-y-3 pb-3 border-b">
+                      <div>
+                        <Label htmlFor="guest-email-crypto">Email Address *</Label>
+                        <Input
+                          id="guest-email-crypto"
+                          type="email"
+                          placeholder="your@email.com"
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          We'll send your receipt to this email
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div>
                     <Label>Select Cryptocurrency</Label>
                     <Select value={cryptoCurrency} onValueChange={(v) => setCryptoCurrency(v as 'USDT' | 'USDC')}>
@@ -193,7 +261,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
                   <Button 
                     onClick={handleCryptoPayment}
-                    disabled={cryptoPayment.isPending}
+                    disabled={cryptoPayment.isPending || !canProceed}
                   >
                     {cryptoPayment.isPending ? (
                       <>
