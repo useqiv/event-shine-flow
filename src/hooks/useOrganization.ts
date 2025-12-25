@@ -573,7 +573,32 @@ export const useUpdateContestant = () => {
   });
 };
 
+// Delete Contestant
+export const useDeleteContestant = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (contestantId: string) => {
+      const { error } = await supabase
+        .from('contestants')
+        .delete()
+        .eq('id', contestantId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contestants'] });
+      toast.success('Contestant deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete contestant');
+      console.error(error);
+    },
+  });
+};
 
+
+// Create Ticket Type
 export const useCreateTicketType = () => {
   const queryClient = useQueryClient();
   
