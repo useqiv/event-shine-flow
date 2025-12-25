@@ -35,7 +35,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2 } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -70,6 +70,8 @@ const ContestManagement = () => {
   const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedContestants, setSelectedContestants] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'order' | 'votes-high' | 'votes-low' | 'name'>('order');
   const [newContestant, setNewContestant] = useState({
     name: '',
     bio: '',
@@ -77,11 +79,49 @@ const ContestManagement = () => {
     performance: '',
   });
 
-  // Sort contestants by display_order for drag and drop
-  const sortedContestants = useMemo(() => {
+  // Filter and sort contestants
+  const filteredContestants = useMemo(() => {
     if (!contestants) return [];
-    return [...contestants].sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
-  }, [contestants]);
+    
+    let filtered = [...contestants];
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((c: any) => 
+        c.name.toLowerCase().includes(query) ||
+        (c.bio && c.bio.toLowerCase().includes(query))
+      );
+    }
+    
+    // Apply sorting
+    switch (sortBy) {
+      case 'votes-high':
+        filtered.sort((a: any, b: any) => b.vote_count - a.vote_count);
+        break;
+      case 'votes-low':
+        filtered.sort((a: any, b: any) => a.vote_count - b.vote_count);
+        break;
+      case 'name':
+        filtered.sort((a: any, b: any) => a.name.localeCompare(b.name));
+        break;
+      case 'order':
+      default:
+        filtered.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+        break;
+    }
+    
+    return filtered;
+  }, [contestants, searchQuery, sortBy]);
+
+  // For drag-and-drop, use the filtered list when no search is active
+  const sortedContestants = useMemo(() => {
+    // Only allow reordering when viewing by custom order and no search
+    if (sortBy === 'order' && !searchQuery.trim()) {
+      return filteredContestants;
+    }
+    return filteredContestants;
+  }, [filteredContestants, sortBy, searchQuery]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -452,83 +492,116 @@ const ContestManagement = () => {
           </TabsList>
 
           <TabsContent value="contestants" className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold">Contestants ({contestants?.length || 0})</h2>
-                {sortedContestants.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={selectedContestants.size === sortedContestants.length && sortedContestants.length > 0}
-                      onCheckedChange={handleSelectAll}
-                    />
-                    <span className="text-sm text-muted-foreground">Select all</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {selectedContestants.size > 0 && (
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => setIsBulkDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete ({selectedContestants.size})
-                  </Button>
-                )}
-                <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  Import CSV
-                </Button>
-                <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Contestant
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Add New Contestant</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Name *</Label>
-                        <Input
-                          placeholder="Contestant name"
-                          value={newContestant.name}
-                          onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Bio</Label>
-                        <Textarea
-                          placeholder="Short bio..."
-                          value={newContestant.bio}
-                          onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
-                        />
-                      </div>
-                      <ImageUpload
-                        bucket="contestant-images"
-                        value={newContestant.photo_url}
-                        onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
-                        label="Photo"
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold">Contestants ({contestants?.length || 0})</h2>
+                  {sortedContestants.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={selectedContestants.size === sortedContestants.length && sortedContestants.length > 0}
+                        onCheckedChange={handleSelectAll}
                       />
-                      <div className="space-y-2">
-                        <Label>Performance/Entry</Label>
-                        <Input
-                          placeholder="e.g., Song title, routine name"
-                          value={newContestant.performance}
-                          onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
-                        />
-                      </div>
-                      <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
-                        {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
-                      </Button>
+                      <span className="text-sm text-muted-foreground">Select all</span>
                     </div>
-                  </DialogContent>
-                </Dialog>
+                  )}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {selectedContestants.size > 0 && (
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete ({selectedContestants.size})
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Import CSV
+                  </Button>
+                  <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Contestant
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add New Contestant</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Name *</Label>
+                          <Input
+                            placeholder="Contestant name"
+                            value={newContestant.name}
+                            onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Bio</Label>
+                          <Textarea
+                            placeholder="Short bio..."
+                            value={newContestant.bio}
+                            onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
+                          />
+                        </div>
+                        <ImageUpload
+                          bucket="contestant-images"
+                          value={newContestant.photo_url}
+                          onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
+                          label="Photo"
+                        />
+                        <div className="space-y-2">
+                          <Label>Performance/Entry</Label>
+                          <Input
+                            placeholder="e.g., Song title, routine name"
+                            value={newContestant.performance}
+                            onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
+                          />
+                        </div>
+                        <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
+                          {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
+
+              {/* Search and Filter */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search contestants..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                  <SelectTrigger className="w-[180px]">
+                    <ArrowUpDown className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="order">Custom Order</SelectItem>
+                    <SelectItem value="votes-high">Votes: High to Low</SelectItem>
+                    <SelectItem value="votes-low">Votes: Low to High</SelectItem>
+                    <SelectItem value="name">Name: A to Z</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {searchQuery && (
+                <p className="text-sm text-muted-foreground">
+                  Showing {sortedContestants.length} of {contestants?.length || 0} contestants
+                </p>
+              )}
             </div>
 
             <CSVImport
