@@ -7,18 +7,70 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
   const updateSetting = useUpdatePlatformSetting();
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{
+    connected: boolean;
+    message: string;
+    balance?: { currency: string; available_balance: number };
+    test_mode?: boolean;
+  } | null>(null);
 
   const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || '';
 
   const handleUpdate = async (key: string, value: string) => {
     await updateSetting.mutateAsync({ key, value });
+  };
+
+  // Fetch recent transactions
+  const { data: recentTransactions, isLoading: loadingTransactions, refetch: refetchTransactions } = useQuery({
+    queryKey: ['admin-recent-transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('*, wallets(user_id, profiles:user_id(full_name, email))')
+        .in('type', ['vote_purchase', 'ticket_purchase', 'deposit'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const testFlutterwaveConnection = async () => {
+    setIsTestingConnection(true);
+    setConnectionStatus(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('test-flutterwave-connection');
+      
+      if (error) throw error;
+      
+      setConnectionStatus(data);
+      
+      if (data.connected) {
+        toast.success('Flutterwave connection successful!');
+      } else {
+        toast.error(data.message || 'Connection failed');
+      }
+    } catch (err: any) {
+      setConnectionStatus({ connected: false, message: err.message });
+      toast.error('Failed to test connection');
+    } finally {
+      setIsTestingConnection(false);
+    }
   };
 
   if (isLoading) {
@@ -207,6 +259,260 @@ const AdminSettings: React.FC = () => {
                     <li>Set a secret hash for webhook verification</li>
                   </ol>
                 </div>
+
+                {/* Connection Status Indicator */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Connection Status</p>
+                      <p className="text-sm text-muted-foreground">Test your Flutterwave API credentials</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={testFlutterwaveConnection}
+                      disabled={isTestingConnection}
+                    >
+                      {isTestingConnection ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Testing...</>
+                      ) : (
+                        <><RefreshCw className="h-4 w-4 mr-2" /> Test Connection</>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {connectionStatus && (
+                    <div className={`p-3 rounded-lg flex items-start gap-3 ${
+                      connectionStatus.connected ? 'bg-green-500/10 border border-green-500/20' : 'bg-destructive/10 border border-destructive/20'
+                    }`}>
+                      {connectionStatus.connected ? (
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-destructive mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <p className={`text-sm font-medium ${connectionStatus.connected ? 'text-green-600' : 'text-destructive'}`}>
+                          {connectionStatus.connected ? 'Connected Successfully' : 'Connection Failed'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">{connectionStatus.message}</p>
+                        {connectionStatus.connected && connectionStatus.balance && (
+                          <div className="mt-2 p-2 bg-background rounded text-xs">
+                            <p>Account Balance: <span className="font-mono font-medium">{connectionStatus.balance.currency} {connectionStatus.balance.available_balance?.toLocaleString()}</span></p>
+                            {connectionStatus.test_mode && (
+                              <Badge variant="secondary" className="mt-1">Test Mode</Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payment Fees Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Receipt className="h-5 w-5" /> Payment Fees & Surcharges</CardTitle>
+                <CardDescription>Configure fees applied to different payment methods</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-medium">Flutterwave Fees</h4>
+                    <div>
+                      <Label>Transaction Fee (%)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        placeholder="1.4" 
+                        defaultValue={getSetting('flutterwave_fee_percentage') || '0'} 
+                        onBlur={(e) => handleUpdate('flutterwave_fee_percentage', e.target.value)} 
+                        className="mt-2" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Percentage fee per transaction</p>
+                    </div>
+                    <div>
+                      <Label>Fixed Fee (NGN)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="100" 
+                        defaultValue={getSetting('flutterwave_fee_fixed') || '0'} 
+                        onBlur={(e) => handleUpdate('flutterwave_fee_fixed', e.target.value)} 
+                        className="mt-2" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Fixed fee per transaction</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Pass Fee to Customer</p>
+                        <p className="text-xs text-muted-foreground">Customer pays the transaction fee</p>
+                      </div>
+                      <Switch 
+                        checked={getSetting('flutterwave_fee_pass_to_customer') === 'true'} 
+                        onCheckedChange={(checked) => handleUpdate('flutterwave_fee_pass_to_customer', String(checked))} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg space-y-4">
+                    <h4 className="font-medium">Crypto Fees</h4>
+                    <div>
+                      <Label>Transaction Fee (%)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        placeholder="0.5" 
+                        defaultValue={getSetting('crypto_fee_percentage') || '0'} 
+                        onBlur={(e) => handleUpdate('crypto_fee_percentage', e.target.value)} 
+                        className="mt-2" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Percentage fee per crypto transaction</p>
+                    </div>
+                    <div>
+                      <Label>Network Fee Surcharge (USD)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="2.00" 
+                        defaultValue={getSetting('crypto_network_surcharge') || '0'} 
+                        onBlur={(e) => handleUpdate('crypto_network_surcharge', e.target.value)} 
+                        className="mt-2" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Additional fee to cover network costs</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Pass Fee to Customer</p>
+                        <p className="text-xs text-muted-foreground">Customer pays the transaction fee</p>
+                      </div>
+                      <Switch 
+                        checked={getSetting('crypto_fee_pass_to_customer') === 'true'} 
+                        onCheckedChange={(checked) => handleUpdate('crypto_fee_pass_to_customer', String(checked))} 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                  <h4 className="font-medium">Convenience Fee</h4>
+                  <p className="text-sm text-muted-foreground">Add an optional convenience fee to all transactions</p>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <Label>Fee Type</Label>
+                      <select 
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-2"
+                        defaultValue={getSetting('convenience_fee_type') || 'none'}
+                        onChange={(e) => handleUpdate('convenience_fee_type', e.target.value)}
+                      >
+                        <option value="none">None</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Fee Value</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        placeholder="0" 
+                        defaultValue={getSetting('convenience_fee_value') || '0'} 
+                        onBlur={(e) => handleUpdate('convenience_fee_value', e.target.value)} 
+                        className="mt-2" 
+                      />
+                    </div>
+                    <div>
+                      <Label>Fee Cap (Max Amount)</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="5000" 
+                        defaultValue={getSetting('convenience_fee_cap') || ''} 
+                        onBlur={(e) => handleUpdate('convenience_fee_cap', e.target.value)} 
+                        className="mt-2" 
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Leave empty for no cap</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Transaction Logs */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Recent Transactions</CardTitle>
+                    <CardDescription>Latest payment transactions across the platform</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => refetchTransactions()}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingTransactions ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : recentTransactions && recentTransactions.length > 0 ? (
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Reference</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentTransactions.map((tx: any) => (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-sm">
+                              {format(new Date(tx.created_at), 'MMM d, HH:mm')}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="text-sm font-medium">{tx.wallets?.profiles?.full_name || 'Unknown'}</p>
+                                <p className="text-xs text-muted-foreground">{tx.wallets?.profiles?.email}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {tx.type.replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono">
+                              ₦{tx.amount?.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                tx.status === 'completed' ? 'default' :
+                                tx.status === 'pending' ? 'secondary' :
+                                'destructive'
+                              }>
+                                {tx.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs text-muted-foreground">
+                              {tx.reference_id?.slice(0, 15)}...
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No transactions found</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
