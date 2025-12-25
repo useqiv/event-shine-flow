@@ -1199,6 +1199,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_referral_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          referral_count: number
+          total_earnings: number
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
