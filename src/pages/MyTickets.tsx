@@ -3,8 +3,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useMyTickets } from '@/hooks/useEvents';
-import { Ticket, Calendar, MapPin, QrCode } from 'lucide-react';
+import RefundRequestDialog from '@/components/RefundRequestDialog';
+import { Ticket, Calendar, MapPin, QrCode, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 
 const MyTickets = () => {
@@ -38,7 +40,22 @@ const MyTickets = () => {
                         <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{format(new Date(ticket.event?.event_date), 'MMM d, yyyy')}</span>
                         <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{ticket.event?.venue}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2 font-mono">QR: {ticket.qr_code}</p>
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-muted-foreground font-mono">QR: {ticket.qr_code}</p>
+                        {ticket.status === 'active' && (
+                          <RefundRequestDialog
+                            transactionType="ticket"
+                            transactionId={ticket.id}
+                            amount={Number(ticket.amount_paid)}
+                            itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
+                          >
+                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Request Refund
+                            </Button>
+                          </RefundRequestDialog>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
