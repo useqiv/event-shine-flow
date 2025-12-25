@@ -118,6 +118,47 @@ export type Database = {
           },
         ]
       }
+      contest_analytics: {
+        Row: {
+          contest_id: string
+          created_at: string
+          date: string
+          hour: number | null
+          id: string
+          unique_voters: number
+          votes_count: number
+          votes_revenue: number
+        }
+        Insert: {
+          contest_id: string
+          created_at?: string
+          date?: string
+          hour?: number | null
+          id?: string
+          unique_voters?: number
+          votes_count?: number
+          votes_revenue?: number
+        }
+        Update: {
+          contest_id?: string
+          created_at?: string
+          date?: string
+          hour?: number | null
+          id?: string
+          unique_voters?: number
+          votes_count?: number
+          votes_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_analytics_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contest_auto_posts: {
         Row: {
           contest_id: string
@@ -1206,6 +1247,66 @@ export type Database = {
           },
           {
             foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_at: string
+          name: string | null
+          organization_id: string
+          permissions: Json | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_at?: string
+          name?: string | null
+          organization_id: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_at?: string
+          name?: string | null
+          organization_id?: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

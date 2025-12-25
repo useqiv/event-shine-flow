@@ -490,6 +490,12 @@ const ContestManagement = () => {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Link to={`/org/contests/${id}/analytics`}>
+              <Button variant="outline">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Analytics
+              </Button>
+            </Link>
             <ShareButtons 
               title={contest.title}
               description={contest.description || `Vote now in ${contest.title}`}
