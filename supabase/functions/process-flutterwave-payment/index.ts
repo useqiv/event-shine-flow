@@ -37,8 +37,10 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log("Fetching Flutterwave settings from database...");
+
     // Fetch Flutterwave settings from platform_settings
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from("platform_settings")
       .select("setting_key, setting_value")
       .in("setting_key", [
@@ -50,27 +52,43 @@ const handler = async (req: Request): Promise<Response> => {
         "flutterwave_default_currency"
       ]);
 
+    if (settingsError) {
+      console.error("Failed to fetch settings:", settingsError.message);
+      return new Response(
+        JSON.stringify({ error: "Failed to load payment configuration." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Settings fetched:", settings?.length || 0, "settings found");
+
     const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || "";
 
+    const isEnabled = getSetting("flutterwave_enabled");
+    console.log("Flutterwave enabled:", isEnabled);
+
     // Check if Flutterwave is enabled
-    if (getSetting("flutterwave_enabled") !== "true") {
+    if (isEnabled !== "true") {
       console.error("Flutterwave payments are disabled");
       return new Response(
-        JSON.stringify({ error: "Flutterwave payments are currently disabled." }),
+        JSON.stringify({ error: "Flutterwave payments are currently disabled. Please enable it in admin settings." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Get secret key from platform settings first, fallback to env
     let flutterwaveSecretKey = getSetting("flutterwave_secret_key");
+    console.log("Secret key from DB:", flutterwaveSecretKey ? "Found (length: " + flutterwaveSecretKey.length + ")" : "Not found");
+    
     if (!flutterwaveSecretKey) {
       flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
+      console.log("Secret key from ENV:", flutterwaveSecretKey ? "Found (length: " + flutterwaveSecretKey.length + ")" : "Not found");
     }
     
     if (!flutterwaveSecretKey) {
-      console.error("FLUTTERWAVE_SECRET_KEY not configured");
+      console.error("FLUTTERWAVE_SECRET_KEY not configured in DB or ENV");
       return new Response(
-        JSON.stringify({ error: "Payment gateway not configured. Please contact support." }),
+        JSON.stringify({ error: "Payment gateway not configured. Please add your Flutterwave secret key in Admin Settings > Flutterwave Configuration." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
