@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,8 @@ import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ShareButtons, ContestantShareButton } from '@/components/ui/share-buttons';
+import { CountdownTimer } from '@/components/ui/countdown-timer';
+import confetti from 'canvas-confetti';
 import { 
   Trophy, 
   Calendar, 
@@ -41,10 +43,44 @@ const ContestDetail = () => {
   const vote = useVote();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
+  const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
+  const previousLeaderRef = useRef<string | null>(null);
+
+  // Handle vote updates with pulse animation and confetti
+  const handleVoteUpdate = useCallback((contestantId: string, newVoteCount: number, previousVoteCount: number) => {
+    // Add pulse animation
+    setPulsingContestants(prev => new Set(prev).add(contestantId));
+    setTimeout(() => {
+      setPulsingContestants(prev => {
+        const next = new Set(prev);
+        next.delete(contestantId);
+        return next;
+      });
+    }, 1000);
+  }, []);
 
   // Enable real-time updates for live leaderboard
-  useRealtimeContestants(id || '');
+  const { initializeVoteCounts } = useRealtimeContestants(id || '', handleVoteUpdate);
   useRealtimeContest(id || '');
+
+  // Initialize vote counts and check for leader changes
+  useEffect(() => {
+    if (contestants && contestants.length > 0) {
+      initializeVoteCounts(contestants);
+      
+      // Check if leader changed
+      const currentLeader = contestants[0]?.id;
+      if (previousLeaderRef.current && previousLeaderRef.current !== currentLeader) {
+        // New leader! Fire confetti
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+      previousLeaderRef.current = currentLeader;
+    }
+  }, [contestants, initializeVoteCounts]);
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
@@ -190,7 +226,7 @@ const ContestDetail = () => {
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Votes</p>
                   <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
@@ -199,13 +235,11 @@ const ContestDetail = () => {
                   <p className="text-sm text-muted-foreground">Vote Price</p>
                   <p className="text-xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Start Date</p>
-                  <p className="text-xl font-bold">{format(new Date(contest.start_date), 'MMM d')}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">End Date</p>
-                  <p className="text-xl font-bold">{format(new Date(contest.end_date), 'MMM d')}</p>
+                <div className="col-span-2 md:col-span-1">
+                  <CountdownTimer 
+                    endDate={contest.end_date} 
+                    startDate={contest.start_date}
+                  />
                 </div>
               </div>
               <ShareButtons 
@@ -238,6 +272,10 @@ const ContestDetail = () => {
                   className={`overflow-hidden transition-all duration-500 ${
                     highlightedContestant === contestant.id 
                       ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]' 
+                      : ''
+                  } ${
+                    pulsingContestants.has(contestant.id)
+                      ? 'animate-pulse ring-2 ring-green-500 ring-offset-2 ring-offset-background'
                       : ''
                   }`}
                 >

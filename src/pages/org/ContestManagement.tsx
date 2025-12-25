@@ -17,6 +17,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { SortableContestantCard } from '@/components/org/SortableContestantCard';
+import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
@@ -372,12 +373,13 @@ const ContestManagement = () => {
   };
 
   const handleExportContestants = () => {
-    if (!contestants || contestants.length === 0) {
+    if (!filteredContestants || filteredContestants.length === 0) {
       toast.error('No contestants to export');
       return;
     }
 
     const headers = [
+      { key: 'rank', label: 'Rank' },
       { key: 'name', label: 'Name' },
       { key: 'bio', label: 'Bio' },
       { key: 'performance', label: 'Performance' },
@@ -385,14 +387,18 @@ const ContestManagement = () => {
       { key: 'created_at', label: 'Added Date' },
     ];
 
-    const exportData = contestants.map((c: any, index: number) => ({
-      ...c,
-      created_at: formatDateForExport(c.created_at),
+    const exportData = filteredContestants.map((c: any, index: number) => ({
       rank: index + 1,
+      name: c.name,
+      bio: c.bio || '',
+      performance: c.performance || '',
+      vote_count: c.vote_count,
+      created_at: formatDateForExport(c.created_at),
     }));
 
-    exportToCsv(exportData, `${contest?.title || 'contest'}-results-${format(new Date(), 'yyyy-MM-dd')}`, headers);
-    toast.success('Contest results exported successfully');
+    const filterSuffix = searchQuery || minVotes || maxVotes ? '-filtered' : '';
+    exportToCsv(exportData, `${contest?.title || 'contest'}-results${filterSuffix}-${format(new Date(), 'yyyy-MM-dd')}`, headers);
+    toast.success(`Exported ${filteredContestants.length} contestants successfully`);
   };
 
   const handleExportLeaderboard = () => {
@@ -773,6 +779,9 @@ const ContestManagement = () => {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Fraud Detection Alerts */}
+              <FraudAlertsCard contestId={id || ''} />
             </div>
 
             <CSVImport
