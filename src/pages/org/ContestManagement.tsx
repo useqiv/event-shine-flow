@@ -35,7 +35,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -72,6 +72,10 @@ const ContestManagement = () => {
   const [selectedContestants, setSelectedContestants] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'order' | 'votes-high' | 'votes-low' | 'name'>('order');
+  const [minVotes, setMinVotes] = useState('');
+  const [maxVotes, setMaxVotes] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
   const [newContestant, setNewContestant] = useState({
     name: '',
     bio: '',
@@ -93,6 +97,16 @@ const ContestManagement = () => {
         (c.bio && c.bio.toLowerCase().includes(query))
       );
     }
+
+    // Apply vote range filter
+    const minV = minVotes ? parseInt(minVotes, 10) : null;
+    const maxV = maxVotes ? parseInt(maxVotes, 10) : null;
+    if (minV !== null && !isNaN(minV)) {
+      filtered = filtered.filter((c: any) => c.vote_count >= minV);
+    }
+    if (maxV !== null && !isNaN(maxV)) {
+      filtered = filtered.filter((c: any) => c.vote_count <= maxV);
+    }
     
     // Apply sorting
     switch (sortBy) {
@@ -112,16 +126,24 @@ const ContestManagement = () => {
     }
     
     return filtered;
-  }, [contestants, searchQuery, sortBy]);
+  }, [contestants, searchQuery, sortBy, minVotes, maxVotes]);
 
-  // For drag-and-drop, use the filtered list when no search is active
+  // Pagination
+  const totalPages = Math.ceil(filteredContestants.length / pageSize);
+  const paginatedContestants = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredContestants.slice(start, start + pageSize);
+  }, [filteredContestants, currentPage, pageSize]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, sortBy, minVotes, maxVotes, pageSize]);
+
+  // For drag-and-drop, use the paginated list
   const sortedContestants = useMemo(() => {
-    // Only allow reordering when viewing by custom order and no search
-    if (sortBy === 'order' && !searchQuery.trim()) {
-      return filteredContestants;
-    }
-    return filteredContestants;
-  }, [filteredContestants, sortBy, searchQuery]);
+    return paginatedContestants;
+  }, [paginatedContestants]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -573,7 +595,7 @@ const ContestManagement = () => {
               </div>
 
               {/* Search and Filter */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -595,11 +617,42 @@ const ContestManagement = () => {
                     <SelectItem value="name">Name: A to Z</SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    placeholder="Min votes"
+                    value={minVotes}
+                    onChange={(e) => setMinVotes(e.target.value)}
+                    className="w-24"
+                    min="0"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    placeholder="Max votes"
+                    value={maxVotes}
+                    onChange={(e) => setMaxVotes(e.target.value)}
+                    className="w-24"
+                    min="0"
+                  />
+                </div>
+                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">6 / page</SelectItem>
+                    <SelectItem value="12">12 / page</SelectItem>
+                    <SelectItem value="24">24 / page</SelectItem>
+                    <SelectItem value="48">48 / page</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              {searchQuery && (
+              {(searchQuery || minVotes || maxVotes) && (
                 <p className="text-sm text-muted-foreground">
-                  Showing {sortedContestants.length} of {contestants?.length || 0} contestants
+                  Showing {sortedContestants.length} of {filteredContestants.length} filtered ({contestants?.length || 0} total)
                 </p>
               )}
             </div>
@@ -638,6 +691,19 @@ const ContestManagement = () => {
                   </div>
                 </SortableContext>
               </DndContext>
+            ) : filteredContestants.length === 0 && (searchQuery || minVotes || maxVotes) ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No contestants match your filters.</p>
+                  <Button 
+                    variant="link" 
+                    onClick={() => { setSearchQuery(''); setMinVotes(''); setMaxVotes(''); }}
+                  >
+                    Clear filters
+                  </Button>
+                </CardContent>
+              </Card>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center">
@@ -645,6 +711,74 @@ const ContestManagement = () => {
                   <p className="text-muted-foreground">No contestants yet. Add your first contestant to get started.</p>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="w-8"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
             )}
           </TabsContent>
 
