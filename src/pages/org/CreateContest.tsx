@@ -8,9 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateContest } from '@/hooks/useOrganization';
-import { useImageUpload } from '@/hooks/useImageUpload';
-import ImageUpload from '@/components/ImageUpload';
-import { Calendar, DollarSign, FileText } from 'lucide-react';
+import { Trophy, Calendar, DollarSign, Image, FileText, Tag } from 'lucide-react';
 
 const categories = [
   'Music',
@@ -28,7 +26,6 @@ const categories = [
 const CreateContest = () => {
   const navigate = useNavigate();
   const createContest = useCreateContest();
-  const { uploadImage, isUploading, progress } = useImageUpload('contest-images');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -99,34 +96,34 @@ const CreateContest = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => handleChange('category', value)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => handleChange('category', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Contest Banner</Label>
-                <ImageUpload
-                  value={formData.image_url}
-                  onChange={(url) => handleChange('image_url', url || '')}
-                  onUpload={uploadImage}
-                  isUploading={isUploading}
-                  progress={progress}
-                  aspectRatio="video"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="image_url">Banner Image URL</Label>
+                  <Input
+                    id="image_url"
+                    placeholder="https://..."
+                    value={formData.image_url}
+                    onChange={(e) => handleChange('image_url', e.target.value)}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

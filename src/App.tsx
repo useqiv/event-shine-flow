@@ -21,7 +21,6 @@ import MyVotes from "./pages/MyVotes";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import AccountTypeSelection from "./pages/AccountTypeSelection";
-import Unauthorized from "./pages/Unauthorized";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -36,7 +35,6 @@ import Payouts from "./pages/org/Payouts";
 import Marketing from "./pages/org/Marketing";
 import Support from "./pages/org/Support";
 import OrgSettings from "./pages/org/OrgSettings";
-import TicketScanner from "./pages/org/TicketScanner";
 
 const queryClient = new QueryClient();
 
@@ -65,14 +63,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/org/dashboard" replace />;
   }
 
-  // Block regular users from org routes - show unauthorized page
+  // Redirect regular users away from org routes
   if (!isOrganization && location.pathname.startsWith('/org/')) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  // Block organization users from regular user dashboard
-  if (isOrganization && ['/dashboard', '/my-tickets', '/my-votes', '/wallet'].includes(location.pathname)) {
-    return <Navigate to="/org/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{children}</>;
@@ -118,14 +111,12 @@ const AppRoutes = () => (
     <Route path="/org/events" element={<ProtectedRoute><ManageEvents /></ProtectedRoute>} />
     <Route path="/org/contests/:id" element={<ProtectedRoute><ContestManagement /></ProtectedRoute>} />
     <Route path="/org/events/:id" element={<ProtectedRoute><EventManagement /></ProtectedRoute>} />
-    <Route path="/org/events/:id/scan" element={<ProtectedRoute><TicketScanner /></ProtectedRoute>} />
     <Route path="/org/wallet" element={<ProtectedRoute><OrgWallet /></ProtectedRoute>} />
     <Route path="/org/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
     <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
     <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
     <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
     
-    <Route path="/unauthorized" element={<ProtectedRoute><Unauthorized /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

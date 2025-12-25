@@ -12,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useContestContestants } from '@/hooks/useOrganization';
-import { useRealtimeVotes } from '@/hooks/useRealtimeVotes';
-import AnimatedLeaderboard from '@/components/AnimatedLeaderboard';
 import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -25,9 +23,6 @@ const ContestManagement = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
-
-  // Enable real-time vote updates
-  const { recentlyUpdatedContestants } = useRealtimeVotes(id);
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [newContestant, setNewContestant] = useState({
@@ -327,13 +322,52 @@ const ContestManagement = () => {
           </TabsContent>
 
           <TabsContent value="leaderboard">
-            <AnimatedLeaderboard
-              contestants={contestants || []}
-              updatedContestantIds={recentlyUpdatedContestants}
-              onExport={handleExportLeaderboard}
-              showExport={true}
-              title="Live Leaderboard"
-            />
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Leaderboard</CardTitle>
+                  <Button variant="outline" size="sm" onClick={handleExportLeaderboard}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {contestants && contestants.length > 0 ? (
+                  <div className="space-y-2">
+                    {contestants.map((contestant: any, index: number) => (
+                      <div key={contestant.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                          index === 0 ? 'bg-yellow-500 text-yellow-950' :
+                          index === 1 ? 'bg-gray-400 text-gray-900' :
+                          index === 2 ? 'bg-orange-400 text-orange-950' :
+                          'bg-secondary text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <div className="h-10 w-10 rounded-full bg-secondary overflow-hidden flex-shrink-0">
+                          {contestant.photo_url ? (
+                            <img src={contestant.photo_url} alt={contestant.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <Users className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{contestant.name}</p>
+                        </div>
+                        <Badge variant="secondary">
+                          {contestant.vote_count.toLocaleString()} votes
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No contestants to display</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">

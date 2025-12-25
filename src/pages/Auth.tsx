@@ -63,7 +63,7 @@ const Auth = () => {
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
       });
-      // AuthRoute will redirect to the correct dashboard once auth + role are loaded.
+      navigate('/dashboard');
     }
   };
 
