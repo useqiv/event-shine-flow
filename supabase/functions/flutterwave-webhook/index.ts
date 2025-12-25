@@ -262,6 +262,13 @@ async function processSuccessfulPayment(paymentData: any) {
     return "card";
   };
 
+  const toPositiveInt = (value: unknown, fallback: number) => {
+    const n = typeof value === "number" ? value : Number(String(value ?? "").trim());
+    if (!Number.isFinite(n)) return fallback;
+    const i = Math.floor(n);
+    return i > 0 ? i : fallback;
+  };
+
   const payment_method = resolvePaymentMethod(paymentData);
 
   // Update transaction status
@@ -295,7 +302,7 @@ async function processSuccessfulPayment(paymentData: any) {
       user_id,
       contest_id,
       contestant_id,
-      quantity: vote_quantity || 1,
+      quantity: toPositiveInt(vote_quantity, 1),
       amount_paid: paymentData.amount,
       payment_method,
       transaction_id: flw_transaction_id || null,
@@ -361,7 +368,7 @@ async function processSuccessfulPayment(paymentData: any) {
       user_id,
       event_id,
       ticket_type_id,
-      quantity: ticket_quantity || 1,
+      quantity: toPositiveInt(ticket_quantity, 1),
       amount_paid: paymentData.amount,
       payment_method,
       qr_code,
