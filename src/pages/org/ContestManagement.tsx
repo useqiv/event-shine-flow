@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,12 +10,20 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useContestContestants } from '@/hooks/useOrganization';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
+
+const categories = [
+  'Music', 'Beauty', 'Fashion', 'Sports', 'Talent',
+  'Dance', 'Photography', 'Art', 'Tech', 'Other'
+];
+
 
 const ContestManagement = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +39,32 @@ const ContestManagement = () => {
     photo_url: '',
     performance: '',
   });
+
+  // Edit contest form state
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    image_url: '',
+    start_date: '',
+    end_date: '',
+    vote_price: 100,
+  });
+
+  // Initialize edit form when contest data loads
+  useEffect(() => {
+    if (contest) {
+      setEditForm({
+        title: contest.title || '',
+        description: contest.description || '',
+        category: contest.category || '',
+        image_url: contest.image_url || '',
+        start_date: contest.start_date ? new Date(contest.start_date).toISOString().slice(0, 16) : '',
+        end_date: contest.end_date ? new Date(contest.end_date).toISOString().slice(0, 16) : '',
+        vote_price: Number(contest.vote_price) || 100,
+      });
+    }
+  }, [contest]);
 
   const handleAddContestant = async () => {
     if (!id || !newContestant.name) return;
@@ -53,12 +87,37 @@ const ContestManagement = () => {
     toast.success('Contest link copied to clipboard!');
   };
 
+  const handleCopyContestantLink = (contestantId: string, contestantName: string) => {
+    const url = `${window.location.origin}/contests/${id}?vote=${contestantId}`;
+    navigator.clipboard.writeText(url);
+    toast.success(`Link for ${contestantName} copied!`);
+  };
+
   const handleToggleActive = async () => {
     if (!contest) return;
     await updateContest.mutateAsync({
       id: contest.id,
       is_active: !contest.is_active,
     });
+  };
+
+  const handleSaveContestDetails = async () => {
+    if (!contest) return;
+    try {
+      await updateContest.mutateAsync({
+        id: contest.id,
+        title: editForm.title,
+        description: editForm.description,
+        category: editForm.category,
+        image_url: editForm.image_url,
+        start_date: editForm.start_date,
+        end_date: editForm.end_date,
+        vote_price: Number(editForm.vote_price),
+      });
+      toast.success('Contest details updated successfully');
+    } catch (error) {
+      console.error('Failed to update contest:', error);
+    }
   };
 
   const handleExportContestants = () => {
@@ -253,14 +312,12 @@ const ContestManagement = () => {
                         onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Photo URL</Label>
-                      <Input
-                        placeholder="https://..."
-                        value={newContestant.photo_url}
-                        onChange={(e) => setNewContestant(prev => ({ ...prev, photo_url: e.target.value }))}
-                      />
-                    </div>
+                    <ImageUpload
+                      bucket="contestant-images"
+                      value={newContestant.photo_url}
+                      onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
+                      label="Photo"
+                    />
                     <div className="space-y-2">
                       <Label>Performance/Entry</Label>
                       <Input
@@ -306,6 +363,17 @@ const ContestManagement = () => {
                             <span className="font-medium">{contestant.vote_count.toLocaleString()} votes</span>
                           </div>
                         </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => handleCopyContestantLink(contestant.id, contestant.name)}
+                        >
+                          <LinkIcon className="h-3 w-3 mr-2" />
+                          Copy Voting Link
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -370,16 +438,107 @@ const ContestManagement = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Contest Settings</CardTitle>
-                <CardDescription>Update your contest details</CardDescription>
+                <CardTitle>Contest Details</CardTitle>
+                <CardDescription>Update your contest information</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Settings editing coming soon...</p>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Contest Title *</Label>
+                  <Input
+                    id="edit-title"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    rows={4}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category">Category *</Label>
+                    <Select
+                      value={editForm.category}
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-vote-price">Price per Vote (₦) *</Label>
+                    <Input
+                      id="edit-vote-price"
+                      type="number"
+                      min="1"
+                      value={editForm.vote_price}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, vote_price: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+
+                <ImageUpload
+                  bucket="contest-images"
+                  value={editForm.image_url}
+                  onChange={(url) => setEditForm(prev => ({ ...prev, image_url: url }))}
+                  label="Contest Banner Image"
+                />
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Schedule</CardTitle>
+                <CardDescription>Update contest dates</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-start-date">Start Date *</Label>
+                    <Input
+                      id="edit-start-date"
+                      type="datetime-local"
+                      value={editForm.start_date}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, start_date: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-end-date">End Date *</Label>
+                    <Input
+                      id="edit-end-date"
+                      type="datetime-local"
+                      value={editForm.end_date}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, end_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
+                <Save className="mr-2 h-4 w-4" />
+                {updateContest.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
