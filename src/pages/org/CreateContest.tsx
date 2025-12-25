@@ -25,6 +25,16 @@ const categories = [
   'Other'
 ];
 
+const currencies = [
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi' },
+  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+];
+
 const CreateContest = () => {
   const navigate = useNavigate();
   const createContest = useCreateContest();
@@ -37,6 +47,7 @@ const CreateContest = () => {
     start_date: '',
     end_date: '',
     vote_price: 100,
+    vote_currency: 'NGN',
     custom_slug: '',
     brand_primary_color: '#7c3aed',
     brand_secondary_color: '#f97316',
@@ -174,23 +185,43 @@ const CreateContest = () => {
                 <DollarSign className="h-5 w-5" />
                 Vote Pricing
               </CardTitle>
-              <CardDescription>Set the price per vote</CardDescription>
+              <CardDescription>Set the price and currency per vote</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="vote_price">Price per Vote (₦) *</Label>
-                <Input
-                  id="vote_price"
-                  type="number"
-                  min="1"
-                  value={formData.vote_price}
-                  onChange={(e) => handleChange('vote_price', e.target.value)}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Users will pay this amount for each vote they cast.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vote_currency">Currency *</Label>
+                  <Select
+                    value={formData.vote_currency}
+                    onValueChange={(value) => handleChange('vote_currency', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.symbol} - {currency.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vote_price">Price per Vote *</Label>
+                  <Input
+                    id="vote_price"
+                    type="number"
+                    min="1"
+                    value={formData.vote_price}
+                    onChange={(e) => handleChange('vote_price', e.target.value)}
+                    required
+                  />
+                </div>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Users will pay this amount for each vote they cast.
+              </p>
             </CardContent>
           </Card>
 
