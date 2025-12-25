@@ -208,11 +208,17 @@ const EventManagement = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Link to={`/org/events/${id}/checkin`}>
+              <Button variant="outline">
+                <Users className="mr-2 h-4 w-4" />
+                Check-in Dashboard
+              </Button>
+            </Link>
             <Link to={`/org/events/${id}/scan`}>
               <Button variant="outline">
                 <QrCode className="mr-2 h-4 w-4" />
-                Check-in Scanner
+                Scanner
               </Button>
             </Link>
             <Button variant="outline" onClick={handleCopyLink}>

@@ -57,6 +57,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/org/wallet', label: 'Wallet & Finance', icon: Wallet },
     { path: '/org/payouts', label: 'Payouts', icon: CreditCard },
     { path: '/org/marketing', label: 'Marketing', icon: Megaphone },
+    { path: '/org/team', label: 'Team Members', icon: Users },
     { path: '/org/support', label: 'Support', icon: HelpCircle },
   ];
 
