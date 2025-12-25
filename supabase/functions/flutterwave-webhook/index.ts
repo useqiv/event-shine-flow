@@ -60,9 +60,25 @@ const handler = async (req: Request): Promise<Response> => {
     
     if (isSuccessful && transaction_id) {
       try {
-        const flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY");
+        // Prefer DB setting (platform_settings) to avoid env mismatches
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { data: settings, error: settingsError } = await supabase
+          .from("platform_settings")
+          .select("setting_key, setting_value")
+          .in("setting_key", ["flutterwave_secret_key"]);
+
+        if (settingsError) {
+          console.error("Failed to fetch Flutterwave secret key from DB:", settingsError.message);
+        }
+
+        const dbSecret = settings?.find((s) => s.setting_key === "flutterwave_secret_key")?.setting_value || "";
+        const flutterwaveSecretKey = dbSecret || Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
+
         console.log("Verifying transaction:", transaction_id);
-        
+
         const verifyResponse = await fetch(
           `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
           {

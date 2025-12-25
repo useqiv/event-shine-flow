@@ -210,7 +210,7 @@ const handler = async (req: Request): Promise<Response> => {
         user_id: payload.user_id,
         wallet_id: wallet.id,
         amount: payload.amount,
-        type: payload.type === "vote" ? "vote_purchase" : "ticket_purchase",
+        type: payload.type, // must match DB constraint (vote | ticket)
         status: "pending",
         reference_id: tx_ref,
         description: `Pending ${payload.type} payment via Flutterwave`,
