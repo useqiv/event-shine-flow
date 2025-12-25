@@ -19,6 +19,7 @@ export type Database = {
           bio: string | null
           contest_id: string
           created_at: string
+          display_order: number | null
           id: string
           is_public_votes: boolean
           name: string
@@ -31,6 +32,7 @@ export type Database = {
           bio?: string | null
           contest_id: string
           created_at?: string
+          display_order?: number | null
           id?: string
           is_public_votes?: boolean
           name: string
@@ -43,6 +45,7 @@ export type Database = {
           bio?: string | null
           contest_id?: string
           created_at?: string
+          display_order?: number | null
           id?: string
           is_public_votes?: boolean
           name?: string

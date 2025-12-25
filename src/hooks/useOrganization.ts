@@ -597,6 +597,57 @@ export const useDeleteContestant = () => {
   });
 };
 
+// Bulk Delete Contestants
+export const useBulkDeleteContestants = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (contestantIds: string[]) => {
+      const { error } = await supabase
+        .from('contestants')
+        .delete()
+        .in('id', contestantIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, contestantIds) => {
+      queryClient.invalidateQueries({ queryKey: ['contestants'] });
+      toast.success(`${contestantIds.length} contestant(s) deleted`);
+    },
+    onError: (error) => {
+      toast.error('Failed to delete contestants');
+      console.error(error);
+    },
+  });
+};
+
+// Reorder Contestants
+export const useReorderContestants = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (updates: { id: string; display_order: number }[]) => {
+      // Update each contestant's display_order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('contestants')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contestants'] });
+      toast.success('Order updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update order');
+      console.error(error);
+    },
+  });
+};
+
 
 // Create Ticket Type
 export const useCreateTicketType = () => {
