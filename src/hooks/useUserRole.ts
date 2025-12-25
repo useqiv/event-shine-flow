@@ -13,11 +13,17 @@ export const useUserRole = () => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
       
       if (error) throw error;
-      return data?.role ?? 'user';
+      
+      // Prioritize roles: admin > organization > user
+      if (!data || data.length === 0) return 'user';
+      
+      const roles = data.map(r => r.role);
+      if (roles.includes('admin')) return 'admin';
+      if (roles.includes('organization')) return 'organization';
+      return 'user';
     },
     enabled: !!user?.id,
   });
