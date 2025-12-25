@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Copy, Check, Trophy, Star, Users, Clock, Flame } from 'lucide-react';
+import { FileText, Copy, Check, Trophy, Star, Users, Clock, Flame, Calendar, Ticket, Bell, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Template {
@@ -15,6 +15,7 @@ interface Template {
 }
 
 const templates: Template[] = [
+  // Contest Templates
   {
     id: 'leaderboard',
     name: 'Leaderboard Update',
@@ -104,6 +105,104 @@ Congratulations to [Winner Name] for winning {{CONTEST_NAME}}!
 
 Thank you to all participants and voters!
 #winner #congratulations`,
+  },
+  // Event Templates
+  {
+    id: 'event-announcement',
+    name: 'Event Announcement',
+    description: 'Announce a new event',
+    icon: Calendar,
+    category: 'announcement',
+    template: `🎉 SAVE THE DATE! 🎉
+
+{{EVENT_NAME}} is happening!
+
+📅 Date: [Event Date]
+📍 Venue: [Venue Name]
+🎫 Tickets available now!
+
+Get yours: {{EVENT_URL}}
+#event #liveshow #entertainment`,
+  },
+  {
+    id: 'event-countdown',
+    name: 'Event Countdown',
+    description: 'Build excitement before the event',
+    icon: Clock,
+    category: 'countdown',
+    template: `⏰ COUNTDOWN TO {{EVENT_NAME}}! ⏰
+
+Only [X] days left until the big day!
+
+📅 [Event Date]
+📍 [Venue Name]
+
+Tickets selling fast! 🎫 {{EVENT_URL}}
+#countdown #dontmissout`,
+  },
+  {
+    id: 'tickets-selling-fast',
+    name: 'Tickets Selling Fast',
+    description: 'Create urgency for ticket sales',
+    icon: Ticket,
+    category: 'engagement',
+    template: `🔥 TICKETS SELLING FAST! 🔥
+
+{{EVENT_NAME}} is almost sold out!
+
+Don't miss your chance to be there!
+
+📅 [Event Date]
+📍 [Venue Name]
+
+Get tickets now: {{EVENT_URL}}
+#limitedtickets #hurry`,
+  },
+  {
+    id: 'event-reminder',
+    name: 'Event Reminder',
+    description: 'Remind attendees about the event',
+    icon: Bell,
+    category: 'countdown',
+    template: `📢 REMINDER: {{EVENT_NAME}} IS TOMORROW! 📢
+
+Get ready for an amazing experience!
+
+📅 [Event Date & Time]
+📍 [Venue Name]
+📍 [Address]
+
+See you there! 🎉
+#eventreminder #seeyoutomorrow`,
+  },
+  {
+    id: 'event-live',
+    name: 'Event is Live',
+    description: 'Announce event has started',
+    icon: Flame,
+    category: 'announcement',
+    template: `🎤 WE'RE LIVE! 🎤
+
+{{EVENT_NAME}} is happening NOW!
+
+Join us at [Venue Name] for an unforgettable experience!
+
+#liveshow #happeningnow #event`,
+  },
+  {
+    id: 'event-thankyou',
+    name: 'Post-Event Thank You',
+    description: 'Thank attendees after the event',
+    icon: Heart,
+    category: 'results',
+    template: `💜 THANK YOU! 💜
+
+What an incredible night at {{EVENT_NAME}}!
+
+Thank you to everyone who came out and made it unforgettable!
+
+Stay tuned for our next event! 🎉
+#thankyou #amazingnight #untilnexttime`,
   },
 ];
 
