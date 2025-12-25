@@ -197,9 +197,9 @@ const AdminEvents: React.FC = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link to={`/events/${event.id}`}>
+                              <Link to={`/admin/events/${event.id}`}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                View Event
+                                View Details
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toggleEventStatus(event.id, event.is_active)}>
