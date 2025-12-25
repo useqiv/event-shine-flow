@@ -5,9 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet } from '@/hooks/useWallet';
@@ -16,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRecordConversion } from '@/hooks/useInfluencerTracking';
 import { ShareButtons, ContestantShareButton } from '@/components/ui/share-buttons';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
+import PaymentModal from '@/components/PaymentModal';
 import confetti from 'canvas-confetti';
 import { 
   Trophy, 
@@ -24,9 +22,6 @@ import {
   ArrowLeft, 
   User,
   Wallet,
-  CreditCard,
-  Building2,
-  Coins
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -48,9 +43,14 @@ const ContestDetail = () => {
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
   const previousLeaderRef = useRef<string | null>(null);
 
+  // Payment modal state
+  const [selectedContestant, setSelectedContestant] = useState<any>(null);
+  const [voteQuantity, setVoteQuantity] = useState(1);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+
   // Handle vote updates with pulse animation and confetti
   const handleVoteUpdate = useCallback((contestantId: string, newVoteCount: number, previousVoteCount: number) => {
-    // Add pulse animation
     setPulsingContestants(prev => new Set(prev).add(contestantId));
     setTimeout(() => {
       setPulsingContestants(prev => {
@@ -70,10 +70,8 @@ const ContestDetail = () => {
     if (contestants && contestants.length > 0) {
       initializeVoteCounts(contestants);
       
-      // Check if leader changed
       const currentLeader = contestants[0]?.id;
       if (previousLeaderRef.current && previousLeaderRef.current !== currentLeader) {
-        // New leader! Fire confetti
         confetti({
           particleCount: 100,
           spread: 70,
@@ -84,14 +82,8 @@ const ContestDetail = () => {
     }
   }, [contestants, initializeVoteCounts]);
 
-  const [selectedContestant, setSelectedContestant] = useState<any>(null);
-  const [voteQuantity, setVoteQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'bank_transfer' | 'usdt'>('wallet');
-  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
-
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
-  const hasInsufficientBalance = paymentMethod === 'wallet' && (wallet?.balance || 0) < totalAmount;
 
   // Handle auto-scroll and highlight when vote parameter is present
   useEffect(() => {
@@ -100,7 +92,6 @@ const ContestDetail = () => {
       if (targetContestant) {
         setHighlightedContestant(voteForContestant);
         
-        // Wait for refs to be attached then scroll
         setTimeout(() => {
           const element = contestantRefs.current[voteForContestant];
           if (element) {
@@ -108,7 +99,6 @@ const ContestDetail = () => {
           }
         }, 300);
 
-        // Remove highlight after 3 seconds
         setTimeout(() => {
           setHighlightedContestant(null);
         }, 3000);
@@ -126,10 +116,16 @@ const ContestDetail = () => {
       return;
     }
     setSelectedContestant(contestant);
-    setIsVoteModalOpen(true);
+    setVoteQuantity(1);
+    setIsVoteSelectionOpen(true);
   };
 
-  const handleVoteSubmit = async () => {
+  const handleProceedToPayment = () => {
+    setIsVoteSelectionOpen(false);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleWalletPayment = async () => {
     if (!selectedContestant || !contest) return;
 
     try {
@@ -138,10 +134,9 @@ const ContestDetail = () => {
         contestId: contest.id,
         quantity: voteQuantity,
         amountPaid: totalAmount,
-        paymentMethod,
+        paymentMethod: 'wallet',
       });
 
-      // Record conversion for influencer tracking
       if (totalAmount > 0) {
         await recordConversion(totalAmount);
       }
@@ -151,7 +146,7 @@ const ContestDetail = () => {
         description: `You have cast ${voteQuantity} vote(s) for ${selectedContestant.name}.`,
       });
 
-      setIsVoteModalOpen(false);
+      setIsVoteSelectionOpen(false);
       setVoteQuantity(1);
     } catch (error: any) {
       toast({
@@ -347,94 +342,84 @@ const ContestDetail = () => {
         </div>
       </div>
 
-      {/* Vote Modal */}
-      <Dialog open={isVoteModalOpen} onOpenChange={setIsVoteModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Vote for {selectedContestant?.name}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            {/* Vote Quantity */}
-            <div>
-              <Label className="text-sm font-medium">Number of Votes</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {voteOptions.map((option) => (
-                  <Button
-                    key={option}
-                    variant={voteQuantity === option ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setVoteQuantity(option)}
-                  >
-                    {option} {option === 1 ? 'vote' : 'votes'}
+      {/* Vote Selection Dialog */}
+      {isVoteSelectionOpen && selectedContestant && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Vote for {selectedContestant.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Vote Quantity */}
+              <div>
+                <p className="text-sm font-medium mb-2">Number of Votes</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {voteOptions.map((option) => (
+                    <Button
+                      key={option}
+                      variant={voteQuantity === option ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setVoteQuantity(option)}
+                    >
+                      {option} {option === 1 ? 'vote' : 'votes'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-4 rounded-lg bg-secondary">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total Amount</span>
+                  <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Wallet Balance */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span className="text-sm">Wallet Balance</span>
+                </div>
+                <span className="font-medium">₦{wallet?.balance?.toLocaleString() || '0'}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setIsVoteSelectionOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+                {wallet && wallet.balance >= totalAmount ? (
+                  <Button onClick={handleWalletPayment} disabled={vote.isPending} className="flex-1">
+                    {vote.isPending ? 'Processing...' : 'Pay with Wallet'}
                   </Button>
-                ))}
+                ) : (
+                  <Button onClick={handleProceedToPayment} className="flex-1">
+                    Other Payment Options
+                  </Button>
+                )}
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-            {/* Payment Method */}
-            <div>
-              <Label className="text-sm font-medium">Payment Method</Label>
-              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="mt-2 space-y-2">
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="wallet" id="wallet" />
-                  <Label htmlFor="wallet" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Wallet className="h-4 w-4" />
-                    Wallet (₦{wallet?.balance?.toLocaleString() || '0'})
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="card" id="card" />
-                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <CreditCard className="h-4 w-4" />
-                    Card Payment
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="bank_transfer" id="bank" />
-                  <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Building2 className="h-4 w-4" />
-                    Bank Transfer
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="usdt" id="usdt" />
-                  <Label htmlFor="usdt" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Coins className="h-4 w-4" />
-                    USDT
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Total */}
-            <div className="p-4 rounded-lg bg-secondary">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total Amount</span>
-                <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
-              </div>
-            </div>
-
-            {hasInsufficientBalance && (
-              <p className="text-sm text-destructive">
-                Insufficient wallet balance. Please fund your wallet or choose another payment method.
-              </p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsVoteModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleVoteSubmit} 
-              disabled={vote.isPending || hasInsufficientBalance}
-            >
-              {vote.isPending ? 'Processing...' : 'Confirm Vote'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Payment Modal for external payments */}
+      {selectedContestant && contest && (
+        <PaymentModal
+          open={isPaymentModalOpen}
+          onOpenChange={setIsPaymentModalOpen}
+          type="vote"
+          amount={totalAmount}
+          currency={(contest as any).vote_currency || 'NGN'}
+          itemDetails={{
+            contest_id: contest.id,
+            contestant_id: selectedContestant.id,
+            vote_quantity: voteQuantity,
+            name: selectedContestant.name,
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };

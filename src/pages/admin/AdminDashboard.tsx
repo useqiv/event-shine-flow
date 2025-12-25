@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAdminStatistics } from '@/hooks/useAdminData';
+import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
 import { 
   Users, 
   Building2, 
@@ -224,7 +225,8 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Payment Statistics Widget */}
+        <PaymentStatsWidget />
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>

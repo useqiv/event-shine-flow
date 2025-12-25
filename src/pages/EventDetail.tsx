@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { useEvent, useTicketTypes, usePurchaseTicket } from '@/hooks/useEvents';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SocialShareButtons from '@/components/SocialShareButtons';
+import PaymentModal from '@/components/PaymentModal';
 import { 
   Calendar, 
   MapPin, 
@@ -20,9 +18,6 @@ import {
   ArrowLeft, 
   Ticket,
   Wallet,
-  CreditCard,
-  Building2,
-  Coins,
   Minus,
   Plus
 } from 'lucide-react';
@@ -39,12 +34,15 @@ const EventDetail = () => {
 
   const [selectedTicketType, setSelectedTicketType] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<'wallet' | 'card' | 'bank_transfer' | 'usdt'>('wallet');
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const isPast = event && new Date(event.event_date) < new Date();
   const totalAmount = selectedTicketType ? quantity * Number(selectedTicketType.price) : 0;
-  const hasInsufficientBalance = paymentMethod === 'wallet' && (wallet?.balance || 0) < totalAmount;
+
+  const availableTickets = selectedTicketType 
+    ? selectedTicketType.quantity_available - selectedTicketType.quantity_sold 
+    : 0;
 
   const handleBuyClick = (ticketType: any) => {
     if (!user) {
@@ -60,7 +58,7 @@ const EventDetail = () => {
     setIsPurchaseModalOpen(true);
   };
 
-  const handlePurchase = async () => {
+  const handleWalletPurchase = async () => {
     if (!selectedTicketType || !event) return;
 
     try {
@@ -69,7 +67,7 @@ const EventDetail = () => {
         ticketTypeId: selectedTicketType.id,
         quantity,
         amountPaid: totalAmount,
-        paymentMethod,
+        paymentMethod: 'wallet',
       });
 
       toast({
@@ -88,9 +86,10 @@ const EventDetail = () => {
     }
   };
 
-  const availableTickets = selectedTicketType 
-    ? selectedTicketType.quantity_available - selectedTicketType.quantity_sold 
-    : 0;
+  const handleProceedToPayment = () => {
+    setIsPurchaseModalOpen(false);
+    setIsPaymentModalOpen(true);
+  };
 
   if (eventLoading) {
     return (
@@ -264,101 +263,91 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* Purchase Modal */}
-      <Dialog open={isPurchaseModalOpen} onOpenChange={setIsPurchaseModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Purchase {selectedTicketType?.name}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            {/* Quantity */}
-            <div>
-              <Label className="text-sm font-medium">Quantity</Label>
-              <div className="flex items-center gap-4 mt-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setQuantity(Math.min(availableTickets, quantity + 1))}
-                  disabled={quantity >= availableTickets}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+      {/* Purchase Selection Dialog */}
+      {isPurchaseModalOpen && selectedTicketType && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Purchase {selectedTicketType.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Quantity */}
+              <div>
+                <p className="text-sm font-medium mb-2">Quantity</p>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xl font-bold w-8 text-center">{quantity}</span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setQuantity(Math.min(availableTickets, quantity + 1))}
+                    disabled={quantity >= availableTickets}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {/* Payment Method */}
-            <div>
-              <Label className="text-sm font-medium">Payment Method</Label>
-              <RadioGroup value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as any)} className="mt-2 space-y-2">
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="wallet" id="wallet" />
-                  <Label htmlFor="wallet" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Wallet className="h-4 w-4" />
-                    Wallet (₦{wallet?.balance?.toLocaleString() || '0'})
-                  </Label>
+              {/* Total */}
+              <div className="p-4 rounded-lg bg-secondary">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Total Amount</span>
+                  <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="card" id="card" />
-                  <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <CreditCard className="h-4 w-4" />
-                    Card Payment
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="bank_transfer" id="bank" />
-                  <Label htmlFor="bank" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Building2 className="h-4 w-4" />
-                    Bank Transfer
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-secondary/50 cursor-pointer">
-                  <RadioGroupItem value="usdt" id="usdt" />
-                  <Label htmlFor="usdt" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Coins className="h-4 w-4" />
-                    USDT
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* Total */}
-            <div className="p-4 rounded-lg bg-secondary">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total Amount</span>
-                <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
               </div>
-            </div>
 
-            {hasInsufficientBalance && (
-              <p className="text-sm text-destructive">
-                Insufficient wallet balance. Please fund your wallet or choose another payment method.
-              </p>
-            )}
-          </div>
+              {/* Wallet Balance */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-4 w-4" />
+                  <span className="text-sm">Wallet Balance</span>
+                </div>
+                <span className="font-medium">₦{wallet?.balance?.toLocaleString() || '0'}</span>
+              </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handlePurchase} 
-              disabled={purchaseTicket.isPending || hasInsufficientBalance}
-            >
-              {purchaseTicket.isPending ? 'Processing...' : 'Confirm Purchase'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {/* Actions */}
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
+                  Cancel
+                </Button>
+                {wallet && wallet.balance >= totalAmount ? (
+                  <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
+                    {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+                  </Button>
+                ) : (
+                  <Button onClick={handleProceedToPayment} className="flex-1">
+                    Other Payment Options
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Payment Modal for external payments */}
+      {selectedTicketType && event && (
+        <PaymentModal
+          open={isPaymentModalOpen}
+          onOpenChange={setIsPaymentModalOpen}
+          type="ticket"
+          amount={totalAmount}
+          currency="NGN"
+          itemDetails={{
+            event_id: event.id,
+            ticket_type_id: selectedTicketType.id,
+            ticket_quantity: quantity,
+            name: selectedTicketType.name,
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 };
