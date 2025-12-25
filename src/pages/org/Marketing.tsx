@@ -13,7 +13,9 @@ import { usePromoCodes, useCreatePromoCode, useDeletePromoCode } from '@/hooks/u
 import { MarketingAnalyticsDashboard } from '@/components/org/MarketingAnalyticsDashboard';
 import { SocialPostTemplates } from '@/components/org/SocialPostTemplates';
 import { QuickSocialPost } from '@/components/org/QuickSocialPost';
-import { Megaphone, Tag, PlusCircle, Trash2, Copy, Percent, BarChart3, Share2, FileText, Users } from 'lucide-react';
+import { ShareCardGeneratorMarketing } from '@/components/org/ShareCardGeneratorMarketing';
+import { InfluencerLinksManager } from '@/components/org/InfluencerLinksManager';
+import { Megaphone, Tag, PlusCircle, Trash2, Copy, Percent, BarChart3, Share2, FileText, Users, Image, Link2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -92,7 +94,7 @@ const Marketing = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -101,13 +103,21 @@ const Marketing = () => {
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">Social</span>
             </TabsTrigger>
+            <TabsTrigger value="cards" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">Cards</span>
+            </TabsTrigger>
+            <TabsTrigger value="influencers" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Influencers</span>
+            </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Templates</span>
             </TabsTrigger>
             <TabsTrigger value="promos" className="flex items-center gap-2">
               <Tag className="h-4 w-4" />
-              <span className="hidden sm:inline">Promo Codes</span>
+              <span className="hidden sm:inline">Promos</span>
             </TabsTrigger>
           </TabsList>
 
@@ -146,6 +156,16 @@ const Marketing = () => {
           {/* Templates Tab */}
           <TabsContent value="templates">
             <SocialPostTemplates />
+          </TabsContent>
+
+          {/* Share Cards Tab */}
+          <TabsContent value="cards">
+            <ShareCardGeneratorMarketing />
+          </TabsContent>
+
+          {/* Influencers Tab */}
+          <TabsContent value="influencers">
+            <InfluencerLinksManager />
           </TabsContent>
 
           {/* Promo Codes Tab */}
@@ -318,35 +338,6 @@ const Marketing = () => {
                 )}
               </CardContent>
             </Card>
-
-            {/* Coming Soon Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Share Cards</CardTitle>
-                  <CardDescription>Generate shareable cards for social media</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Coming soon...</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Influencer Links</CardTitle>
-                  <CardDescription>Track referrals from influencers</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Coming soon...</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
