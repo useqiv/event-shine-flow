@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { useCreateContest } from '@/hooks/useOrganization';
 import { Calendar, DollarSign, FileText } from 'lucide-react';
 
@@ -36,6 +37,10 @@ const CreateContest = () => {
     start_date: '',
     end_date: '',
     vote_price: 100,
+    custom_slug: '',
+    brand_primary_color: '#7c3aed',
+    brand_secondary_color: '#f97316',
+    brand_logo_url: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,6 +193,17 @@ const CreateContest = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Branding */}
+          <ContestBrandingForm
+            values={{
+              custom_slug: formData.custom_slug,
+              brand_primary_color: formData.brand_primary_color,
+              brand_secondary_color: formData.brand_secondary_color,
+              brand_logo_url: formData.brand_logo_url,
+            }}
+            onChange={handleChange}
+          />
 
           {/* Actions */}
           <div className="flex gap-4 justify-end">

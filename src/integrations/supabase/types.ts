@@ -66,8 +66,12 @@ export type Database = {
       }
       contests: {
         Row: {
+          brand_logo_url: string | null
+          brand_primary_color: string | null
+          brand_secondary_color: string | null
           category: string
           created_at: string
+          custom_slug: string | null
           description: string | null
           end_date: string
           id: string
@@ -82,8 +86,12 @@ export type Database = {
           vote_price: number
         }
         Insert: {
+          brand_logo_url?: string | null
+          brand_primary_color?: string | null
+          brand_secondary_color?: string | null
           category: string
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           end_date: string
           id?: string
@@ -98,8 +106,12 @@ export type Database = {
           vote_price?: number
         }
         Update: {
+          brand_logo_url?: string | null
+          brand_primary_color?: string | null
+          brand_secondary_color?: string | null
           category?: string
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           end_date?: string
           id?: string

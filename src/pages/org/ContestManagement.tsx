@@ -18,6 +18,8 @@ import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { SortableContestantCard } from '@/components/org/SortableContestantCard';
 import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
+import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
+import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
@@ -185,7 +187,14 @@ const ContestManagement = () => {
     start_date: '',
     end_date: '',
     vote_price: 100,
+    custom_slug: '',
+    brand_primary_color: '#7c3aed',
+    brand_secondary_color: '#f97316',
+    brand_logo_url: '',
   });
+
+  // Share card state
+  const [shareCardContestant, setShareCardContestant] = useState<any>(null);
 
   // Initialize edit form when contest data loads
   useEffect(() => {
@@ -198,6 +207,10 @@ const ContestManagement = () => {
         start_date: contest.start_date ? new Date(contest.start_date).toISOString().slice(0, 16) : '',
         end_date: contest.end_date ? new Date(contest.end_date).toISOString().slice(0, 16) : '',
         vote_price: Number(contest.vote_price) || 100,
+        custom_slug: (contest as any).custom_slug || '',
+        brand_primary_color: (contest as any).brand_primary_color || '#7c3aed',
+        brand_secondary_color: (contest as any).brand_secondary_color || '#f97316',
+        brand_logo_url: (contest as any).brand_logo_url || '',
       });
     }
   }, [contest]);
@@ -365,6 +378,10 @@ const ContestManagement = () => {
         start_date: editForm.start_date,
         end_date: editForm.end_date,
         vote_price: Number(editForm.vote_price),
+        custom_slug: editForm.custom_slug || null,
+        brand_primary_color: editForm.brand_primary_color,
+        brand_secondary_color: editForm.brand_secondary_color,
+        brand_logo_url: editForm.brand_logo_url || null,
       });
       toast.success('Contest details updated successfully');
     } catch (error) {
@@ -815,6 +832,7 @@ const ContestManagement = () => {
                           setIsDeleteDialogOpen(true);
                         }}
                         onCopyLink={handleCopyContestantLink}
+                        onShareCard={setShareCardContestant}
                       />
                     ))}
                   </div>
@@ -1055,6 +1073,18 @@ const ContestManagement = () => {
               </CardContent>
             </Card>
 
+            {/* Branding */}
+            <ContestBrandingForm
+              values={{
+                custom_slug: editForm.custom_slug,
+                brand_primary_color: editForm.brand_primary_color,
+                brand_secondary_color: editForm.brand_secondary_color,
+                brand_logo_url: editForm.brand_logo_url,
+              }}
+              onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
+              contestId={id}
+            />
+
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
                 <Save className="mr-2 h-4 w-4" />
@@ -1063,6 +1093,21 @@ const ContestManagement = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Share Card Generator */}
+        {shareCardContestant && contest && (
+          <ShareCardGenerator
+            open={!!shareCardContestant}
+            onOpenChange={(open) => !open && setShareCardContestant(null)}
+            contestant={shareCardContestant}
+            contest={{
+              id: contest.id,
+              title: contest.title,
+              brand_primary_color: (contest as any).brand_primary_color,
+              brand_logo_url: (contest as any).brand_logo_url,
+            }}
+          />
+        )}
 
         {/* Edit Contestant Dialog */}
         <Dialog open={isEditContestantOpen} onOpenChange={setIsEditContestantOpen}>
