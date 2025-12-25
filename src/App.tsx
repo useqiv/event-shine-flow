@@ -56,6 +56,7 @@ import AdminModeration from "./pages/admin/AdminModeration";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPaymentHistory from "./pages/admin/AdminPaymentHistory";
 import AdminPaymentAnalytics from "./pages/admin/AdminPaymentAnalytics";
+import AdminRefunds from "./pages/admin/AdminRefunds";
 
 const queryClient = new QueryClient();
 
@@ -163,6 +164,7 @@ const AppRoutes = () => (
     <Route path="/admin/finance" element={<ProtectedRoute><AdminFinance /></ProtectedRoute>} />
     <Route path="/admin/payments" element={<ProtectedRoute><AdminPaymentHistory /></ProtectedRoute>} />
     <Route path="/admin/analytics" element={<ProtectedRoute><AdminPaymentAnalytics /></ProtectedRoute>} />
+    <Route path="/admin/refunds" element={<ProtectedRoute><AdminRefunds /></ProtectedRoute>} />
     <Route path="/admin/fraud" element={<ProtectedRoute><AdminFraud /></ProtectedRoute>} />
     <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
     <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
