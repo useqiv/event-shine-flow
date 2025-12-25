@@ -13,6 +13,7 @@ import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeC
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useRecordConversion } from '@/hooks/useInfluencerTracking';
 import { ShareButtons, ContestantShareButton } from '@/components/ui/share-buttons';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import confetti from 'canvas-confetti';
@@ -41,6 +42,7 @@ const ContestDetail = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const { data: wallet } = useWallet();
   const vote = useVote();
+  const { recordConversion } = useRecordConversion();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
@@ -138,6 +140,11 @@ const ContestDetail = () => {
         amountPaid: totalAmount,
         paymentMethod,
       });
+
+      // Record conversion for influencer tracking
+      if (totalAmount > 0) {
+        await recordConversion(totalAmount);
+      }
 
       toast({
         title: 'Vote Successful!',
