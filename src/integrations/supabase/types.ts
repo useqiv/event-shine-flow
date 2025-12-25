@@ -247,6 +247,126 @@ export type Database = {
           },
         ]
       }
+      influencer_clicks: {
+        Row: {
+          clicked_at: string
+          conversion_amount: number | null
+          converted: boolean
+          converted_at: string | null
+          id: string
+          ip_hash: string | null
+          link_id: string
+          referrer: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          conversion_amount?: number | null
+          converted?: boolean
+          converted_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          link_id: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          conversion_amount?: number | null
+          converted?: boolean
+          converted_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          link_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_clicks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      influencer_links: {
+        Row: {
+          code: string
+          commission_type: string
+          commission_value: number
+          contest_id: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          total_clicks: number
+          total_commission: number
+          total_conversions: number
+          total_revenue: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          commission_type?: string
+          commission_value?: number
+          contest_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          total_clicks?: number
+          total_commission?: number
+          total_conversions?: number
+          total_revenue?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          commission_type?: string
+          commission_value?: number
+          contest_id?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          total_clicks?: number
+          total_commission?: number
+          total_conversions?: number
+          total_revenue?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_links_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "influencer_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "influencer_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
