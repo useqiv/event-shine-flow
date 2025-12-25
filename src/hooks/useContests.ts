@@ -152,6 +152,31 @@ export const useMyVotes = () => {
   });
 };
 
+export const useMyContestVotes = (contestId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['my-contest-votes', contestId, user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('votes')
+        .select(`
+          *,
+          contestant:contestants(id, name, photo_url)
+        `)
+        .eq('user_id', user.id)
+        .eq('contest_id', contestId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id && !!contestId,
+  });
+};
+
 export const useVote = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();

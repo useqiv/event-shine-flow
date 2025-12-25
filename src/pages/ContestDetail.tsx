@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useContest, useContestants, useVote } from '@/hooks/useContests';
+import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,8 @@ import {
   ArrowLeft, 
   User,
   Wallet,
+  History,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -35,6 +37,7 @@ const ContestDetail = () => {
   const { toast } = useToast();
   const { data: contest, isLoading: contestLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
+  const { data: myVotes, isLoading: myVotesLoading } = useMyContestVotes(id || '');
   const { data: wallet } = useWallet();
   const vote = useVote();
   const { recordConversion } = useRecordConversion();
@@ -340,6 +343,74 @@ const ContestDetail = () => {
             </Card>
           )}
         </div>
+
+        {/* Voting History - Only show for logged in users */}
+        {user && (
+          <div>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Your Voting History
+            </h2>
+            {myVotesLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            ) : myVotes && myVotes.length > 0 ? (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {myVotes.map((vote: any) => (
+                      <div key={vote.id} className="flex items-center gap-4 p-4">
+                        <div className="h-12 w-12 rounded-full bg-secondary overflow-hidden flex-shrink-0">
+                          {vote.contestant?.photo_url ? (
+                            <img 
+                              src={vote.contestant.photo_url} 
+                              alt={vote.contestant.name} 
+                              className="h-full w-full object-cover" 
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <User className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {vote.contestant?.name || 'Unknown Contestant'}
+                          </p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Vote className="h-3.5 w-3.5" />
+                              {vote.quantity} {vote.quantity === 1 ? 'vote' : 'votes'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {format(new Date(vote.created_at), 'MMM d, yyyy h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">₦{Number(vote.amount_paid).toLocaleString()}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {vote.payment_method}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="p-6 text-center">
+                <Vote className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">You haven't voted in this contest yet</p>
+                <p className="text-sm text-muted-foreground mt-1">Cast your first vote above!</p>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Vote Selection Dialog */}
