@@ -14,6 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_activity_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_moderation: {
+        Row: {
+          content_type: string
+          content_url: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          content_type: string
+          content_url: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          content_type?: string
+          content_url?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_moderation_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_moderation_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contest_auto_posts: {
         Row: {
           contest_id: string
@@ -307,6 +411,62 @@ export type Database = {
           },
         ]
       }
+      fraud_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          description: string
+          entity_id: string
+          entity_type: string
+          id: string
+          metadata: Json | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          description: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          description?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alerts_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       influencer_clicks: {
         Row: {
           clicked_at: string
@@ -460,6 +620,66 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_approvals: {
+        Row: {
+          blacklist_reason: string | null
+          blacklisted_at: string | null
+          created_at: string
+          id: string
+          is_blacklisted: boolean
+          organization_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          special_commission_rate: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          blacklist_reason?: string | null
+          blacklisted_at?: string | null
+          created_at?: string
+          id?: string
+          is_blacklisted?: boolean
+          organization_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          special_commission_rate?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          blacklist_reason?: string | null
+          blacklisted_at?: string | null
+          created_at?: string
+          id?: string
+          is_blacklisted?: boolean
+          organization_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          special_commission_rate?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_approvals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_approvals_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_settings: {
         Row: {
           account_name: string | null
@@ -572,15 +792,52 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_type: string
+          setting_value: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_type?: string
+          setting_value?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_type_selected: boolean
           avatar_url: string | null
           created_at: string
           email: string | null
+          fraud_score: number
           full_name: string | null
           id: string
+          is_suspended: boolean
           phone: string | null
+          suspended_at: string | null
+          suspended_reason: string | null
           updated_at: string
         }
         Insert: {
@@ -588,9 +845,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          fraud_score?: number
           full_name?: string | null
           id: string
+          is_suspended?: boolean
           phone?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
         }
         Update: {
@@ -598,9 +859,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           email?: string | null
+          fraud_score?: number
           full_name?: string | null
           id?: string
+          is_suspended?: boolean
           phone?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1199,6 +1464,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_admin_statistics: { Args: never; Returns: Json }
       get_referral_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
