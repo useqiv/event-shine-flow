@@ -35,7 +35,8 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -138,6 +139,17 @@ const ContestManagement = () => {
     const topPerformer = filteredContestants.reduce((top: any, c: any) => 
       !top || c.vote_count > top.vote_count ? c : top, null);
     return { totalVotes, averageVotes, topPerformer };
+  }, [filteredContestants]);
+
+  // Chart data for vote distribution (top 10 contestants)
+  const chartData = useMemo(() => {
+    if (filteredContestants.length === 0) return [];
+    const sorted = [...filteredContestants].sort((a: any, b: any) => b.vote_count - a.vote_count);
+    return sorted.slice(0, 10).map((c: any) => ({
+      name: c.name.length > 12 ? c.name.slice(0, 12) + '...' : c.name,
+      fullName: c.name,
+      votes: c.vote_count,
+    }));
   }, [filteredContestants]);
 
   // Pagination
@@ -716,6 +728,50 @@ const ContestManagement = () => {
                     </CardContent>
                   </Card>
                 </div>
+              )}
+
+              {/* Vote Distribution Chart */}
+              {chartData.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <PieChart className="h-4 w-4" />
+                      Vote Distribution (Top 10)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+                          <XAxis type="number" tickFormatter={(v) => v.toLocaleString()} />
+                          <YAxis 
+                            type="category" 
+                            dataKey="name" 
+                            width={100} 
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            formatter={(value: number) => [value.toLocaleString(), 'Votes']}
+                            labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--popover))', 
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar dataKey="votes" radius={[0, 4, 4, 0]}>
+                            {chartData.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={index === 0 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.5)'} 
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
 
