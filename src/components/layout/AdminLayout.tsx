@@ -51,6 +51,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/contests', label: 'Contests', icon: Trophy },
     { path: '/admin/events', label: 'Events', icon: Calendar },
     { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
+    { path: '/admin/payments', label: 'Payment History', icon: Wallet },
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },

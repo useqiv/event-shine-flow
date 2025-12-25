@@ -25,14 +25,6 @@ interface PaymentRequest {
   redirect_url?: string;
 }
 
-interface FlutterwaveInitResponse {
-  status: string;
-  message: string;
-  data: {
-    link: string;
-  };
-}
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("Flutterwave payment function called");
 
@@ -43,11 +35,34 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY");
     if (!flutterwaveSecretKey) {
-      throw new Error("Flutterwave secret key not configured");
+      console.error("FLUTTERWAVE_SECRET_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "Payment gateway not configured. Please contact support." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const payload: PaymentRequest = await req.json();
-    console.log("Payment request:", payload);
+    let payload: PaymentRequest;
+    try {
+      payload = await req.json();
+    } catch (e) {
+      console.error("Invalid JSON payload:", e);
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("Payment request:", JSON.stringify(payload));
+
+    // Validate required fields
+    if (!payload.user_id || !payload.email || !payload.amount) {
+      console.error("Missing required fields");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: user_id, email, or amount" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const tx_ref = `${payload.type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -67,27 +82,31 @@ const handler = async (req: Request): Promise<Response> => {
       meta.ticket_quantity = payload.ticket_quantity;
     }
 
+    // Use the current app URL for redirect
+    const baseUrl = "https://preview--lovable-voting-platform.lovable.app";
+    const redirectUrl = payload.redirect_url || `${baseUrl}/payment-callback`;
+
     const flutterwavePayload = {
       tx_ref,
       amount: payload.amount,
       currency: payload.currency || "NGN",
-      redirect_url: payload.redirect_url || "https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook",
+      redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
       customer: {
         email: payload.email,
         phonenumber: payload.phone || "",
-        name: payload.name,
+        name: payload.name || "Customer",
       },
       meta,
       customizations: {
         title: payload.type === "vote" ? "Vote Purchase" : "Ticket Purchase",
         description: payload.type === "vote" 
-          ? `Purchase ${payload.vote_quantity} vote(s)` 
-          : `Purchase ${payload.ticket_quantity} ticket(s)`,
+          ? `Purchase ${payload.vote_quantity || 1} vote(s)` 
+          : `Purchase ${payload.ticket_quantity || 1} ticket(s)`,
         logo: "https://tirqmqzgksclsjxfiham.supabase.co/storage/v1/object/public/avatars/logo.png",
       },
     };
 
-    console.log("Flutterwave payload:", flutterwavePayload);
+    console.log("Calling Flutterwave API...");
 
     const response = await fetch("https://api.flutterwave.com/v3/payments", {
       method: "POST",
@@ -98,11 +117,28 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify(flutterwavePayload),
     });
 
-    const data: FlutterwaveInitResponse = await response.json();
-    console.log("Flutterwave response:", data);
+    const responseText = await response.text();
+    console.log("Flutterwave raw response:", responseText);
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error("Failed to parse Flutterwave response:", e);
+      return new Response(
+        JSON.stringify({ error: "Invalid response from payment gateway" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Flutterwave parsed response:", JSON.stringify(data));
 
     if (data.status !== "success") {
-      throw new Error(data.message || "Failed to initialize payment");
+      console.error("Flutterwave error:", data.message);
+      return new Response(
+        JSON.stringify({ error: data.message || "Failed to initialize payment" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Store pending transaction in database
@@ -110,14 +146,18 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: wallet } = await supabase
+    const { data: wallet, error: walletError } = await supabase
       .from("wallets")
       .select("id")
       .eq("user_id", payload.user_id)
       .single();
 
+    if (walletError) {
+      console.log("Wallet lookup error (non-critical):", walletError.message);
+    }
+
     if (wallet) {
-      await supabase.from("wallet_transactions").insert({
+      const { error: txError } = await supabase.from("wallet_transactions").insert({
         user_id: payload.user_id,
         wallet_id: wallet.id,
         amount: payload.amount,
@@ -126,7 +166,13 @@ const handler = async (req: Request): Promise<Response> => {
         reference_id: tx_ref,
         description: `Pending ${payload.type} payment via Flutterwave`,
       });
+
+      if (txError) {
+        console.log("Transaction insert error (non-critical):", txError.message);
+      }
     }
+
+    console.log("Payment initialized successfully, returning link:", data.data.link);
 
     return new Response(
       JSON.stringify({
@@ -137,9 +183,9 @@ const handler = async (req: Request): Promise<Response> => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error processing Flutterwave payment:", error);
+    console.error("Unexpected error processing Flutterwave payment:", error.message, error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An unexpected error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
