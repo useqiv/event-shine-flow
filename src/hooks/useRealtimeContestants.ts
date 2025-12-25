@@ -1,9 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useRealtimeContestants = (contestId: string) => {
+type VoteUpdateCallback = (contestantId: string, newVoteCount: number, previousVoteCount: number) => void;
+
+export const useRealtimeContestants = (contestId: string, onVoteUpdate?: VoteUpdateCallback) => {
   const queryClient = useQueryClient();
+  const previousVotesRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!contestId) return;
@@ -20,6 +23,17 @@ export const useRealtimeContestants = (contestId: string) => {
         },
         (payload) => {
           console.log('Contestant update received:', payload);
+          const newData = payload.new as any;
+          const previousVoteCount = previousVotesRef.current[newData.id] || 0;
+          
+          // Call the callback if vote count changed
+          if (onVoteUpdate && newData.vote_count !== previousVoteCount) {
+            onVoteUpdate(newData.id, newData.vote_count, previousVoteCount);
+          }
+          
+          // Update the reference
+          previousVotesRef.current[newData.id] = newData.vote_count;
+          
           // Invalidate queries to trigger refetch with new data
           queryClient.invalidateQueries({ queryKey: ['contestants', contestId] });
         }
@@ -42,7 +56,18 @@ export const useRealtimeContestants = (contestId: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [contestId, queryClient]);
+  }, [contestId, queryClient, onVoteUpdate]);
+
+  // Initialize vote counts from current data
+  const initializeVoteCounts = useCallback((contestants: any[]) => {
+    contestants.forEach((c: any) => {
+      if (previousVotesRef.current[c.id] === undefined) {
+        previousVotesRef.current[c.id] = c.vote_count;
+      }
+    });
+  }, []);
+
+  return { initializeVoteCounts };
 };
 
 export const useRealtimeContest = (contestId: string) => {
