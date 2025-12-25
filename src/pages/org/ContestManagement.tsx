@@ -21,6 +21,7 @@ import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { SocialPostingCard } from '@/components/org/SocialPostingCard';
+import { ScheduledPostingCard } from '@/components/org/ScheduledPostingCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
@@ -1103,6 +1104,12 @@ const ContestManagement = () => {
                 }))}
               />
             )}
+
+            {/* Scheduled Auto-Posting */}
+            <ScheduledPostingCard
+              contestId={contest.id}
+              contestTitle={contest.title}
+            />
 
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
