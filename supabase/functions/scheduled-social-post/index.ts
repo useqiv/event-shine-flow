@@ -15,6 +15,9 @@ const TWITTER_API_SECRET = Deno.env.get("TWITTER_CONSUMER_SECRET")?.trim();
 const TWITTER_ACCESS_TOKEN = Deno.env.get("TWITTER_ACCESS_TOKEN")?.trim();
 const TWITTER_ACCESS_TOKEN_SECRET = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET")?.trim();
 
+// Ticket milestones to track
+const TICKET_MILESTONES = [10, 25, 50, 100, 250, 500, 1000];
+
 function generateOAuthSignature(
   method: string,
   url: string,
@@ -73,6 +76,27 @@ async function sendTweet(message: string): Promise<any> {
   return JSON.parse(responseText);
 }
 
+async function createNotification(
+  supabase: any,
+  userId: string,
+  title: string,
+  message: string,
+  type: string,
+  referenceId?: string
+) {
+  const { error } = await supabase.from('notifications').insert({
+    user_id: userId,
+    title,
+    message,
+    type,
+    reference_id: referenceId || null,
+  });
+  
+  if (error) {
+    console.error("Failed to create notification:", error);
+  }
+}
+
 function generateLeaderboardMessage(contest: any, contestants: any[]): string {
   const top3 = contestants.slice(0, 3);
   let message = `🏆 ${contest.title} - Live Leaderboard!\n\n`;
@@ -80,9 +104,6 @@ function generateLeaderboardMessage(contest: any, contestants: any[]): string {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
     message += `${medal} ${c.name}: ${c.vote_count.toLocaleString()} votes\n`;
   });
-  const contestUrl = contest.custom_slug 
-    ? `https://your-domain.com/c/${contest.custom_slug}`
-    : `https://your-domain.com/contests/${contest.id}`;
   message += `\n🗳️ Vote now!`;
   return message;
 }
@@ -127,6 +148,60 @@ function calculateNextPostTime(interval: string): Date {
   }
 }
 
+async function checkTicketMilestones(supabase: any) {
+  console.log("Checking ticket milestones...");
+  
+  // Get all active events with their ticket types and total sold
+  const { data: events, error: eventsError } = await supabase
+    .from('events')
+    .select(`
+      id,
+      title,
+      organization_id,
+      ticket_types (
+        quantity_sold
+      )
+    `)
+    .eq('is_active', true);
+
+  if (eventsError) {
+    console.error("Error fetching events for milestones:", eventsError);
+    return;
+  }
+
+  for (const event of events || []) {
+    const totalSold = event.ticket_types?.reduce((sum: number, tt: any) => sum + (tt.quantity_sold || 0), 0) || 0;
+    
+    // Check if we've crossed a milestone
+    for (const milestone of TICKET_MILESTONES) {
+      if (totalSold >= milestone) {
+        // Check if we've already notified about this milestone
+        const { data: existingNotif } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', event.organization_id)
+          .eq('type', 'ticket_milestone')
+          .eq('reference_id', event.id)
+          .ilike('title', `%${milestone} tickets%`)
+          .limit(1);
+
+        if (!existingNotif?.length) {
+          await createNotification(
+            supabase,
+            event.organization_id,
+            `🎉 ${milestone} Tickets Sold!`,
+            `Congratulations! "${event.title}" has reached ${milestone} tickets sold!`,
+            'ticket_milestone',
+            event.id
+          );
+          console.log(`Created milestone notification for event ${event.id}: ${milestone} tickets`);
+          break; // Only notify for highest reached milestone that hasn't been notified
+        }
+      }
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -139,6 +214,9 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const results = [];
 
+    // Check ticket milestones
+    await checkTicketMilestones(supabase);
+
     // Process contest auto-posts
     const { data: contestPosts, error: contestFetchError } = await supabase
       .from('contest_auto_posts')
@@ -149,7 +227,8 @@ Deno.serve(async (req) => {
           title,
           custom_slug,
           is_active,
-          end_date
+          end_date,
+          organization_id
         )
       `)
       .eq('is_active', true)
@@ -215,6 +294,19 @@ Deno.serve(async (req) => {
 
       } catch (postError: any) {
         console.error(`Error posting for contest auto-post ${autoPost.id}:`, postError);
+        
+        // Create failure notification for the organization
+        if (autoPost.organization_id) {
+          await createNotification(
+            supabase,
+            autoPost.organization_id,
+            '⚠️ Auto-Post Failed',
+            `Failed to post to ${autoPost.platform} for contest "${autoPost.contests?.title || 'Unknown'}": ${postError.message}`,
+            'auto_post_failure',
+            autoPost.contest_id
+          );
+        }
+        
         results.push({
           type: 'contest',
           autoPostId: autoPost.id,
@@ -290,6 +382,19 @@ Deno.serve(async (req) => {
 
       } catch (postError: any) {
         console.error(`Error posting for event auto-post ${autoPost.id}:`, postError);
+        
+        // Create failure notification for the organization
+        if (autoPost.organization_id) {
+          await createNotification(
+            supabase,
+            autoPost.organization_id,
+            '⚠️ Auto-Post Failed',
+            `Failed to post to ${autoPost.platform} for event "${autoPost.events?.title || 'Unknown'}": ${postError.message}`,
+            'auto_post_failure',
+            autoPost.event_id
+          );
+        }
+        
         results.push({
           type: 'event',
           autoPostId: autoPost.id,
