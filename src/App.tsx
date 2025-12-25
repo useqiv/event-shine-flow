@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
+import { InfluencerTracker } from "@/components/InfluencerTracker";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -131,7 +132,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <InfluencerTracker>
+              <AppRoutes />
+            </InfluencerTracker>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
