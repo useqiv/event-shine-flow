@@ -192,10 +192,35 @@ async function processSuccessfulPayment(paymentData: any) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const meta = paymentData.meta || {};
-  const { user_id, type, contest_id, contestant_id, vote_quantity, event_id, ticket_type_id, ticket_quantity } = meta;
+  const {
+    user_id,
+    type,
+    contest_id,
+    contestant_id,
+    vote_quantity,
+    event_id,
+    ticket_type_id,
+    ticket_quantity,
+  } = meta;
   const customer = paymentData.customer || {};
 
   console.log("Payment meta:", JSON.stringify(meta));
+
+  const resolvePaymentMethod = (pd: any): "wallet" | "card" | "bank_transfer" | "usdt" => {
+    const allowed = new Set(["wallet", "card", "bank_transfer", "usdt"]);
+
+    const raw = String(pd?.payment_type || "").toLowerCase().trim();
+    if (allowed.has(raw)) return raw as any;
+
+    // Common Flutterwave values
+    if (raw.includes("bank") || raw.includes("transfer")) return "bank_transfer";
+    if (raw.includes("usdt") || String(pd?.currency || "").toUpperCase() === "USDT") return "usdt";
+
+    // Default to card to satisfy DB constraint
+    return "card";
+  };
+
+  const payment_method = resolvePaymentMethod(paymentData);
 
   // Update transaction status
   const { error: updateError } = await supabase
@@ -209,20 +234,20 @@ async function processSuccessfulPayment(paymentData: any) {
 
   if (type === "vote" && contest_id && contestant_id && user_id) {
     console.log("Recording vote...");
-    
+
     // Get contest and contestant details
     const { data: contest } = await supabase
       .from("contests")
       .select("title")
       .eq("id", contest_id)
       .single();
-    
+
     const { data: contestant } = await supabase
       .from("contestants")
       .select("name")
       .eq("id", contestant_id)
       .single();
-    
+
     // Record vote
     const { error: voteError } = await supabase.from("votes").insert({
       user_id,
@@ -230,7 +255,7 @@ async function processSuccessfulPayment(paymentData: any) {
       contestant_id,
       quantity: vote_quantity || 1,
       amount_paid: paymentData.amount,
-      payment_method: "flutterwave",
+      payment_method,
     });
 
     if (voteError) {
@@ -246,7 +271,7 @@ async function processSuccessfulPayment(paymentData: any) {
         type: "vote",
         reference_id: contest_id,
       });
-      
+
       // Send email receipt
       await sendReceipt({
         type: "vote",
@@ -255,7 +280,7 @@ async function processSuccessfulPayment(paymentData: any) {
         amount: paymentData.amount,
         currency: paymentData.currency || "NGN",
         quantity: vote_quantity || 1,
-        payment_method: "Flutterwave",
+        payment_method: `Flutterwave (${payment_method.replace(/_/g, " ")})`,
         transaction_ref: paymentData.tx_ref,
         contest_title: contest?.title || "Contest",
         contestant_name: contestant?.name || "Contestant",
@@ -263,20 +288,20 @@ async function processSuccessfulPayment(paymentData: any) {
     }
   } else if (type === "ticket" && event_id && ticket_type_id && user_id) {
     console.log("Recording ticket purchase...");
-    
+
     // Get event and ticket type details
     const { data: event } = await supabase
       .from("events")
       .select("title, event_date, venue")
       .eq("id", event_id)
       .single();
-    
+
     const { data: ticketType } = await supabase
       .from("ticket_types")
       .select("name")
       .eq("id", ticket_type_id)
       .single();
-    
+
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -287,7 +312,7 @@ async function processSuccessfulPayment(paymentData: any) {
       ticket_type_id,
       quantity: ticket_quantity || 1,
       amount_paid: paymentData.amount,
-      payment_method: "flutterwave",
+      payment_method,
       qr_code,
       status: "active",
     });
@@ -305,7 +330,7 @@ async function processSuccessfulPayment(paymentData: any) {
         type: "ticket",
         reference_id: event_id,
       });
-      
+
       // Send email receipt with QR code
       await sendReceipt({
         type: "ticket",
@@ -314,17 +339,19 @@ async function processSuccessfulPayment(paymentData: any) {
         amount: paymentData.amount,
         currency: paymentData.currency || "NGN",
         quantity: ticket_quantity || 1,
-        payment_method: "Flutterwave",
+        payment_method: `Flutterwave (${payment_method.replace(/_/g, " ")})`,
         transaction_ref: paymentData.tx_ref,
         event_title: event?.title || "Event",
-        event_date: event?.event_date ? new Date(event.event_date).toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : "TBA",
+        event_date: event?.event_date
+          ? new Date(event.event_date).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "TBA",
         event_venue: event?.venue || "Venue TBA",
         ticket_type: ticketType?.name || "General",
         qr_code,
