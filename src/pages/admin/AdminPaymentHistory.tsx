@@ -11,6 +11,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import { CalendarIcon, Download, Search, Filter, CreditCard, Wallet } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,9 @@ interface PaymentTransaction {
 }
 
 const AdminPaymentHistory = () => {
+  // Enable real-time payment updates
+  useRealtimePayments();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [methodFilter, setMethodFilter] = useState<string>('all');

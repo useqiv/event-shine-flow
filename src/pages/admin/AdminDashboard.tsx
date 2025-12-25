@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAdminStatistics } from '@/hooks/useAdminData';
+import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
 import { 
   Users, 
@@ -95,6 +96,9 @@ const AlertCard = ({
 
 const AdminDashboard: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
+  
+  // Enable real-time payment notifications
+  useRealtimePayments();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
