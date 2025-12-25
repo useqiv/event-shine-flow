@@ -2,12 +2,20 @@ import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useMyVotes } from '@/hooks/useContests';
-import { Vote, Trophy } from 'lucide-react';
-import { format } from 'date-fns';
+import RefundRequestDialog from '@/components/RefundRequestDialog';
+import { Vote, Trophy, RotateCcw } from 'lucide-react';
+import { format, isAfter } from 'date-fns';
 
 const MyVotes = () => {
   const { data: votes, isLoading } = useMyVotes();
+
+  // Only show refund button for votes on active contests (contest hasn't ended)
+  const canRequestRefund = (vote: any) => {
+    if (!vote.contest?.end_date) return false;
+    return isAfter(new Date(vote.contest.end_date), new Date());
+  };
 
   return (
     <DashboardLayout>
@@ -20,18 +28,35 @@ const MyVotes = () => {
           <div className="space-y-4">
             {votes.map((vote: any) => (
               <Card key={vote.id}>
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Vote className="h-6 w-6 text-primary" />
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Vote className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold">Voted for {vote.contestant?.name}</p>
+                      <p className="text-sm text-muted-foreground">{vote.contest?.title} • {vote.quantity} vote(s)</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">₦{vote.amount_paid.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">Voted for {vote.contestant?.name}</p>
-                    <p className="text-sm text-muted-foreground">{vote.contest?.title} • {vote.quantity} vote(s)</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">₦{vote.amount_paid.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
-                  </div>
+                  {canRequestRefund(vote) && (
+                    <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                      <RefundRequestDialog
+                        transactionType="vote"
+                        transactionId={vote.id}
+                        amount={Number(vote.amount_paid)}
+                        itemName={`Vote for ${vote.contestant?.name} in ${vote.contest?.title}`}
+                      >
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Request Refund
+                        </Button>
+                      </RefundRequestDialog>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
