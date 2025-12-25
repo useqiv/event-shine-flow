@@ -15,8 +15,11 @@ const TWITTER_API_SECRET = Deno.env.get("TWITTER_CONSUMER_SECRET")?.trim();
 const TWITTER_ACCESS_TOKEN = Deno.env.get("TWITTER_ACCESS_TOKEN")?.trim();
 const TWITTER_ACCESS_TOKEN_SECRET = Deno.env.get("TWITTER_ACCESS_TOKEN_SECRET")?.trim();
 
-// Ticket milestones to track
+// Ticket milestones to track (absolute numbers)
 const TICKET_MILESTONES = [10, 25, 50, 100, 250, 500, 1000];
+
+// Percentage milestones to track
+const PERCENTAGE_MILESTONES = [50, 75, 90, 100];
 
 function generateOAuthSignature(
   method: string,
@@ -151,7 +154,7 @@ function calculateNextPostTime(interval: string): Date {
 async function checkTicketMilestones(supabase: any) {
   console.log("Checking ticket milestones...");
   
-  // Get all active events with their ticket types and total sold
+  // Get all active events with their ticket types
   const { data: events, error: eventsError } = await supabase
     .from('events')
     .select(`
@@ -159,7 +162,8 @@ async function checkTicketMilestones(supabase: any) {
       title,
       organization_id,
       ticket_types (
-        quantity_sold
+        quantity_sold,
+        quantity_available
       )
     `)
     .eq('is_active', true);
@@ -171,18 +175,19 @@ async function checkTicketMilestones(supabase: any) {
 
   for (const event of events || []) {
     const totalSold = event.ticket_types?.reduce((sum: number, tt: any) => sum + (tt.quantity_sold || 0), 0) || 0;
+    const totalAvailable = event.ticket_types?.reduce((sum: number, tt: any) => sum + (tt.quantity_available || 0), 0) || 0;
+    const percentageSold = totalAvailable > 0 ? Math.floor((totalSold / totalAvailable) * 100) : 0;
     
-    // Check if we've crossed a milestone
+    // Check absolute number milestones
     for (const milestone of TICKET_MILESTONES) {
       if (totalSold >= milestone) {
-        // Check if we've already notified about this milestone
         const { data: existingNotif } = await supabase
           .from('notifications')
           .select('id')
           .eq('user_id', event.organization_id)
           .eq('type', 'ticket_milestone')
           .eq('reference_id', event.id)
-          .ilike('title', `%${milestone} tickets%`)
+          .ilike('title', `%${milestone} Tickets%`)
           .limit(1);
 
         if (!existingNotif?.length) {
@@ -195,7 +200,40 @@ async function checkTicketMilestones(supabase: any) {
             event.id
           );
           console.log(`Created milestone notification for event ${event.id}: ${milestone} tickets`);
-          break; // Only notify for highest reached milestone that hasn't been notified
+          break;
+        }
+      }
+    }
+    
+    // Check percentage milestones (75%, 90%, 100% sold out)
+    for (const pctMilestone of PERCENTAGE_MILESTONES) {
+      if (percentageSold >= pctMilestone) {
+        const milestoneLabel = pctMilestone === 100 ? 'SOLD OUT' : `${pctMilestone}% Sold`;
+        const { data: existingPctNotif } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', event.organization_id)
+          .eq('type', 'ticket_milestone')
+          .eq('reference_id', event.id)
+          .ilike('title', `%${milestoneLabel}%`)
+          .limit(1);
+
+        if (!existingPctNotif?.length) {
+          const emoji = pctMilestone === 100 ? '🔥' : pctMilestone >= 90 ? '🚀' : '📈';
+          const message = pctMilestone === 100 
+            ? `"${event.title}" is completely SOLD OUT! All ${totalSold} tickets have been sold!`
+            : `"${event.title}" has reached ${pctMilestone}% capacity! ${totalSold} of ${totalAvailable} tickets sold.`;
+          
+          await createNotification(
+            supabase,
+            event.organization_id,
+            `${emoji} ${milestoneLabel}!`,
+            message,
+            'ticket_milestone',
+            event.id
+          );
+          console.log(`Created percentage milestone notification for event ${event.id}: ${pctMilestone}%`);
+          break;
         }
       }
     }

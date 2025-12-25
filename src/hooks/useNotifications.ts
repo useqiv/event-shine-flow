@@ -7,7 +7,7 @@ export interface Notification {
   user_id: string;
   title: string;
   message: string;
-  type: 'vote' | 'ticket' | 'wallet' | 'system' | 'promotion';
+  type: string;
   is_read: boolean;
   reference_id: string | null;
   created_at: string;
