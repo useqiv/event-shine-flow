@@ -65,14 +65,14 @@ const AdminSettings: React.FC = () => {
   const validateFlutterwaveKeys = (): boolean => {
     const errors: Record<string, string> = {};
     
-    // Public key validation - should start with FLWPUBK or FLWPUBK_TEST
-    if (flutterwaveForm.public_key && !/^FLWPUBK[_-]?[A-Za-z0-9]+$/i.test(flutterwaveForm.public_key)) {
-      errors.public_key = 'Invalid format. Should start with FLWPUBK (e.g., FLWPUBK-xxxxxxxx-X)';
+    // Public key validation - should start with FLWPUBK (live: FLWPUBK-xxx-X, test: FLWPUBK_TEST-xxx-X)
+    if (flutterwaveForm.public_key && !/^FLWPUBK[_A-Za-z0-9-]+$/i.test(flutterwaveForm.public_key)) {
+      errors.public_key = 'Invalid format. Should start with FLWPUBK';
     }
     
-    // Secret key validation - should start with FLWSECK or FLWSECK_TEST
-    if (flutterwaveForm.secret_key && !/^FLWSECK[_-]?[A-Za-z0-9]+$/i.test(flutterwaveForm.secret_key)) {
-      errors.secret_key = 'Invalid format. Should start with FLWSECK (e.g., FLWSECK-xxxxxxxx-X)';
+    // Secret key validation - should start with FLWSECK (live: FLWSECK-xxx-X, test: FLWSECK_TEST-xxx-X)
+    if (flutterwaveForm.secret_key && !/^FLWSECK[_A-Za-z0-9-]+$/i.test(flutterwaveForm.secret_key)) {
+      errors.secret_key = 'Invalid format. Should start with FLWSECK';
     }
     
     setFlutterwaveErrors(errors);
