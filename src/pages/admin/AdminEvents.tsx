@@ -33,9 +33,9 @@ const AdminEvents: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredEvents = events?.filter(event => 
-    event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    (event.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (event.venue?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (event.category?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   ) || [];
 
   const toggleEventStatus = async (eventId: string, currentStatus: boolean) => {
@@ -54,12 +54,12 @@ const AdminEvents: React.FC = () => {
 
   const getStatusBadge = (event: any) => {
     const now = new Date();
-    const eventDate = new Date(event.event_date);
+    const eventDate = event.event_date ? new Date(event.event_date) : null;
 
     if (!event.is_active) {
       return <Badge variant="secondary">Paused</Badge>;
     }
-    if (now > eventDate) {
+    if (eventDate && now > eventDate) {
       return <Badge variant="secondary">Past</Badge>;
     }
     return <Badge className="bg-green-500">Active</Badge>;
@@ -187,7 +187,7 @@ const AdminEvents: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>{event.tickets?.[0]?.count || 0}</TableCell>
-                      <TableCell>{format(new Date(event.event_date), 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'TBD'}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
