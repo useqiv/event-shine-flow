@@ -30,7 +30,8 @@ import {
   BarChart3,
   Bell,
   PieChart,
-  RotateCcw
+  RotateCcw,
+  GitCompare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +60,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
+    { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
   ];
 
   const bottomNavItems = [
