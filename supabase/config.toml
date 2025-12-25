@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.verify-crypto-payment]
 verify_jwt = true
+
+[functions.send-payment-receipt]
+verify_jwt = true
