@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,12 +12,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
+import { SortableContestantCard } from '@/components/org/SortableContestantCard';
 import { useContest, useContestants } from '@/hooks/useContests';
-import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant } from '@/hooks/useOrganization';
+import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent 
+} from '@dnd-kit/core';
+import { 
+  arrayMove, 
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  verticalListSortingStrategy 
+} from '@dnd-kit/sortable';
 import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -37,6 +54,8 @@ const ContestManagement = () => {
   const createContestant = useCreateContestant();
   const updateContestant = useUpdateContestant();
   const deleteContestant = useDeleteContestant();
+  const bulkDeleteContestants = useBulkDeleteContestants();
+  const reorderContestants = useReorderContestants();
 
   // Enable real-time updates
   useRealtimeContestants(id || '');
@@ -45,16 +64,30 @@ const ContestManagement = () => {
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [isEditContestantOpen, setIsEditContestantOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [contestantToDelete, setContestantToDelete] = useState<any>(null);
   const [editingContestant, setEditingContestant] = useState<any>(null);
   const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [selectedContestants, setSelectedContestants] = useState<Set<string>>(new Set());
   const [newContestant, setNewContestant] = useState({
     name: '',
     bio: '',
     photo_url: '',
     performance: '',
   });
+
+  // Sort contestants by display_order for drag and drop
+  const sortedContestants = useMemo(() => {
+    if (!contestants) return [];
+    return [...contestants].sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+  }, [contestants]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // Edit contest form state
   const [editForm, setEditForm] = useState({
@@ -131,9 +164,64 @@ const ContestManagement = () => {
       await deleteContestant.mutateAsync(contestantToDelete.id);
       setIsDeleteDialogOpen(false);
       setContestantToDelete(null);
+      setSelectedContestants(prev => {
+        const next = new Set(prev);
+        next.delete(contestantToDelete.id);
+        return next;
+      });
     } catch (error) {
       console.error('Failed to delete contestant:', error);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedContestants.size === 0) return;
+    try {
+      await bulkDeleteContestants.mutateAsync(Array.from(selectedContestants));
+      setIsBulkDeleteDialogOpen(false);
+      setSelectedContestants(new Set());
+    } catch (error) {
+      console.error('Failed to bulk delete contestants:', error);
+    }
+  };
+
+  const handleSelectContestant = (id: string, selected: boolean) => {
+    setSelectedContestants(prev => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && sortedContestants) {
+      setSelectedContestants(new Set(sortedContestants.map((c: any) => c.id)));
+    } else {
+      setSelectedContestants(new Set());
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sortedContestants.findIndex((c: any) => c.id === active.id);
+    const newIndex = sortedContestants.findIndex((c: any) => c.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrder = arrayMove(sortedContestants, oldIndex, newIndex);
+    const updates = newOrder.map((contestant: any, index: number) => ({
+      id: contestant.id,
+      display_order: index + 1,
+    }));
+
+    await reorderContestants.mutateAsync(updates);
   };
 
   const handleCSVImport = async (data: ContestantCSVRow[]) => {
@@ -365,8 +453,29 @@ const ContestManagement = () => {
 
           <TabsContent value="contestants" className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-lg font-semibold">Contestants ({contestants?.length || 0})</h2>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold">Contestants ({contestants?.length || 0})</h2>
+                {sortedContestants.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedContestants.size === sortedContestants.length && sortedContestants.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <span className="text-sm text-muted-foreground">Select all</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {selectedContestants.size > 0 && (
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => setIsBulkDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete ({selectedContestants.size})
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Import CSV
@@ -435,74 +544,27 @@ const ContestManagement = () => {
                   <Skeleton key={i} className="h-48" />
                 ))}
               </div>
-            ) : contestants && contestants.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {contestants.map((contestant: any) => (
-                  <Card key={contestant.id}>
-                    <CardContent className="p-4">
-                      <div className="flex gap-4">
-                        <div className="h-16 w-16 rounded-lg bg-secondary overflow-hidden flex-shrink-0 relative group">
-                          {contestant.photo_url ? (
-                            <img src={contestant.photo_url} alt={contestant.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center">
-                              <Users className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          )}
-                          <button
-                            onClick={() => handleEditContestant(contestant)}
-                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Camera className="h-5 w-5 text-white" />
-                          </button>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-1">
-                            <h3 className="font-semibold">{contestant.name}</h3>
-                            <div className="flex gap-0.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => handleEditContestant(contestant)}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-destructive hover:text-destructive"
-                                onClick={() => {
-                                  setContestantToDelete(contestant);
-                                  setIsDeleteDialogOpen(true);
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{contestant.bio}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Vote className="h-4 w-4 text-primary" />
-                            <span className="font-medium">{contestant.vote_count.toLocaleString()} votes</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full text-xs"
-                          onClick={() => handleCopyContestantLink(contestant.id, contestant.name)}
-                        >
-                          <LinkIcon className="h-3 w-3 mr-2" />
-                          Copy Voting Link
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            ) : sortedContestants.length > 0 ? (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortedContestants.map((c: any) => c.id)} strategy={verticalListSortingStrategy}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sortedContestants.map((contestant: any) => (
+                      <SortableContestantCard
+                        key={contestant.id}
+                        contestant={contestant}
+                        isSelected={selectedContestants.has(contestant.id)}
+                        onSelect={handleSelectContestant}
+                        onEdit={handleEditContestant}
+                        onDelete={(c) => {
+                          setContestantToDelete(c);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        onCopyLink={handleCopyContestantLink}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center">
@@ -731,6 +793,28 @@ const ContestManagement = () => {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {deleteContestant.isPending ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {selectedContestants.size} Contestant(s)</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {selectedContestants.size} contestant(s)? 
+                This action cannot be undone. All votes for these contestants will also be removed.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {bulkDeleteContestants.isPending ? 'Deleting...' : `Delete ${selectedContestants.size} Contestant(s)`}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
