@@ -242,7 +242,11 @@ async function processSuccessfulPayment(paymentData: any) {
   } = meta;
   const customer = paymentData.customer || {};
 
+  // Flutterwave transaction id – used for idempotency
+  const flw_transaction_id = String(paymentData.id || "");
+
   console.log("Payment meta:", JSON.stringify(meta));
+  console.log("Flutterwave transaction id:", flw_transaction_id);
 
   const resolvePaymentMethod = (pd: any): "wallet" | "card" | "bank_transfer" | "usdt" => {
     const allowed = new Set(["wallet", "card", "bank_transfer", "usdt"]);
@@ -286,7 +290,7 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", contestant_id)
       .single();
 
-    // Record vote
+    // Record vote – use transaction_id for idempotency (unique index prevents duplicates)
     const { error: voteError } = await supabase.from("votes").insert({
       user_id,
       contest_id,
@@ -294,12 +298,19 @@ async function processSuccessfulPayment(paymentData: any) {
       quantity: vote_quantity || 1,
       amount_paid: paymentData.amount,
       payment_method,
+      transaction_id: flw_transaction_id || null,
     });
 
     if (voteError) {
-      console.error("Error recording vote:", voteError.message);
-      // Alert admins about the failure
-      await notifyAdminsOfFailure(supabase, "vote", voteError.message, paymentData, meta);
+      // Check if duplicate (unique constraint violation)
+      const isDuplicate = voteError.message.includes("duplicate") || voteError.code === "23505";
+      if (isDuplicate) {
+        console.log("Vote already recorded for this transaction (idempotency check)");
+      } else {
+        console.error("Error recording vote:", voteError.message);
+        // Alert admins about the failure
+        await notifyAdminsOfFailure(supabase, "vote", voteError.message, paymentData, meta);
+      }
     } else {
       console.log("Vote recorded successfully");
 
@@ -345,7 +356,7 @@ async function processSuccessfulPayment(paymentData: any) {
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Record ticket purchase
+    // Record ticket purchase – use transaction_id for idempotency
     const { error: ticketError } = await supabase.from("tickets").insert({
       user_id,
       event_id,
@@ -355,12 +366,19 @@ async function processSuccessfulPayment(paymentData: any) {
       payment_method,
       qr_code,
       status: "active",
+      transaction_id: flw_transaction_id || null,
     });
 
     if (ticketError) {
-      console.error("Error recording ticket:", ticketError.message);
-      // Alert admins about the failure
-      await notifyAdminsOfFailure(supabase, "ticket", ticketError.message, paymentData, meta);
+      // Check if duplicate (unique constraint violation)
+      const isDuplicate = ticketError.message.includes("duplicate") || ticketError.code === "23505";
+      if (isDuplicate) {
+        console.log("Ticket already recorded for this transaction (idempotency check)");
+      } else {
+        console.error("Error recording ticket:", ticketError.message);
+        // Alert admins about the failure
+        await notifyAdminsOfFailure(supabase, "ticket", ticketError.message, paymentData, meta);
+      }
     } else {
       console.log("Ticket recorded successfully");
 
