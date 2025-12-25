@@ -7,15 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -28,22 +31,36 @@ const AdminSettings: React.FC = () => {
     test_mode?: boolean;
   } | null>(null);
 
+  // Date range state for transaction filter
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+
   const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || '';
 
   const handleUpdate = async (key: string, value: string) => {
     await updateSetting.mutateAsync({ key, value });
   };
 
-  // Fetch recent transactions
+  // Fetch transactions with date filter
   const { data: recentTransactions, isLoading: loadingTransactions, refetch: refetchTransactions } = useQuery({
-    queryKey: ['admin-recent-transactions'],
+    queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('wallet_transactions')
         .select('*, wallets(user_id, profiles:user_id(full_name, email))')
-        .in('type', ['vote_purchase', 'ticket_purchase', 'deposit'])
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .in('type', ['vote_purchase', 'ticket_purchase', 'deposit', 'refund'])
+        .order('created_at', { ascending: false });
+
+      if (dateRange.from) {
+        query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
+      }
+      if (dateRange.to) {
+        query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
+      }
+
+      const { data, error } = await query.limit(100);
       
       if (error) throw error;
       return data;
@@ -441,48 +458,141 @@ const AdminSettings: React.FC = () => {
             {/* Recent Transaction Logs */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Recent Transactions</CardTitle>
-                    <CardDescription>Latest payment transactions across the platform</CardDescription>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" /> Transaction Logs</CardTitle>
+                      <CardDescription>Payment transactions filtered by date range</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          if (!recentTransactions || recentTransactions.length === 0) {
+                            toast.error('No transactions to export');
+                            return;
+                          }
+                          const exportData = recentTransactions.map((tx: any) => ({
+                            date: formatDateForExport(tx.created_at),
+                            user_name: tx.wallets?.profiles?.full_name || 'Unknown',
+                            user_email: tx.wallets?.profiles?.email || '',
+                            type: tx.type.replace('_', ' '),
+                            amount: formatCurrencyForExport(tx.amount),
+                            status: tx.status,
+                            reference: tx.reference_id || '',
+                            description: tx.description || '',
+                          }));
+                          exportToCsv(exportData, `transactions-export-${format(new Date(), 'yyyy-MM-dd')}`, [
+                            { key: 'date', label: 'Date' },
+                            { key: 'user_name', label: 'User Name' },
+                            { key: 'user_email', label: 'Email' },
+                            { key: 'type', label: 'Type' },
+                            { key: 'amount', label: 'Amount (NGN)' },
+                            { key: 'status', label: 'Status' },
+                            { key: 'reference', label: 'Reference' },
+                            { key: 'description', label: 'Description' },
+                          ]);
+                          toast.success('Transactions exported to CSV');
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" /> Export CSV
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => refetchTransactions()}>
+                        <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => {
-                        if (!recentTransactions || recentTransactions.length === 0) {
-                          toast.error('No transactions to export');
-                          return;
-                        }
-                        const exportData = recentTransactions.map((tx: any) => ({
-                          date: formatDateForExport(tx.created_at),
-                          user_name: tx.wallets?.profiles?.full_name || 'Unknown',
-                          user_email: tx.wallets?.profiles?.email || '',
-                          type: tx.type.replace('_', ' '),
-                          amount: formatCurrencyForExport(tx.amount),
-                          status: tx.status,
-                          reference: tx.reference_id || '',
-                          description: tx.description || '',
-                        }));
-                        exportToCsv(exportData, `transactions-export-${format(new Date(), 'yyyy-MM-dd')}`, [
-                          { key: 'date', label: 'Date' },
-                          { key: 'user_name', label: 'User Name' },
-                          { key: 'user_email', label: 'Email' },
-                          { key: 'type', label: 'Type' },
-                          { key: 'amount', label: 'Amount (NGN)' },
-                          { key: 'status', label: 'Status' },
-                          { key: 'reference', label: 'Reference' },
-                          { key: 'description', label: 'Description' },
-                        ]);
-                        toast.success('Transactions exported to CSV');
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" /> Export CSV
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => refetchTransactions()}>
-                      <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-                    </Button>
+
+                  {/* Date Range Filter */}
+                  <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium">Filter by date:</span>
+                    <div className="flex items-center gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "w-[140px] justify-start text-left font-normal",
+                              !dateRange.from && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "From"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.from}
+                            onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <span className="text-muted-foreground">to</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "w-[140px] justify-start text-left font-normal",
+                              !dateRange.to && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "To"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.to}
+                            onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
+                      >
+                        7d
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
+                      >
+                        30d
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
+                      >
+                        90d
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDateRange({ from: undefined, to: undefined })}
+                      >
+                        All
+                      </Button>
+                    </div>
+                    {recentTransactions && (
+                      <Badge variant="secondary" className="ml-auto">
+                        {recentTransactions.length} transactions
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
