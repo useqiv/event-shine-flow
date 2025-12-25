@@ -20,6 +20,7 @@ import { SortableContestantCard } from '@/components/org/SortableContestantCard'
 import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
+import { SocialPostingCard } from '@/components/org/SocialPostingCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
@@ -1084,6 +1085,24 @@ const ContestManagement = () => {
               onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
               contestId={id}
             />
+
+            {/* Social Media Posting */}
+            {contestants && contestants.length > 0 && (
+              <SocialPostingCard
+                contest={{
+                  id: contest.id,
+                  title: contest.title,
+                  custom_slug: editForm.custom_slug || null,
+                  brand_primary_color: editForm.brand_primary_color,
+                }}
+                contestants={contestants.map((c: any) => ({
+                  id: c.id,
+                  name: c.name,
+                  vote_count: c.vote_count,
+                  photo_url: c.photo_url,
+                }))}
+              />
+            )}
 
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
