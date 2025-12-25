@@ -209,6 +209,12 @@ const EventManagement = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Link to={`/org/events/${id}/scan`}>
+              <Button variant="outline">
+                <QrCode className="mr-2 h-4 w-4" />
+                Check-in Scanner
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleCopyLink}>
               <Copy className="mr-2 h-4 w-4" />
               Copy Link

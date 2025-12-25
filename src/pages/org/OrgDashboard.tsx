@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts } from '@/hooks/useOrganization';
+import RevenueChart from '@/components/org/RevenueChart';
 import { 
   Wallet, 
   Trophy, 
@@ -195,6 +196,9 @@ const OrgDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Revenue Trends Chart */}
+        <RevenueChart />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Contests */}
