@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 const AdminSettings: React.FC = () => {
@@ -37,20 +38,27 @@ const AdminSettings: React.FC = () => {
     to: new Date(),
   });
 
+  // Transaction type filter
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string>('all');
+
   const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || '';
 
   const handleUpdate = async (key: string, value: string) => {
     await updateSetting.mutateAsync({ key, value });
   };
 
-  // Fetch transactions with date filter
+  // Fetch transactions with date and type filter
   const { data: recentTransactions, isLoading: loadingTransactions, refetch: refetchTransactions } = useQuery({
-    queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to],
+    queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to, transactionTypeFilter],
     queryFn: async () => {
+      const types = transactionTypeFilter === 'all' 
+        ? ['vote_purchase', 'ticket_purchase', 'deposit', 'refund']
+        : [transactionTypeFilter];
+
       let query = supabase
         .from('wallet_transactions')
         .select('*, wallets(user_id, profiles:user_id(full_name, email))')
-        .in('type', ['vote_purchase', 'ticket_purchase', 'deposit', 'refund'])
+        .in('type', types)
         .order('created_at', { ascending: false });
 
       if (dateRange.from) {
@@ -66,6 +74,39 @@ const AdminSettings: React.FC = () => {
       return data;
     },
   });
+
+  // Calculate transaction statistics
+  const transactionStats = React.useMemo(() => {
+    if (!recentTransactions || recentTransactions.length === 0) {
+      return {
+        totalAmount: 0,
+        averageAmount: 0,
+        count: 0,
+        byType: {} as Record<string, { count: number; amount: number }>,
+      };
+    }
+
+    const byType: Record<string, { count: number; amount: number }> = {};
+    let totalAmount = 0;
+
+    recentTransactions.forEach((tx: any) => {
+      const amount = Number(tx.amount) || 0;
+      totalAmount += amount;
+      
+      if (!byType[tx.type]) {
+        byType[tx.type] = { count: 0, amount: 0 };
+      }
+      byType[tx.type].count++;
+      byType[tx.type].amount += amount;
+    });
+
+    return {
+      totalAmount,
+      averageAmount: totalAmount / recentTransactions.length,
+      count: recentTransactions.length,
+      byType,
+    };
+  }, [recentTransactions]);
 
   const testFlutterwaveConnection = async () => {
     setIsTestingConnection(true);
@@ -504,9 +545,25 @@ const AdminSettings: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Date Range Filter */}
+                  {/* Filters Row */}
                   <div className="flex flex-wrap items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm font-medium">Filter by date:</span>
+                    <span className="text-sm font-medium">Filters:</span>
+                    
+                    {/* Type Filter */}
+                    <Select value={transactionTypeFilter} onValueChange={setTransactionTypeFilter}>
+                      <SelectTrigger className="w-[160px] h-9">
+                        <SelectValue placeholder="All Types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="vote_purchase">Vote Purchases</SelectItem>
+                        <SelectItem value="ticket_purchase">Ticket Purchases</SelectItem>
+                        <SelectItem value="deposit">Deposits</SelectItem>
+                        <SelectItem value="refund">Refunds</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {/* Date Range */}
                     <div className="flex items-center gap-2">
                       <Popover>
                         <PopoverTrigger asChild>
@@ -514,12 +571,12 @@ const AdminSettings: React.FC = () => {
                             variant="outline"
                             size="sm"
                             className={cn(
-                              "w-[140px] justify-start text-left font-normal",
+                              "w-[130px] justify-start text-left font-normal",
                               !dateRange.from && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateRange.from ? format(dateRange.from, "MMM d, yyyy") : "From"}
+                            {dateRange.from ? format(dateRange.from, "MMM d, yy") : "From"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -532,19 +589,19 @@ const AdminSettings: React.FC = () => {
                           />
                         </PopoverContent>
                       </Popover>
-                      <span className="text-muted-foreground">to</span>
+                      <span className="text-muted-foreground">-</span>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
                             size="sm"
                             className={cn(
-                              "w-[140px] justify-start text-left font-normal",
+                              "w-[130px] justify-start text-left font-normal",
                               !dateRange.to && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateRange.to ? format(dateRange.to, "MMM d, yyyy") : "To"}
+                            {dateRange.to ? format(dateRange.to, "MMM d, yy") : "To"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -558,6 +615,8 @@ const AdminSettings: React.FC = () => {
                         </PopoverContent>
                       </Popover>
                     </div>
+                    
+                    {/* Quick Date Buttons */}
                     <div className="flex gap-1">
                       <Button 
                         variant="ghost" 
@@ -580,20 +639,52 @@ const AdminSettings: React.FC = () => {
                       >
                         90d
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setDateRange({ from: undefined, to: undefined })}
-                      >
-                        All
-                      </Button>
                     </div>
-                    {recentTransactions && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {recentTransactions.length} transactions
-                      </Badge>
-                    )}
                   </div>
+
+                  {/* Summary Statistics */}
+                  {!loadingTransactions && recentTransactions && recentTransactions.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 bg-primary/5 rounded-lg border">
+                        <div className="flex items-center gap-2 text-primary">
+                          <DollarSign className="h-4 w-4" />
+                          <span className="text-xs font-medium">Total Amount</span>
+                        </div>
+                        <p className="text-lg font-bold mt-1">₦{transactionStats.totalAmount.toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <TrendingUp className="h-4 w-4" />
+                          <span className="text-xs font-medium">Avg. Transaction</span>
+                        </div>
+                        <p className="text-lg font-bold mt-1">₦{Math.round(transactionStats.averageAmount).toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <ShoppingCart className="h-4 w-4" />
+                          <span className="text-xs font-medium">Votes</span>
+                        </div>
+                        <p className="text-lg font-bold mt-1">
+                          {transactionStats.byType['vote_purchase']?.count || 0}
+                          <span className="text-xs font-normal text-muted-foreground ml-1">
+                            (₦{(transactionStats.byType['vote_purchase']?.amount || 0).toLocaleString()})
+                          </span>
+                        </p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg border">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Ticket className="h-4 w-4" />
+                          <span className="text-xs font-medium">Tickets</span>
+                        </div>
+                        <p className="text-lg font-bold mt-1">
+                          {transactionStats.byType['ticket_purchase']?.count || 0}
+                          <span className="text-xs font-normal text-muted-foreground ml-1">
+                            (₦{(transactionStats.byType['ticket_purchase']?.amount || 0).toLocaleString()})
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
