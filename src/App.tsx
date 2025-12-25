@@ -42,6 +42,18 @@ import Support from "./pages/org/Support";
 import OrgSettings from "./pages/org/OrgSettings";
 import OrgNotifications from "./pages/org/OrgNotifications";
 
+// Admin Dashboard Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOrganizations from "./pages/admin/AdminOrganizations";
+import AdminContests from "./pages/admin/AdminContests";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminPayouts from "./pages/admin/AdminPayouts";
+import AdminFinance from "./pages/admin/AdminFinance";
+import AdminFraud from "./pages/admin/AdminFraud";
+import AdminModeration from "./pages/admin/AdminModeration";
+import AdminSettings from "./pages/admin/AdminSettings";
+
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -58,19 +70,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
   
-  // Redirect to account setup if not completed (except if already on that page)
   if (profile && !profile.account_type_selected && location.pathname !== "/account-setup") {
     return <Navigate to="/account-setup" replace />;
   }
 
-  // Redirect organization users to org dashboard if they try to access regular dashboard
   const isOrganization = role === 'organization';
+  const isAdmin = role === 'admin';
+  
   if (isOrganization && location.pathname === '/dashboard') {
     return <Navigate to="/org/dashboard" replace />;
   }
+  
+  if (isAdmin && location.pathname === '/dashboard') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
-  // Redirect regular users away from org routes
-  if (!isOrganization && location.pathname.startsWith('/org/')) {
+  if (!isOrganization && !isAdmin && location.pathname.startsWith('/org/')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  if (!isAdmin && location.pathname.startsWith('/admin/')) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -87,6 +106,8 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (user) {
     const isOrganization = role === 'organization';
+    const isAdmin = role === 'admin';
+    if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
     return <Navigate to={isOrganization ? "/org/dashboard" : "/dashboard"} replace />;
   }
   
@@ -127,6 +148,18 @@ const AppRoutes = () => (
     <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
     <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
     <Route path="/org/notifications" element={<ProtectedRoute><OrgNotifications /></ProtectedRoute>} />
+    
+    {/* Admin Dashboard Routes */}
+    <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+    <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
+    <Route path="/admin/organizations" element={<ProtectedRoute><AdminOrganizations /></ProtectedRoute>} />
+    <Route path="/admin/contests" element={<ProtectedRoute><AdminContests /></ProtectedRoute>} />
+    <Route path="/admin/events" element={<ProtectedRoute><AdminEvents /></ProtectedRoute>} />
+    <Route path="/admin/payouts" element={<ProtectedRoute><AdminPayouts /></ProtectedRoute>} />
+    <Route path="/admin/finance" element={<ProtectedRoute><AdminFinance /></ProtectedRoute>} />
+    <Route path="/admin/fraud" element={<ProtectedRoute><AdminFraud /></ProtectedRoute>} />
+    <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
+    <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
     
     <Route path="*" element={<NotFound />} />
   </Routes>
