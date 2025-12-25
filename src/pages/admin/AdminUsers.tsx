@@ -29,9 +29,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { useAllUsers, useSuspendUser, useActivateUser } from '@/hooks/useAdminData';
-import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle } from 'lucide-react';
+import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import EditUserDialog from '@/components/admin/EditUserDialog';
 
 const AdminUsers: React.FC = () => {
   const { data: users, isLoading } = useAllUsers();
@@ -43,6 +44,7 @@ const AdminUsers: React.FC = () => {
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [suspendReason, setSuspendReason] = useState('');
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const filteredUsers = users?.filter(user => 
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -210,6 +212,13 @@ const AdminUsers: React.FC = () => {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user);
+                              setEditDialogOpen(true);
+                            }}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit User
+                            </DropdownMenuItem>
                             {user.is_suspended ? (
                               <DropdownMenuItem onClick={() => handleActivate(user.id)}>
                                 <UserCheck className="mr-2 h-4 w-4" />
@@ -349,6 +358,13 @@ const AdminUsers: React.FC = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Edit User Dialog */}
+        <EditUserDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          user={selectedUser}
+        />
       </div>
     </AdminLayout>
   );

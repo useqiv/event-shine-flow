@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useOrganizationSettings, useUpdateOrganizationSettings } from '@/hooks/useOrganization';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { Settings, Building, User, CreditCard } from 'lucide-react';
+import { Building, User, CreditCard } from 'lucide-react';
+import { toast } from 'sonner';
 
 const OrgSettings = () => {
   const { data: profile } = useProfile();
@@ -63,15 +64,30 @@ const OrgSettings = () => {
   }, [orgSettings]);
 
   const handleSaveProfile = async () => {
-    await updateProfile.mutateAsync(profileData);
+    try {
+      await updateProfile.mutateAsync(profileData);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      toast.error('Failed to update profile');
+    }
   };
 
   const handleSaveCompany = async () => {
-    await updateOrgSettings.mutateAsync(companyData);
+    try {
+      await updateOrgSettings.mutateAsync(companyData);
+      toast.success('Company information saved');
+    } catch (error) {
+      toast.error('Failed to save company information');
+    }
   };
 
   const handleSaveBank = async () => {
-    await updateOrgSettings.mutateAsync(bankData);
+    try {
+      await updateOrgSettings.mutateAsync(bankData);
+      toast.success('Payment details saved');
+    } catch (error) {
+      toast.error('Failed to save payment details');
+    }
   };
 
   return (
