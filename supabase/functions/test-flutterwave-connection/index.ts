@@ -18,18 +18,37 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    console.log("Fetching Flutterwave settings for connection test...");
+
     // Fetch Flutterwave settings from platform_settings
-    const { data: settings } = await supabase
+    const { data: settings, error: settingsError } = await supabase
       .from("platform_settings")
       .select("setting_key, setting_value")
       .in("setting_key", ["flutterwave_secret_key", "flutterwave_test_mode"]);
+
+    if (settingsError) {
+      console.error("Failed to fetch settings:", settingsError.message);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          connected: false,
+          message: "Failed to load settings from database" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Settings fetched:", settings?.length || 0, "settings found");
 
     const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || "";
 
     // Get secret key from platform settings first, fallback to env
     let secretKey = getSetting("flutterwave_secret_key");
+    console.log("Secret key from DB:", secretKey ? "Found (length: " + secretKey.length + ")" : "Not found");
+    
     if (!secretKey) {
       secretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
+      console.log("Secret key from ENV:", secretKey ? "Found (length: " + secretKey.length + ")" : "Not found");
     }
 
     if (!secretKey) {
@@ -37,7 +56,7 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ 
           success: false, 
           connected: false,
-          message: "No API key configured" 
+          message: "No API secret key configured. Please add your Flutterwave secret key in Admin Settings > Flutterwave Configuration and save." 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
