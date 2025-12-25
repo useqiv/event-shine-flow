@@ -12,9 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
+import { ShareButtons } from '@/components/ui/share-buttons';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useContestContestants } from '@/hooks/useOrganization';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -33,6 +35,8 @@ const ContestManagement = () => {
   const createContestant = useCreateContestant();
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
+  const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [newContestant, setNewContestant] = useState({
     name: '',
     bio: '',
@@ -78,6 +82,28 @@ const ContestManagement = () => {
       setNewContestant({ name: '', bio: '', photo_url: '', performance: '' });
     } catch (error) {
       console.error('Failed to add contestant:', error);
+    }
+  };
+
+  const handleCSVImport = async (data: ContestantCSVRow[]) => {
+    if (!id) return;
+    setIsImporting(true);
+    try {
+      for (const contestant of data) {
+        await createContestant.mutateAsync({
+          contest_id: id,
+          name: contestant.name,
+          bio: contestant.bio || '',
+          performance: contestant.performance || '',
+          photo_url: '',
+        });
+      }
+      toast.success(`Successfully imported ${data.length} contestant(s)`);
+    } catch (error: any) {
+      toast.error(`Import failed: ${error.message}`);
+      throw error;
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -212,7 +238,12 @@ const ContestManagement = () => {
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <ShareButtons 
+              title={contest.title}
+              description={contest.description || `Vote now in ${contest.title}`}
+              url={`${window.location.origin}/contests/${id}`}
+            />
             <Button variant="outline" onClick={handleCopyLink}>
               <Copy className="mr-2 h-4 w-4" />
               Copy Link
@@ -282,57 +313,70 @@ const ContestManagement = () => {
           </TabsList>
 
           <TabsContent value="contestants" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h2 className="text-lg font-semibold">Contestants ({contestants?.length || 0})</h2>
-              <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Contestant
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Contestant</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Name *</Label>
-                      <Input
-                        placeholder="Contestant name"
-                        value={newContestant.name}
-                        onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Bio</Label>
-                      <Textarea
-                        placeholder="Short bio..."
-                        value={newContestant.bio}
-                        onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
-                      />
-                    </div>
-                    <ImageUpload
-                      bucket="contestant-images"
-                      value={newContestant.photo_url}
-                      onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
-                      label="Photo"
-                    />
-                    <div className="space-y-2">
-                      <Label>Performance/Entry</Label>
-                      <Input
-                        placeholder="e.g., Song title, routine name"
-                        value={newContestant.performance}
-                        onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
-                      />
-                    </div>
-                    <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
-                      {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Import CSV
+                </Button>
+                <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Contestant
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Contestant</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Name *</Label>
+                        <Input
+                          placeholder="Contestant name"
+                          value={newContestant.name}
+                          onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Bio</Label>
+                        <Textarea
+                          placeholder="Short bio..."
+                          value={newContestant.bio}
+                          onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
+                        />
+                      </div>
+                      <ImageUpload
+                        bucket="contestant-images"
+                        value={newContestant.photo_url}
+                        onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
+                        label="Photo"
+                      />
+                      <div className="space-y-2">
+                        <Label>Performance/Entry</Label>
+                        <Input
+                          placeholder="e.g., Song title, routine name"
+                          value={newContestant.performance}
+                          onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
+                        />
+                      </div>
+                      <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
+                        {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
+
+            <CSVImport
+              open={isCSVImportOpen}
+              onOpenChange={setIsCSVImportOpen}
+              onImport={handleCSVImport}
+              isImporting={isImporting}
+            />
 
             {contestantsLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

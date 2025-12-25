@@ -9,7 +9,8 @@ import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/useProf
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, Lock } from 'lucide-react';
+import { User, Mail, Phone, Lock, Camera, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ const Profile = () => {
   const [phone, setPhone] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   React.useEffect(() => {
     if (profile) {
@@ -29,6 +31,45 @@ const Profile = () => {
       setPhone(profile.phone || '');
     }
   }, [profile]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Please select an image file', variant: 'destructive' });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'Image must be less than 2MB', variant: 'destructive' });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      await updateProfile.mutateAsync({ avatar_url: urlData.publicUrl });
+      toast({ title: 'Avatar updated!' });
+    } catch (error: any) {
+      toast({ title: 'Failed to upload avatar', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     try {
@@ -71,10 +112,32 @@ const Profile = () => {
           <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4 mb-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">{profile?.full_name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={profile?.avatar_url || ''} />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {profile?.full_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full cursor-pointer hover:bg-primary/90 transition-colors"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Camera className="h-3.5 w-3.5" />
+                  )}
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={isUploadingAvatar}
+                />
+              </div>
               <div>
                 <p className="font-semibold text-lg">{profile?.full_name || 'User'}</p>
                 <p className="text-muted-foreground">{profile?.email}</p>

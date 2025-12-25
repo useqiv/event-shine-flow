@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { ShareButtons, ContestantShareButton } from '@/components/ui/share-buttons';
 import { 
   Trophy, 
   Calendar, 
@@ -29,12 +30,16 @@ const voteOptions = [1, 5, 10, 25, 50, 100];
 
 const ContestDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const voteForContestant = searchParams.get('vote');
   const { user } = useAuth();
   const { toast } = useToast();
   const { data: contest, isLoading: contestLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const { data: wallet } = useWallet();
   const vote = useVote();
+  const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
@@ -44,6 +49,29 @@ const ContestDetail = () => {
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const hasInsufficientBalance = paymentMethod === 'wallet' && (wallet?.balance || 0) < totalAmount;
+
+  // Handle auto-scroll and highlight when vote parameter is present
+  useEffect(() => {
+    if (voteForContestant && contestants && contestants.length > 0) {
+      const targetContestant = contestants.find((c: any) => c.id === voteForContestant);
+      if (targetContestant) {
+        setHighlightedContestant(voteForContestant);
+        
+        // Wait for refs to be attached then scroll
+        setTimeout(() => {
+          const element = contestantRefs.current[voteForContestant];
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedContestant(null);
+        }, 3000);
+      }
+    }
+  }, [voteForContestant, contestants]);
 
   const handleVoteClick = (contestant: any) => {
     if (!user) {
@@ -156,23 +184,30 @@ const ContestDetail = () => {
             )}
           </div>
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Votes</p>
-                <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Votes</p>
+                  <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Vote Price</p>
+                  <p className="text-xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Start Date</p>
+                  <p className="text-xl font-bold">{format(new Date(contest.start_date), 'MMM d')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">End Date</p>
+                  <p className="text-xl font-bold">{format(new Date(contest.end_date), 'MMM d')}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Vote Price</p>
-                <p className="text-xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="text-xl font-bold">{format(new Date(contest.start_date), 'MMM d')}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">End Date</p>
-                <p className="text-xl font-bold">{format(new Date(contest.end_date), 'MMM d')}</p>
-              </div>
+              <ShareButtons 
+                title={contest.title} 
+                description={contest.description || `Vote now in ${contest.title}`}
+                url={`${window.location.origin}/contests/${id}`}
+              />
             </div>
             {contest.description && (
               <p className="mt-4 text-muted-foreground">{contest.description}</p>
@@ -192,7 +227,15 @@ const ContestDetail = () => {
           ) : contestants && contestants.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {contestants.map((contestant, index) => (
-                <Card key={contestant.id} className="overflow-hidden">
+                <Card 
+                  key={contestant.id} 
+                  ref={(el) => { contestantRefs.current[contestant.id] = el; }}
+                  className={`overflow-hidden transition-all duration-500 ${
+                    highlightedContestant === contestant.id 
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]' 
+                      : ''
+                  }`}
+                >
                   <div className="relative h-48 bg-secondary">
                     {contestant.photo_url ? (
                       <img 
@@ -214,7 +257,15 @@ const ContestDetail = () => {
                     )}
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg">{contestant.name}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-lg">{contestant.name}</h3>
+                      <ContestantShareButton 
+                        contestId={id || ''}
+                        contestantId={contestant.id}
+                        contestantName={contestant.name}
+                        contestTitle={contest?.title || ''}
+                      />
+                    </div>
                     {contestant.bio && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
                     )}
