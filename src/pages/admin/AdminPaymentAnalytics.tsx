@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import RevenueForecast from '@/components/admin/RevenueForecast';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -177,17 +178,27 @@ const AdminPaymentAnalytics = () => {
             <h1 className="text-3xl font-bold">Payment Analytics</h1>
             <p className="text-muted-foreground">Revenue trends and transaction insights</p>
           </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
+
+        <Tabs defaultValue="analytics" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="forecast">Revenue Forecast</TabsTrigger>
+            </TabsList>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TabsContent value="analytics" className="space-y-6">
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -442,6 +453,12 @@ const AdminPaymentAnalytics = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="forecast">
+            <RevenueForecast />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );

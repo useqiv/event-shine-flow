@@ -995,6 +995,51 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          original_transaction_id: string
+          original_transaction_type: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          original_transaction_id: string
+          original_transaction_type: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason: string
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          original_transaction_id?: string
+          original_transaction_type?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_items: {
         Row: {
           created_at: string
