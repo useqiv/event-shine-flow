@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Twitter, Send, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Share2, Twitter, Facebook, Instagram, Send, Clock, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 
 interface Contestant {
   id: string;
@@ -31,12 +30,19 @@ interface SocialPostingCardProps {
 
 type PostStatus = 'idle' | 'posting' | 'success' | 'error';
 
+const platforms = [
+  { id: 'twitter', name: 'X/Twitter', icon: Twitter, available: true, color: 'bg-black' },
+  { id: 'facebook', name: 'Facebook', icon: Facebook, available: false, color: 'bg-blue-600' },
+  { id: 'instagram', name: 'Instagram', icon: Instagram, available: false, color: 'bg-gradient-to-r from-purple-500 to-pink-500' },
+];
+
 export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, contestants }) => {
   const { toast } = useToast();
   const [postType, setPostType] = useState<'leaderboard' | 'contestant' | 'custom'>('leaderboard');
   const [selectedContestant, setSelectedContestant] = useState<string>('');
   const [customMessage, setCustomMessage] = useState('');
   const [postStatus, setPostStatus] = useState<PostStatus>('idle');
+  const [selectedPlatform, setSelectedPlatform] = useState('twitter');
 
   const contestUrl = contest.custom_slug 
     ? `${window.location.origin}/c/${contest.custom_slug}`
@@ -67,7 +73,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
     return '';
   };
 
-  const handlePost = async (platform: 'twitter') => {
+  const handlePost = async (platform: string) => {
     const message = generateMessage();
     if (!message) {
       toast({
@@ -75,6 +81,24 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
         description: 'Please generate or write a message first.',
         variant: 'destructive',
       });
+      return;
+    }
+
+    if (platform !== 'twitter') {
+      // Open share URL for unsupported platforms
+      const encodedMessage = encodeURIComponent(message);
+      const encodedUrl = encodeURIComponent(contestUrl);
+      
+      if (platform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedMessage}`, '_blank');
+      } else if (platform === 'instagram') {
+        // Instagram doesn't have a web share API, copy to clipboard
+        navigator.clipboard.writeText(message);
+        toast({
+          title: 'Copied to Clipboard',
+          description: 'Message copied! Open Instagram to post manually.',
+        });
+      }
       return;
     }
 
@@ -104,7 +128,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
       setPostStatus('error');
       toast({
         title: 'Posting Failed',
-        description: error.message || 'Failed to post to social media. Please check your API keys.',
+        description: error.message || 'Failed to post. Check your API keys in Supabase secrets.',
         variant: 'destructive',
       });
 
@@ -119,7 +143,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Share2 className="h-5 w-5" />
-          Social Media Auto-Posting
+          Social Media Posting
         </CardTitle>
         <CardDescription>
           Share contest updates to your social media accounts
@@ -210,23 +234,39 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
           </div>
         )}
 
-        {/* Post Buttons */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            onClick={() => handlePost('twitter')}
-            disabled={!previewMessage || postStatus === 'posting'}
-            className="flex items-center gap-2"
-          >
-            <Twitter className="h-4 w-4" />
-            Post to X/Twitter
-          </Button>
+        {/* Platform Buttons */}
+        <div className="space-y-2">
+          <Label>Post to Platform</Label>
+          <div className="flex flex-wrap gap-2">
+            {platforms.map((platform) => {
+              const Icon = platform.icon;
+              return (
+                <Button
+                  key={platform.id}
+                  onClick={() => handlePost(platform.id)}
+                  disabled={!previewMessage || postStatus === 'posting'}
+                  variant={platform.available ? 'default' : 'outline'}
+                  className="flex items-center gap-2"
+                >
+                  <Icon className="h-4 w-4" />
+                  {platform.name}
+                  {!platform.available && (
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Facebook & Instagram will open in a new window for manual posting.
+          </p>
         </div>
 
         {/* Setup Instructions */}
         <div className="mt-4 p-4 rounded-lg bg-muted/50">
-          <h4 className="font-medium text-sm mb-2">Setup Required</h4>
+          <h4 className="font-medium text-sm mb-2">Auto-Posting Setup (Twitter)</h4>
           <p className="text-xs text-muted-foreground">
-            To enable auto-posting, configure your Twitter API keys in Supabase Edge Function secrets:
+            Configure your Twitter API keys in Supabase Edge Function secrets:
           </p>
           <ul className="text-xs text-muted-foreground mt-2 space-y-1">
             <li>• TWITTER_CONSUMER_KEY</li>

@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      contest_auto_posts: {
+        Row: {
+          contest_id: string
+          created_at: string
+          custom_message: string | null
+          id: string
+          is_active: boolean
+          last_posted_at: string | null
+          next_post_at: string | null
+          organization_id: string
+          platform: string
+          post_type: string
+          schedule_interval: string
+          updated_at: string
+        }
+        Insert: {
+          contest_id: string
+          created_at?: string
+          custom_message?: string | null
+          id?: string
+          is_active?: boolean
+          last_posted_at?: string | null
+          next_post_at?: string | null
+          organization_id: string
+          platform?: string
+          post_type?: string
+          schedule_interval?: string
+          updated_at?: string
+        }
+        Update: {
+          contest_id?: string
+          created_at?: string
+          custom_message?: string | null
+          id?: string
+          is_active?: boolean
+          last_posted_at?: string | null
+          next_post_at?: string | null
+          organization_id?: string
+          platform?: string
+          post_type?: string
+          schedule_interval?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_auto_posts_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contestants: {
         Row: {
           bio: string | null
