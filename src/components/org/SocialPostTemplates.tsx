@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Copy, Check, Trophy, Star, Users, Clock, Flame, Calendar, Ticket, Bell, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,6 +13,7 @@ interface Template {
   icon: React.ElementType;
   template: string;
   category: 'engagement' | 'announcement' | 'countdown' | 'results';
+  type: 'contest' | 'event';
 }
 
 const templates: Template[] = [
@@ -22,6 +24,7 @@ const templates: Template[] = [
     description: 'Share current top contestants',
     icon: Trophy,
     category: 'engagement',
+    type: 'contest',
     template: `🏆 {{CONTEST_NAME}} - Live Leaderboard!
 
 🥇 #1: [Contestant Name] - X,XXX votes
@@ -37,6 +40,7 @@ const templates: Template[] = [
     description: 'Feature a specific contestant',
     icon: Star,
     category: 'engagement',
+    type: 'contest',
     template: `🌟 Contestant Spotlight 🌟
 
 Meet [Contestant Name]! Currently ranked #X in {{CONTEST_NAME}} with X,XXX votes!
@@ -50,6 +54,7 @@ Support them now: {{CONTEST_URL}}?vote=[ID]
     description: 'Announce voting has started',
     icon: Users,
     category: 'announcement',
+    type: 'contest',
     template: `🎉 VOTING IS NOW OPEN! 🎉
 
 {{CONTEST_NAME}} is live!
@@ -65,6 +70,7 @@ Vote here: {{CONTEST_URL}}
     description: 'Create urgency before closing',
     icon: Clock,
     category: 'countdown',
+    type: 'contest',
     template: `⏰ ONLY 24 HOURS LEFT! ⏰
 
 {{CONTEST_NAME}} voting closes tomorrow!
@@ -80,6 +86,7 @@ Vote now: {{CONTEST_URL}}
     description: 'Last call for votes',
     icon: Flame,
     category: 'countdown',
+    type: 'contest',
     template: `🔥 FINAL HOURS! 🔥
 
 {{CONTEST_NAME}} closes in just a few hours!
@@ -95,6 +102,7 @@ Cast your final votes: {{CONTEST_URL}}
     description: 'Announce contest results',
     icon: Trophy,
     category: 'results',
+    type: 'contest',
     template: `🎊 WE HAVE A WINNER! 🎊
 
 Congratulations to [Winner Name] for winning {{CONTEST_NAME}}!
@@ -113,6 +121,7 @@ Thank you to all participants and voters!
     description: 'Announce a new event',
     icon: Calendar,
     category: 'announcement',
+    type: 'event',
     template: `🎉 SAVE THE DATE! 🎉
 
 {{EVENT_NAME}} is happening!
@@ -130,6 +139,7 @@ Get yours: {{EVENT_URL}}
     description: 'Build excitement before the event',
     icon: Clock,
     category: 'countdown',
+    type: 'event',
     template: `⏰ COUNTDOWN TO {{EVENT_NAME}}! ⏰
 
 Only [X] days left until the big day!
@@ -146,6 +156,7 @@ Tickets selling fast! 🎫 {{EVENT_URL}}
     description: 'Create urgency for ticket sales',
     icon: Ticket,
     category: 'engagement',
+    type: 'event',
     template: `🔥 TICKETS SELLING FAST! 🔥
 
 {{EVENT_NAME}} is almost sold out!
@@ -164,6 +175,7 @@ Get tickets now: {{EVENT_URL}}
     description: 'Remind attendees about the event',
     icon: Bell,
     category: 'countdown',
+    type: 'event',
     template: `📢 REMINDER: {{EVENT_NAME}} IS TOMORROW! 📢
 
 Get ready for an amazing experience!
@@ -181,6 +193,7 @@ See you there! 🎉
     description: 'Announce event has started',
     icon: Flame,
     category: 'announcement',
+    type: 'event',
     template: `🎤 WE'RE LIVE! 🎤
 
 {{EVENT_NAME}} is happening NOW!
@@ -195,6 +208,7 @@ Join us at [Venue Name] for an unforgettable experience!
     description: 'Thank attendees after the event',
     icon: Heart,
     category: 'results',
+    type: 'event',
     template: `💜 THANK YOU! 💜
 
 What an incredible night at {{EVENT_NAME}}!
@@ -213,6 +227,51 @@ const categoryColors: Record<string, string> = {
   results: 'bg-purple-500/10 text-purple-500',
 };
 
+const TemplateCard: React.FC<{ template: Template; copiedId: string | null; onCopy: (template: string, id: string) => void }> = ({ template, copiedId, onCopy }) => {
+  const Icon = template.icon;
+  return (
+    <div className="p-4 rounded-lg border border-border hover:border-primary/50 transition-colors">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h4 className="font-medium">{template.name}</h4>
+            <p className="text-xs text-muted-foreground">{template.description}</p>
+          </div>
+        </div>
+        <Badge className={categoryColors[template.category]}>
+          {template.category}
+        </Badge>
+      </div>
+      <div className="p-3 rounded bg-muted/50 mb-3">
+        <pre className="text-xs whitespace-pre-wrap font-sans text-muted-foreground">
+          {template.template}
+        </pre>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => onCopy(template.template, template.id)}
+      >
+        {copiedId === template.id ? (
+          <>
+            <Check className="h-4 w-4 mr-2" />
+            Copied!
+          </>
+        ) : (
+          <>
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Template
+          </>
+        )}
+      </Button>
+    </div>
+  );
+};
+
 export const SocialPostTemplates: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -222,6 +281,9 @@ export const SocialPostTemplates: React.FC = () => {
     toast.success('Template copied to clipboard!');
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  const contestTemplates = templates.filter(t => t.type === 'contest');
+  const eventTemplates = templates.filter(t => t.type === 'event');
 
   return (
     <Card>
@@ -235,55 +297,42 @@ export const SocialPostTemplates: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {templates.map((template) => {
-            const Icon = template.icon;
-            return (
-              <div
-                key={template.id}
-                className="p-4 rounded-lg border border-border hover:border-primary/50 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">{template.name}</h4>
-                      <p className="text-xs text-muted-foreground">{template.description}</p>
-                    </div>
-                  </div>
-                  <Badge className={categoryColors[template.category]}>
-                    {template.category}
-                  </Badge>
-                </div>
-                <div className="p-3 rounded bg-muted/50 mb-3">
-                  <pre className="text-xs whitespace-pre-wrap font-sans text-muted-foreground">
-                    {template.template}
-                  </pre>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleCopy(template.template, template.id)}
-                >
-                  {copiedId === template.id ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Template
-                    </>
-                  )}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+        <Tabs defaultValue="contest" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="contest" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Contest Templates
+            </TabsTrigger>
+            <TabsTrigger value="event" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Event Templates
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="contest">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {contestTemplates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  copiedId={copiedId}
+                  onCopy={handleCopy}
+                />
+              ))}
+            </div>
+          </TabsContent>
+          <TabsContent value="event">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {eventTemplates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  copiedId={copiedId}
+                  onCopy={handleCopy}
+                />
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
