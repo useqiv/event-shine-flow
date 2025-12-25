@@ -3,14 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useOrganizationContests } from '@/hooks/useOrganization';
+import { useOrganizationContests, useOrganizationEvents } from '@/hooks/useOrganization';
 import { useContestants } from '@/hooks/useContests';
 import { supabase } from '@/integrations/supabase/client';
-import { Send, Twitter, Facebook, Instagram, Loader2, ExternalLink, Sparkles, Wand2 } from 'lucide-react';
+import { Send, Twitter, Facebook, Instagram, Loader2, ExternalLink, Sparkles, Wand2, Trophy, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
-const postTypes = [
+const contestPostTypes = [
   { id: 'leaderboard', name: 'Leaderboard Update' },
   { id: 'contestant', name: 'Contestant Spotlight' },
   { id: 'countdown', name: 'Countdown / Urgency' },
@@ -18,10 +19,21 @@ const postTypes = [
   { id: 'announcement', name: 'Announcement' },
 ];
 
+const eventPostTypes = [
+  { id: 'event_announcement', name: 'Event Announcement' },
+  { id: 'event_countdown', name: 'Event Countdown' },
+  { id: 'tickets_selling', name: 'Tickets Selling Fast' },
+  { id: 'event_reminder', name: 'Event Reminder' },
+  { id: 'event_live', name: 'Event is Live' },
+];
+
 export const QuickSocialPost: React.FC = () => {
   const { data: contests } = useOrganizationContests();
+  const { data: events } = useOrganizationEvents();
   
+  const [contentType, setContentType] = useState<'contest' | 'event'>('contest');
   const [selectedContest, setSelectedContest] = useState<string>('');
+  const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('twitter');
   const [postType, setPostType] = useState<string>('leaderboard');
   const [message, setMessage] = useState('');
@@ -30,10 +42,14 @@ export const QuickSocialPost: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const activeContests = contests?.filter(c => c.is_active) || [];
+  const activeEvents = events?.filter(e => e.is_active) || [];
   const selectedContestData = contests?.find(c => c.id === selectedContest);
+  const selectedEventData = events?.find(e => e.id === selectedEvent);
   
   const { data: contestants } = useContestants(selectedContest);
   const sortedContestants = contestants ? [...contestants].sort((a, b) => b.vote_count - a.vote_count) : [];
+  
+  const currentPostTypes = contentType === 'contest' ? contestPostTypes : eventPostTypes;
 
   const getContestUrl = (contestId: string) => {
     const contest = contests?.find(c => c.id === contestId);
@@ -43,26 +59,47 @@ export const QuickSocialPost: React.FC = () => {
       : `${window.location.origin}/contests/${contestId}`;
   };
 
+  const getEventUrl = (eventId: string) => {
+    return `${window.location.origin}/events/${eventId}`;
+  };
+
   const handleGenerateAI = async () => {
-    if (!selectedContest) {
+    if (contentType === 'contest' && !selectedContest) {
       toast.error('Please select a contest first');
+      return;
+    }
+    if (contentType === 'event' && !selectedEvent) {
+      toast.error('Please select an event first');
       return;
     }
 
     setIsGenerating(true);
 
     try {
+      const body = contentType === 'contest' 
+        ? {
+            contentType: 'contest',
+            contestTitle: selectedContestData?.title,
+            contestants: sortedContestants.slice(0, 5).map(c => ({
+              name: c.name,
+              vote_count: c.vote_count,
+            })),
+            postType,
+            platform: selectedPlatform,
+            customContext: customContext || undefined,
+          }
+        : {
+            contentType: 'event',
+            eventTitle: selectedEventData?.title,
+            eventDate: selectedEventData?.event_date,
+            venue: selectedEventData?.venue,
+            postType,
+            platform: selectedPlatform,
+            customContext: customContext || undefined,
+          };
+
       const { data, error } = await supabase.functions.invoke('generate-social-post', {
-        body: {
-          contestTitle: selectedContestData?.title,
-          contestants: sortedContestants.slice(0, 5).map(c => ({
-            name: c.name,
-            vote_count: c.vote_count,
-          })),
-          postType,
-          platform: selectedPlatform,
-          customContext: customContext || undefined,
-        },
+        body,
       });
 
       if (error) {
@@ -96,11 +133,13 @@ export const QuickSocialPost: React.FC = () => {
       return;
     }
 
-    const contestUrl = selectedContest ? getContestUrl(selectedContest) : window.location.origin;
+    const targetUrl = contentType === 'contest' 
+      ? (selectedContest ? getContestUrl(selectedContest) : window.location.origin)
+      : (selectedEvent ? getEventUrl(selectedEvent) : window.location.origin);
 
     if (platform !== 'twitter') {
       const encodedMessage = encodeURIComponent(message);
-      const encodedUrl = encodeURIComponent(contestUrl);
+      const encodedUrl = encodeURIComponent(targetUrl);
       
       if (platform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedMessage}`, '_blank');
@@ -118,8 +157,9 @@ export const QuickSocialPost: React.FC = () => {
         body: {
           platform,
           message,
-          contestId: selectedContest || null,
-          contestUrl,
+          contestId: contentType === 'contest' ? selectedContest : null,
+          eventId: contentType === 'event' ? selectedEvent : null,
+          targetUrl,
         },
       });
 
@@ -135,6 +175,14 @@ export const QuickSocialPost: React.FC = () => {
     }
   };
 
+  const handleContentTypeChange = (type: string) => {
+    setContentType(type as 'contest' | 'event');
+    setPostType(type === 'contest' ? 'leaderboard' : 'event_announcement');
+    setSelectedContest('');
+    setSelectedEvent('');
+    setMessage('');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -143,25 +191,53 @@ export const QuickSocialPost: React.FC = () => {
           AI-Powered Social Posts
         </CardTitle>
         <CardDescription>
-          Generate engaging posts with AI or write your own
+          Generate engaging posts with AI or write your own for contests and events
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <Tabs value={contentType} onValueChange={handleContentTypeChange}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="contest" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Contest
+            </TabsTrigger>
+            <TabsTrigger value="event" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Event
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Select Contest</Label>
-            <Select value={selectedContest} onValueChange={setSelectedContest}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a contest" />
-              </SelectTrigger>
-              <SelectContent>
-                {activeContests.map((contest) => (
-                  <SelectItem key={contest.id} value={contest.id}>
-                    {contest.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>{contentType === 'contest' ? 'Select Contest' : 'Select Event'}</Label>
+            {contentType === 'contest' ? (
+              <Select value={selectedContest} onValueChange={setSelectedContest}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a contest" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeContests.map((contest) => (
+                    <SelectItem key={contest.id} value={contest.id}>
+                      {contest.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose an event" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeEvents.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -187,7 +263,7 @@ export const QuickSocialPost: React.FC = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {postTypes.map((type) => (
+                {currentPostTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id}>
                     {type.name}
                   </SelectItem>
@@ -211,7 +287,7 @@ export const QuickSocialPost: React.FC = () => {
         {/* AI Generate Button */}
         <Button
           onClick={handleGenerateAI}
-          disabled={!selectedContest || isGenerating}
+          disabled={(contentType === 'contest' ? !selectedContest : !selectedEvent) || isGenerating}
           variant="outline"
           className="w-full"
         >
