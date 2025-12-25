@@ -1,21 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+
+const categories = [
+  'Music', 'Party', 'Conference', 'Workshop', 'Sports',
+  'Festival', 'Networking', 'Concert', 'Exhibition', 'Other'
+];
 
 const EventManagement = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +41,45 @@ const EventManagement = () => {
     quantity_available: '',
     description: '',
   });
+
+  // Edit event form state
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    category: '',
+    image_url: '',
+    event_date: '',
+    venue: '',
+    address: '',
+  });
+
+  // Initialize edit form when event data loads
+  useEffect(() => {
+    if (event) {
+      setEditForm({
+        title: event.title || '',
+        description: event.description || '',
+        category: event.category || '',
+        image_url: event.image_url || '',
+        event_date: event.event_date ? new Date(event.event_date).toISOString().slice(0, 16) : '',
+        venue: event.venue || '',
+        address: event.address || '',
+      });
+    }
+  }, [event]);
+
+  const handleSaveEventDetails = async () => {
+    if (!event) return;
+    try {
+      await updateEvent.mutateAsync({
+        id: event.id,
+        ...editForm,
+      });
+      toast.success('Event details updated successfully');
+    } catch (error) {
+      console.error('Failed to update event:', error);
+    }
+  };
 
   const handleAddTicketType = async () => {
     if (!id || !newTicketType.name || !newTicketType.price || !newTicketType.quantity_available) return;
@@ -420,16 +467,101 @@ const EventManagement = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Event Settings</CardTitle>
-                <CardDescription>Update your event details</CardDescription>
+                <CardTitle>Event Details</CardTitle>
+                <CardDescription>Update your event information</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Settings editing coming soon...</p>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-title">Event Title *</Label>
+                  <Input
+                    id="edit-title"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    rows={4}
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category *</Label>
+                  <Select
+                    value={editForm.category}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <ImageUpload
+                  bucket="event-images"
+                  value={editForm.image_url}
+                  onChange={(url) => setEditForm(prev => ({ ...prev, image_url: url }))}
+                  label="Event Banner Image"
+                />
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Date & Location</CardTitle>
+                <CardDescription>Update event schedule and venue</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-event-date">Event Date & Time *</Label>
+                  <Input
+                    id="edit-event-date"
+                    type="datetime-local"
+                    value={editForm.event_date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, event_date: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-venue">Venue Name *</Label>
+                  <Input
+                    id="edit-venue"
+                    value={editForm.venue}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, venue: e.target.value }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-address">Full Address</Label>
+                  <Textarea
+                    id="edit-address"
+                    rows={2}
+                    value={editForm.address}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSaveEventDetails} disabled={updateEvent.isPending}>
+                <Save className="mr-2 h-4 w-4" />
+                {updateEvent.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

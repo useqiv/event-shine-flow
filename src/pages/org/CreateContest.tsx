@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { useCreateContest } from '@/hooks/useOrganization';
-import { Trophy, Calendar, DollarSign, Image, FileText, Tag } from 'lucide-react';
+import { Calendar, DollarSign, FileText } from 'lucide-react';
 
 const categories = [
   'Music',
@@ -114,17 +115,14 @@ const CreateContest = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Banner Image URL</Label>
-                  <Input
-                    id="image_url"
-                    placeholder="https://..."
-                    value={formData.image_url}
-                    onChange={(e) => handleChange('image_url', e.target.value)}
-                  />
-                </div>
               </div>
+
+              <ImageUpload
+                bucket="contest-images"
+                value={formData.image_url}
+                onChange={(url) => handleChange('image_url', url)}
+                label="Contest Banner Image"
+              />
             </CardContent>
           </Card>
 

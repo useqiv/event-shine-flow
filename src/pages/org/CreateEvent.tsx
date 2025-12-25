@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { useCreateEvent } from '@/hooks/useOrganization';
-import { Calendar, MapPin, FileText, Image } from 'lucide-react';
+import { Calendar, MapPin, FileText } from 'lucide-react';
 
 const categories = [
   'Music',
@@ -111,17 +112,14 @@ const CreateEvent = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="image_url">Event Banner URL</Label>
-                  <Input
-                    id="image_url"
-                    placeholder="https://..."
-                    value={formData.image_url}
-                    onChange={(e) => handleChange('image_url', e.target.value)}
-                  />
-                </div>
               </div>
+
+              <ImageUpload
+                bucket="event-images"
+                value={formData.image_url}
+                onChange={(url) => handleChange('image_url', url)}
+                label="Event Banner Image"
+              />
             </CardContent>
           </Card>
 
