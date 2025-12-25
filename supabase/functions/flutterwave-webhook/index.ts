@@ -315,6 +315,24 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", contestant_id)
       .single();
 
+    // Idempotency: if we already inserted a vote for this wallet transaction, do nothing
+    if (db_transaction_id) {
+      const { data: existingVote, error: existingVoteError } = await supabase
+        .from("votes")
+        .select("id")
+        .eq("transaction_id", db_transaction_id)
+        .maybeSingle();
+
+      if (existingVoteError) {
+        console.error("Failed to check existing vote:", existingVoteError.message);
+      }
+
+      if (existingVote?.id) {
+        console.log("Vote already recorded for wallet transaction:", db_transaction_id);
+        return;
+      }
+    }
+
     // Record vote – use wallet_transactions.id for idempotency/FK
     const { error: voteError } = await supabase.from("votes").insert({
       user_id,
@@ -380,6 +398,24 @@ async function processSuccessfulPayment(paymentData: any) {
 
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Idempotency: if we already inserted a ticket for this wallet transaction, do nothing
+    if (db_transaction_id) {
+      const { data: existingTicket, error: existingTicketError } = await supabase
+        .from("tickets")
+        .select("id")
+        .eq("transaction_id", db_transaction_id)
+        .maybeSingle();
+
+      if (existingTicketError) {
+        console.error("Failed to check existing ticket:", existingTicketError.message);
+      }
+
+      if (existingTicket?.id) {
+        console.log("Ticket already recorded for wallet transaction:", db_transaction_id);
+        return;
+      }
+    }
 
     // Record ticket purchase – use wallet_transactions.id for idempotency/FK
     const { error: ticketError } = await supabase.from("tickets").insert({
