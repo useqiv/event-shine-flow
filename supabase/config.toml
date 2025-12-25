@@ -13,16 +13,16 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.process-flutterwave-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.flutterwave-webhook]
 verify_jwt = false
 
 [functions.process-crypto-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-crypto-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-payment-receipt]
 verify_jwt = true
