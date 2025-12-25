@@ -191,6 +191,66 @@ export type Database = {
           },
         ]
       }
+      event_auto_posts: {
+        Row: {
+          created_at: string
+          custom_message: string | null
+          event_id: string
+          id: string
+          is_active: boolean
+          last_posted_at: string | null
+          next_post_at: string | null
+          organization_id: string
+          platform: string
+          post_type: string
+          schedule_interval: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_message?: string | null
+          event_id: string
+          id?: string
+          is_active?: boolean
+          last_posted_at?: string | null
+          next_post_at?: string | null
+          organization_id: string
+          platform?: string
+          post_type?: string
+          schedule_interval?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_message?: string | null
+          event_id?: string
+          id?: string
+          is_active?: boolean
+          last_posted_at?: string | null
+          next_post_at?: string | null
+          organization_id?: string
+          platform?: string
+          post_type?: string
+          schedule_interval?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_auto_posts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_auto_posts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           address: string | null
