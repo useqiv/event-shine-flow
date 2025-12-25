@@ -543,7 +543,37 @@ export const useCreateContestant = () => {
   });
 };
 
-// Create Ticket Type
+// Update Contestant
+export const useUpdateContestant = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updateData }: { 
+      id: string; 
+      name?: string;
+      bio?: string;
+      photo_url?: string;
+      performance?: string;
+    }) => {
+      const { error } = await supabase
+        .from('contestants')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contestants'] });
+      toast.success('Contestant updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update contestant');
+      console.error(error);
+    },
+  });
+};
+
+
 export const useCreateTicketType = () => {
   const queryClient = useQueryClient();
   
