@@ -797,6 +797,8 @@ const ContestManagement = () => {
                         key={contestant.id}
                         contestant={contestant}
                         isSelected={selectedContestants.has(contestant.id)}
+                        contestId={id || ''}
+                        contestTitle={contest?.title || ''}
                         onSelect={handleSelectContestant}
                         onEdit={handleEditContestant}
                         onDelete={(c) => {
