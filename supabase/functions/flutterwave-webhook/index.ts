@@ -169,11 +169,11 @@ async function sendReceipt(receiptData: any) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
       },
       body: JSON.stringify(receiptData),
     });
-    
+
     if (response.ok) {
       console.log("Receipt email sent successfully");
     } else {
@@ -181,6 +181,44 @@ async function sendReceipt(receiptData: any) {
     }
   } catch (error: any) {
     console.error("Error sending receipt:", error.message);
+  }
+}
+
+async function notifyAdminsOfFailure(
+  supabase: any,
+  errorType: "vote" | "ticket",
+  errorMessage: string,
+  paymentData: any,
+  meta: any
+) {
+  try {
+    // Fetch all admin user ids
+    const { data: adminRoles, error: rolesError } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+
+    if (rolesError || !adminRoles?.length) {
+      console.error("Could not fetch admin users for failure alert:", rolesError?.message);
+      return;
+    }
+
+    const notifications = adminRoles.map((r: { user_id: string }) => ({
+      user_id: r.user_id,
+      title: `Payment Recorded but ${errorType === "vote" ? "Vote" : "Ticket"} Insert Failed`,
+      message: `tx_ref: ${paymentData.tx_ref}, amount: ${paymentData.amount} ${paymentData.currency || "NGN"}. Error: ${errorMessage}`,
+      type: "system",
+      reference_id: meta.contest_id || meta.event_id || null,
+    }));
+
+    const { error: notifError } = await supabase.from("notifications").insert(notifications);
+    if (notifError) {
+      console.error("Failed to insert admin failure notifications:", notifError.message);
+    } else {
+      console.log(`Notified ${notifications.length} admin(s) about ${errorType} insert failure`);
+    }
+  } catch (err: any) {
+    console.error("Error notifying admins:", err.message);
   }
 }
 
@@ -260,6 +298,8 @@ async function processSuccessfulPayment(paymentData: any) {
 
     if (voteError) {
       console.error("Error recording vote:", voteError.message);
+      // Alert admins about the failure
+      await notifyAdminsOfFailure(supabase, "vote", voteError.message, paymentData, meta);
     } else {
       console.log("Vote recorded successfully");
 
@@ -319,6 +359,8 @@ async function processSuccessfulPayment(paymentData: any) {
 
     if (ticketError) {
       console.error("Error recording ticket:", ticketError.message);
+      // Alert admins about the failure
+      await notifyAdminsOfFailure(supabase, "ticket", ticketError.message, paymentData, meta);
     } else {
       console.log("Ticket recorded successfully");
 
