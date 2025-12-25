@@ -32,6 +32,7 @@ import ManageContests from "./pages/org/ManageContests";
 import ManageEvents from "./pages/org/ManageEvents";
 import ContestManagement from "./pages/org/ContestManagement";
 import EventManagement from "./pages/org/EventManagement";
+import EventScanner from "./pages/org/EventScanner";
 import OrgWallet from "./pages/org/OrgWallet";
 import Payouts from "./pages/org/Payouts";
 import Marketing from "./pages/org/Marketing";
@@ -115,6 +116,7 @@ const AppRoutes = () => (
     <Route path="/org/events" element={<ProtectedRoute><ManageEvents /></ProtectedRoute>} />
     <Route path="/org/contests/:id" element={<ProtectedRoute><ContestManagement /></ProtectedRoute>} />
     <Route path="/org/events/:id" element={<ProtectedRoute><EventManagement /></ProtectedRoute>} />
+    <Route path="/org/events/:id/scan" element={<ProtectedRoute><EventScanner /></ProtectedRoute>} />
     <Route path="/org/wallet" element={<ProtectedRoute><OrgWallet /></ProtectedRoute>} />
     <Route path="/org/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
     <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
