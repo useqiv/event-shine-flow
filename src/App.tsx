@@ -57,6 +57,8 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPaymentHistory from "./pages/admin/AdminPaymentHistory";
 import AdminPaymentAnalytics from "./pages/admin/AdminPaymentAnalytics";
 import AdminRefunds from "./pages/admin/AdminRefunds";
+import AdminContestDetail from "./pages/admin/AdminContestDetail";
+import AdminEventDetail from "./pages/admin/AdminEventDetail";
 
 const queryClient = new QueryClient();
 
@@ -159,7 +161,9 @@ const AppRoutes = () => (
     <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
     <Route path="/admin/organizations" element={<ProtectedRoute><AdminOrganizations /></ProtectedRoute>} />
     <Route path="/admin/contests" element={<ProtectedRoute><AdminContests /></ProtectedRoute>} />
+    <Route path="/admin/contests/:id" element={<ProtectedRoute><AdminContestDetail /></ProtectedRoute>} />
     <Route path="/admin/events" element={<ProtectedRoute><AdminEvents /></ProtectedRoute>} />
+    <Route path="/admin/events/:id" element={<ProtectedRoute><AdminEventDetail /></ProtectedRoute>} />
     <Route path="/admin/payouts" element={<ProtectedRoute><AdminPayouts /></ProtectedRoute>} />
     <Route path="/admin/finance" element={<ProtectedRoute><AdminFinance /></ProtectedRoute>} />
     <Route path="/admin/payments" element={<ProtectedRoute><AdminPaymentHistory /></ProtectedRoute>} />

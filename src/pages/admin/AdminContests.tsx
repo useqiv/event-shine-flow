@@ -207,9 +207,9 @@ const AdminContests: React.FC = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link to={`/contests/${contest.id}`}>
+                              <Link to={`/admin/contests/${contest.id}`}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                View Contest
+                                View Details
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toggleContestStatus(contest.id, contest.is_active)}>
