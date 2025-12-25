@@ -136,6 +136,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+async function sendReceipt(receiptData: any) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-payment-receipt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify(receiptData),
+    });
+    
+    if (response.ok) {
+      console.log("Receipt email sent successfully");
+    } else {
+      console.error("Failed to send receipt:", await response.text());
+    }
+  } catch (error: any) {
+    console.error("Error sending receipt:", error.message);
+  }
+}
+
 async function processSuccessfulPayment(paymentData: any) {
   console.log("Processing successful payment, tx_ref:", paymentData.tx_ref);
 
@@ -145,6 +167,7 @@ async function processSuccessfulPayment(paymentData: any) {
 
   const meta = paymentData.meta || {};
   const { user_id, type, contest_id, contestant_id, vote_quantity, event_id, ticket_type_id, ticket_quantity } = meta;
+  const customer = paymentData.customer || {};
 
   console.log("Payment meta:", JSON.stringify(meta));
 
@@ -160,6 +183,19 @@ async function processSuccessfulPayment(paymentData: any) {
 
   if (type === "vote" && contest_id && contestant_id && user_id) {
     console.log("Recording vote...");
+    
+    // Get contest and contestant details
+    const { data: contest } = await supabase
+      .from("contests")
+      .select("title")
+      .eq("id", contest_id)
+      .single();
+    
+    const { data: contestant } = await supabase
+      .from("contestants")
+      .select("name")
+      .eq("id", contestant_id)
+      .single();
     
     // Record vote
     const { error: voteError } = await supabase.from("votes").insert({
@@ -184,9 +220,36 @@ async function processSuccessfulPayment(paymentData: any) {
         type: "vote",
         reference_id: contest_id,
       });
+      
+      // Send email receipt
+      await sendReceipt({
+        type: "vote",
+        user_email: customer.email,
+        user_name: customer.name || "Valued Customer",
+        amount: paymentData.amount,
+        currency: paymentData.currency || "NGN",
+        quantity: vote_quantity || 1,
+        payment_method: "Flutterwave",
+        transaction_ref: paymentData.tx_ref,
+        contest_title: contest?.title || "Contest",
+        contestant_name: contestant?.name || "Contestant",
+      });
     }
   } else if (type === "ticket" && event_id && ticket_type_id && user_id) {
     console.log("Recording ticket purchase...");
+    
+    // Get event and ticket type details
+    const { data: event } = await supabase
+      .from("events")
+      .select("title, event_date, venue")
+      .eq("id", event_id)
+      .single();
+    
+    const { data: ticketType } = await supabase
+      .from("ticket_types")
+      .select("name")
+      .eq("id", ticket_type_id)
+      .single();
     
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -215,6 +278,30 @@ async function processSuccessfulPayment(paymentData: any) {
         message: `Your ${ticket_quantity || 1} ticket(s) have been purchased successfully.`,
         type: "ticket",
         reference_id: event_id,
+      });
+      
+      // Send email receipt with QR code
+      await sendReceipt({
+        type: "ticket",
+        user_email: customer.email,
+        user_name: customer.name || "Valued Customer",
+        amount: paymentData.amount,
+        currency: paymentData.currency || "NGN",
+        quantity: ticket_quantity || 1,
+        payment_method: "Flutterwave",
+        transaction_ref: paymentData.tx_ref,
+        event_title: event?.title || "Event",
+        event_date: event?.event_date ? new Date(event.event_date).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : "TBA",
+        event_venue: event?.venue || "Venue TBA",
+        ticket_type: ticketType?.name || "General",
+        qr_code,
       });
     }
   } else {

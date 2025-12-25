@@ -28,7 +28,8 @@ import {
   X,
   CreditCard,
   BarChart3,
-  Bell
+  Bell,
+  PieChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/events', label: 'Events', icon: Calendar },
     { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
     { path: '/admin/payments', label: 'Payment History', icon: Wallet },
+    { path: '/admin/analytics', label: 'Payment Analytics', icon: PieChart },
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
