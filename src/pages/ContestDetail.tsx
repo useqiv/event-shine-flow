@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
+import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,10 @@ const ContestDetail = () => {
   const vote = useVote();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
+
+  // Enable real-time updates for live leaderboard
+  useRealtimeContestants(id || '');
+  useRealtimeContest(id || '');
 
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);

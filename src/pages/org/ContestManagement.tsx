@@ -15,8 +15,9 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { useContest, useContestants } from '@/hooks/useContests';
-import { useUpdateContest, useCreateContestant, useContestContestants } from '@/hooks/useOrganization';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2 } from 'lucide-react';
+import { useUpdateContest, useCreateContestant, useUpdateContestant } from '@/hooks/useOrganization';
+import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -33,8 +34,15 @@ const ContestManagement = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
+  const updateContestant = useUpdateContestant();
+
+  // Enable real-time updates
+  useRealtimeContestants(id || '');
+  useRealtimeContest(id || '');
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
+  const [isEditContestantOpen, setIsEditContestantOpen] = useState(false);
+  const [editingContestant, setEditingContestant] = useState<any>(null);
   const [isCSVImportOpen, setIsCSVImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [newContestant, setNewContestant] = useState({
@@ -82,6 +90,34 @@ const ContestManagement = () => {
       setNewContestant({ name: '', bio: '', photo_url: '', performance: '' });
     } catch (error) {
       console.error('Failed to add contestant:', error);
+    }
+  };
+
+  const handleEditContestant = (contestant: any) => {
+    setEditingContestant({
+      id: contestant.id,
+      name: contestant.name,
+      bio: contestant.bio || '',
+      photo_url: contestant.photo_url || '',
+      performance: contestant.performance || '',
+    });
+    setIsEditContestantOpen(true);
+  };
+
+  const handleSaveContestant = async () => {
+    if (!editingContestant) return;
+    try {
+      await updateContestant.mutateAsync({
+        id: editingContestant.id,
+        name: editingContestant.name,
+        bio: editingContestant.bio,
+        photo_url: editingContestant.photo_url,
+        performance: editingContestant.performance,
+      });
+      setIsEditContestantOpen(false);
+      setEditingContestant(null);
+    } catch (error) {
+      console.error('Failed to update contestant:', error);
     }
   };
 
@@ -390,7 +426,7 @@ const ContestManagement = () => {
                   <Card key={contestant.id}>
                     <CardContent className="p-4">
                       <div className="flex gap-4">
-                        <div className="h-16 w-16 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                        <div className="h-16 w-16 rounded-lg bg-secondary overflow-hidden flex-shrink-0 relative group">
                           {contestant.photo_url ? (
                             <img src={contestant.photo_url} alt={contestant.name} className="h-full w-full object-cover" />
                           ) : (
@@ -398,9 +434,25 @@ const ContestManagement = () => {
                               <Users className="h-8 w-8 text-muted-foreground" />
                             </div>
                           )}
+                          <button
+                            onClick={() => handleEditContestant(contestant)}
+                            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Camera className="h-5 w-5 text-white" />
+                          </button>
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold">{contestant.name}</h3>
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-semibold">{contestant.name}</h3>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => handleEditContestant(contestant)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <p className="text-sm text-muted-foreground line-clamp-2">{contestant.bio}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <Vote className="h-4 w-4 text-primary" />
@@ -585,6 +637,52 @@ const ContestManagement = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Edit Contestant Dialog */}
+        <Dialog open={isEditContestantOpen} onOpenChange={setIsEditContestantOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Contestant</DialogTitle>
+            </DialogHeader>
+            {editingContestant && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name *</Label>
+                  <Input
+                    placeholder="Contestant name"
+                    value={editingContestant.name}
+                    onChange={(e) => setEditingContestant((prev: any) => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bio</Label>
+                  <Textarea
+                    placeholder="Short bio..."
+                    value={editingContestant.bio}
+                    onChange={(e) => setEditingContestant((prev: any) => ({ ...prev, bio: e.target.value }))}
+                  />
+                </div>
+                <ImageUpload
+                  bucket="contestant-images"
+                  value={editingContestant.photo_url}
+                  onChange={(url) => setEditingContestant((prev: any) => ({ ...prev, photo_url: url }))}
+                  label="Photo"
+                />
+                <div className="space-y-2">
+                  <Label>Performance/Entry</Label>
+                  <Input
+                    placeholder="e.g., Song title, routine name"
+                    value={editingContestant.performance}
+                    onChange={(e) => setEditingContestant((prev: any) => ({ ...prev, performance: e.target.value }))}
+                  />
+                </div>
+                <Button onClick={handleSaveContestant} className="w-full" disabled={updateContestant.isPending}>
+                  {updateContestant.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </OrganizationLayout>
   );
