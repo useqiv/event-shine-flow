@@ -18,7 +18,7 @@ const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
   const { user } = useAuth();
 
-  // Fetch ticket revenue per event
+  // Fetch ticket revenue per event with currency info
   const { data: eventRevenues } = useQuery({
     queryKey: ['event-revenues', user?.id],
     queryFn: async () => {
@@ -30,15 +30,28 @@ const ManageEvents = () => {
       const eventIds = eventsData?.map(e => e.id) || [];
       if (eventIds.length === 0) return {};
 
+      // Fetch tickets with ticket_type to get currency
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('event_id, amount_paid, quantity')
+        .select('event_id, amount_paid, quantity, ticket_type_id')
         .in('event_id', eventIds);
 
-      const revenues: Record<string, { revenue: number; ticketsSold: number }> = {};
+      // Fetch ticket types to get currencies
+      const ticketTypeIds = [...new Set(tickets?.map(t => t.ticket_type_id) || [])];
+      const { data: ticketTypes } = await supabase
+        .from('ticket_types')
+        .select('id, currency')
+        .in('id', ticketTypeIds);
+
+      const ticketTypeCurrencyMap: Record<string, string> = {};
+      ticketTypes?.forEach(tt => {
+        ticketTypeCurrencyMap[tt.id] = tt.currency || 'USD';
+      });
+
+      const revenues: Record<string, { revenue: number; ticketsSold: number; currency: string }> = {};
       tickets?.forEach(ticket => {
         if (!revenues[ticket.event_id]) {
-          revenues[ticket.event_id] = { revenue: 0, ticketsSold: 0 };
+          revenues[ticket.event_id] = { revenue: 0, ticketsSold: 0, currency: ticketTypeCurrencyMap[ticket.ticket_type_id] || 'USD' };
         }
         revenues[ticket.event_id].revenue += Number(ticket.amount_paid);
         revenues[ticket.event_id].ticketsSold += ticket.quantity;
@@ -114,10 +127,11 @@ const ManageEvents = () => {
         ) : events && events.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((event: any) => {
-              const eventData = eventRevenues?.[event.id] || { revenue: 0, ticketsSold: 0 };
+              const eventData = eventRevenues?.[event.id] || { revenue: 0, ticketsSold: 0, currency: 'USD' };
               const totalRevenue = eventData.revenue;
               const netRevenue = totalRevenue * (1 - ticketCommission / 100);
               const commissionDeducted = totalRevenue - netRevenue;
+              const eventCurrency = eventData.currency || 'USD';
 
               return (
                 <Card key={event.id} className="overflow-hidden">
@@ -160,7 +174,7 @@ const ManageEvents = () => {
                           <DollarSign className="h-3 w-3" />
                           <span>Total Revenue</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(totalRevenue, 'NGN')}</span>
+                        <span className="font-medium">{formatCurrency(totalRevenue, eventCurrency)}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -174,13 +188,13 @@ const ManageEvents = () => {
                               <TooltipContent>
                                 <p className="text-xs">
                                   {ticketCommission}% commission<br/>
-                                  Deducted: {formatCurrency(commissionDeducted, 'NGN')}
+                                  Deducted: {formatCurrency(commissionDeducted, eventCurrency)}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(netRevenue, 'NGN')}</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(netRevenue, eventCurrency)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {eventData.ticketsSold} tickets sold
