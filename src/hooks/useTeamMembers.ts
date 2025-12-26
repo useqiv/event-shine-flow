@@ -70,20 +70,21 @@ export const useInviteTeamMember = () => {
       
       if (error) throw error;
 
-      // Send invitation email
-      try {
-        await supabase.functions.invoke('send-team-invite', {
-          body: {
-            email: memberData.email,
-            name: memberData.name,
-            role: memberData.role,
-            organizationName: memberData.organizationName || 'Our Organization',
-            inviterName: memberData.inviterName || 'The Team',
-          },
+      // Check if user with this email exists and send in-app notification
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', memberData.email)
+        .single();
+
+      if (existingUser) {
+        await supabase.from('notifications').insert({
+          user_id: existingUser.id,
+          title: 'Team Invitation',
+          message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}.`,
+          type: 'team_invite',
+          reference_id: user!.id,
         });
-      } catch (emailError) {
-        console.error('Failed to send invitation email:', emailError);
-        // Don't throw - the invite was successful, email is secondary
       }
     },
     onSuccess: () => {
