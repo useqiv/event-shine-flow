@@ -424,8 +424,24 @@ export const useOrganizationStats = () => {
       const pendingPayouts = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       const completedPayouts = payouts?.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       
+      // Get organization commission rates
+      const { data: approval } = await supabase
+        .from('organization_approvals')
+        .select('ticket_commission_rate, vote_commission_rate')
+        .eq('organization_id', user!.id)
+        .single();
+      
+      // Default commission rates (10% if not set)
+      const ticketCommissionRate = approval?.ticket_commission_rate ?? 10;
+      const voteCommissionRate = approval?.vote_commission_rate ?? 10;
+      
+      // Calculate net revenue after platform commission
+      const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
+      const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
+      
       const totalRevenue = ticketRevenue + voteRevenue;
-      const availableBalance = totalRevenue - completedPayouts - pendingPayouts;
+      const netRevenue = netTicketRevenue + netVoteRevenue;
+      const availableBalance = netRevenue - completedPayouts - pendingPayouts;
       
       return {
         totalRevenue,
