@@ -248,7 +248,7 @@ const EventCheckinDashboard = () => {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Link to={`/org/events/${id}/scan`}>
+            <Link to={`/org/events/${id}/scanner`}>
               <Button>
                 <QrCode className="mr-2 h-4 w-4" />
                 Open Scanner
