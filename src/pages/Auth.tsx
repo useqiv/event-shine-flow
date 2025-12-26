@@ -7,17 +7,21 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Vote, Eye, EyeOff, Mail, Lock, User, Gift } from 'lucide-react';
+import { Vote, Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
+import { PasswordStrength, isPasswordStrong } from '@/components/ui/password-strength';
+import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const emailSchema = z.string().email('Invalid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
 
 const Auth = () => {
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { isLocked, remainingAttempts, formattedRemainingTime, recordFailedAttempt, resetAttempts } = useLoginRateLimit();
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -46,6 +50,15 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isLocked) {
+      toast({
+        title: 'Account Temporarily Locked',
+        description: `Too many failed attempts. Please try again in ${formattedRemainingTime}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     try {
       emailSchema.parse(loginEmail);
       passwordSchema.parse(loginPassword);
@@ -65,12 +78,18 @@ const Auth = () => {
     setIsLoading(false);
 
     if (error) {
+      const attemptData = recordFailedAttempt();
+      const attemptsLeft = Math.max(0, 5 - attemptData.count);
+      
       toast({
         title: 'Login Failed',
-        description: error.message,
+        description: attemptData.lockedUntil 
+          ? 'Too many failed attempts. Your account is temporarily locked for 15 minutes.'
+          : `${error.message}${attemptsLeft > 0 ? ` (${attemptsLeft} attempts remaining)` : ''}`,
         variant: 'destructive',
       });
     } else {
+      resetAttempts();
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
@@ -94,6 +113,15 @@ const Auth = () => {
         });
         return;
       }
+    }
+
+    if (!isPasswordStrong(signupPassword)) {
+      toast({
+        title: 'Weak Password',
+        description: 'Please create a stronger password that meets all requirements.',
+        variant: 'destructive',
+      });
+      return;
     }
 
     if (signupPassword !== confirmPassword) {
@@ -164,6 +192,24 @@ const Auth = () => {
                     Welcome back! Sign in to your account.
                   </CardDescription>
                   
+                  {isLocked && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Too many failed login attempts. Please try again in {formattedRemainingTime}.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {!isLocked && remainingAttempts < 5 && remainingAttempts > 0 && (
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        {remainingAttempts} login attempt{remainingAttempts !== 1 ? 's' : ''} remaining before temporary lockout.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <div className="relative">
@@ -205,8 +251,8 @@ const Auth = () => {
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-4">
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? 'Signing in...' : 'Sign In'}
+                  <Button type="submit" className="w-full" disabled={isLoading || isLocked}>
+                    {isLoading ? 'Signing in...' : isLocked ? `Locked (${formattedRemainingTime})` : 'Sign In'}
                   </Button>
                   
                   <div className="relative w-full">
@@ -290,6 +336,7 @@ const Auth = () => {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    <PasswordStrength password={signupPassword} />
                   </div>
                   
                   <div className="space-y-2">
