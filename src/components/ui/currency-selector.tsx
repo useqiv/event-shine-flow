@@ -1,5 +1,6 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useExchangeRates, fallbackRates } from '@/hooks/useExchangeRates';
 
 export const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar', minAmount: 1 },
@@ -10,17 +11,6 @@ export const currencies = [
   { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', minAmount: 100 },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand', minAmount: 10 },
 ];
-
-// Approximate exchange rates to USD (for display purposes only)
-export const exchangeRates: Record<string, number> = {
-  USD: 1,
-  NGN: 1550,
-  EUR: 0.92,
-  GBP: 0.79,
-  GHS: 15.5,
-  KES: 153,
-  ZAR: 18.5,
-};
 
 export const getCurrencySymbol = (code: string): string => {
   return currencies.find(c => c.code === code)?.symbol || code;
@@ -35,20 +25,43 @@ export const formatCurrency = (amount: number, currencyCode: string): string => 
   return `${symbol}${amount.toLocaleString()}`;
 };
 
-// Convert amount from one currency to another (approximate)
-export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
-  const fromRate = exchangeRates[fromCurrency] || 1;
-  const toRate = exchangeRates[toCurrency] || 1;
+// Convert amount from one currency to another using provided rates
+export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string, rates: Record<string, number>): number => {
+  const fromRate = rates[fromCurrency] || 1;
+  const toRate = rates[toCurrency] || 1;
   const amountInUSD = amount / fromRate;
   return amountInUSD * toRate;
 };
 
-// Format amount with conversion display
-export const formatWithConversion = (amount: number, fromCurrency: string, toCurrency: string): string => {
+// Format amount with conversion display using provided rates
+export const formatWithConversion = (amount: number, fromCurrency: string, toCurrency: string, rates: Record<string, number>): string => {
   if (fromCurrency === toCurrency) return '';
-  const converted = convertCurrency(amount, fromCurrency, toCurrency);
+  const converted = convertCurrency(amount, fromCurrency, toCurrency, rates);
   const symbol = getCurrencySymbol(toCurrency);
   return `≈ ${symbol}${converted.toFixed(2)}`;
+};
+
+// Hook to get conversion display with real-time rates
+export const useConversionDisplay = () => {
+  const { data: ratesData } = useExchangeRates();
+  const rates = ratesData?.rates || fallbackRates;
+  
+  const getConversion = (amount: number, fromCurrency: string, toCurrency: string = 'USD') => {
+    if (fromCurrency === toCurrency) return '';
+    return formatWithConversion(amount, fromCurrency, toCurrency, rates);
+  };
+
+  const convert = (amount: number, fromCurrency: string, toCurrency: string = 'USD') => {
+    return convertCurrency(amount, fromCurrency, toCurrency, rates);
+  };
+
+  return { 
+    getConversion, 
+    convert, 
+    rates,
+    isLive: ratesData && !ratesData.fallback,
+    lastUpdated: ratesData?.lastUpdated
+  };
 };
 
 interface CurrencySelectorProps {

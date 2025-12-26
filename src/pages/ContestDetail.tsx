@@ -16,7 +16,7 @@ import { CountdownTimer } from '@/components/ui/countdown-timer';
 import PaymentModal from '@/components/PaymentModal';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import confetti from 'canvas-confetti';
-import { formatCurrency, formatWithConversion } from '@/components/ui/currency-selector';
+import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
 import { 
   Trophy, 
   Calendar, 
@@ -43,6 +43,7 @@ const ContestDetail = () => {
   const { data: wallet } = useWallet();
   const vote = useVote();
   const { recordConversion } = useRecordConversion();
+  const { getConversion } = useConversionDisplay();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
@@ -242,7 +243,7 @@ const ContestDetail = () => {
                   <p className="text-sm text-muted-foreground">Vote Price</p>
                   <p className="text-xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
                   {contest.vote_currency && contest.vote_currency !== 'USD' && (
-                    <p className="text-xs text-muted-foreground">{formatWithConversion(Number(contest.vote_price), contest.vote_currency, 'USD')}</p>
+                    <p className="text-xs text-muted-foreground">{getConversion(Number(contest.vote_price), contest.vote_currency, 'USD')}</p>
                   )}
                 </div>
                 <div className="col-span-2 md:col-span-1">
