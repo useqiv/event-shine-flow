@@ -324,7 +324,7 @@ const EventDetail = () => {
                   <Wallet className="h-4 w-4" />
                   <span className="text-sm">Wallet Balance</span>
                 </div>
-                <span className="font-medium">₦{wallet?.balance?.toLocaleString() || '0'}</span>
+                <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
               </div>
 
               {/* Actions */}

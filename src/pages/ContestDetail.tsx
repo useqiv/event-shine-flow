@@ -385,7 +385,7 @@ const ContestDetail = () => {
                   <Card className="p-4">
                     <p className="text-sm text-muted-foreground">Total Spent</p>
                     <p className="text-2xl font-bold">
-                      ₦{myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0).toLocaleString()}
+                      {formatCurrency(myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0), contest.vote_currency || 'NGN')}
                     </p>
                   </Card>
                   <Card className="p-4">
@@ -435,7 +435,7 @@ const ContestDetail = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">₦{Number(vote.amount_paid).toLocaleString()}</p>
+                          <p className="font-semibold">{formatCurrency(Number(vote.amount_paid), contest.vote_currency || 'NGN')}</p>
                           <Badge variant="outline" className="text-xs">
                             {vote.payment_method}
                           </Badge>
@@ -486,7 +486,7 @@ const ContestDetail = () => {
               <div className="p-4 rounded-lg bg-secondary">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total Amount</span>
-                  <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
+                  <span className="text-xl font-bold">{formatCurrency(totalAmount, contest.vote_currency || 'NGN')}</span>
                 </div>
               </div>
 
@@ -496,7 +496,7 @@ const ContestDetail = () => {
                   <Wallet className="h-4 w-4" />
                   <span className="text-sm">Wallet Balance</span>
                 </div>
-                <span className="font-medium">₦{wallet?.balance?.toLocaleString() || '0'}</span>
+                <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
               </div>
 
               {/* Actions */}

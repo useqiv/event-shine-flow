@@ -12,6 +12,7 @@ import { Trophy, Search, Filter, Calendar, Vote, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsSaved, useToggleSave } from '@/hooks/useSavedItems';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/components/ui/currency-selector';
 
 const ContestCard = ({ contest }: { contest: any }) => {
   const { user } = useAuth();
@@ -86,7 +87,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm font-medium text-primary">
-              ₦{contest.vote_price} per vote
+              {formatCurrency(contest.vote_price, contest.vote_currency || 'NGN')} per vote
             </span>
             <Button size="sm">Vote Now</Button>
           </div>
