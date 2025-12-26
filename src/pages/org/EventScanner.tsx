@@ -11,7 +11,7 @@ import { useEvent } from '@/hooks/useEvents';
 import { useEventTicketTypes, useQRScanLogs } from '@/hooks/useOrganization';
 import QRCodeScanner from '@/components/org/QRCodeScanner';
 import ManualTicketLookup from '@/components/org/ManualTicketLookup';
-import { Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard, Users, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventScanner = () => {

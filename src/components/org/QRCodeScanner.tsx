@@ -274,14 +274,14 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
       {/* Scanner View */}
       <Card className="overflow-hidden">
-        <CardContent className="p-0">
+        <CardContent className="p-0 relative">
           <div 
             id={scannerContainerId} 
             className="w-full aspect-square max-h-[400px] bg-secondary"
           />
           
           {!isScanning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+            <div className="absolute inset-0 flex items-center justify-center bg-secondary z-10">
               <div className="text-center p-6">
                 <Camera className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">Camera is off</p>
