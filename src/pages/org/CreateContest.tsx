@@ -59,8 +59,18 @@ const CreateContest = () => {
     
     try {
       await createContest.mutateAsync({
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        image_url: formData.image_url || undefined,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
         vote_price: Number(formData.vote_price),
+        vote_currency: formData.vote_currency,
+        custom_slug: formData.custom_slug || undefined,
+        brand_primary_color: formData.brand_primary_color,
+        brand_secondary_color: formData.brand_secondary_color,
+        brand_logo_url: formData.brand_logo_url || undefined,
       });
       navigate('/org/contests');
     } catch (error) {
