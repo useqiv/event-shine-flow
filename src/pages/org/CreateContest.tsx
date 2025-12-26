@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
+import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest } from '@/hooks/useOrganization';
 import { Calendar, DollarSign, FileText } from 'lucide-react';
 
@@ -25,16 +26,6 @@ const categories = [
   'Other'
 ];
 
-const currencies = [
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi' },
-  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
-  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-];
-
 const CreateContest = () => {
   const navigate = useNavigate();
   const createContest = useCreateContest();
@@ -46,8 +37,8 @@ const CreateContest = () => {
     image_url: '',
     start_date: '',
     end_date: '',
-    vote_price: 100,
-    vote_currency: 'NGN',
+    vote_price: 1,
+    vote_currency: 'USD',
     custom_slug: '',
     brand_primary_color: '#7c3aed',
     brand_secondary_color: '#f97316',
@@ -201,28 +192,18 @@ const CreateContest = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="vote_currency">Currency *</Label>
-                  <Select
+                  <CurrencySelector
                     value={formData.vote_currency}
                     onValueChange={(value) => handleChange('vote_currency', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((currency) => (
-                        <SelectItem key={currency.code} value={currency.code}>
-                          {currency.symbol} - {currency.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vote_price">Price per Vote *</Label>
                   <Input
                     id="vote_price"
                     type="number"
-                    min="1"
+                    min="0.01"
+                    step="0.01"
                     value={formData.vote_price}
                     onChange={(e) => handleChange('vote_price', e.target.value)}
                     required

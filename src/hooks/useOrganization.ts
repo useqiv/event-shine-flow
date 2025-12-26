@@ -681,6 +681,7 @@ export const useCreateTicketType = () => {
       event_id: string;
       name: string;
       price: number;
+      currency?: string;
       quantity_available: number;
       description?: string;
     }) => {
@@ -710,6 +711,7 @@ export const useUpdateTicketType = () => {
       id: string; 
       name?: string;
       price?: number;
+      currency?: string;
       quantity_available?: number;
       description?: string;
     }) => {
