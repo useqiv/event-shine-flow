@@ -7,21 +7,24 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Vote, Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle } from 'lucide-react';
+import { Vote, Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle, Shield, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { PasswordStrength, isPasswordStrong } from '@/components/ui/password-strength';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 const emailSchema = z.string().email('Invalid email address');
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
 
 const Auth = () => {
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, mfaState, verifyMfa, clearMfaState } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { isLocked, remainingAttempts, formattedRemainingTime, recordFailedAttempt, resetAttempts } = useLoginRateLimit();
+  
+  const [mfaCode, setMfaCode] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -74,7 +77,7 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error, mfaRequired } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
 
     if (error) {
@@ -86,6 +89,36 @@ const Auth = () => {
         description: attemptData.lockedUntil 
           ? 'Too many failed attempts. Your account is temporarily locked for 15 minutes.'
           : `${error.message}${attemptsLeft > 0 ? ` (${attemptsLeft} attempts remaining)` : ''}`,
+        variant: 'destructive',
+      });
+    } else if (mfaRequired) {
+      // MFA screen will be shown via mfaState
+      toast({
+        title: 'Verification Required',
+        description: 'Please enter your 2FA code to continue.',
+      });
+    } else {
+      resetAttempts();
+      toast({
+        title: 'Welcome back!',
+        description: 'You have successfully logged in.',
+      });
+      navigate('/dashboard');
+    }
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaState.factorId || mfaCode.length !== 6) return;
+
+    setIsLoading(true);
+    const { error } = await verifyMfa(mfaState.factorId, mfaCode);
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'Verification Failed',
+        description: 'Invalid code. Please try again.',
         variant: 'destructive',
       });
     } else {
@@ -165,6 +198,60 @@ const Auth = () => {
       });
     }
   };
+
+  // Show MFA verification screen if required
+  if (mfaState.required && mfaState.factorId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Link to="/" className="flex items-center justify-center gap-2 mb-8">
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+              <Vote className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-2xl text-foreground">VoteApp</span>
+          </Link>
+
+          <Card className="border-border/50">
+            <CardHeader className="text-center">
+              <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Shield className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle>Two-Factor Authentication</CardTitle>
+              <CardDescription>
+                Enter the 6-digit code from your authenticator app.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleMfaVerify}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="mfa-code">Verification Code</Label>
+                  <Input
+                    id="mfa-code"
+                    type="text"
+                    placeholder="000000"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="text-center text-lg tracking-widest font-mono"
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4">
+                <Button type="submit" className="w-full" disabled={isLoading || mfaCode.length !== 6}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Verify
+                </Button>
+                <Button type="button" variant="ghost" onClick={() => { clearMfaState(); setMfaCode(''); }}>
+                  Cancel
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -246,6 +333,9 @@ const Auth = () => {
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
+                    </div>
+                    <div className="flex justify-end">
+                      <ForgotPasswordDialog />
                     </div>
                   </div>
                 </CardContent>

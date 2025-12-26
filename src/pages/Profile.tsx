@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +9,22 @@ import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/useProf
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, Lock, Camera, Loader2, Globe } from 'lucide-react';
+import { User, Mail, Phone, Lock, Camera, Loader2, Globe, Shield, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import CurrencyPreferenceSelector from '@/components/ui/currency-preference-selector';
+import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const { user } = useAuth();
@@ -25,13 +38,58 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<any[]>([]);
+  const [isLoadingMfa, setIsLoadingMfa] = useState(true);
+  const [isDisablingMfa, setIsDisablingMfa] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
       setPhone(profile.phone || '');
     }
   }, [profile]);
+
+  useEffect(() => {
+    loadMfaFactors();
+  }, []);
+
+  const loadMfaFactors = async () => {
+    setIsLoadingMfa(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      if (error) throw error;
+      setMfaFactors(data.totp || []);
+    } catch (error) {
+      console.error('Failed to load MFA factors:', error);
+    } finally {
+      setIsLoadingMfa(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    const verifiedFactor = mfaFactors.find(f => f.factor_type === 'totp' && f.status === 'verified');
+    if (!verifiedFactor) return;
+
+    setIsDisablingMfa(true);
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: verifiedFactor.id });
+      if (error) throw error;
+      
+      toast({
+        title: '2FA Disabled',
+        description: 'Two-factor authentication has been disabled.',
+      });
+      loadMfaFactors();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to disable 2FA',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDisablingMfa(false);
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -184,6 +242,56 @@ const Profile = () => {
           </CardHeader>
           <CardContent>
             <CurrencyPreferenceSelector />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Two-Factor Authentication
+            </CardTitle>
+            <CardDescription>
+              Add an extra layer of security to your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingMfa ? (
+              <Skeleton className="h-24 w-full" />
+            ) : mfaFactors.some(f => f.factor_type === 'totp' && f.status === 'verified') ? (
+              <div className="space-y-4">
+                <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-900">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    Two-factor authentication is enabled on your account.
+                  </AlertDescription>
+                </Alert>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isDisablingMfa}>
+                      {isDisablingMfa && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Disable 2FA
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Disable Two-Factor Authentication?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove the extra security layer from your account. Are you sure you want to continue?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDisableMfa} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Disable 2FA
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ) : (
+              <TwoFactorSetup onComplete={loadMfaFactors} />
+            )}
           </CardContent>
         </Card>
 
