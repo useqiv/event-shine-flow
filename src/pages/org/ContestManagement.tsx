@@ -26,6 +26,7 @@ import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
   DndContext, 
   closestCenter, 
@@ -543,7 +544,7 @@ const ContestManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Vote Price</p>
-                  <p className="text-2xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
                 </div>
                 <Trophy className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -554,7 +555,7 @@ const ContestManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-2xl font-bold">₦{(contest.total_votes * Number(contest.vote_price)).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(contest.total_votes * Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
               </div>
