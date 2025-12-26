@@ -3,12 +3,34 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePromoCodes } from '@/hooks/useOrganization';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Tag, Users, DollarSign, Percent } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { TrendingUp, Tag, Users, DollarSign, Percent, Clock, ShoppingCart } from 'lucide-react';
+import { format, subDays, startOfDay } from 'date-fns';
 
 export const PromoCodeAnalytics = () => {
   const { data: promoCodes, isLoading } = usePromoCodes();
+  
+  // Fetch detailed usage data
+  const { data: usageData, isLoading: isLoadingUsage } = useQuery({
+    queryKey: ['promo-code-usage'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('promo_code_usage')
+        .select(`
+          *,
+          promo_codes (code, discount_type, discount_value)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (isLoading) {
     return (
@@ -34,26 +56,35 @@ export const PromoCodeAnalytics = () => {
     );
   }
 
-  // Calculate analytics
+  // Calculate analytics from usage data (more accurate)
+  const totalDiscountGiven = usageData?.reduce((sum: number, u: any) => sum + Number(u.discount_amount || 0), 0) || 0;
+  const totalOrderValue = usageData?.reduce((sum: number, u: any) => sum + Number(u.order_amount || 0), 0) || 0;
+  
+  // Calculate analytics from promo codes
   const totalCodes = promoCodes.length;
   const activeCodes = promoCodes.filter((p: any) => p.is_active).length;
-  const totalRedemptions = promoCodes.reduce((sum: number, p: any) => sum + (p.current_uses || 0), 0);
+  const totalRedemptions = usageData?.length || promoCodes.reduce((sum: number, p: any) => sum + (p.current_uses || 0), 0);
   
-  // Calculate estimated revenue impact (discount given)
-  const estimatedDiscountGiven = promoCodes.reduce((sum: number, p: any) => {
-    const uses = p.current_uses || 0;
-    if (p.discount_type === 'percentage') {
-      // Estimate based on average transaction of 5000
-      return sum + (uses * 5000 * (p.discount_value / 100));
-    }
-    return sum + (uses * p.discount_value);
-  }, 0);
-
   // Calculate redemption rate for codes with max_uses
   const codesWithLimit = promoCodes.filter((p: any) => p.max_uses);
   const avgRedemptionRate = codesWithLimit.length > 0
     ? codesWithLimit.reduce((sum: number, p: any) => sum + ((p.current_uses / p.max_uses) * 100), 0) / codesWithLimit.length
     : 0;
+
+  // Prepare usage over time data (last 14 days)
+  const usageByDay = Array.from({ length: 14 }, (_, i) => {
+    const date = startOfDay(subDays(new Date(), 13 - i));
+    const dayUsage = usageData?.filter((u: any) => {
+      const usageDate = startOfDay(new Date(u.created_at));
+      return usageDate.getTime() === date.getTime();
+    }) || [];
+    
+    return {
+      date: format(date, 'MMM dd'),
+      uses: dayUsage.length,
+      discount: dayUsage.reduce((sum: number, u: any) => sum + Number(u.discount_amount || 0), 0),
+    };
+  });
 
   // Prepare data for charts
   const codeUsageData = promoCodes
@@ -108,7 +139,7 @@ export const PromoCodeAnalytics = () => {
               <Users className="h-8 w-8 text-primary" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Across all codes
+              {isLoadingUsage ? 'Loading...' : `From ${usageData?.length || 0} tracked uses`}
             </p>
           </CardContent>
         </Card>
@@ -132,13 +163,13 @@ export const PromoCodeAnalytics = () => {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Est. Discount Given</p>
-                <p className="text-2xl font-bold">₦{estimatedDiscountGiven.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Total Discount Given</p>
+                <p className="text-2xl font-bold">₦{totalDiscountGiven.toLocaleString()}</p>
               </div>
               <DollarSign className="h-8 w-8 text-primary" />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Revenue impact
+              On ₦{totalOrderValue.toLocaleString()} orders
             </p>
           </CardContent>
         </Card>
@@ -267,6 +298,90 @@ export const PromoCodeAnalytics = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Usage Over Time */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Usage Over Time (Last 14 Days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={usageByDay}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip />
+              <Line yAxisId="left" type="monotone" dataKey="uses" stroke="hsl(var(--primary))" name="Uses" />
+              <Line yAxisId="right" type="monotone" dataKey="discount" stroke="hsl(var(--secondary))" name="Discount (₦)" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Recent Usage Table */}
+      {usageData && usageData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Recent Promo Code Usage
+            </CardTitle>
+            <CardDescription>Detailed tracking of recent redemptions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Order</TableHead>
+                    <TableHead className="text-right">Discount</TableHead>
+                    <TableHead className="text-right">Final</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usageData.slice(0, 20).map((usage: any) => (
+                    <TableRow key={usage.id}>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">
+                          {usage.promo_codes?.code || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[150px] truncate">
+                        {usage.email || 'Guest'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={usage.order_type === 'ticket' ? 'default' : 'secondary'}>
+                          {usage.order_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ₦{Number(usage.order_amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right text-green-600">
+                        -₦{Number(usage.discount_amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ₦{Number(usage.final_amount).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {format(new Date(usage.created_at), 'MMM dd, HH:mm')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

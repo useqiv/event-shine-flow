@@ -25,6 +25,19 @@ interface ValidateResult {
   errorMessage: string | null;
 }
 
+interface PromoUsageDetails {
+  userId: string;
+  email?: string;
+  orderType: 'ticket' | 'vote';
+  orderAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+  eventId?: string;
+  contestId?: string;
+  ticketTypeId?: string;
+  transactionReference?: string;
+}
+
 export const usePromoCodeValidation = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
@@ -51,7 +64,7 @@ export const usePromoCodeValidation = () => {
         .select('*')
         .eq('code', code.toUpperCase())
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error || !promoCode) {
         return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'Invalid promo code' };
@@ -124,31 +137,44 @@ export const usePromoCodeValidation = () => {
     }
   };
 
-  const incrementPromoCodeUsage = async (promoId: string) => {
+  const recordPromoCodeUsage = async (promoId: string, details: PromoUsageDetails) => {
     try {
-      // Get current usage count
+      // Insert usage record
+      const { error: usageError } = await supabase
+        .from('promo_code_usage')
+        .insert({
+          promo_code_id: promoId,
+          user_id: details.userId,
+          email: details.email,
+          order_type: details.orderType,
+          order_amount: details.orderAmount,
+          discount_amount: details.discountAmount,
+          final_amount: details.finalAmount,
+          event_id: details.eventId || null,
+          contest_id: details.contestId || null,
+          ticket_type_id: details.ticketTypeId || null,
+          transaction_reference: details.transactionReference || null,
+        });
+
+      if (usageError) {
+        console.error('Error recording promo code usage:', usageError);
+      }
+
+      // Increment the current_uses counter
       const { data: promo, error: fetchError } = await supabase
         .from('promo_codes')
         .select('current_uses')
         .eq('id', promoId)
         .single();
       
-      if (fetchError || !promo) {
-        console.error('Error fetching promo code:', fetchError);
-        return;
-      }
-
-      // Update with incremented value
-      const { error: updateError } = await supabase
-        .from('promo_codes')
-        .update({ current_uses: promo.current_uses + 1 })
-        .eq('id', promoId);
-
-      if (updateError) {
-        console.error('Error updating promo code usage:', updateError);
+      if (!fetchError && promo) {
+        await supabase
+          .from('promo_codes')
+          .update({ current_uses: promo.current_uses + 1 })
+          .eq('id', promoId);
       }
     } catch (err) {
-      console.error('Error incrementing promo code usage:', err);
+      console.error('Error in promo code usage tracking:', err);
     }
   };
 
@@ -162,7 +188,7 @@ export const usePromoCodeValidation = () => {
     appliedPromo,
     discountAmount,
     validatePromoCode,
-    incrementPromoCodeUsage,
+    recordPromoCodeUsage,
     clearAppliedPromo,
   };
 };
