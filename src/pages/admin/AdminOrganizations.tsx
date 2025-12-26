@@ -33,7 +33,8 @@ import { Label } from '@/components/ui/label';
 import { 
   useAllOrganizations, 
   useApproveOrganization, 
-  useRejectOrganization 
+  useRejectOrganization,
+  useUpdateOrganizationCommission 
 } from '@/hooks/useAdminData';
 import { 
   Search, 
@@ -42,7 +43,8 @@ import {
   XCircle, 
   Eye,
   Building2,
-  Ban
+  Ban,
+  Percent
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,14 +53,18 @@ const AdminOrganizations: React.FC = () => {
   const { data: organizations, isLoading } = useAllOrganizations();
   const approveOrg = useApproveOrganization();
   const rejectOrg = useRejectOrganization();
+  const updateCommission = useUpdateOrganizationCommission();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [specialRate, setSpecialRate] = useState('');
+  const [voteCommissionRate, setVoteCommissionRate] = useState('');
+  const [ticketCommissionRate, setTicketCommissionRate] = useState('');
 
   const filteredOrgs = organizations?.filter(org => 
     org.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,6 +88,29 @@ const AdminOrganizations: React.FC = () => {
     setRejectDialogOpen(false);
     setRejectReason('');
     setSelectedOrg(null);
+  };
+
+  const handleUpdateCommission = async () => {
+    if (!selectedOrg) return;
+    await updateCommission.mutateAsync({
+      orgId: selectedOrg.id,
+      voteCommissionRate: voteCommissionRate ? parseFloat(voteCommissionRate) : null,
+      ticketCommissionRate: ticketCommissionRate ? parseFloat(ticketCommissionRate) : null,
+      specialCommissionRate: specialRate ? parseFloat(specialRate) : null,
+    });
+    setCommissionDialogOpen(false);
+    setVoteCommissionRate('');
+    setTicketCommissionRate('');
+    setSpecialRate('');
+    setSelectedOrg(null);
+  };
+
+  const openCommissionDialog = (org: any) => {
+    setSelectedOrg(org);
+    setVoteCommissionRate(org.approval?.vote_commission_rate?.toString() || '');
+    setTicketCommissionRate(org.approval?.ticket_commission_rate?.toString() || '');
+    setSpecialRate(org.approval?.special_commission_rate?.toString() || '');
+    setCommissionDialogOpen(true);
   };
 
   const getStatusBadge = (org: any) => {
@@ -210,9 +239,25 @@ const AdminOrganizations: React.FC = () => {
                       <TableCell>{org.email}</TableCell>
                       <TableCell>{getStatusBadge(org)}</TableCell>
                       <TableCell>
-                        {org.approval?.special_commission_rate 
-                          ? `${org.approval.special_commission_rate}%`
-                          : 'Default (10%)'}
+                        <div className="text-sm">
+                          {org.approval?.vote_commission_rate || org.approval?.ticket_commission_rate ? (
+                            <div className="space-y-0.5">
+                              {org.approval?.vote_commission_rate && (
+                                <div>Votes: <span className="font-medium">{org.approval.vote_commission_rate}%</span></div>
+                              )}
+                              {org.approval?.ticket_commission_rate && (
+                                <div>Tickets: <span className="font-medium">{org.approval.ticket_commission_rate}%</span></div>
+                              )}
+                              {!org.approval?.vote_commission_rate && !org.approval?.ticket_commission_rate && org.approval?.special_commission_rate && (
+                                <div>All: <span className="font-medium">{org.approval.special_commission_rate}%</span></div>
+                              )}
+                            </div>
+                          ) : org.approval?.special_commission_rate ? (
+                            <span className="font-medium">{org.approval.special_commission_rate}%</span>
+                          ) : (
+                            <span className="text-muted-foreground">Default</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{format(new Date(org.created_at), 'MMM d, yyyy')}</TableCell>
                       <TableCell className="text-right">
@@ -256,16 +301,25 @@ const AdminOrganizations: React.FC = () => {
                               </>
                             )}
                             {org.approval?.status === 'approved' && !org.approval?.is_blacklisted && (
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  setSelectedOrg(org);
-                                  setRejectDialogOpen(true);
-                                }}
-                                className="text-destructive"
-                              >
-                                <Ban className="mr-2 h-4 w-4" />
-                                Blacklist
-                              </DropdownMenuItem>
+                              <>
+                                <DropdownMenuItem 
+                                  onClick={() => openCommissionDialog(org)}
+                                >
+                                  <Percent className="mr-2 h-4 w-4" />
+                                  Edit Commission
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedOrg(org);
+                                    setRejectDialogOpen(true);
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Ban className="mr-2 h-4 w-4" />
+                                  Blacklist
+                                </DropdownMenuItem>
+                              </>
                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -453,6 +507,87 @@ const AdminOrganizations: React.FC = () => {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Commission Dialog */}
+        <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Commission Rates</DialogTitle>
+              <DialogDescription>
+                Set custom commission rates for this organization. Leave empty to use platform defaults.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={selectedOrg?.avatar_url || ''} />
+                  <AvatarFallback><Building2 className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedOrg?.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedOrg?.email}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Vote Commission (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={voteCommissionRate}
+                    onChange={(e) => setVoteCommissionRate(e.target.value)}
+                    placeholder="Platform default"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label>Ticket Commission (%)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={ticketCommissionRate}
+                    onChange={(e) => setTicketCommissionRate(e.target.value)}
+                    placeholder="Platform default"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Fallback Rate (%) <span className="text-muted-foreground text-xs">(Legacy)</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={specialRate}
+                  onChange={(e) => setSpecialRate(e.target.value)}
+                  placeholder="Used if specific rates not set"
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only used if vote/ticket rates are not set
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCommissionDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateCommission}
+                disabled={updateCommission.isPending}
+              >
+                {updateCommission.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

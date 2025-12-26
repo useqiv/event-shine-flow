@@ -34,7 +34,7 @@ const OrgDashboard = () => {
   const { data: events, isLoading: eventsLoading } = useOrganizationEvents();
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
 
-  // Fetch commission settings
+  // Fetch platform commission settings
   const { data: commissionSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
     queryFn: async () => {
@@ -54,18 +54,40 @@ const OrgDashboard = () => {
     },
   });
 
+  // Fetch organization-specific commission rates
+  const { data: orgApproval } = useQuery({
+    queryKey: ['org-approval-commission'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
+        .from('organization_approvals')
+        .select('vote_commission_rate, ticket_commission_rate, special_commission_rate')
+        .eq('organization_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const pendingPayouts = payouts?.filter(p => p.status === 'pending') || [];
 
-  // Calculate net revenue after commission deduction
-  const platformCommission = commissionSettings?.platform_commission_percentage || 10;
-  const voteCommission = commissionSettings?.vote_commission_percentage || platformCommission;
-  const ticketCommission = commissionSettings?.ticket_commission_percentage || platformCommission;
+  // Calculate commission rates - org-specific rates take priority over platform defaults
+  const platformVoteCommission = commissionSettings?.vote_commission_percentage || commissionSettings?.platform_commission_percentage || 10;
+  const platformTicketCommission = commissionSettings?.ticket_commission_percentage || commissionSettings?.platform_commission_percentage || 10;
+  
+  // Use org-specific rates if available, otherwise fall back to platform defaults
+  const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
+  const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
+  const hasCustomRate = orgApproval?.vote_commission_rate != null || orgApproval?.ticket_commission_rate != null || orgApproval?.special_commission_rate != null;
   
   const voteRevenue = stats?.voteRevenue || 0;
   const ticketRevenue = stats?.ticketRevenue || 0;
   const totalRevenue = stats?.totalRevenue || 0;
   
-  // Calculate net revenue using specific commission rates
+  // Calculate net revenue using appropriate commission rates
   const netVoteRevenue = voteRevenue * (1 - voteCommission / 100);
   const netTicketRevenue = ticketRevenue * (1 - ticketCommission / 100);
   const netRevenue = netVoteRevenue + netTicketRevenue;
@@ -252,7 +274,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                -{platformCommission}% platform fee
+                {hasCustomRate ? 'Custom rate' : 'Platform fee'}: Votes {voteCommission}%, Tickets {ticketCommission}%
               </p>
             </CardContent>
           </Card>

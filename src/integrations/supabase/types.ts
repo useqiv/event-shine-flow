@@ -674,7 +674,9 @@ export type Database = {
           reviewed_by: string | null
           special_commission_rate: number | null
           status: string
+          ticket_commission_rate: number | null
           updated_at: string
+          vote_commission_rate: number | null
         }
         Insert: {
           blacklist_reason?: string | null
@@ -688,7 +690,9 @@ export type Database = {
           reviewed_by?: string | null
           special_commission_rate?: number | null
           status?: string
+          ticket_commission_rate?: number | null
           updated_at?: string
+          vote_commission_rate?: number | null
         }
         Update: {
           blacklist_reason?: string | null
@@ -702,7 +706,9 @@ export type Database = {
           reviewed_by?: string | null
           special_commission_rate?: number | null
           status?: string
+          ticket_commission_rate?: number | null
           updated_at?: string
+          vote_commission_rate?: number | null
         }
         Relationships: [
           {
