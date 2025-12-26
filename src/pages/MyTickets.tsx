@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,14 +6,43 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useMyTickets } from '@/hooks/useEvents';
 import RefundRequestDialog from '@/components/RefundRequestDialog';
 import { QRCodeSVG } from 'qrcode.react';
-import { Ticket, Calendar, MapPin, Clock, Hash, CreditCard, RotateCcw, Maximize2, Download } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Ticket, 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  Hash, 
+  CreditCard, 
+  RotateCcw, 
+  Maximize2, 
+  Download,
+  Share2,
+  Copy,
+  Mail,
+  Printer,
+  Check,
+  Loader2
+} from 'lucide-react';
 import { format } from 'date-fns';
 
 const TicketCard = ({ ticket }: { ticket: any }) => {
   const [showQRDialog, setShowQRDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const printRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const ticketUrl = `${window.location.origin}/events/${ticket.event_id}`;
 
   const downloadQRCode = () => {
     const svg = document.getElementById(`qr-full-${ticket.id}`);
@@ -34,6 +63,208 @@ const TicketCard = ({ ticket }: { ticket: any }) => {
       };
       img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
     }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(ticketUrl);
+      setCopied(true);
+      toast({ title: "Link copied!", description: "Ticket link copied to clipboard" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  };
+
+  const shareViaEmail = async () => {
+    if (!recipientEmail) {
+      toast({ title: "Please enter an email address", variant: "destructive" });
+      return;
+    }
+
+    setEmailSending(true);
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .single();
+
+      const { error } = await supabase.functions.invoke('share-ticket-email', {
+        body: {
+          recipientEmail,
+          recipientName,
+          senderName: profile?.full_name || 'Someone',
+          eventTitle: ticket.event?.title,
+          eventDate: format(new Date(ticket.event?.event_date), 'EEEE, MMMM d, yyyy'),
+          eventTime: format(new Date(ticket.event?.event_date), 'h:mm a'),
+          venue: ticket.event?.venue,
+          ticketType: ticket.ticket_type?.name,
+          quantity: ticket.quantity,
+          ticketCode: ticket.qr_code,
+          ticketUrl,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Ticket shared!", description: `Email sent to ${recipientEmail}` });
+      setRecipientEmail('');
+      setRecipientName('');
+      setShowShareDialog(false);
+    } catch (error: any) {
+      toast({ 
+        title: "Failed to send email", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const printTicket = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({ title: "Please allow popups to print", variant: "destructive" });
+      return;
+    }
+
+    const eventDate = format(new Date(ticket.event?.event_date), 'EEEE, MMMM d, yyyy');
+    const eventTime = format(new Date(ticket.event?.event_date), 'h:mm a');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ticket - ${ticket.event?.title}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: #fff;
+          }
+          .ticket {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 3px solid #7c3aed;
+            border-radius: 16px;
+            overflow: hidden;
+          }
+          .header {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+          }
+          .header h1 { font-size: 24px; margin-bottom: 4px; }
+          .header p { opacity: 0.9; font-size: 14px; }
+          .content {
+            display: flex;
+            padding: 24px;
+          }
+          .qr-section {
+            flex-shrink: 0;
+            padding-right: 24px;
+            border-right: 2px dashed #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          }
+          .qr-code {
+            width: 150px;
+            height: 150px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .qr-code svg { width: 100%; height: 100%; }
+          .qr-label { font-size: 10px; color: #6b7280; margin-top: 8px; text-align: center; }
+          .details {
+            flex: 1;
+            padding-left: 24px;
+          }
+          .detail-row {
+            margin-bottom: 16px;
+          }
+          .detail-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-top: 2px;
+          }
+          .footer {
+            background: #f9fafb;
+            padding: 16px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #6b7280;
+          }
+          .ticket-id { font-family: monospace; }
+          @media print {
+            body { padding: 20px; }
+            .ticket { border-width: 2px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="ticket">
+          <div class="header">
+            <h1>${ticket.event?.title}</h1>
+            <p>${ticket.ticket_type?.name} × ${ticket.quantity}</p>
+          </div>
+          <div class="content">
+            <div class="qr-section">
+              <div class="qr-code" id="qr-container"></div>
+              <p class="qr-label">Scan for entry</p>
+            </div>
+            <div class="details">
+              <div class="detail-row">
+                <div class="detail-label">Date</div>
+                <div class="detail-value">${eventDate}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Time</div>
+                <div class="detail-value">${eventTime}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Venue</div>
+                <div class="detail-value">${ticket.event?.venue}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Ticket Code</div>
+                <div class="detail-value" style="font-family: monospace; font-size: 12px;">${ticket.qr_code}</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <span class="ticket-id">ID: ${ticket.id.slice(0, 8).toUpperCase()}</span>
+            <span>Amount Paid: ₦${Number(ticket.amount_paid).toLocaleString()}</span>
+          </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+        <script>
+          QRCode.toCanvas(document.createElement('canvas'), '${ticket.qr_code}', { width: 150 }, function(error, canvas) {
+            if (!error) {
+              document.getElementById('qr-container').appendChild(canvas);
+              setTimeout(function() { window.print(); window.close(); }, 500);
+            }
+          });
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -147,7 +378,7 @@ const TicketCard = ({ ticket }: { ticket: any }) => {
             <Separator className="my-4" />
 
             {/* Footer Info */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Hash className="h-3 w-3" />
@@ -162,19 +393,80 @@ const TicketCard = ({ ticket }: { ticket: any }) => {
                 </span>
               </div>
 
-              {ticket.status === 'active' && (
-                <RefundRequestDialog
-                  transactionType="ticket"
-                  transactionId={ticket.id}
-                  amount={Number(ticket.amount_paid)}
-                  itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
-                >
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Request Refund
-                  </Button>
-                </RefundRequestDialog>
-              )}
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Share2 className="h-4 w-4 mr-1" />
+                      Share
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Share Ticket</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      {/* Copy Link */}
+                      <div className="space-y-2">
+                        <Label>Copy Link</Label>
+                        <div className="flex gap-2">
+                          <Input value={ticketUrl} readOnly className="flex-1" />
+                          <Button onClick={copyLink} variant="outline" size="icon">
+                            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Email Share */}
+                      <div className="space-y-3">
+                        <Label>Share via Email</Label>
+                        <div className="space-y-2">
+                          <Input 
+                            placeholder="Recipient name (optional)"
+                            value={recipientName}
+                            onChange={(e) => setRecipientName(e.target.value)}
+                          />
+                          <Input 
+                            type="email"
+                            placeholder="Recipient email"
+                            value={recipientEmail}
+                            onChange={(e) => setRecipientEmail(e.target.value)}
+                          />
+                        </div>
+                        <Button onClick={shareViaEmail} disabled={emailSending} className="w-full">
+                          {emailSending ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</>
+                          ) : (
+                            <><Mail className="h-4 w-4 mr-2" /> Send Email</>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Button variant="outline" size="sm" onClick={printTicket}>
+                  <Printer className="h-4 w-4 mr-1" />
+                  Print
+                </Button>
+
+                {ticket.status === 'active' && (
+                  <RefundRequestDialog
+                    transactionType="ticket"
+                    transactionId={ticket.id}
+                    amount={Number(ticket.amount_paid)}
+                    itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
+                  >
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Refund
+                    </Button>
+                  </RefundRequestDialog>
+                )}
+              </div>
             </div>
           </div>
         </div>
