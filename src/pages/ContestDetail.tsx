@@ -247,6 +247,8 @@ const ContestDetail = () => {
                       amount={Number(contest.vote_price)} 
                       currency={contest.vote_currency || 'NGN'} 
                       size="md"
+                      showBadge
+                      showToggle
                     />
                   </p>
                 </div>
@@ -387,6 +389,8 @@ const ContestDetail = () => {
                         amount={myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0)} 
                         currency={contest.vote_currency || 'NGN'} 
                         size="lg"
+                        showBadge
+                        showToggle
                       />
                     </p>
                   </Card>

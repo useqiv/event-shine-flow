@@ -238,7 +238,7 @@ const EventDetail = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold">
-                              <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" />
+                              <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" showBadge showToggle />
                             </p>
                           </div>
                         </div>
@@ -307,7 +307,7 @@ const EventDetail = () => {
                   <span className="text-sm text-muted-foreground">Total Amount</span>
                   <div className="text-right">
                     <span className="text-xl font-bold">
-                      <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" />
+                      <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" showBadge showToggle />
                     </span>
                   </div>
                 </div>
