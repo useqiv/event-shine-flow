@@ -16,7 +16,9 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone } from 'lucide-react';
+import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
+import AttendanceReportExport from '@/components/org/AttendanceReportExport';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -36,6 +38,7 @@ const EventManagement = () => {
   const createTicketType = useCreateTicketType();
 
   const [isAddTicketTypeOpen, setIsAddTicketTypeOpen] = useState(false);
+  const [editingTicketType, setEditingTicketType] = useState<any>(null);
   const [newTicketType, setNewTicketType] = useState({
     name: '',
     price: '',
@@ -359,7 +362,15 @@ const EventManagement = () => {
             ) : ticketTypes && ticketTypes.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {ticketTypes.map((ticketType: any) => (
-                  <Card key={ticketType.id}>
+                  <Card key={ticketType.id} className="relative group">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setEditingTicketType(ticketType)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="font-semibold">{ticketType.name}</h3>
@@ -377,6 +388,9 @@ const EventManagement = () => {
                           style={{ width: `${(ticketType.quantity_sold / ticketType.quantity_available) * 100}%` }}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {ticketType.quantity_available - ticketType.quantity_sold} remaining
+                      </p>
                     </CardContent>
                   </Card>
                 ))}
@@ -394,12 +408,15 @@ const EventManagement = () => {
           <TabsContent value="attendees">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <CardTitle>Attendees ({tickets?.length || 0})</CardTitle>
-                  <Button variant="outline" size="sm" onClick={handleExportAttendees}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleExportAttendees}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Quick CSV
+                    </Button>
+                    <AttendanceReportExport eventId={id!} eventTitle={event.title} />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -582,6 +599,12 @@ const EventManagement = () => {
             </div>
           </TabsContent>
         </Tabs>
+        {/* Edit Ticket Type Dialog */}
+        <EditTicketTypeDialog
+          ticketType={editingTicketType}
+          open={!!editingTicketType}
+          onOpenChange={(open) => !open && setEditingTicketType(null)}
+        />
       </div>
     </OrganizationLayout>
   );

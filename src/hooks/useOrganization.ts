@@ -683,6 +683,61 @@ export const useCreateTicketType = () => {
   });
 };
 
+// Update Ticket Type
+export const useUpdateTicketType = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updateData }: { 
+      id: string; 
+      name?: string;
+      price?: number;
+      quantity_available?: number;
+      description?: string;
+    }) => {
+      const { error } = await supabase
+        .from('ticket_types')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ticket-types'] });
+      toast.success('Ticket type updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update ticket type');
+      console.error(error);
+    },
+  });
+};
+
+// Delete Ticket Type
+export const useDeleteTicketType = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (ticketTypeId: string) => {
+      const { error } = await supabase
+        .from('ticket_types')
+        .delete()
+        .eq('id', ticketTypeId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ticket-types'] });
+      toast.success('Ticket type deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete ticket type. It may have tickets sold.');
+      console.error(error);
+    },
+  });
+};
+
+
 // Update Contest
 export const useUpdateContest = () => {
   const queryClient = useQueryClient();
