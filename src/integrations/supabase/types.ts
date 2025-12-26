@@ -925,6 +925,7 @@ export type Database = {
           is_active: boolean
           max_uses: number | null
           organization_id: string
+          ticket_type_id: string | null
           updated_at: string
           valid_from: string
           valid_until: string | null
@@ -942,6 +943,7 @@ export type Database = {
           is_active?: boolean
           max_uses?: number | null
           organization_id: string
+          ticket_type_id?: string | null
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
@@ -959,6 +961,7 @@ export type Database = {
           is_active?: boolean
           max_uses?: number | null
           organization_id?: string
+          ticket_type_id?: string | null
           updated_at?: string
           valid_from?: string
           valid_until?: string | null
@@ -983,6 +986,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_codes_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
             referencedColumns: ["id"]
           },
         ]
