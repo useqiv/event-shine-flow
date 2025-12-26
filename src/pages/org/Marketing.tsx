@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { usePromoCodes, useCreatePromoCode, useDeletePromoCode, useOrganizationEvents } from '@/hooks/useOrganization';
 import { supabase } from '@/integrations/supabase/client';
 import { MarketingAnalyticsDashboard } from '@/components/org/MarketingAnalyticsDashboard';
+import { PromoCodeAnalytics } from '@/components/org/PromoCodeAnalytics';
 import { SocialPostTemplates } from '@/components/org/SocialPostTemplates';
 import { QuickSocialPost } from '@/components/org/QuickSocialPost';
 import { ShareCardGeneratorMarketing } from '@/components/org/ShareCardGeneratorMarketing';
@@ -211,7 +212,11 @@ const Marketing = () => {
           </TabsContent>
 
           {/* Promo Codes Tab */}
-          <TabsContent value="promos">
+          <TabsContent value="promos" className="space-y-6">
+            {/* Analytics Section */}
+            <PromoCodeAnalytics />
+
+            {/* Promo Codes Management */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">

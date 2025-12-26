@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useFlutterwavePayment, useCryptoPayment, useVerifyCryptoPayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, CreditCard, Wallet, Copy, Check } from 'lucide-react';
+import { usePromoCodeValidation } from '@/hooks/usePromoCode';
+import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PaymentModalProps {
@@ -45,8 +47,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const [guestName, setGuestName] = useState('');
+  const [promoCodeInput, setPromoCodeInput] = useState('');
 
   const flutterwavePayment = useFlutterwavePayment();
+  const { 
+    isValidating: isValidatingPromo, 
+    appliedPromo, 
+    discountAmount, 
+    validatePromoCode, 
+    incrementPromoCodeUsage,
+    clearAppliedPromo 
+  } = usePromoCodeValidation();
+
+  // Calculate final amount after discount
+  const finalAmount = Math.max(0, amount - discountAmount);
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
 
@@ -54,7 +68,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail);
   const canProceed = !isGuest || (guestEmail && isValidEmail);
 
-  const handleFlutterwavePayment = () => {
+  const handleApplyPromoCode = async () => {
+    const result = await validatePromoCode(
+      promoCodeInput,
+      type,
+      amount,
+      itemDetails.event_id,
+      itemDetails.contest_id,
+      itemDetails.ticket_type_id
+    );
+
+    if (result.isValid) {
+      toast.success(`Promo code applied! You save ${currency} ${result.discountAmount.toLocaleString()}`);
+    } else {
+      toast.error(result.errorMessage || 'Invalid promo code');
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    clearAppliedPromo();
+    setPromoCodeInput('');
+    toast.info('Promo code removed');
+  };
+
+  const handleFlutterwavePayment = async () => {
     const email = user?.email || guestEmail;
     const name = user?.user_metadata?.full_name || guestName || 'Guest';
     const userId = user?.id || `guest_${Date.now()}`;
@@ -64,9 +101,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
+    // Increment promo code usage if applied
+    if (appliedPromo) {
+      await incrementPromoCodeUsage(appliedPromo.id);
+    }
+
     flutterwavePayment.mutate({
       type,
-      amount,
+      amount: finalAmount,
       currency,
       email,
       name,
@@ -139,9 +181,65 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         </DialogHeader>
 
         <div className="py-4">
-          <div className="mb-4 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">Amount to pay</p>
-            <p className="text-2xl font-bold">{currency} {amount.toLocaleString()}</p>
+          {/* Price Summary */}
+          <div className="mb-4 p-4 bg-muted rounded-lg space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{currency} {amount.toLocaleString()}</span>
+            </div>
+            {appliedPromo && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span className="flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Discount ({appliedPromo.code})
+                </span>
+                <span>-{currency} {discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-2 border-t">
+              <span className="font-medium">Total</span>
+              <span className="text-xl font-bold">{currency} {finalAmount.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* Promo Code Input */}
+          <div className="mb-4">
+            {!appliedPromo ? (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Enter promo code"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    className="uppercase"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleApplyPromoCode}
+                  disabled={isValidatingPromo || !promoCodeInput}
+                >
+                  {isValidatingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-green-100 dark:bg-green-900">
+                    <Tag className="h-3 w-3 mr-1" />
+                    {appliedPromo.code}
+                  </Badge>
+                  <span className="text-sm text-green-700 dark:text-green-300">
+                    {appliedPromo.discount_type === 'percentage' 
+                      ? `${appliedPromo.discount_value}% off` 
+                      : `${currency} ${appliedPromo.discount_value} off`}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleRemovePromoCode}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {!cryptoPaymentData ? (
