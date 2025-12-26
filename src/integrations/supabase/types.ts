@@ -911,6 +911,83 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_code_usage: {
+        Row: {
+          contest_id: string | null
+          created_at: string
+          discount_amount: number
+          email: string | null
+          event_id: string | null
+          final_amount: number
+          id: string
+          order_amount: number
+          order_type: string
+          promo_code_id: string
+          ticket_type_id: string | null
+          transaction_reference: string | null
+          user_id: string
+        }
+        Insert: {
+          contest_id?: string | null
+          created_at?: string
+          discount_amount: number
+          email?: string | null
+          event_id?: string | null
+          final_amount: number
+          id?: string
+          order_amount: number
+          order_type: string
+          promo_code_id: string
+          ticket_type_id?: string | null
+          transaction_reference?: string | null
+          user_id: string
+        }
+        Update: {
+          contest_id?: string | null
+          created_at?: string
+          discount_amount?: number
+          email?: string | null
+          event_id?: string | null
+          final_amount?: number
+          id?: string
+          order_amount?: number
+          order_type?: string
+          promo_code_id?: string
+          ticket_type_id?: string | null
+          transaction_reference?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_usage_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promo_codes: {
         Row: {
           applicable_to: string

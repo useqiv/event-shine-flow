@@ -55,7 +55,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     appliedPromo, 
     discountAmount, 
     validatePromoCode, 
-    incrementPromoCodeUsage,
+    recordPromoCodeUsage,
     clearAppliedPromo 
   } = usePromoCodeValidation();
 
@@ -101,9 +101,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
-    // Increment promo code usage if applied
+    // Record promo code usage if applied
     if (appliedPromo) {
-      await incrementPromoCodeUsage(appliedPromo.id);
+      await recordPromoCodeUsage(appliedPromo.id, {
+        userId,
+        email,
+        orderType: type,
+        orderAmount: amount,
+        discountAmount,
+        finalAmount,
+        eventId: itemDetails.event_id,
+        contestId: itemDetails.contest_id,
+        ticketTypeId: itemDetails.ticket_type_id,
+      });
     }
 
     flutterwavePayment.mutate({
