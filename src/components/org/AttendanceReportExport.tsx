@@ -20,6 +20,7 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
   const [isExporting, setIsExporting] = useState(false);
   const [includeFields, setIncludeFields] = useState({
+    ticket_id: true,
     attendee_name: true,
     attendee_email: true,
     attendee_phone: true,
@@ -30,6 +31,8 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
     purchase_date: true,
     status: true,
     check_in_time: true,
+    check_in_count: true,
+    last_scan_time: true,
     qr_code: false,
   });
 
@@ -59,18 +62,27 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
 
       if (ticketsError) throw ticketsError;
 
-      // Fetch check-in logs
+      // Fetch all check-in logs for analytics
       const { data: scanLogs } = await supabase
         .from('qr_scan_logs')
         .select('ticket_id, scanned_at, scan_result')
-        .eq('event_id', eventId)
-        .eq('scan_result', 'success');
+        .eq('event_id', eventId);
 
-      // Create a map of ticket check-ins
-      const checkInMap = new Map<string, string>();
+      // Create maps for check-in analytics
+      const firstCheckInMap = new Map<string, string>();
+      const lastCheckInMap = new Map<string, string>();
+      const checkInCountMap = new Map<string, number>();
+      
       scanLogs?.forEach(log => {
-        if (!checkInMap.has(log.ticket_id)) {
-          checkInMap.set(log.ticket_id, log.scanned_at);
+        if (log.scan_result === 'success') {
+          // Track first check-in
+          if (!firstCheckInMap.has(log.ticket_id)) {
+            firstCheckInMap.set(log.ticket_id, log.scanned_at);
+          }
+          // Track last check-in (always update)
+          lastCheckInMap.set(log.ticket_id, log.scanned_at);
+          // Count successful scans
+          checkInCountMap.set(log.ticket_id, (checkInCountMap.get(log.ticket_id) || 0) + 1);
         }
       });
 
@@ -90,6 +102,7 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
           .maybeSingle();
 
         enrichedData.push({
+          ticket_id: ticket.id.slice(0, 8).toUpperCase(),
           attendee_name: profile?.full_name || 'N/A',
           attendee_email: profile?.email || 'N/A',
           attendee_phone: profile?.phone || 'N/A',
@@ -99,7 +112,9 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
           payment_method: ticket.payment_method,
           purchase_date: formatDateForExport(ticket.created_at),
           status: ticket.status === 'used' ? 'Checked In' : ticket.status === 'active' ? 'Not Checked In' : ticket.status,
-          check_in_time: checkInMap.has(ticket.id) ? formatDateForExport(checkInMap.get(ticket.id)!) : 'Not checked in',
+          check_in_time: firstCheckInMap.has(ticket.id) ? formatDateForExport(firstCheckInMap.get(ticket.id)!) : 'Not checked in',
+          check_in_count: checkInCountMap.get(ticket.id) || 0,
+          last_scan_time: lastCheckInMap.has(ticket.id) ? formatDateForExport(lastCheckInMap.get(ticket.id)!) : 'N/A',
           qr_code: ticket.qr_code,
         });
       }
@@ -111,6 +126,7 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
 
       // Build headers based on selected fields
       const fieldLabels: Record<string, string> = {
+        ticket_id: 'Ticket ID',
         attendee_name: 'Attendee Name',
         attendee_email: 'Email',
         attendee_phone: 'Phone',
@@ -120,7 +136,9 @@ const AttendanceReportExport: React.FC<AttendanceReportExportProps> = ({ eventId
         payment_method: 'Payment Method',
         purchase_date: 'Purchase Date',
         status: 'Status',
-        check_in_time: 'Check-in Time',
+        check_in_time: 'First Check-in',
+        check_in_count: 'Scan Count',
+        last_scan_time: 'Last Scan',
         qr_code: 'QR Code',
       };
 
