@@ -17,6 +17,11 @@ const fallbackRates: Record<string, number> = {
   GHS: 15.5,
   KES: 153,
   ZAR: 18.5,
+  XAF: 605,
+  XOF: 605,
+  TZS: 2500,
+  UGX: 3700,
+  RWF: 1300,
 };
 
 export const useExchangeRates = () => {

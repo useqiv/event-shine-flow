@@ -21,6 +21,7 @@ import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ti
 import { format, startOfDay, endOfDay } from 'date-fns';
 import ReferralCard from '@/components/ReferralCard';
 import { cn } from '@/lib/utils';
+import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 
 type TransactionType = 'all' | 'deposit' | 'vote' | 'ticket' | 'referral' | 'voucher' | 'withdrawal';
 
@@ -33,7 +34,7 @@ const WalletPage = () => {
   const redeemVoucher = useRedeemVoucher();
   const updateThreshold = useUpdateLowBalanceThreshold();
   const { toast } = useToast();
-  const { getConversion } = useConversionDisplay();
+  const { getConversion, isLive, lastUpdated } = useConversionDisplay();
 
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
@@ -377,9 +378,12 @@ const WalletPage = () => {
                   step={fundCurrency === 'USD' || fundCurrency === 'EUR' || fundCurrency === 'GBP' ? 0.01 : 1}
                 />
                 {fundAmount && fundCurrency !== 'USD' && parseFloat(fundAmount) > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {getConversion(parseFloat(fundAmount), fundCurrency, 'USD')}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {getConversion(parseFloat(fundAmount), fundCurrency, 'USD')}
+                    </p>
+                    <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
+                  </div>
                 )}
               </div>
             </div>

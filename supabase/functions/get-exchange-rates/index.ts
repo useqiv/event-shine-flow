@@ -38,7 +38,7 @@ serve(async (req) => {
     const data = await response.json();
     
     // Extract the rates we need
-    const supportedCurrencies = ['USD', 'NGN', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR'];
+    const supportedCurrencies = ['USD', 'NGN', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR', 'XAF', 'XOF', 'TZS', 'UGX', 'RWF'];
     const rates: Record<string, number> = {};
     
     for (const currency of supportedCurrencies) {
@@ -75,6 +75,11 @@ serve(async (req) => {
       GHS: 15.5,
       KES: 153,
       ZAR: 18.5,
+      XAF: 605,
+      XOF: 605,
+      TZS: 2500,
+      UGX: 3700,
+      RWF: 1300,
     };
 
     return new Response(JSON.stringify({ 
