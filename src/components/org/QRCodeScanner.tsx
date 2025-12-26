@@ -2,11 +2,14 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Camera, CameraOff, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Camera, CameraOff, RefreshCw, CheckCircle, XCircle, AlertCircle, Volume2, VolumeX, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface QRCodeScannerProps {
   eventId: string;
@@ -20,6 +23,15 @@ interface ScanResult {
     holderName?: string;
     ticketType?: string;
   };
+}
+
+interface RecentCheckIn {
+  id: string;
+  timestamp: Date;
+  status: 'success' | 'error' | 'warning';
+  holderName?: string;
+  ticketType?: string;
+  message: string;
 }
 
 // Haptic feedback utility
@@ -85,12 +97,6 @@ const playSound = (type: 'success' | 'error' | 'warning') => {
   }
 };
 
-// Combined feedback function
-const provideFeedback = (type: 'success' | 'error' | 'warning') => {
-  triggerHapticFeedback(type);
-  playSound(type);
-};
-
 const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }) => {
   const { user } = useAuth();
   const [isScanning, setIsScanning] = useState(false);
@@ -98,8 +104,30 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
   const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
   const [selectedCamera, setSelectedCamera] = useState<string>('');
   const [scanStats, setScanStats] = useState({ total: 0, successful: 0, failed: 0 });
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [recentCheckIns, setRecentCheckIns] = useState<RecentCheckIn[]>([]);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-reader';
+
+  // Combined feedback function that respects sound toggle
+  const provideFeedback = useCallback((type: 'success' | 'error' | 'warning') => {
+    triggerHapticFeedback(type);
+    if (soundEnabled) {
+      playSound(type);
+    }
+  }, [soundEnabled]);
+
+  // Add to recent check-ins list
+  const addRecentCheckIn = useCallback((checkIn: Omit<RecentCheckIn, 'id' | 'timestamp'>) => {
+    setRecentCheckIns(prev => [
+      {
+        ...checkIn,
+        id: crypto.randomUUID(),
+        timestamp: new Date(),
+      },
+      ...prev.slice(0, 9) // Keep only last 10
+    ]);
+  }, []);
 
   useEffect(() => {
     // Get available cameras
@@ -184,10 +212,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
       if (ticketError || !ticket) {
         provideFeedback('error');
-        setLastScan({
-          status: 'error',
+        const scanResult = {
+          status: 'error' as const,
           message: 'Ticket not found in system',
-        });
+        };
+        setLastScan(scanResult);
+        addRecentCheckIn({ status: 'error', message: 'Ticket not found in system' });
         // Log with placeholder ticket_id since we don't have one
         try {
           await supabase.from('qr_scan_logs').insert({
@@ -226,6 +256,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           status: 'error',
           message: 'This ticket is for a different event',
         });
+        addRecentCheckIn({ status: 'error', message: 'Wrong event ticket' });
         logScan(ticket.id, 'wrong_event');
         setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
         onScanComplete?.({ success: false, message: 'Wrong event' });
@@ -243,6 +274,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
             holderName: profile?.full_name || undefined,
             ticketType: ticketType?.name || undefined,
           },
+        });
+        addRecentCheckIn({
+          status: 'warning',
+          message: 'Already checked in',
+          holderName: profile?.full_name || undefined,
+          ticketType: ticketType?.name || undefined,
         });
         logScan(ticket.id, 'already_used');
         setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
@@ -273,6 +310,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           ticketType: ticketType?.name || undefined,
         },
       });
+      addRecentCheckIn({
+        status: 'success',
+        message: 'Check-in successful',
+        holderName: profile?.full_name || undefined,
+        ticketType: ticketType?.name || undefined,
+      });
       setScanStats(prev => ({ ...prev, total: prev.total + 1, successful: prev.successful + 1 }));
       onScanComplete?.({ success: true, message: 'Check-in successful', ticketId: ticket.id });
 
@@ -282,6 +325,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         status: 'error',
         message: err.message || 'Failed to process QR code',
       });
+      addRecentCheckIn({ status: 'error', message: err.message || 'Processing failed' });
       setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
       onScanComplete?.({ success: false, message: err.message });
     }
@@ -400,7 +444,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       )}
 
       {/* Controls */}
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         {isScanning ? (
           <Button variant="destructive" onClick={stopScanning} className="flex-1">
             <CameraOff className="mr-2 h-4 w-4" />
@@ -417,6 +461,32 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
             <RefreshCw className="h-4 w-4" />
           </Button>
         )}
+        
+        {/* Sound Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          title={soundEnabled ? 'Sound on' : 'Sound off'}
+        >
+          {soundEnabled ? (
+            <Volume2 className="h-4 w-4" />
+          ) : (
+            <VolumeX className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Sound Toggle Label */}
+      <div className="flex items-center justify-center gap-2">
+        <Label htmlFor="sound-toggle" className="text-xs text-muted-foreground">
+          Sound feedback
+        </Label>
+        <Switch
+          id="sound-toggle"
+          checked={soundEnabled}
+          onCheckedChange={setSoundEnabled}
+        />
       </div>
 
       {/* Camera Selection */}
@@ -424,6 +494,54 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         <p className="text-xs text-center text-muted-foreground">
           Using: {cameras.find(c => c.id === selectedCamera)?.label || 'Unknown camera'}
         </p>
+      )}
+
+      {/* Recent Check-ins List */}
+      {recentCheckIns.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-semibold text-sm">Recent Check-ins</h3>
+              <span className="text-xs text-muted-foreground">({recentCheckIns.length})</span>
+            </div>
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-2">
+                {recentCheckIns.map((checkIn) => (
+                  <div
+                    key={checkIn.id}
+                    className={`flex items-center gap-3 p-2 rounded-lg border ${
+                      checkIn.status === 'success' ? 'bg-green-500/5 border-green-500/20' :
+                      checkIn.status === 'warning' ? 'bg-yellow-500/5 border-yellow-500/20' :
+                      'bg-destructive/5 border-destructive/20'
+                    }`}
+                  >
+                    {checkIn.status === 'success' ? (
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    ) : checkIn.status === 'warning' ? (
+                      <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {checkIn.holderName || checkIn.message}
+                      </p>
+                      {checkIn.ticketType && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {checkIn.ticketType}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">
+                      {format(checkIn.timestamp, 'HH:mm:ss')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
