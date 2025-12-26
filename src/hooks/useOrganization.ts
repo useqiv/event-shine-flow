@@ -371,13 +371,14 @@ export const useOrganizationStats = () => {
   return useQuery({
     queryKey: ['organization-stats', user?.id],
     queryFn: async () => {
-      // Get ticket revenue
+      // Get all events
       const { data: events } = await supabase
         .from('events')
-        .select('id')
+        .select('id, is_active, event_date')
         .eq('organization_id', user!.id);
       
       const eventIds = events?.map(e => e.id) || [];
+      const activeEvents = events?.filter(e => e.is_active && new Date(e.event_date) > new Date()).length || 0;
       
       let ticketRevenue = 0;
       let ticketsSold = 0;
@@ -392,13 +393,14 @@ export const useOrganizationStats = () => {
         ticketsSold = tickets?.reduce((sum, t) => sum + t.quantity, 0) || 0;
       }
       
-      // Get vote revenue
+      // Get all contests
       const { data: contests } = await supabase
         .from('contests')
-        .select('id')
+        .select('id, is_active, end_date')
         .eq('organization_id', user!.id);
       
       const contestIds = contests?.map(c => c.id) || [];
+      const activeContests = contests?.filter(c => c.is_active && new Date(c.end_date) > new Date()).length || 0;
       
       let voteRevenue = 0;
       let totalVotes = 0;
@@ -434,8 +436,8 @@ export const useOrganizationStats = () => {
         pendingPayouts,
         completedPayouts,
         availableBalance,
-        activeContests: contests?.length || 0,
-        activeEvents: events?.length || 0,
+        activeContests,
+        activeEvents,
       };
     },
     enabled: !!user,
