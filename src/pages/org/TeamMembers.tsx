@@ -17,6 +17,8 @@ import {
   useRemoveTeamMember,
   TeamMember 
 } from '@/hooks/useTeamMembers';
+import { useProfile } from '@/hooks/useProfile';
+import { useOrganizationSettings } from '@/hooks/useOrganization';
 import { UserPlus, Users, Mail, Trash2, Edit, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -32,6 +34,8 @@ const defaultPermissions: TeamMember['permissions'] = {
 
 const TeamMembers = () => {
   const { data: members, isLoading } = useTeamMembers();
+  const { data: profile } = useProfile();
+  const { data: orgSettings } = useOrganizationSettings();
   const inviteMember = useInviteTeamMember();
   const updateMember = useUpdateTeamMember();
   const removeMember = useRemoveTeamMember();
@@ -47,7 +51,11 @@ const TeamMembers = () => {
   });
 
   const handleInvite = async () => {
-    await inviteMember.mutateAsync(inviteData);
+    await inviteMember.mutateAsync({
+      ...inviteData,
+      organizationName: orgSettings?.company_name || 'Our Organization',
+      inviterName: profile?.full_name || 'The Team',
+    });
     setIsInviteOpen(false);
     setInviteData({ email: '', name: '', role: 'staff', permissions: { ...defaultPermissions } });
   };

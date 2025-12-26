@@ -55,6 +55,8 @@ export const useInviteTeamMember = () => {
       name?: string; 
       role: string;
       permissions: TeamMember['permissions'];
+      organizationName?: string;
+      inviterName?: string;
     }) => {
       const { error } = await supabase
         .from('team_members')
@@ -67,6 +69,22 @@ export const useInviteTeamMember = () => {
         });
       
       if (error) throw error;
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke('send-team-invite', {
+          body: {
+            email: memberData.email,
+            name: memberData.name,
+            role: memberData.role,
+            organizationName: memberData.organizationName || 'Our Organization',
+            inviterName: memberData.inviterName || 'The Team',
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // Don't throw - the invite was successful, email is secondary
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
