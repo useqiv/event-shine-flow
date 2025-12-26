@@ -2,6 +2,8 @@ import React from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStatistics } from '@/hooks/useAdminData';
+import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -28,13 +30,8 @@ import {
 const AdminFinance: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  // Default currency for admin pages (platform default)
+  const platformCurrency = 'NGN';
 
   // Mock data for charts - in production, this would come from actual data
   const revenueData = [
@@ -99,7 +96,9 @@ const AdminFinance: React.FC = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
+              <div className="text-2xl font-bold">
+                <CurrencyDisplay amount={totalRevenue} currency={platformCurrency} size="lg" />
+              </div>
               <div className="flex items-center text-xs text-green-500 mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +12.5% from last month
@@ -115,7 +114,9 @@ const AdminFinance: React.FC = () => {
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(platformEarnings)}</div>
+              <div className="text-2xl font-bold">
+                <CurrencyDisplay amount={platformEarnings} currency={platformCurrency} size="lg" />
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {commissionRate}% commission
               </p>
@@ -131,7 +132,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-500">
-                {formatCurrency(stats?.pending_payouts || 0)}
+                <CurrencyDisplay amount={stats?.pending_payouts || 0} currency={platformCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Awaiting processing
@@ -148,7 +149,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                {formatCurrency(platformEarnings - (stats?.pending_payouts || 0))}
+                <CurrencyDisplay amount={platformEarnings - (stats?.pending_payouts || 0)} currency={platformCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 After pending payouts
@@ -180,9 +181,9 @@ const AdminFinance: React.FC = () => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => `₦${value/1000}k`} />
+                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(value / 1000, platformCurrency).replace(/,/g, '') + 'k'} />
                     <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: number) => formatCurrency(value, platformCurrency)}
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
@@ -253,28 +254,28 @@ const AdminFinance: React.FC = () => {
                   <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-1))]" />
                   <span>Vote Revenue</span>
                 </div>
-                <span className="font-medium">{formatCurrency(totalRevenue * 0.65)}</span>
+                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.65} currency={platformCurrency} /></span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-2))]" />
                   <span>Ticket Revenue</span>
                 </div>
-                <span className="font-medium">{formatCurrency(totalRevenue * 0.30)}</span>
+                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.30} currency={platformCurrency} /></span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-3))]" />
                   <span>Premium Features</span>
                 </div>
-                <span className="font-medium">{formatCurrency(totalRevenue * 0.03)}</span>
+                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.03} currency={platformCurrency} /></span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-4))]" />
                   <span>API Access</span>
                 </div>
-                <span className="font-medium">{formatCurrency(totalRevenue * 0.02)}</span>
+                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.02} currency={platformCurrency} /></span>
               </div>
             </CardContent>
           </Card>

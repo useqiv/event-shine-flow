@@ -12,6 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 import { CalendarIcon, Download, Search, Filter, CreditCard, Wallet } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,6 +33,9 @@ interface PaymentTransaction {
 }
 
 const AdminPaymentHistory = () => {
+  // Platform default currency
+  const platformCurrency = 'NGN';
+  
   // Enable real-time payment updates
   useRealtimePayments();
   
@@ -219,8 +224,8 @@ const AdminPaymentHistory = () => {
     };
   }, [filteredTransactions]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
+  const formatAmount = (amount: number) => {
+    return formatCurrency(amount, platformCurrency);
   };
 
   const exportToCSV = () => {
@@ -273,7 +278,7 @@ const AdminPaymentHistory = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Revenue</CardDescription>
-              <CardTitle className="text-2xl">{formatCurrency(totals.completed)}</CardTitle>
+              <CardTitle className="text-2xl"><CurrencyDisplay amount={totals.completed} currency={platformCurrency} size="lg" /></CardTitle>
             </CardHeader>
           </Card>
           <Card>
@@ -439,7 +444,7 @@ const AdminPaymentHistory = () => {
                           {tx.contest_title || tx.event_title || '-'}
                         </TableCell>
                         <TableCell>{tx.quantity}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(tx.amount)}</TableCell>
+                        <TableCell className="font-medium"><CurrencyDisplay amount={tx.amount} currency={platformCurrency} /></TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {tx.payment_method === 'crypto' ? (
