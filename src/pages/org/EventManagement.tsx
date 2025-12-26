@@ -218,7 +218,7 @@ const EventManagement = () => {
                 Check-in Dashboard
               </Button>
             </Link>
-            <Link to={`/org/events/${id}/scan`}>
+            <Link to={`/org/events/${id}/scanner`}>
               <Button variant="outline">
                 <QrCode className="mr-2 h-4 w-4" />
                 Scanner
