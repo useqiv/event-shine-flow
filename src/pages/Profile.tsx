@@ -9,8 +9,9 @@ import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/useProf
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { User, Mail, Phone, Lock, Camera, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Lock, Camera, Loader2, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import CurrencyPreferenceSelector from '@/components/ui/currency-preference-selector';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -171,6 +172,18 @@ const Profile = () => {
             <Button onClick={handleUpdateProfile} disabled={updateProfile.isPending}>
               {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Currency Preferences
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CurrencyPreferenceSelector />
           </CardContent>
         </Card>
 

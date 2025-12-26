@@ -10,6 +10,11 @@ export const currencies = [
   { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', minAmount: 1 },
   { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', minAmount: 100 },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand', minAmount: 10 },
+  { code: 'XAF', symbol: 'FCFA', name: 'Central African CFA Franc', minAmount: 100 },
+  { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc', minAmount: 100 },
+  { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling', minAmount: 1000 },
+  { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', minAmount: 1000 },
+  { code: 'RWF', symbol: 'FRw', name: 'Rwandan Franc', minAmount: 100 },
 ];
 
 export const getCurrencySymbol = (code: string): string => {
@@ -43,7 +48,7 @@ export const formatWithConversion = (amount: number, fromCurrency: string, toCur
 
 // Hook to get conversion display with real-time rates
 export const useConversionDisplay = () => {
-  const { data: ratesData } = useExchangeRates();
+  const { data: ratesData, isLoading } = useExchangeRates();
   const rates = ratesData?.rates || fallbackRates;
   
   const getConversion = (amount: number, fromCurrency: string, toCurrency: string = 'USD') => {
@@ -55,12 +60,20 @@ export const useConversionDisplay = () => {
     return convertCurrency(amount, fromCurrency, toCurrency, rates);
   };
 
+  // Get conversion to user's preferred currency
+  const getPreferredConversion = (amount: number, fromCurrency: string, preferredCurrency: string) => {
+    if (fromCurrency === preferredCurrency) return '';
+    return formatWithConversion(amount, fromCurrency, preferredCurrency, rates);
+  };
+
   return { 
     getConversion, 
     convert, 
+    getPreferredConversion,
     rates,
-    isLive: ratesData && !ratesData.fallback,
-    lastUpdated: ratesData?.lastUpdated
+    isLive: !!(ratesData && !ratesData.fallback),
+    lastUpdated: ratesData?.lastUpdated,
+    isLoading
   };
 };
 

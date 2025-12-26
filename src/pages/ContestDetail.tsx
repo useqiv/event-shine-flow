@@ -17,6 +17,8 @@ import PaymentModal from '@/components/PaymentModal';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import confetti from 'canvas-confetti';
 import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
+import { useUserCurrency } from '@/hooks/useUserCurrency';
+import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { 
   Trophy, 
   Calendar, 
@@ -43,7 +45,8 @@ const ContestDetail = () => {
   const { data: wallet } = useWallet();
   const vote = useVote();
   const { recordConversion } = useRecordConversion();
-  const { getConversion } = useConversionDisplay();
+  const { getPreferredConversion, isLive, lastUpdated } = useConversionDisplay();
+  const { preferredCurrency } = useUserCurrency();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
@@ -240,10 +243,13 @@ const ContestDetail = () => {
                   <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Vote Price</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground">Vote Price</p>
+                    <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
+                  </div>
                   <p className="text-xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
-                  {contest.vote_currency && contest.vote_currency !== 'USD' && (
-                    <p className="text-xs text-muted-foreground">{getConversion(Number(contest.vote_price), contest.vote_currency, 'USD')}</p>
+                  {contest.vote_currency && contest.vote_currency !== preferredCurrency && (
+                    <p className="text-xs text-muted-foreground">{getPreferredConversion(Number(contest.vote_price), contest.vote_currency, preferredCurrency)}</p>
                   )}
                 </div>
                 <div className="col-span-2 md:col-span-1">
