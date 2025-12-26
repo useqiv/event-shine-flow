@@ -14,40 +14,26 @@ export interface Notification {
   created_at: string;
 }
 
-export const useNotifications = () => {
+// Separate hook for real-time subscription
+export const useNotificationRealtime = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Set up real-time subscription
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('New notification received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications', user.id] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('Notification updated:', payload);
+          console.log('Notification change:', payload);
           queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
           queryClient.invalidateQueries({ queryKey: ['unread-notifications', user.id] });
         }
@@ -58,6 +44,13 @@ export const useNotifications = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
+};
+
+export const useNotifications = () => {
+  const { user } = useAuth();
+
+  // Set up real-time subscription
+  useNotificationRealtime();
 
   return useQuery({
     queryKey: ['notifications', user?.id],
@@ -80,32 +73,6 @@ export const useNotifications = () => {
 
 export const useUnreadCount = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  // Set up real-time subscription for unread count
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('unread-notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications', user.id] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, queryClient]);
 
   return useQuery({
     queryKey: ['unread-notifications', user?.id],
