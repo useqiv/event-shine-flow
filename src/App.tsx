@@ -65,7 +65,7 @@ import AdminContestDetail from "./pages/admin/AdminContestDetail";
 import AdminEventDetail from "./pages/admin/AdminEventDetail";
 import AdminVoteReconciliation from "./pages/admin/AdminVoteReconciliation";
 
-const queryClient = new QueryClient();
+import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -187,22 +187,26 @@ const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <InfluencerTracker>
-              <AppRoutes />
-            </InfluencerTracker>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </HelmetProvider>
-);
+const App = () => {
+  const [queryClient] = useState(() => new QueryClient());
+  
+  return (
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <InfluencerTracker>
+                <AppRoutes />
+              </InfluencerTracker>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
+  );
+};
 
 export default App;
