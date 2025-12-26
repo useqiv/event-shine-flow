@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +21,75 @@ interface ScanResult {
     ticketType?: string;
   };
 }
+
+// Haptic feedback utility
+const triggerHapticFeedback = (type: 'success' | 'error' | 'warning') => {
+  if ('vibrate' in navigator) {
+    switch (type) {
+      case 'success':
+        navigator.vibrate([100, 50, 100]); // Double short vibration for success
+        break;
+      case 'error':
+        navigator.vibrate([300]); // Long vibration for error
+        break;
+      case 'warning':
+        navigator.vibrate([150, 100, 150]); // Medium pattern for warning
+        break;
+    }
+  }
+};
+
+// Sound feedback utility
+const playSound = (type: 'success' | 'error' | 'warning') => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    gainNode.gain.value = 0.3;
+    
+    switch (type) {
+      case 'success':
+        // Pleasant ascending tone
+        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+        oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+        oscillator.type = 'sine';
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        break;
+      case 'error':
+        // Low buzzer tone
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+        oscillator.type = 'square';
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.4);
+        break;
+      case 'warning':
+        // Double beep
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+        oscillator.type = 'triangle';
+        oscillator.start(audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + 0.25);
+        oscillator.stop(audioContext.currentTime + 0.3);
+        break;
+    }
+  } catch (err) {
+    console.log('Sound feedback not available:', err);
+  }
+};
+
+// Combined feedback function
+const provideFeedback = (type: 'success' | 'error' | 'warning') => {
+  triggerHapticFeedback(type);
+  playSound(type);
+};
 
 const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }) => {
   const { user } = useAuth();
@@ -114,6 +183,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         .maybeSingle();
 
       if (ticketError || !ticket) {
+        provideFeedback('error');
         setLastScan({
           status: 'error',
           message: 'Ticket not found in system',
@@ -151,6 +221,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
       // Check if ticket belongs to this event
       if (ticket.event_id !== eventId) {
+        provideFeedback('error');
         setLastScan({
           status: 'error',
           message: 'This ticket is for a different event',
@@ -164,6 +235,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
       // Check if ticket is already used
       if (ticket.status === 'used') {
+        provideFeedback('warning');
         setLastScan({
           status: 'warning',
           message: 'Ticket already checked in',
@@ -192,6 +264,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       // Log successful scan
       logScan(ticket.id, 'success');
 
+      provideFeedback('success');
       setLastScan({
         status: 'success',
         message: 'Check-in successful!',
@@ -204,6 +277,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       onScanComplete?.({ success: true, message: 'Check-in successful', ticketId: ticket.id });
 
     } catch (err: any) {
+      provideFeedback('error');
       setLastScan({
         status: 'error',
         message: err.message || 'Failed to process QR code',
