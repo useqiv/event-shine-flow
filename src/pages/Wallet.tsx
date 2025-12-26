@@ -22,6 +22,7 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import ReferralCard from '@/components/ReferralCard';
 import { cn } from '@/lib/utils';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
+import CurrencyCalculator from '@/components/ui/currency-calculator';
 
 type TransactionType = 'all' | 'deposit' | 'vote' | 'ticket' | 'referral' | 'voucher' | 'withdrawal';
 
@@ -344,6 +345,9 @@ const WalletPage = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Currency Calculator */}
+        <CurrencyCalculator />
       </div>
 
       {/* Fund Wallet Modal */}
