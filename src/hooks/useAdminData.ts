@@ -335,6 +335,64 @@ export const useApproveOrganization = () => {
   });
 };
 
+export const useUpdateOrganizationCommission = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      orgId, 
+      voteCommissionRate, 
+      ticketCommissionRate,
+      specialCommissionRate 
+    }: { 
+      orgId: string; 
+      voteCommissionRate?: number | null;
+      ticketCommissionRate?: number | null;
+      specialCommissionRate?: number | null;
+    }) => {
+      // Check if approval record exists
+      const { data: existing } = await supabase
+        .from('organization_approvals')
+        .select('id')
+        .eq('organization_id', orgId)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from('organization_approvals')
+          .update({
+            vote_commission_rate: voteCommissionRate,
+            ticket_commission_rate: ticketCommissionRate,
+            special_commission_rate: specialCommissionRate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('organization_id', orgId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('organization_approvals')
+          .insert({
+            organization_id: orgId,
+            status: 'approved',
+            vote_commission_rate: voteCommissionRate,
+            ticket_commission_rate: ticketCommissionRate,
+            special_commission_rate: specialCommissionRate
+          });
+
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-organizations'] });
+      toast.success('Commission rates updated');
+    },
+    onError: () => {
+      toast.error('Failed to update commission rates');
+    }
+  });
+};
+
 export const useRejectOrganization = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
