@@ -9,6 +9,7 @@ export interface Wallet {
   referral_earnings: number;
   referral_code: string;
   referred_by: string | null;
+  low_balance_threshold: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -176,6 +177,28 @@ export const useRedeemVoucher = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
+    },
+  });
+};
+
+export const useUpdateLowBalanceThreshold = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (threshold: number | null) => {
+      if (!user?.id) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('wallets')
+        .update({ low_balance_threshold: threshold })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return threshold;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
     },
   });
 };

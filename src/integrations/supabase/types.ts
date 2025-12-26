@@ -1864,6 +1864,7 @@ export type Database = {
           balance: number
           created_at: string
           id: string
+          low_balance_threshold: number | null
           referral_code: string | null
           referral_earnings: number
           referred_by: string | null
@@ -1874,6 +1875,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          low_balance_threshold?: number | null
           referral_code?: string | null
           referral_earnings?: number
           referred_by?: string | null
@@ -1884,6 +1886,7 @@ export type Database = {
           balance?: number
           created_at?: string
           id?: string
+          low_balance_threshold?: number | null
           referral_code?: string | null
           referral_earnings?: number
           referred_by?: string | null
