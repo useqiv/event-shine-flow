@@ -801,6 +801,7 @@ export type Database = {
           company_name: string | null
           company_phone: string | null
           created_at: string
+          default_currency: string
           id: string
           organization_id: string
           preferred_payout_method: string | null
@@ -816,6 +817,7 @@ export type Database = {
           company_name?: string | null
           company_phone?: string | null
           created_at?: string
+          default_currency?: string
           id?: string
           organization_id: string
           preferred_payout_method?: string | null
@@ -831,6 +833,7 @@ export type Database = {
           company_name?: string | null
           company_phone?: string | null
           created_at?: string
+          default_currency?: string
           id?: string
           organization_id?: string
           preferred_payout_method?: string | null
