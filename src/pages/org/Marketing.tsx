@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,22 +9,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { usePromoCodes, useCreatePromoCode, useDeletePromoCode } from '@/hooks/useOrganization';
+import { usePromoCodes, useCreatePromoCode, useDeletePromoCode, useOrganizationEvents } from '@/hooks/useOrganization';
+import { supabase } from '@/integrations/supabase/client';
 import { MarketingAnalyticsDashboard } from '@/components/org/MarketingAnalyticsDashboard';
 import { SocialPostTemplates } from '@/components/org/SocialPostTemplates';
 import { QuickSocialPost } from '@/components/org/QuickSocialPost';
 import { ShareCardGeneratorMarketing } from '@/components/org/ShareCardGeneratorMarketing';
 import { InfluencerLinksManager } from '@/components/org/InfluencerLinksManager';
-import { Megaphone, Tag, PlusCircle, Trash2, Copy, Percent, BarChart3, Share2, FileText, Users, Image, Link2 } from 'lucide-react';
+import { Megaphone, Tag, PlusCircle, Trash2, Copy, Percent, BarChart3, Share2, FileText, Users, Image, Link2, Ticket, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
+interface TicketType {
+  id: string;
+  name: string;
+  event_id: string;
+}
+
 const Marketing = () => {
   const { data: promoCodes, isLoading } = usePromoCodes();
+  const { data: events } = useOrganizationEvents();
   const createPromoCode = useCreatePromoCode();
   const deletePromoCode = useDeletePromoCode();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
   const [newPromo, setNewPromo] = useState({
     code: '',
     discount_type: 'percentage',
@@ -32,11 +41,35 @@ const Marketing = () => {
     max_uses: '',
     valid_until: '',
     applicable_to: 'all',
+    event_id: '',
+    ticket_type_id: '',
   });
+
+  // Fetch ticket types when event is selected
+  useEffect(() => {
+    const fetchTicketTypes = async () => {
+      if (newPromo.event_id && newPromo.applicable_to === 'ticket_type') {
+        const { data } = await supabase
+          .from('ticket_types')
+          .select('id, name, event_id')
+          .eq('event_id', newPromo.event_id);
+        setTicketTypes(data || []);
+      } else {
+        setTicketTypes([]);
+        setNewPromo(prev => ({ ...prev, ticket_type_id: '' }));
+      }
+    };
+    fetchTicketTypes();
+  }, [newPromo.event_id, newPromo.applicable_to]);
 
   const handleCreatePromo = async () => {
     if (!newPromo.code || !newPromo.discount_value) {
       toast.error('Please fill in required fields');
+      return;
+    }
+
+    if (newPromo.applicable_to === 'ticket_type' && !newPromo.ticket_type_id) {
+      toast.error('Please select a ticket type');
       return;
     }
 
@@ -47,8 +80,10 @@ const Marketing = () => {
         discount_value: Number(newPromo.discount_value),
         max_uses: newPromo.max_uses ? Number(newPromo.max_uses) : null,
         valid_until: newPromo.valid_until || null,
-        applicable_to: newPromo.applicable_to,
-      });
+        applicable_to: newPromo.applicable_to === 'ticket_type' ? 'events' : newPromo.applicable_to,
+        event_id: newPromo.event_id || null,
+        ticket_type_id: newPromo.ticket_type_id || null,
+      } as any);
       setIsCreateOpen(false);
       setNewPromo({
         code: '',
@@ -57,6 +92,8 @@ const Marketing = () => {
         max_uses: '',
         valid_until: '',
         applicable_to: 'all',
+        event_id: '',
+        ticket_type_id: '',
       });
     } catch (error) {
       console.error('Failed to create promo code:', error);
@@ -263,18 +300,85 @@ const Marketing = () => {
                           <Label>Applicable To</Label>
                           <Select
                             value={newPromo.applicable_to}
-                            onValueChange={(value) => setNewPromo(prev => ({ ...prev, applicable_to: value }))}
+                            onValueChange={(value) => setNewPromo(prev => ({ 
+                              ...prev, 
+                              applicable_to: value,
+                              event_id: '',
+                              ticket_type_id: '',
+                            }))}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="all">All (Events & Contests)</SelectItem>
-                              <SelectItem value="events">Events Only</SelectItem>
-                              <SelectItem value="contests">Contests Only</SelectItem>
+                              <SelectItem value="events">All Events</SelectItem>
+                              <SelectItem value="contests">All Contests</SelectItem>
+                              <SelectItem value="ticket_type">Specific Ticket Type</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
+
+                        {/* Event selection for ticket type specific codes */}
+                        {newPromo.applicable_to === 'ticket_type' && (
+                          <>
+                            <div className="space-y-2">
+                              <Label>Select Event *</Label>
+                              <Select
+                                value={newPromo.event_id}
+                                onValueChange={(value) => setNewPromo(prev => ({ 
+                                  ...prev, 
+                                  event_id: value,
+                                  ticket_type_id: '',
+                                }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose an event" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {events?.map((event: any) => (
+                                    <SelectItem key={event.id} value={event.id}>
+                                      <div className="flex items-center gap-2">
+                                        <Calendar className="h-4 w-4" />
+                                        {event.title}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {newPromo.event_id && (
+                              <div className="space-y-2">
+                                <Label>Select Ticket Type *</Label>
+                                <Select
+                                  value={newPromo.ticket_type_id}
+                                  onValueChange={(value) => setNewPromo(prev => ({ ...prev, ticket_type_id: value }))}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Choose a ticket type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {ticketTypes.length > 0 ? (
+                                      ticketTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.id}>
+                                          <div className="flex items-center gap-2">
+                                            <Ticket className="h-4 w-4" />
+                                            {type.name}
+                                          </div>
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="none" disabled>
+                                        No ticket types found for this event
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         <Button onClick={handleCreatePromo} className="w-full" disabled={createPromoCode.isPending}>
                           {createPromoCode.isPending ? 'Creating...' : 'Create Promo Code'}
@@ -293,11 +397,15 @@ const Marketing = () => {
                   </div>
                 ) : promoCodes && promoCodes.length > 0 ? (
                   <div className="space-y-3">
-                    {promoCodes.map((promo) => (
+                    {promoCodes.map((promo: any) => (
                       <div key={promo.id} className="flex items-center justify-between p-4 rounded-lg border border-border">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Percent className="h-6 w-6 text-primary" />
+                            {promo.ticket_type_id ? (
+                              <Ticket className="h-6 w-6 text-primary" />
+                            ) : (
+                              <Percent className="h-6 w-6 text-primary" />
+                            )}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -305,13 +413,22 @@ const Marketing = () => {
                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopyCode(promo.code)}>
                                 <Copy className="h-3 w-3" />
                               </Button>
+                              {promo.ticket_type_id && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Ticket className="h-3 w-3 mr-1" />
+                                  Ticket-specific
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground">
                               {promo.discount_type === 'percentage' 
                                 ? `${promo.discount_value}% off` 
-                                : `${promo.discount_value} off`}
+                                : `₦${Number(promo.discount_value).toLocaleString()} off`}
                               {promo.max_uses && ` • ${promo.current_uses}/${promo.max_uses} uses`}
                               {promo.valid_until && ` • Expires ${format(new Date(promo.valid_until), 'MMM d, yyyy')}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Applies to: {promo.ticket_type_id ? 'Specific ticket type' : promo.applicable_to === 'all' ? 'All' : promo.applicable_to}
                             </p>
                           </div>
                         </div>
