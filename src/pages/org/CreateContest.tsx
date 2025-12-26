@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/ui/image-upload';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import CurrencySelector from '@/components/ui/currency-selector';
-import { useCreateContest } from '@/hooks/useOrganization';
+import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
 import { Calendar, DollarSign, FileText } from 'lucide-react';
 
 const categories = [
@@ -29,6 +29,7 @@ const categories = [
 const CreateContest = () => {
   const navigate = useNavigate();
   const createContest = useCreateContest();
+  const { data: orgSettings } = useOrganizationSettings();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -44,6 +45,20 @@ const CreateContest = () => {
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
   });
+
+  // Set default currency from org settings when loaded
+  useEffect(() => {
+    if (orgSettings?.default_currency && !formData.vote_currency) {
+      setFormData(prev => ({ ...prev, vote_currency: orgSettings.default_currency }));
+    }
+  }, [orgSettings]);
+
+  // Update vote_currency when org settings load (only if still on default)
+  useEffect(() => {
+    if (orgSettings?.default_currency && formData.vote_currency === 'USD') {
+      setFormData(prev => ({ ...prev, vote_currency: orgSettings.default_currency }));
+    }
+  }, [orgSettings?.default_currency]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

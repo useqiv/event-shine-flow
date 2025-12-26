@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import PaymentModal from '@/components/PaymentModal';
+import CurrencyDisplay from '@/components/ui/currency-display';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
   Calendar, 
   MapPin, 
@@ -22,9 +24,6 @@ import {
   Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
-import { useUserCurrency } from '@/hooks/useUserCurrency';
-import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,8 +33,6 @@ const EventDetail = () => {
   const { data: ticketTypes, isLoading: ticketsLoading } = useTicketTypes(id || '');
   const { data: wallet } = useWallet();
   const purchaseTicket = usePurchaseTicket();
-  const { getPreferredConversion, isLive, lastUpdated } = useConversionDisplay();
-  const { preferredCurrency } = useUserCurrency();
 
   const [selectedTicketType, setSelectedTicketType] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -240,10 +237,9 @@ const EventDetail = () => {
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-bold">{formatCurrency(Number(ticketType.price), ticketType.currency || 'NGN')}</p>
-                            {ticketType.currency && ticketType.currency !== preferredCurrency && (
-                              <p className="text-xs text-muted-foreground">{getPreferredConversion(Number(ticketType.price), ticketType.currency, preferredCurrency)}</p>
-                            )}
+                            <p className="text-lg font-bold">
+                              <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" />
+                            </p>
                           </div>
                         </div>
                         <div className="flex justify-between items-center mt-4">
@@ -310,10 +306,9 @@ const EventDetail = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total Amount</span>
                   <div className="text-right">
-                    <span className="text-xl font-bold">{formatCurrency(totalAmount, selectedTicketType?.currency || 'NGN')}</span>
-                    {selectedTicketType?.currency && selectedTicketType.currency !== preferredCurrency && (
-                      <p className="text-xs text-muted-foreground">{getPreferredConversion(totalAmount, selectedTicketType.currency, preferredCurrency)}</p>
-                    )}
+                    <span className="text-xl font-bold">
+                      <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" />
+                    </span>
                   </div>
                 </div>
               </div>

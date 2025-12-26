@@ -16,8 +16,8 @@ import { CountdownTimer } from '@/components/ui/countdown-timer';
 import PaymentModal from '@/components/PaymentModal';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import confetti from 'canvas-confetti';
-import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
-import { useUserCurrency } from '@/hooks/useUserCurrency';
+import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { 
   Trophy, 
@@ -45,8 +45,6 @@ const ContestDetail = () => {
   const { data: wallet } = useWallet();
   const vote = useVote();
   const { recordConversion } = useRecordConversion();
-  const { getPreferredConversion, isLive, lastUpdated } = useConversionDisplay();
-  const { preferredCurrency } = useUserCurrency();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
@@ -243,14 +241,14 @@ const ContestDetail = () => {
                   <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm text-muted-foreground">Vote Price</p>
-                    <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
-                  </div>
-                  <p className="text-xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
-                  {contest.vote_currency && contest.vote_currency !== preferredCurrency && (
-                    <p className="text-xs text-muted-foreground">{getPreferredConversion(Number(contest.vote_price), contest.vote_currency, preferredCurrency)}</p>
-                  )}
+                  <p className="text-sm text-muted-foreground">Vote Price</p>
+                  <p className="text-xl font-bold">
+                    <CurrencyDisplay 
+                      amount={Number(contest.vote_price)} 
+                      currency={contest.vote_currency || 'NGN'} 
+                      size="md"
+                    />
+                  </p>
                 </div>
                 <div className="col-span-2 md:col-span-1">
                   <CountdownTimer 
@@ -385,7 +383,11 @@ const ContestDetail = () => {
                   <Card className="p-4">
                     <p className="text-sm text-muted-foreground">Total Spent</p>
                     <p className="text-2xl font-bold">
-                      {formatCurrency(myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0), contest.vote_currency || 'NGN')}
+                      <CurrencyDisplay 
+                        amount={myVotes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0)} 
+                        currency={contest.vote_currency || 'NGN'} 
+                        size="lg"
+                      />
                     </p>
                   </Card>
                   <Card className="p-4">
@@ -435,7 +437,9 @@ const ContestDetail = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">{formatCurrency(Number(vote.amount_paid), contest.vote_currency || 'NGN')}</p>
+                          <p className="font-semibold">
+                            <CurrencyDisplay amount={Number(vote.amount_paid)} currency={contest.vote_currency || 'NGN'} size="sm" />
+                          </p>
                           <Badge variant="outline" className="text-xs">
                             {vote.payment_method}
                           </Badge>
@@ -486,7 +490,9 @@ const ContestDetail = () => {
               <div className="p-4 rounded-lg bg-secondary">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total Amount</span>
-                  <span className="text-xl font-bold">{formatCurrency(totalAmount, contest.vote_currency || 'NGN')}</span>
+                  <span className="text-xl font-bold">
+                    <CurrencyDisplay amount={totalAmount} currency={contest.vote_currency || 'NGN'} size="lg" />
+                  </span>
                 </div>
               </div>
 
