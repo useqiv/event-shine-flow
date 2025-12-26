@@ -29,3 +29,6 @@ verify_jwt = true
 
 [functions.check-orphan-transactions]
 verify_jwt = false
+
+[functions.activate-scheduled-contests]
+verify_jwt = false
