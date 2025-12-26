@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useOrganizationContests } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -159,7 +160,7 @@ const ManageContests = () => {
                           <DollarSign className="h-3 w-3" />
                           <span>Total Revenue</span>
                         </div>
-                        <span className="font-medium">₦{totalRevenue.toLocaleString()}</span>
+                        <span className="font-medium">{formatCurrency(totalRevenue, contest.vote_currency || 'USD')}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -173,13 +174,13 @@ const ManageContests = () => {
                               <TooltipContent>
                                 <p className="text-xs">
                                   {voteCommission}% commission<br/>
-                                  Deducted: ₦{commissionDeducted.toLocaleString()}
+                                  Deducted: {formatCurrency(commissionDeducted, contest.vote_currency || 'USD')}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <span className="font-medium text-green-600 dark:text-green-400">₦{netRevenue.toLocaleString()}</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(netRevenue, contest.vote_currency || 'USD')}</span>
                       </div>
                     </div>
 

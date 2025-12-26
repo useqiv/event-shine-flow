@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -25,6 +26,7 @@ interface ContestDetails {
   title: string;
   total_votes: number;
   vote_price: number;
+  vote_currency: string;
   start_date: string;
   end_date: string;
 }
@@ -65,7 +67,7 @@ const ContestAnalytics = () => {
         // Fetch contest details
         const { data: contestData } = await supabase
           .from('contests')
-          .select('id, title, total_votes, vote_price, start_date, end_date')
+          .select('id, title, total_votes, vote_price, vote_currency, start_date, end_date')
           .eq('id', id)
           .single();
         
@@ -203,7 +205,7 @@ const ContestAnalytics = () => {
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
-                    <p className="text-2xl font-bold">₦{analytics.totalRevenue.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{formatCurrency(analytics.totalRevenue, contest?.vote_currency || 'USD')}</p>
                   )}
                 </div>
                 <DollarSign className="h-8 w-8 opacity-80" />
@@ -396,7 +398,7 @@ const ContestAnalytics = () => {
                   </div>
                   <div className="text-center p-4 rounded-lg bg-muted/50">
                     <p className="text-3xl font-bold text-primary">
-                      ₦{(analytics.totalRevenue / (analytics.uniqueVoters || 1)).toFixed(0)}
+                      {formatCurrency(Math.round(analytics.totalRevenue / (analytics.uniqueVoters || 1)), contest?.vote_currency || 'USD')}
                     </p>
                     <p className="text-sm text-muted-foreground">Avg Spend per Voter</p>
                   </div>

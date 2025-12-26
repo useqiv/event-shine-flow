@@ -10,6 +10,7 @@ import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, u
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import RevenueChart from '@/components/org/RevenueChart';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
   Trophy, 
@@ -227,7 +228,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{totalRevenue.toLocaleString()}
+                      {formatCurrency(totalRevenue, 'NGN')}
                     </p>
                   )}
                 </div>
@@ -255,7 +256,7 @@ const OrgDashboard = () => {
                             After platform commission:<br/>
                             • Votes: {voteCommission}% commission<br/>
                             • Tickets: {ticketCommission}% commission<br/>
-                            Total deducted: ₦{totalCommissionDeducted.toLocaleString()}
+                            Total deducted: {formatCurrency(totalCommissionDeducted, 'NGN')}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -265,7 +266,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      ₦{netRevenue.toLocaleString()}
+                      {formatCurrency(netRevenue, 'NGN')}
                     </p>
                   )}
                 </div>
@@ -300,7 +301,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                ₦{stats?.voteRevenue?.toLocaleString() || '0'} in revenue
+                {formatCurrency(stats?.voteRevenue || 0, 'NGN')} in revenue
               </p>
             </CardContent>
           </Card>
@@ -324,7 +325,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                ₦{stats?.ticketRevenue?.toLocaleString() || '0'} in revenue
+                {formatCurrency(stats?.ticketRevenue || 0, 'NGN')} in revenue
               </p>
             </CardContent>
           </Card>
@@ -364,7 +365,7 @@ const OrgDashboard = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-2xl font-bold text-foreground">
-                    ₦{stats?.pendingPayouts?.toLocaleString() || '0'}
+                    {formatCurrency(stats?.pendingPayouts || 0, 'NGN')}
                   </p>
                 </div>
                 <CreditCard className="h-8 w-8 text-muted-foreground" />
