@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { useEventTicketTypes, useQRScanLogs } from '@/hooks/useOrganization';
+import ManualTicketLookup from '@/components/org/ManualTicketLookup';
 import { 
   Users, 
   UserCheck, 
@@ -15,9 +16,12 @@ import {
   TrendingUp,
   QrCode,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  Wifi,
+  WifiOff,
+  User
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 interface EventDetails {
   id: string;
@@ -26,12 +30,20 @@ interface EventDetails {
   venue: string;
 }
 
+interface RecentCheckin {
+  id: string;
+  scanned_at: string;
+  scan_result: string;
+  attendee_name?: string;
+  ticket_type?: string;
+}
+
 interface CheckinStats {
   totalTickets: number;
   checkedIn: number;
   pending: number;
   checkInRate: number;
-  recentCheckins: any[];
+  recentCheckins: RecentCheckin[];
   hourlyCheckins: { hour: number; count: number }[];
 }
 
@@ -47,6 +59,8 @@ const EventCheckinDashboard = () => {
     hourlyCheckins: [],
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { data: ticketTypes } = useEventTicketTypes(id || '');
   const { data: scanLogs, refetch: refetchScans } = useQRScanLogs(id);
 
@@ -63,26 +77,67 @@ const EventCheckinDashboard = () => {
       
       if (eventData) setEvent(eventData);
 
-      // Fetch tickets for this event
+      // Fetch tickets for this event with user info
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('id, status, quantity')
+        .select('id, status, quantity, user_id')
         .eq('event_id', id);
 
       const totalTickets = tickets?.reduce((sum, t) => sum + t.quantity, 0) || 0;
       const checkedIn = tickets?.filter(t => t.status === 'used').reduce((sum, t) => sum + t.quantity, 0) || 0;
 
-      // Fetch scan logs for hourly breakdown
+      // Fetch scan logs with ticket info for recent checkins
       const { data: scans } = await supabase
         .from('qr_scan_logs')
-        .select('scanned_at')
+        .select('id, scanned_at, scan_result, ticket_id')
         .eq('event_id', id)
-        .eq('scan_result', 'success')
-        .gte('scanned_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        .order('scanned_at', { ascending: false })
+        .limit(50);
 
-      // Calculate hourly breakdown
+      // Enrich recent check-ins with attendee info
+      const recentCheckins: RecentCheckin[] = [];
+      for (const scan of (scans || []).slice(0, 15)) {
+        if (scan.ticket_id) {
+          const { data: ticket } = await supabase
+            .from('tickets')
+            .select('user_id, ticket_type_id')
+            .eq('id', scan.ticket_id)
+            .maybeSingle();
+          
+          let attendeeName = 'Unknown';
+          let ticketType = 'Standard';
+          
+          if (ticket) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', ticket.user_id)
+              .maybeSingle();
+            
+            const { data: type } = await supabase
+              .from('ticket_types')
+              .select('name')
+              .eq('id', ticket.ticket_type_id)
+              .maybeSingle();
+            
+            attendeeName = profile?.full_name || 'Unknown';
+            ticketType = type?.name || 'Standard';
+          }
+          
+          recentCheckins.push({
+            id: scan.id,
+            scanned_at: scan.scanned_at,
+            scan_result: scan.scan_result,
+            attendee_name: attendeeName,
+            ticket_type: ticketType,
+          });
+        }
+      }
+
+      // Calculate hourly breakdown from successful scans
+      const successfulScans = scans?.filter(s => s.scan_result === 'success') || [];
       const hourlyMap = new Map<number, number>();
-      scans?.forEach(scan => {
+      successfulScans.forEach(scan => {
         const hour = new Date(scan.scanned_at).getHours();
         hourlyMap.set(hour, (hourlyMap.get(hour) || 0) + 1);
       });
@@ -97,9 +152,10 @@ const EventCheckinDashboard = () => {
         checkedIn,
         pending: totalTickets - checkedIn,
         checkInRate: totalTickets > 0 ? (checkedIn / totalTickets) * 100 : 0,
-        recentCheckins: scanLogs?.slice(0, 10) || [],
+        recentCheckins,
         hourlyCheckins,
       });
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch stats:', error);
     } finally {
@@ -111,12 +167,12 @@ const EventCheckinDashboard = () => {
     fetchStats();
   }, [id, scanLogs]);
 
-  // Real-time subscription for scan logs
+  // Real-time subscription for scan logs and tickets
   useEffect(() => {
     if (!id) return;
 
     const channel = supabase
-      .channel('checkin-updates')
+      .channel(`checkin-updates-${id}`)
       .on(
         'postgres_changes',
         {
@@ -130,7 +186,21 @@ const EventCheckinDashboard = () => {
           fetchStats();
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets',
+          filter: `event_id=eq.${id}`,
+        },
+        () => {
+          fetchStats();
+        }
+      )
+      .subscribe((status) => {
+        setIsConnected(status === 'SUBSCRIBED');
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -150,12 +220,28 @@ const EventCheckinDashboard = () => {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Check-in Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground">Check-in Dashboard</h1>
+              {isConnected ? (
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <Wifi className="h-3 w-3 mr-1" />
+                  Live
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                  <WifiOff className="h-3 w-3 mr-1" />
+                  Reconnecting
+                </Badge>
+              )}
+            </div>
             {event && (
               <p className="text-muted-foreground">
                 {event.title} • {event.venue}
               </p>
             )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {formatDistanceToNow(lastUpdate, { addSuffix: true })}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={fetchStats}>
@@ -280,7 +366,15 @@ const EventCheckinDashboard = () => {
           {/* Recent Check-ins */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Check-ins</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Recent Check-ins
+                {isConnected && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                )}
+              </CardTitle>
               <CardDescription>Live feed of latest check-ins</CardDescription>
             </CardHeader>
             <CardContent>
@@ -290,21 +384,23 @@ const EventCheckinDashboard = () => {
                     <Skeleton key={i} className="h-12" />
                   ))}
                 </div>
-              ) : scanLogs && scanLogs.length > 0 ? (
+              ) : stats.recentCheckins.length > 0 ? (
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {scanLogs.slice(0, 15).map((scan: any) => (
+                  {stats.recentCheckins.map((scan) => (
                     <div 
                       key={scan.id} 
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 animate-in fade-in slide-in-from-top-1 duration-300"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`h-2 w-2 rounded-full ${scan.scan_result === 'success' ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${scan.scan_result === 'success' ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                          <User className={`h-4 w-4 ${scan.scan_result === 'success' ? 'text-green-600' : 'text-red-600'}`} />
+                        </div>
                         <div>
                           <p className="text-sm font-medium">
-                            {scan.tickets?.ticket_types?.name || 'Standard Ticket'}
+                            {scan.attendee_name || 'Unknown Attendee'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(scan.scanned_at), 'HH:mm:ss')}
+                            {scan.ticket_type} • {format(new Date(scan.scanned_at), 'HH:mm:ss')}
                           </p>
                         </div>
                       </div>
@@ -323,6 +419,9 @@ const EventCheckinDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Manual Ticket Lookup */}
+        <ManualTicketLookup eventId={id || ''} onCheckIn={fetchStats} />
 
         {/* Ticket Types Breakdown */}
         {ticketTypes && ticketTypes.length > 0 && (
