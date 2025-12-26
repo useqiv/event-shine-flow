@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency } from '@/components/ui/currency-selector';
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
@@ -159,7 +160,7 @@ const ManageEvents = () => {
                           <DollarSign className="h-3 w-3" />
                           <span>Total Revenue</span>
                         </div>
-                        <span className="font-medium">₦{totalRevenue.toLocaleString()}</span>
+                        <span className="font-medium">{formatCurrency(totalRevenue, 'NGN')}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -173,13 +174,13 @@ const ManageEvents = () => {
                               <TooltipContent>
                                 <p className="text-xs">
                                   {ticketCommission}% commission<br/>
-                                  Deducted: ₦{commissionDeducted.toLocaleString()}
+                                  Deducted: {formatCurrency(commissionDeducted, 'NGN')}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <span className="font-medium text-green-600 dark:text-green-400">₦{netRevenue.toLocaleString()}</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(netRevenue, 'NGN')}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {eventData.ticketsSold} tickets sold
