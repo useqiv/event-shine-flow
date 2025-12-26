@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts } from '@/hooks/useOrganization';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import RevenueChart from '@/components/org/RevenueChart';
 import { 
   Wallet, 
@@ -19,7 +22,9 @@ import {
   DollarSign,
   Users,
   BarChart3,
-  PlusCircle
+  PlusCircle,
+  TrendingDown,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -29,7 +34,42 @@ const OrgDashboard = () => {
   const { data: events, isLoading: eventsLoading } = useOrganizationEvents();
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
 
+  // Fetch commission settings
+  const { data: commissionSettings } = useQuery({
+    queryKey: ['platform-commission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .eq('category', 'commission');
+      
+      if (error) throw error;
+      
+      // Parse into a convenient object
+      const settings: Record<string, number> = {};
+      data?.forEach((s: any) => {
+        settings[s.setting_key] = Number(s.setting_value) || 0;
+      });
+      return settings;
+    },
+  });
+
   const pendingPayouts = payouts?.filter(p => p.status === 'pending') || [];
+
+  // Calculate net revenue after commission deduction
+  const platformCommission = commissionSettings?.platform_commission_percentage || 10;
+  const voteCommission = commissionSettings?.vote_commission_percentage || platformCommission;
+  const ticketCommission = commissionSettings?.ticket_commission_percentage || platformCommission;
+  
+  const voteRevenue = stats?.voteRevenue || 0;
+  const ticketRevenue = stats?.ticketRevenue || 0;
+  const totalRevenue = stats?.totalRevenue || 0;
+  
+  // Calculate net revenue using specific commission rates
+  const netVoteRevenue = voteRevenue * (1 - voteCommission / 100);
+  const netTicketRevenue = ticketRevenue * (1 - ticketCommission / 100);
+  const netRevenue = netVoteRevenue + netTicketRevenue;
+  const totalCommissionDeducted = totalRevenue - netRevenue;
   
   // Show full page skeleton during initial load
   const isInitialLoading = statsLoading && contestsLoading && eventsLoading;
@@ -154,7 +194,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Total Revenue */}
           <Card>
             <CardContent className="pt-6">
@@ -165,7 +205,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{stats?.totalRevenue?.toLocaleString() || '0.00'}
+                      ₦{totalRevenue.toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -173,6 +213,47 @@ const OrgDashboard = () => {
                   <DollarSign className="h-6 w-6 text-primary" />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Net Revenue */}
+          <Card className="border-green-200 dark:border-green-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="text-xs">
+                            After platform commission:<br/>
+                            • Votes: {voteCommission}% commission<br/>
+                            • Tickets: {ticketCommission}% commission<br/>
+                            Total deducted: ₦{totalCommissionDeducted.toLocaleString()}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      ₦{netRevenue.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                -{platformCommission}% platform fee
+              </p>
             </CardContent>
           </Card>
 
