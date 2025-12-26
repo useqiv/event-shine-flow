@@ -396,6 +396,41 @@ export type Database = {
           },
         ]
       }
+      event_templates: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          template_data: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           address: string | null
@@ -778,6 +813,56 @@ export type Database = {
             foreignKeyName: "organization_settings_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_webhooks: {
+        Row: {
+          created_at: string
+          events: string[]
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          organization_id: string
+          secret: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          organization_id: string
+          secret?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          organization_id?: string
+          secret?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1744,6 +1829,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          success: boolean
+          webhook_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          webhook_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          success?: boolean
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "organization_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

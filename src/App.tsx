@@ -27,6 +27,7 @@ import SavedItems from "./pages/SavedItems";
 import ReferralLeaderboard from "./pages/ReferralLeaderboard";
 import PaymentCallback from "./pages/PaymentCallback";
 import AcceptTransfer from "./pages/AcceptTransfer";
+import EmbedLeaderboard from "./pages/EmbedLeaderboard";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -130,6 +131,7 @@ const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
     <Route path="/c/:slug" element={<PublicContest />} />
+    <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
