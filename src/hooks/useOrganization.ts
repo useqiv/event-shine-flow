@@ -829,14 +829,30 @@ export const useEventTickets = (eventId: string) => {
   return useQuery({
     queryKey: ['event-tickets', eventId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch tickets with ticket_types
+      const { data: tickets, error } = await supabase
         .from('tickets')
-        .select('*, ticket_types(name, price), profiles(full_name, email)')
+        .select('*, ticket_types(name, price)')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      if (!tickets || tickets.length === 0) return [];
+
+      // Fetch profiles for all user_ids
+      const userIds = [...new Set(tickets.map(t => t.user_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', userIds);
+      
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+      // Merge profiles into tickets
+      return tickets.map(ticket => ({
+        ...ticket,
+        profiles: profileMap.get(ticket.user_id) || { full_name: 'Unknown', email: '' },
+      }));
     },
     enabled: !!eventId,
   });
