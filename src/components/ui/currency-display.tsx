@@ -30,9 +30,14 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   showBadge = false,
   showToggle = false,
 }) => {
-  const [showConverted, setShowConverted] = useState(false);
   const { convert, isLive } = useConversionDisplay();
-  const { preferredCurrency } = useUserCurrency();
+  const { preferredCurrency, showConvertedByDefault } = useUserCurrency();
+  const [showConverted, setShowConverted] = useState(showConvertedByDefault);
+  
+  // Sync with global preference when it changes
+  React.useEffect(() => {
+    setShowConverted(showConvertedByDefault);
+  }, [showConvertedByDefault]);
   
   // Use provided conversion currency or fall back to user's preferred currency
   const targetCurrency = conversionCurrency || preferredCurrency;
