@@ -28,6 +28,7 @@ import ReferralLeaderboard from "./pages/ReferralLeaderboard";
 import PaymentCallback from "./pages/PaymentCallback";
 import AcceptTransfer from "./pages/AcceptTransfer";
 import EmbedLeaderboard from "./pages/EmbedLeaderboard";
+import FavoriteContestants from "./pages/FavoriteContestants";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -144,6 +145,7 @@ const AppRoutes = () => (
     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
     <Route path="/saved" element={<ProtectedRoute><SavedItems /></ProtectedRoute>} />
+    <Route path="/favorites" element={<ProtectedRoute><FavoriteContestants /></ProtectedRoute>} />
     <Route path="/leaderboard" element={<ProtectedRoute><ReferralLeaderboard /></ProtectedRoute>} />
     <Route path="/payment-callback" element={<PaymentCallback />} />
     <Route path="/accept-transfer" element={<AcceptTransfer />} />

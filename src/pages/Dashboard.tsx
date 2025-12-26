@@ -19,6 +19,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { VotingAnalytics } from '@/components/dashboard/VotingAnalytics';
 import { TicketReminders } from '@/components/dashboard/TicketReminders';
 import { ContestCountdowns } from '@/components/dashboard/ContestCountdowns';
+import { EventCalendar } from '@/components/dashboard/EventCalendar';
+import { VoteStreak } from '@/components/dashboard/VoteStreak';
 import { 
   Wallet, 
   Trophy, 
@@ -417,11 +419,17 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Vote Streak */}
+        <VoteStreak />
+
         {/* New Feature Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TicketReminders />
           <ContestCountdowns />
         </div>
+
+        {/* Event Calendar */}
+        <EventCalendar />
 
         {/* Voting Analytics */}
         <VotingAnalytics />

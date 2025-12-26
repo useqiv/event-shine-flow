@@ -487,6 +487,35 @@ export type Database = {
           },
         ]
       }
+      favorite_contestants: {
+        Row: {
+          contestant_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          contestant_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          contestant_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_contestants_contestant_id_fkey"
+            columns: ["contestant_id"]
+            isOneToOne: false
+            referencedRelation: "contestants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fraud_alerts: {
         Row: {
           alert_type: string
@@ -1661,6 +1690,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_vote_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_vote_date: string | null
+          longest_streak: number
+          total_streak_bonuses_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_vote_date?: string | null
+          longest_streak?: number
+          total_streak_bonuses_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_vote_date?: string | null
+          longest_streak?: number
+          total_streak_bonuses_earned?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
