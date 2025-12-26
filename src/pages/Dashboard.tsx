@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  StatsGridSkeleton, 
+  CardSkeleton, 
+  ListSkeleton 
+} from '@/components/ui/loading-skeletons';
 import { useWallet } from '@/hooks/useWallet';
 import { useFeaturedContests } from '@/hooks/useContests';
 import { useFeaturedEvents } from '@/hooks/useEvents';
@@ -24,16 +29,122 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 
+// Stat card skeleton with icon placeholder
+const StatCardSkeleton = () => (
+  <Card>
+    <CardContent className="pt-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+        <Skeleton className="h-12 w-12 rounded-xl" />
+      </div>
+      <Skeleton className="h-4 w-28 mt-4" />
+    </CardContent>
+  </Card>
+);
+
+// List card skeleton for notifications/contests/events
+const ListCardSkeleton = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
+  <Card>
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg flex items-center gap-2">
+        <Icon className="h-5 w-5" />
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex gap-3 p-2 rounded-lg">
+            <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          </div>
+        ))}
+        <Skeleton className="h-9 w-full rounded-md" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Recent votes skeleton
+const RecentVotesSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="text-lg flex items-center gap-2">
+        <Vote className="h-5 w-5" />
+        My Recent Votes
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-3">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+            <div className="text-right space-y-2">
+              <Skeleton className="h-4 w-16 ml-auto" />
+              <Skeleton className="h-3 w-20 ml-auto" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const Dashboard = () => {
   const { data: wallet, isLoading: walletLoading } = useWallet();
   const { data: featuredContests, isLoading: contestsLoading } = useFeaturedContests();
   const { data: featuredEvents, isLoading: eventsLoading } = useFeaturedEvents();
   const { data: myTickets, isLoading: ticketsLoading } = useMyTickets();
   const { data: myVotes, isLoading: votesLoading } = useMyVotes();
-  const { data: notifications } = useNotifications();
+  const { data: notifications, isLoading: notificationsLoading } = useNotifications();
 
   const unreadNotifications = notifications?.filter(n => !n.is_read) || [];
   const recentNotifications = unreadNotifications.slice(0, 3);
+
+  // Show full page skeleton when primary data is loading
+  const isInitialLoading = walletLoading && contestsLoading && eventsLoading;
+
+  if (isInitialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          {/* Welcome Section */}
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-5 w-64" />
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+
+          {/* Three Column Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <ListCardSkeleton title="Notifications" icon={Bell} />
+            <ListCardSkeleton title="Trending Contests" icon={TrendingUp} />
+            <ListCardSkeleton title="Upcoming Events" icon={Clock} />
+          </div>
+
+          {/* Recent Votes Skeleton */}
+          <RecentVotesSkeleton />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
