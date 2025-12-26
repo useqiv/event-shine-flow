@@ -16,6 +16,7 @@ export interface OrganizationSettings {
   account_name: string | null;
   usdt_address: string | null;
   preferred_payout_method: string | null;
+  default_currency: string;
   created_at: string;
   updated_at: string;
 }

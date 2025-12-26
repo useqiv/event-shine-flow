@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import CurrencySelector, { getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
+import CurrencySelector, { getCurrencySymbol, getCurrencyMinAmount, formatWithConversion, currencies } from '@/components/ui/currency-selector';
 import { useWallet, useWalletTransactions, useRedeemVoucher, useUpdateLowBalanceThreshold } from '@/hooks/useWallet';
 import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -88,13 +88,16 @@ const WalletPage = () => {
 
   const handleFund = async () => {
     const amount = parseFloat(fundAmount);
+    const minAmount = getCurrencyMinAmount(fundCurrency);
+    const currencySymbol = getCurrencySymbol(fundCurrency);
+    
     if (isNaN(amount) || amount <= 0) {
       toast({ title: 'Invalid amount', description: 'Please enter a valid amount', variant: 'destructive' });
       return;
     }
     
-    if (amount < 100) {
-      toast({ title: 'Minimum amount', description: 'Minimum funding amount is ₦100', variant: 'destructive' });
+    if (amount < minAmount) {
+      toast({ title: 'Minimum amount', description: `Minimum funding amount is ${currencySymbol}${minAmount}`, variant: 'destructive' });
       return;
     }
 
@@ -369,11 +372,20 @@ const WalletPage = () => {
                   value={fundAmount} 
                   onChange={e => setFundAmount(e.target.value)} 
                   placeholder="Enter amount" 
-                  min={fundCurrency === 'USD' ? 1 : 100}
-                  step={fundCurrency === 'USD' ? 0.01 : 1}
+                  min={getCurrencyMinAmount(fundCurrency)}
+                  step={fundCurrency === 'USD' || fundCurrency === 'EUR' || fundCurrency === 'GBP' ? 0.01 : 1}
                 />
+                {fundAmount && fundCurrency !== 'USD' && parseFloat(fundAmount) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {formatWithConversion(parseFloat(fundAmount), fundCurrency, 'USD')}
+                  </p>
+                )}
               </div>
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Minimum: {currencySymbol}{getCurrencyMinAmount(fundCurrency).toLocaleString()}
+            </p>
             
             <div>
               <Label className="text-sm text-muted-foreground">Quick select</Label>

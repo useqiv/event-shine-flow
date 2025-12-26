@@ -7,10 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useOrganizationSettings, useUpdateOrganizationSettings } from '@/hooks/useOrganization';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { Building, User, CreditCard } from 'lucide-react';
+import { Building, User, CreditCard, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { WebhooksManager } from '@/components/org/WebhooksManager';
 import { EmbedCodeGenerator } from '@/components/org/EmbedCodeGenerator';
+import CurrencySelector from '@/components/ui/currency-selector';
 
 const OrgSettings = () => {
   const { data: profile } = useProfile();
@@ -38,6 +39,8 @@ const OrgSettings = () => {
     usdt_address: '',
   });
 
+  const [defaultCurrency, setDefaultCurrency] = useState('USD');
+
   useEffect(() => {
     if (profile) {
       setProfileData({
@@ -62,6 +65,7 @@ const OrgSettings = () => {
         account_name: orgSettings.account_name || '',
         usdt_address: orgSettings.usdt_address || '',
       });
+      setDefaultCurrency(orgSettings.default_currency || 'USD');
     }
   }, [orgSettings]);
 
@@ -76,10 +80,19 @@ const OrgSettings = () => {
 
   const handleSaveCompany = async () => {
     try {
-      await updateOrgSettings.mutateAsync(companyData);
+      await updateOrgSettings.mutateAsync({ ...companyData, default_currency: defaultCurrency });
       toast.success('Company information saved');
     } catch (error) {
       toast.error('Failed to save company information');
+    }
+  };
+
+  const handleSaveCurrency = async () => {
+    try {
+      await updateOrgSettings.mutateAsync({ default_currency: defaultCurrency });
+      toast.success('Default currency saved');
+    } catch (error) {
+      toast.error('Failed to save currency preference');
     }
   };
 
@@ -185,6 +198,33 @@ const OrgSettings = () => {
             </div>
             <Button onClick={handleSaveCompany} disabled={updateOrgSettings.isPending}>
               {updateOrgSettings.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Currency Preferences */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Currency Preferences
+            </CardTitle>
+            <CardDescription>Set your default currency for pricing contests and events</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Default Currency</Label>
+              <CurrencySelector
+                value={defaultCurrency}
+                onValueChange={setDefaultCurrency}
+                className="w-full md:w-64"
+              />
+              <p className="text-sm text-muted-foreground">
+                This will be the default currency when creating new contests and events.
+              </p>
+            </div>
+            <Button onClick={handleSaveCurrency} disabled={updateOrgSettings.isPending}>
+              {updateOrgSettings.isPending ? 'Saving...' : 'Save Currency'}
             </Button>
           </CardContent>
         </Card>
