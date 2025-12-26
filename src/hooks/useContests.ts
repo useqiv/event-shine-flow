@@ -11,6 +11,7 @@ export interface Contest {
   start_date: string;
   end_date: string;
   vote_price: number;
+  vote_currency: string;
   is_active: boolean;
   is_featured: boolean;
   total_votes: number;

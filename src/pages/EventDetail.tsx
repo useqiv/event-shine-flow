@@ -22,6 +22,7 @@ import {
   Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency, formatWithConversion } from '@/components/ui/currency-selector';
 
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -234,7 +235,12 @@ const EventDetail = () => {
                               <p className="text-sm text-muted-foreground mt-1">{ticketType.description}</p>
                             )}
                           </div>
-                          <p className="text-lg font-bold">₦{Number(ticketType.price).toLocaleString()}</p>
+                          <div className="text-right">
+                            <p className="text-lg font-bold">{formatCurrency(Number(ticketType.price), ticketType.currency || 'NGN')}</p>
+                            {ticketType.currency && ticketType.currency !== 'USD' && (
+                              <p className="text-xs text-muted-foreground">{formatWithConversion(Number(ticketType.price), ticketType.currency, 'USD')}</p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex justify-between items-center mt-4">
                           <span className="text-sm text-muted-foreground">
@@ -299,7 +305,12 @@ const EventDetail = () => {
               <div className="p-4 rounded-lg bg-secondary">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Total Amount</span>
-                  <span className="text-xl font-bold">₦{totalAmount.toLocaleString()}</span>
+                  <div className="text-right">
+                    <span className="text-xl font-bold">{formatCurrency(totalAmount, selectedTicketType?.currency || 'NGN')}</span>
+                    {selectedTicketType?.currency && selectedTicketType.currency !== 'USD' && (
+                      <p className="text-xs text-muted-foreground">{formatWithConversion(totalAmount, selectedTicketType.currency, 'USD')}</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
