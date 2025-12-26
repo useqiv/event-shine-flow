@@ -33,6 +33,7 @@ interface FlutterwaveWebhookData {
       event_id?: string;
       ticket_type_id?: string;
       ticket_quantity?: number;
+      funding_amount?: number;
     };
   };
 }
@@ -239,6 +240,7 @@ async function processSuccessfulPayment(paymentData: any) {
     event_id,
     ticket_type_id,
     ticket_quantity,
+    funding_amount,
   } = meta;
   const customer = paymentData.customer || {};
 
@@ -476,6 +478,53 @@ async function processSuccessfulPayment(paymentData: any) {
         event_venue: event?.venue || "Venue TBA",
         ticket_type: ticketType?.name || "General",
         qr_code,
+      });
+    }
+  } else if (type === "wallet" && user_id) {
+    console.log("Processing wallet funding...");
+
+    // Get wallet
+    const { data: wallet, error: walletError } = await supabase
+      .from("wallets")
+      .select("id, balance")
+      .eq("user_id", user_id)
+      .single();
+
+    if (walletError || !wallet) {
+      console.error("Error fetching wallet:", walletError?.message);
+      return;
+    }
+
+    // Update wallet balance
+    const newBalance = Number(wallet.balance) + paymentData.amount;
+    const { error: updateError } = await supabase
+      .from("wallets")
+      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .eq("id", wallet.id);
+
+    if (updateError) {
+      console.error("Error updating wallet balance:", updateError.message);
+    } else {
+      console.log("Wallet funded successfully, new balance:", newBalance);
+
+      // Create notification
+      await supabase.from("notifications").insert({
+        user_id,
+        title: "Wallet Funded Successfully",
+        message: `Your wallet has been credited with ${paymentData.currency || "NGN"} ${paymentData.amount.toLocaleString()}.`,
+        type: "system",
+      });
+
+      // Send email receipt
+      await sendReceipt({
+        type: "wallet",
+        user_email: customer.email,
+        user_name: customer.name || "Valued Customer",
+        amount: paymentData.amount,
+        currency: paymentData.currency || "NGN",
+        payment_method: `Flutterwave`,
+        transaction_ref: paymentData.tx_ref,
+        new_balance: newBalance,
       });
     }
   } else {

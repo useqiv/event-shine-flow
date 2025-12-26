@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PaymentRequest {
-  type: "vote" | "ticket";
+  type: "vote" | "ticket" | "wallet";
   amount: number;
   currency: string;
   email: string;
@@ -133,11 +133,31 @@ const handler = async (req: Request): Promise<Response> => {
       meta.event_id = payload.event_id;
       meta.ticket_type_id = payload.ticket_type_id;
       meta.ticket_quantity = payload.ticket_quantity;
+    } else if (payload.type === "wallet") {
+      meta.funding_amount = payload.amount;
     }
 
     // Use the current app URL for redirect
     const baseUrl = "https://preview--lovable-voting-platform.lovable.app";
     const redirectUrl = payload.redirect_url || `${baseUrl}/payment-callback`;
+
+    const getPaymentTitle = () => {
+      switch (payload.type) {
+        case "vote": return "Vote Purchase";
+        case "ticket": return "Ticket Purchase";
+        case "wallet": return "Wallet Funding";
+        default: return "Payment";
+      }
+    };
+
+    const getPaymentDescription = () => {
+      switch (payload.type) {
+        case "vote": return `Purchase ${payload.vote_quantity || 1} vote(s)`;
+        case "ticket": return `Purchase ${payload.ticket_quantity || 1} ticket(s)`;
+        case "wallet": return `Fund wallet with ${payload.currency || defaultCurrency} ${payload.amount}`;
+        default: return "Payment";
+      }
+    };
 
     const flutterwavePayload = {
       tx_ref,
@@ -151,10 +171,8 @@ const handler = async (req: Request): Promise<Response> => {
       },
       meta,
       customizations: {
-        title: payload.type === "vote" ? "Vote Purchase" : "Ticket Purchase",
-        description: payload.type === "vote" 
-          ? `Purchase ${payload.vote_quantity || 1} vote(s)` 
-          : `Purchase ${payload.ticket_quantity || 1} ticket(s)`,
+        title: getPaymentTitle(),
+        description: getPaymentDescription(),
         logo: "https://tirqmqzgksclsjxfiham.supabase.co/storage/v1/object/public/avatars/logo.png",
       },
     };
@@ -206,14 +224,18 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (wallet) {
+      // Map wallet funding to 'deposit' type for DB constraint
+      const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
       const { error: txError } = await supabase.from("wallet_transactions").insert({
         user_id: payload.user_id,
         wallet_id: wallet.id,
         amount: payload.amount,
-        type: payload.type, // must match DB constraint (vote | ticket)
+        type: transactionType,
         status: "pending",
         reference_id: tx_ref,
-        description: `Pending ${payload.type} payment via Flutterwave`,
+        description: payload.type === "wallet" 
+          ? `Wallet funding via Flutterwave` 
+          : `Pending ${payload.type} payment via Flutterwave`,
       });
 
       if (txError) {

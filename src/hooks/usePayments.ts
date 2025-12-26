@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface FlutterwavePaymentParams {
-  type: 'vote' | 'ticket';
+  type: 'vote' | 'ticket' | 'wallet';
   amount: number;
   currency: string;
   email: string;
