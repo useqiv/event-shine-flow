@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import CurrencySelector, { getCurrencySymbol } from '@/components/ui/currency-selector';
+import CurrencySelector, { getCurrencySymbol, formatCurrency } from '@/components/ui/currency-selector';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
@@ -169,7 +169,7 @@ const EventManagement = () => {
       { key: 'profiles.email', label: 'Email' },
       { key: 'ticket_types.name', label: 'Ticket Type' },
       { key: 'quantity', label: 'Quantity' },
-      { key: 'amount_paid', label: 'Amount Paid (₦)' },
+      { key: 'amount_paid', label: 'Amount Paid' },
       { key: 'payment_method', label: 'Payment Method' },
       { key: 'status', label: 'Status' },
       { key: 'created_at', label: 'Purchase Date' },
@@ -298,7 +298,7 @@ const EventManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">₦{totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue, ticketTypes?.[0]?.currency || 'NGN')}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -318,13 +318,13 @@ const EventManagement = () => {
                         <TooltipContent>
                           <p className="text-xs">
                             {ticketCommission}% commission<br/>
-                            Deducted: ₦{commissionDeducted.toLocaleString()}
+                            Deducted: {formatCurrency(commissionDeducted, ticketTypes?.[0]?.currency || 'NGN')}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">₦{netRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, ticketTypes?.[0]?.currency || 'NGN')}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
@@ -445,7 +445,7 @@ const EventManagement = () => {
                           {ticketType.quantity_sold}/{ticketType.quantity_available}
                         </Badge>
                       </div>
-                      <p className="text-2xl font-bold text-primary">₦{Number(ticketType.price).toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-primary">{formatCurrency(Number(ticketType.price), ticketType.currency || 'NGN')}</p>
                       {ticketType.description && (
                         <p className="text-sm text-muted-foreground mt-2">{ticketType.description}</p>
                       )}
@@ -508,7 +508,7 @@ const EventManagement = () => {
                             <TableCell>{ticket.profiles?.full_name || 'N/A'}</TableCell>
                             <TableCell>{ticket.profiles?.email || 'N/A'}</TableCell>
                             <TableCell>{ticket.ticket_types?.name}</TableCell>
-                            <TableCell>₦{Number(ticket.amount_paid).toLocaleString()}</TableCell>
+                            <TableCell>{formatCurrency(Number(ticket.amount_paid), ticket.ticket_types?.currency || 'NGN')}</TableCell>
                             <TableCell>{format(new Date(ticket.created_at), 'MMM d, yyyy')}</TableCell>
                             <TableCell>
                               <Badge variant={ticket.status === 'active' ? 'default' : 'secondary'}>
