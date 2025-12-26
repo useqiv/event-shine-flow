@@ -35,19 +35,25 @@ import {
   ArrowRightLeft,
   AlertCircle,
   X,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  History,
+  User,
+  ArrowRight
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
-const TicketCard = ({ ticket, pendingTransfer, onTransferComplete }: { 
+const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComplete }: { 
   ticket: any; 
   pendingTransfer: any | null;
+  transferHistory: any[];
   onTransferComplete: () => void;
 }) => {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [transferring, setTransferring] = useState(false);
@@ -63,6 +69,7 @@ const TicketCard = ({ ticket, pendingTransfer, onTransferComplete }: {
 
   const ticketUrl = `${window.location.origin}/events/${ticket.event_id}`;
   const hasPendingTransfer = pendingTransfer && pendingTransfer.status === 'pending';
+  const hasTransferHistory = transferHistory && transferHistory.length > 0;
 
   const cancelTransfer = async () => {
     if (!pendingTransfer) return;
@@ -732,6 +739,82 @@ const TicketCard = ({ ticket, pendingTransfer, onTransferComplete }: {
                     </RefundRequestDialog>
                   </>
                 )}
+
+                {/* Transfer History Button */}
+                {hasTransferHistory && (
+                  <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <History className="h-4 w-4 mr-1" />
+                        History ({transferHistory.length})
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <History className="h-5 w-5" />
+                          Transfer History
+                        </DialogTitle>
+                        <DialogDescription>
+                          Previous owners and transfer records for this ticket
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4 max-h-[400px] overflow-y-auto">
+                        {/* Current Owner */}
+                        <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">You (Current Owner)</p>
+                            <p className="text-xs text-muted-foreground">
+                              {transferHistory.length > 0 
+                                ? `Received ${formatDistanceToNow(new Date(transferHistory[0].completed_at), { addSuffix: true })}`
+                                : 'Original purchaser'
+                              }
+                            </p>
+                          </div>
+                          <Badge variant="default" className="text-xs">Current</Badge>
+                        </div>
+
+                        {/* Transfer History */}
+                        {transferHistory.map((transfer: any, index: number) => (
+                          <div key={transfer.id} className="relative">
+                            {/* Connector Line */}
+                            <div className="absolute left-5 -top-4 w-px h-4 bg-border" />
+                            
+                            <div className="flex items-start gap-3 p-3 bg-secondary/50 rounded-lg">
+                              <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium truncate">
+                                    From: {transfer.to_user_email === user?.email ? 'Previous owner' : transfer.to_user_email}
+                                  </p>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Transferred {format(new Date(transfer.completed_at), 'MMM d, yyyy')} at {format(new Date(transfer.completed_at), 'h:mm a')}
+                                </p>
+                                <p className="text-xs text-muted-foreground font-mono mt-1">
+                                  Code: {transfer.transfer_code}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {transferHistory.length === 0 && (
+                          <div className="text-center py-6 text-muted-foreground">
+                            <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No transfer history</p>
+                            <p className="text-xs">You are the original purchaser</p>
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </div>
             </div>
           </div>
@@ -764,8 +847,33 @@ const MyTickets = () => {
     enabled: !!user,
   });
 
+  // Fetch transfer history for all tickets
+  const { data: allTransferHistory } = useQuery({
+    queryKey: ['transfer-history', user?.id],
+    queryFn: async () => {
+      if (!user || !tickets) return [];
+      const ticketIds = tickets.map((t: any) => t.id);
+      if (ticketIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('ticket_transfers')
+        .select('*')
+        .in('ticket_id', ticketIds)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && !!tickets && tickets.length > 0,
+  });
+
   const getPendingTransfer = (ticketId: string) => {
     return pendingTransfers?.find((t: any) => t.ticket_id === ticketId) || null;
+  };
+
+  const getTransferHistory = (ticketId: string) => {
+    return allTransferHistory?.filter((t: any) => t.ticket_id === ticketId) || [];
   };
 
   const handleTransferComplete = () => {
@@ -823,6 +931,7 @@ const MyTickets = () => {
                 key={ticket.id} 
                 ticket={ticket} 
                 pendingTransfer={getPendingTransfer(ticket.id)}
+                transferHistory={getTransferHistory(ticket.id)}
                 onTransferComplete={handleTransferComplete} 
               />
             ))}

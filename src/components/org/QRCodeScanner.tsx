@@ -99,16 +99,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     }
 
     try {
-      // Parse QR code - expected format: TICKET-{ticketId}-{eventId}
-      const parts = decodedText.split('-');
-      if (parts.length < 3 || parts[0] !== 'TICKET') {
-        throw new Error('Invalid QR code format');
-      }
-
-      const ticketId = parts.slice(1, -1).join('-'); // Handle UUIDs with dashes
-      const qrEventId = parts[parts.length - 1];
-
-      // Fetch ticket details
+      // Fetch ticket by QR code value directly
       const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .select(`
@@ -127,7 +118,17 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           status: 'error',
           message: 'Ticket not found in system',
         });
-        logScan('unknown', 'invalid');
+        // Log with placeholder ticket_id since we don't have one
+        try {
+          await supabase.from('qr_scan_logs').insert({
+            event_id: eventId,
+            ticket_id: '00000000-0000-0000-0000-000000000000', // Placeholder for invalid tickets
+            scan_result: 'invalid',
+            scanned_by: user?.id,
+          });
+        } catch (e) {
+          console.error('Failed to log invalid scan:', e);
+        }
         setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
         onScanComplete?.({ success: false, message: 'Ticket not found' });
         resumeScanning();
