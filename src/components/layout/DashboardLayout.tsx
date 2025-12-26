@@ -28,7 +28,8 @@ import {
   X,
   Settings,
   HelpCircle,
-  Bookmark
+  Bookmark,
+  Heart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/my-tickets', label: 'My Tickets', icon: Ticket },
     { path: '/my-votes', label: 'My Votes', icon: Vote },
+    { path: '/favorites', label: 'Favorites', icon: Heart },
     { path: '/saved', label: 'Saved', icon: Bookmark },
   ];
 
@@ -207,6 +209,12 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                       <Link to="/profile" className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/favorites" className="cursor-pointer">
+                        <Heart className="mr-2 h-4 w-4" />
+                        Favorite Contestants
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

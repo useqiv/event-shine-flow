@@ -14,6 +14,7 @@ import { useRecordConversion } from '@/hooks/useInfluencerTracking';
 import { ShareButtons, ContestantShareButton } from '@/components/ui/share-buttons';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import PaymentModal from '@/components/PaymentModal';
+import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import confetti from 'canvas-confetti';
 import { 
   Trophy, 
@@ -307,12 +308,15 @@ const ContestDetail = () => {
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-lg">{contestant.name}</h3>
-                      <ContestantShareButton 
-                        contestId={id || ''}
-                        contestantId={contestant.id}
-                        contestantName={contestant.name}
-                        contestTitle={contest?.title || ''}
-                      />
+                      <div className="flex items-center gap-1">
+                        <FavoriteButton contestantId={contestant.id} />
+                        <ContestantShareButton 
+                          contestId={id || ''}
+                          contestantId={contestant.id}
+                          contestantName={contestant.name}
+                          contestTitle={contest?.title || ''}
+                        />
+                      </div>
                     </div>
                     {contestant.bio && (
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
