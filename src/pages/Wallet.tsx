@@ -5,17 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { useWallet, useWalletTransactions, useFundWallet, useRedeemVoucher } from '@/hooks/useWallet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { useWallet, useWalletTransactions, useRedeemVoucher } from '@/hooks/useWallet';
+import { useFlutterwavePayment } from '@/hooks/usePayments';
+import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket, CreditCard, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import ReferralCard from '@/components/ReferralCard';
 
 const WalletPage = () => {
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
   const { data: wallet, isLoading: walletLoading } = useWallet();
   const { data: transactions, isLoading: txLoading } = useWalletTransactions();
-  const fundWallet = useFundWallet();
+  const flutterwavePayment = useFlutterwavePayment();
   const redeemVoucher = useRedeemVoucher();
   const { toast } = useToast();
 
@@ -27,16 +32,40 @@ const WalletPage = () => {
   const handleFund = async () => {
     const amount = parseFloat(fundAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast({ title: 'Invalid amount', variant: 'destructive' });
+      toast({ title: 'Invalid amount', description: 'Please enter a valid amount', variant: 'destructive' });
       return;
     }
+    
+    if (amount < 100) {
+      toast({ title: 'Minimum amount', description: 'Minimum funding amount is ₦100', variant: 'destructive' });
+      return;
+    }
+
+    if (!user?.id || !user?.email) {
+      toast({ title: 'Not authenticated', description: 'Please login to fund your wallet', variant: 'destructive' });
+      return;
+    }
+
     try {
-      await fundWallet.mutateAsync({ amount, paymentMethod: 'card' });
-      toast({ title: 'Wallet funded successfully!' });
+      await flutterwavePayment.mutateAsync({
+        type: 'wallet',
+        amount,
+        currency: 'NGN',
+        email: user.email,
+        name: profile?.full_name || user.email,
+        user_id: user.id,
+        redirect_url: `${window.location.origin}/wallet?funding=complete`,
+      });
+      
+      // Payment initiated - user will be redirected to Flutterwave
       setIsFundModalOpen(false);
       setFundAmount('');
     } catch (error: any) {
-      toast({ title: 'Failed to fund wallet', description: error.message, variant: 'destructive' });
+      toast({ 
+        title: 'Failed to initiate payment', 
+        description: error.message || 'Please try again', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -57,9 +86,13 @@ const WalletPage = () => {
       case 'deposit': return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
       case 'vote': return <Vote className="h-4 w-4 text-primary" />;
       case 'ticket': return <Ticket className="h-4 w-4 text-accent" />;
+      case 'voucher': return <Gift className="h-4 w-4 text-green-500" />;
+      case 'referral': return <ArrowDownLeft className="h-4 w-4 text-green-500" />;
       default: return <ArrowUpRight className="h-4 w-4 text-muted-foreground" />;
     }
   };
+
+  const quickAmounts = [1000, 2000, 5000, 10000];
 
   return (
     <DashboardLayout>
@@ -104,8 +137,8 @@ const WalletPage = () => {
                       <p className="text-sm text-muted-foreground">{tx.description}</p>
                     </div>
                     <div className="text-right">
-                      <p className={`font-medium ${tx.amount >= 0 ? 'text-green-500' : 'text-destructive'}`}>
-                        {tx.amount >= 0 ? '+' : ''}₦{Math.abs(tx.amount).toLocaleString()}
+                      <p className={`font-medium ${tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral' ? 'text-green-500' : 'text-destructive'}`}>
+                        {tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral' ? '+' : '-'}₦{Math.abs(tx.amount).toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">{format(new Date(tx.created_at), 'MMM d, HH:mm')}</p>
                     </div>
@@ -123,15 +156,75 @@ const WalletPage = () => {
       </div>
 
       <Dialog open={isFundModalOpen} onOpenChange={setIsFundModalOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Fund Wallet</DialogTitle></DialogHeader>
-          <div className="py-4">
-            <Label>Amount (₦)</Label>
-            <Input type="number" value={fundAmount} onChange={e => setFundAmount(e.target.value)} placeholder="1000" className="mt-2" />
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Fund Wallet
+            </DialogTitle>
+            <DialogDescription>
+              Add funds to your wallet using Flutterwave. You can pay with card, bank transfer, or USSD.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Amount (₦)</Label>
+              <Input 
+                type="number" 
+                value={fundAmount} 
+                onChange={e => setFundAmount(e.target.value)} 
+                placeholder="Enter amount" 
+                className="mt-2"
+                min={100}
+              />
+            </div>
+            
+            <div>
+              <Label className="text-sm text-muted-foreground">Quick select</Label>
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {quickAmounts.map(amount => (
+                  <Button
+                    key={amount}
+                    type="button"
+                    variant={fundAmount === String(amount) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFundAmount(String(amount))}
+                  >
+                    ₦{amount.toLocaleString()}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-3 text-sm">
+              <p className="font-medium mb-1">Payment Methods Available:</p>
+              <ul className="text-muted-foreground space-y-1">
+                <li>• Card (Visa, Mastercard)</li>
+                <li>• Bank Transfer</li>
+                <li>• USSD</li>
+              </ul>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsFundModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleFund} disabled={fundWallet.isPending}>{fundWallet.isPending ? 'Processing...' : 'Fund'}</Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsFundModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleFund} 
+              disabled={flutterwavePayment.isPending || !fundAmount}
+            >
+              {flutterwavePayment.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Pay ₦{parseFloat(fundAmount || '0').toLocaleString()}
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
