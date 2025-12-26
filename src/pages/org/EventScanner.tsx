@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEvent } from '@/hooks/useEvents';
 import { useEventTicketTypes, useQRScanLogs } from '@/hooks/useOrganization';
 import QRCodeScanner from '@/components/org/QRCodeScanner';
-import { ArrowLeft, Calendar, MapPin, Ticket, QrCode } from 'lucide-react';
+import ManualTicketLookup from '@/components/org/ManualTicketLookup';
+import { ArrowLeft, Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventScanner = () => {
@@ -62,9 +64,17 @@ const EventScanner = () => {
             <h1 className="text-xl font-bold text-foreground">Event Check-in</h1>
             <p className="text-sm text-muted-foreground">{event.title}</p>
           </div>
-          <Badge variant={event.is_active ? "default" : "secondary"}>
-            {event.is_active ? 'Active' : 'Inactive'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Link to={`/org/events/${id}/dashboard`}>
+              <Button variant="outline" size="sm">
+                <LayoutDashboard className="h-4 w-4 mr-1" />
+                Dashboard
+              </Button>
+            </Link>
+            <Badge variant={event.is_active ? "default" : "secondary"}>
+              {event.is_active ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
         </div>
 
         {/* Event Info Card */}
@@ -133,21 +143,40 @@ const EventScanner = () => {
           </Card>
         )}
 
-        {/* QR Scanner */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5" />
-              Scan Tickets
-            </CardTitle>
-            <CardDescription>
-              Point the camera at a ticket QR code to check in attendees
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <QRCodeScanner eventId={id || ''} onScanComplete={handleScanComplete} />
-          </CardContent>
-        </Card>
+        {/* Scanner/Lookup Tabs */}
+        <Tabs defaultValue="scanner" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scanner" className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              QR Scanner
+            </TabsTrigger>
+            <TabsTrigger value="lookup" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Manual Lookup
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="scanner" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  Scan Tickets
+                </CardTitle>
+                <CardDescription>
+                  Point the camera at a ticket QR code to check in attendees
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QRCodeScanner eventId={id || ''} onScanComplete={handleScanComplete} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="lookup" className="mt-4">
+            <ManualTicketLookup eventId={id || ''} onCheckIn={handleScanComplete} />
+          </TabsContent>
+        </Tabs>
       </div>
     </OrganizationLayout>
   );
