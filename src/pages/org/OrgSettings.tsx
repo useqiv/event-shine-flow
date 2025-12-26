@@ -9,6 +9,8 @@ import { useOrganizationSettings, useUpdateOrganizationSettings } from '@/hooks/
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { Building, User, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { WebhooksManager } from '@/components/org/WebhooksManager';
+import { EmbedCodeGenerator } from '@/components/org/EmbedCodeGenerator';
 
 const OrgSettings = () => {
   const { data: profile } = useProfile();
@@ -233,6 +235,12 @@ const OrgSettings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Webhooks */}
+        <WebhooksManager />
+
+        {/* Embed Widget */}
+        <EmbedCodeGenerator />
       </div>
     </OrganizationLayout>
   );
