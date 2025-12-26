@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 import RevenueForecast from '@/components/admin/RevenueForecast';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -20,6 +22,9 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 const AdminPaymentAnalytics = () => {
   useRealtimePayments();
   const [timeRange, setTimeRange] = React.useState('7d');
+  
+  // Platform default currency
+  const platformCurrency = 'NGN';
 
   // Fetch votes
   const { data: votes, isLoading: votesLoading } = useQuery({
@@ -160,12 +165,8 @@ const AdminPaymentAnalytics = () => {
     };
   }, [votes, tickets, peakHoursData]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', { 
-      style: 'currency', 
-      currency: 'NGN',
-      minimumFractionDigits: 0 
-    }).format(amount);
+  const formatAmount = (amount: number) => {
+    return formatCurrency(amount, platformCurrency);
   };
 
   const isLoading = votesLoading || ticketsLoading;
@@ -211,7 +212,7 @@ const AdminPaymentAnalytics = () => {
               {isLoading ? (
                 <Skeleton className="h-8 w-32" />
               ) : (
-                <div className="text-2xl font-bold">{formatCurrency(summaryStats.totalRevenue)}</div>
+                <div className="text-2xl font-bold"><CurrencyDisplay amount={summaryStats.totalRevenue} currency={platformCurrency} size="lg" /></div>
               )}
             </CardContent>
           </Card>
@@ -237,7 +238,7 @@ const AdminPaymentAnalytics = () => {
               {isLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="text-2xl font-bold">{formatCurrency(summaryStats.avgTransaction)}</div>
+                <div className="text-2xl font-bold"><CurrencyDisplay amount={summaryStats.avgTransaction} currency={platformCurrency} size="lg" /></div>
               )}
             </CardContent>
           </Card>
@@ -280,12 +281,12 @@ const AdminPaymentAnalytics = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" />
-                  <YAxis 
-                    tickFormatter={(v) => `₦${(v / 1000).toFixed(0)}k`}
-                    className="text-xs"
-                  />
+                    <YAxis 
+                      tickFormatter={(v) => formatAmount(v / 1000).replace(/,/g, '') + 'k'}
+                      className="text-xs"
+                    />
                   <Tooltip 
-                    formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: number) => formatAmount(value)}
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
@@ -346,7 +347,7 @@ const AdminPaymentAnalytics = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                      <Tooltip formatter={(value: number) => formatAmount(value)} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="flex-1 space-y-3">
@@ -361,7 +362,7 @@ const AdminPaymentAnalytics = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-medium">{item.percentage}%</div>
-                          <div className="text-xs text-muted-foreground">{formatCurrency(item.value)}</div>
+                          <div className="text-xs text-muted-foreground"><CurrencyDisplay amount={item.value} currency={platformCurrency} size="sm" /></div>
                         </div>
                       </div>
                     ))}
@@ -392,7 +393,7 @@ const AdminPaymentAnalytics = () => {
                     <YAxis className="text-xs" />
                     <Tooltip 
                       formatter={(value: number, name: string) => [
-                        name === 'amount' ? formatCurrency(value) : value,
+                        name === 'amount' ? formatAmount(value) : value,
                         name === 'amount' ? 'Revenue' : 'Transactions'
                       ]}
                       contentStyle={{ 
@@ -431,7 +432,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Vote Revenue</span>
                   </div>
                   <div className="text-2xl font-bold text-primary">
-                    {formatCurrency(summaryStats.voteRevenue)}
+                    <CurrencyDisplay amount={summaryStats.voteRevenue} currency={platformCurrency} size="lg" />
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {votes?.length || 0} transactions
@@ -443,7 +444,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Ticket Revenue</span>
                   </div>
                   <div className="text-2xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>
-                    {formatCurrency(summaryStats.ticketRevenue)}
+                    <CurrencyDisplay amount={summaryStats.ticketRevenue} currency={platformCurrency} size="lg" />
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {tickets?.length || 0} transactions
