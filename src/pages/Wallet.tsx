@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import CurrencySelector, { getCurrencySymbol, getCurrencyMinAmount, formatWithConversion, currencies } from '@/components/ui/currency-selector';
+import CurrencySelector, { getCurrencySymbol, getCurrencyMinAmount, useConversionDisplay, currencies } from '@/components/ui/currency-selector';
 import { useWallet, useWalletTransactions, useRedeemVoucher, useUpdateLowBalanceThreshold } from '@/hooks/useWallet';
 import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +33,7 @@ const WalletPage = () => {
   const redeemVoucher = useRedeemVoucher();
   const updateThreshold = useUpdateLowBalanceThreshold();
   const { toast } = useToast();
+  const { getConversion } = useConversionDisplay();
 
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
@@ -377,7 +378,7 @@ const WalletPage = () => {
                 />
                 {fundAmount && fundCurrency !== 'USD' && parseFloat(fundAmount) > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {formatWithConversion(parseFloat(fundAmount), fundCurrency, 'USD')}
+                    {getConversion(parseFloat(fundAmount), fundCurrency, 'USD')}
                   </p>
                 )}
               </div>

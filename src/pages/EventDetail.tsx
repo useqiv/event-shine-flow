@@ -22,7 +22,7 @@ import {
   Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency, formatWithConversion } from '@/components/ui/currency-selector';
+import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
 
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +32,7 @@ const EventDetail = () => {
   const { data: ticketTypes, isLoading: ticketsLoading } = useTicketTypes(id || '');
   const { data: wallet } = useWallet();
   const purchaseTicket = usePurchaseTicket();
+  const { getConversion } = useConversionDisplay();
 
   const [selectedTicketType, setSelectedTicketType] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -238,7 +239,7 @@ const EventDetail = () => {
                           <div className="text-right">
                             <p className="text-lg font-bold">{formatCurrency(Number(ticketType.price), ticketType.currency || 'NGN')}</p>
                             {ticketType.currency && ticketType.currency !== 'USD' && (
-                              <p className="text-xs text-muted-foreground">{formatWithConversion(Number(ticketType.price), ticketType.currency, 'USD')}</p>
+                              <p className="text-xs text-muted-foreground">{getConversion(Number(ticketType.price), ticketType.currency, 'USD')}</p>
                             )}
                           </div>
                         </div>
@@ -308,7 +309,7 @@ const EventDetail = () => {
                   <div className="text-right">
                     <span className="text-xl font-bold">{formatCurrency(totalAmount, selectedTicketType?.currency || 'NGN')}</span>
                     {selectedTicketType?.currency && selectedTicketType.currency !== 'USD' && (
-                      <p className="text-xs text-muted-foreground">{formatWithConversion(totalAmount, selectedTicketType.currency, 'USD')}</p>
+                      <p className="text-xs text-muted-foreground">{getConversion(totalAmount, selectedTicketType.currency, 'USD')}</p>
                     )}
                   </div>
                 </div>
