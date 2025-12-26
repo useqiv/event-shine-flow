@@ -216,7 +216,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Revenue */}
           <Card>
             <CardContent className="pt-6">
@@ -271,30 +271,6 @@ const OrgDashboard = () => {
                 </div>
                 <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {hasCustomRate ? 'Custom rate' : 'Platform fee'}: Votes {voteCommission}%, Tickets {ticketCommission}%
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Available Balance */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      ₦{stats?.availableBalance?.toLocaleString() || '0.00'}
-                    </p>
-                  )}
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-chart-2/10 flex items-center justify-center">
-                  <Wallet className="h-6 w-6 text-chart-2" />
                 </div>
               </div>
               <Link to="/org/payouts">
