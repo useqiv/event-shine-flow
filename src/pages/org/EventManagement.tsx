@@ -16,7 +16,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CurrencySelector, { getCurrencySymbol, formatCurrency } from '@/components/ui/currency-selector';
 import { useEvent } from '@/hooks/useEvents';
-import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
+import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs, useOrganizationSettings } from '@/hooks/useOrganization';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
@@ -39,6 +39,7 @@ const EventManagement = () => {
   const { data: ticketTypes, isLoading: ticketTypesLoading } = useEventTicketTypes(id || '');
   const { data: tickets, isLoading: ticketsLoading } = useEventTickets(id || '');
   const { data: scanLogs } = useQRScanLogs(id);
+  const { data: orgSettings } = useOrganizationSettings();
   const updateEvent = useUpdateEvent();
   const createTicketType = useCreateTicketType();
 
@@ -81,12 +82,17 @@ const EventManagement = () => {
   const [newTicketType, setNewTicketType] = useState({
     name: '',
     price: '',
-    currency: 'USD',
+    currency: orgSettings?.default_currency || 'USD',
     quantity_available: '',
     description: '',
   });
 
-  // Edit event form state
+  // Update currency when org settings load
+  useEffect(() => {
+    if (orgSettings?.default_currency) {
+      setNewTicketType(prev => ({ ...prev, currency: orgSettings.default_currency }));
+    }
+  }, [orgSettings?.default_currency]);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
