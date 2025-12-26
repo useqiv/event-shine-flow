@@ -26,6 +26,7 @@ import PublicContest from "./pages/PublicContest";
 import SavedItems from "./pages/SavedItems";
 import ReferralLeaderboard from "./pages/ReferralLeaderboard";
 import PaymentCallback from "./pages/PaymentCallback";
+import AcceptTransfer from "./pages/AcceptTransfer";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -143,6 +144,7 @@ const AppRoutes = () => (
     <Route path="/saved" element={<ProtectedRoute><SavedItems /></ProtectedRoute>} />
     <Route path="/leaderboard" element={<ProtectedRoute><ReferralLeaderboard /></ProtectedRoute>} />
     <Route path="/payment-callback" element={<PaymentCallback />} />
+    <Route path="/accept-transfer" element={<AcceptTransfer />} />
     <Route path="/account-setup" element={<ProtectedRoute><AccountTypeSelection /></ProtectedRoute>} />
     
     {/* Organization Dashboard Routes */}

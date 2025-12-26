@@ -1314,6 +1314,53 @@ export type Database = {
           },
         ]
       }
+      ticket_transfers: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          from_user_id: string
+          id: string
+          status: string
+          ticket_id: string
+          to_user_email: string
+          to_user_id: string
+          transfer_code: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          from_user_id: string
+          id?: string
+          status?: string
+          ticket_id: string
+          to_user_email: string
+          to_user_id: string
+          transfer_code: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          from_user_id?: string
+          id?: string
+          status?: string
+          ticket_id?: string
+          to_user_email?: string
+          to_user_id?: string
+          transfer_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_transfers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_types: {
         Row: {
           created_at: string

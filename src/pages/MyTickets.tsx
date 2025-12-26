@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,8 @@ import RefundRequestDialog from '@/components/RefundRequestDialog';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Ticket, 
   Calendar, 
@@ -28,21 +30,118 @@ import {
   Mail,
   Printer,
   Check,
-  Loader2
+  Loader2,
+  Send,
+  ArrowRightLeft
 } from 'lucide-react';
 import { format } from 'date-fns';
 
-const TicketCard = ({ ticket }: { ticket: any }) => {
+const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferComplete: () => void }) => {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
+  const [transferring, setTransferring] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferName, setTransferName] = useState('');
   const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const ticketUrl = `${window.location.origin}/events/${ticket.event_id}`;
+
+  const generateTransferCode = () => {
+    return `TXF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  };
+
+  const transferTicket = async () => {
+    if (!transferEmail) {
+      toast({ title: "Please enter recipient email", variant: "destructive" });
+      return;
+    }
+
+    if (!user) {
+      toast({ title: "Please log in to transfer tickets", variant: "destructive" });
+      return;
+    }
+
+    setTransferring(true);
+    try {
+      const transferCode = generateTransferCode();
+      const acceptUrl = `${window.location.origin}/accept-transfer?code=${transferCode}`;
+
+      // Get sender's profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      // Check if recipient exists
+      const { data: recipientProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', transferEmail)
+        .maybeSingle();
+
+      // Create transfer record
+      const { error: transferError } = await supabase
+        .from('ticket_transfers')
+        .insert({
+          ticket_id: ticket.id,
+          from_user_id: user.id,
+          to_user_id: recipientProfile?.id || user.id,
+          to_user_email: transferEmail,
+          transfer_code: transferCode,
+          status: 'pending',
+        });
+
+      if (transferError) throw transferError;
+
+      // Send email notification
+      const { error: emailError } = await supabase.functions.invoke('transfer-ticket-email', {
+        body: {
+          recipientEmail: transferEmail,
+          recipientName: transferName,
+          senderName: profile?.full_name || 'Someone',
+          eventTitle: ticket.event?.title,
+          eventDate: format(new Date(ticket.event?.event_date), 'EEEE, MMMM d, yyyy'),
+          eventTime: format(new Date(ticket.event?.event_date), 'h:mm a'),
+          venue: ticket.event?.venue,
+          ticketType: ticket.ticket_type?.name,
+          quantity: ticket.quantity,
+          transferCode,
+          acceptUrl,
+        },
+      });
+
+      if (emailError) {
+        console.error('Email error:', emailError);
+      }
+
+      toast({ 
+        title: "Transfer initiated!", 
+        description: `An email has been sent to ${transferEmail} with instructions to accept the ticket.` 
+      });
+      
+      setTransferEmail('');
+      setTransferName('');
+      setShowTransferDialog(false);
+    } catch (error: any) {
+      console.error('Transfer error:', error);
+      toast({ 
+        title: "Transfer failed", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    } finally {
+      setTransferring(false);
+    }
+  };
+
 
   const downloadQRCode = () => {
     const svg = document.getElementById(`qr-full-${ticket.id}`);
@@ -454,17 +553,87 @@ const TicketCard = ({ ticket }: { ticket: any }) => {
                 </Button>
 
                 {ticket.status === 'active' && (
-                  <RefundRequestDialog
-                    transactionType="ticket"
-                    transactionId={ticket.id}
-                    amount={Number(ticket.amount_paid)}
-                    itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
-                  >
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                      <RotateCcw className="h-4 w-4 mr-1" />
-                      Refund
-                    </Button>
-                  </RefundRequestDialog>
+                  <>
+                    <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <ArrowRightLeft className="h-4 w-4 mr-1" />
+                          Transfer
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Transfer Ticket</DialogTitle>
+                          <DialogDescription>
+                            Transfer this ticket to another person. They will receive an email with instructions to accept it.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="bg-secondary/50 rounded-lg p-4">
+                            <h4 className="font-semibold">{ticket.event?.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {ticket.ticket_type?.name} × {ticket.quantity}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(ticket.event?.event_date), 'MMM d, yyyy')} at {format(new Date(ticket.event?.event_date), 'h:mm a')}
+                            </p>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="transfer-name">Recipient Name (optional)</Label>
+                              <Input 
+                                id="transfer-name"
+                                placeholder="Enter recipient's name"
+                                value={transferName}
+                                onChange={(e) => setTransferName(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="transfer-email">Recipient Email *</Label>
+                              <Input 
+                                id="transfer-email"
+                                type="email"
+                                placeholder="Enter recipient's email"
+                                value={transferEmail}
+                                onChange={(e) => setTransferEmail(e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                            <p className="text-sm text-amber-600 dark:text-amber-400">
+                              <strong>Note:</strong> Once the recipient accepts, this ticket will be removed from your account. The transfer expires in 48 hours if not accepted.
+                            </p>
+                          </div>
+
+                          <Button 
+                            onClick={transferTicket} 
+                            disabled={transferring || !transferEmail} 
+                            className="w-full"
+                          >
+                            {transferring ? (
+                              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Transferring...</>
+                            ) : (
+                              <><Send className="h-4 w-4 mr-2" /> Send Transfer</>
+                            )}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <RefundRequestDialog
+                      transactionType="ticket"
+                      transactionId={ticket.id}
+                      amount={Number(ticket.amount_paid)}
+                      itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
+                    >
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Refund
+                      </Button>
+                    </RefundRequestDialog>
+                  </>
                 )}
               </div>
             </div>
@@ -524,7 +693,7 @@ const MyTickets = () => {
         ) : tickets && tickets.length > 0 ? (
           <div className="space-y-4">
             {tickets.map((ticket: any) => (
-              <TicketCard key={ticket.id} ticket={ticket} />
+              <TicketCard key={ticket.id} ticket={ticket} onTransferComplete={() => {}} />
             ))}
           </div>
         ) : (
