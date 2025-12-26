@@ -14,8 +14,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQueryClient } from '@tanstack/react-query';
-import { 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
   Ticket, 
   Calendar, 
   MapPin, 
@@ -32,17 +32,26 @@ import {
   Check,
   Loader2,
   Send,
-  ArrowRightLeft
+  ArrowRightLeft,
+  AlertCircle,
+  X,
+  Clock as ClockIcon
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
-const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferComplete: () => void }) => {
+const TicketCard = ({ ticket, pendingTransfer, onTransferComplete }: { 
+  ticket: any; 
+  pendingTransfer: any | null;
+  onTransferComplete: () => void;
+}) => {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [transferEmail, setTransferEmail] = useState('');
@@ -50,8 +59,34 @@ const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferCom
   const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const ticketUrl = `${window.location.origin}/events/${ticket.event_id}`;
+  const hasPendingTransfer = pendingTransfer && pendingTransfer.status === 'pending';
+
+  const cancelTransfer = async () => {
+    if (!pendingTransfer) return;
+    
+    setCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('ticket_transfers')
+        .update({ status: 'cancelled' })
+        .eq('id', pendingTransfer.id);
+
+      if (error) throw error;
+
+      toast({ title: "Transfer cancelled", description: "The pending transfer has been cancelled." });
+      setShowCancelDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['pending-transfers'] });
+      onTransferComplete();
+    } catch (error: any) {
+      toast({ title: "Failed to cancel transfer", description: error.message, variant: "destructive" });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
 
   const generateTransferCode = () => {
     return `TXF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -367,7 +402,69 @@ const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferCom
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={`overflow-hidden ${hasPendingTransfer ? 'ring-2 ring-amber-500/50' : ''}`}>
+      {/* Pending Transfer Banner */}
+      {hasPendingTransfer && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <div className="text-sm">
+              <span className="text-amber-600 dark:text-amber-400 font-medium">Transfer pending</span>
+              <span className="text-muted-foreground ml-1">
+                to {pendingTransfer.to_user_email}
+              </span>
+              <span className="text-muted-foreground text-xs ml-2">
+                · Expires {formatDistanceToNow(new Date(pendingTransfer.expires_at), { addSuffix: true })}
+              </span>
+            </div>
+          </div>
+          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="border-amber-500/30 hover:bg-amber-500/10">
+                <X className="h-4 w-4 mr-1" />
+                Cancel Transfer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cancel Transfer</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to cancel this pending transfer?
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="bg-secondary/50 rounded-lg p-4">
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Recipient:</span>{' '}
+                    <span className="font-medium">{pendingTransfer.to_user_email}</span>
+                  </p>
+                  <p className="text-sm mt-1">
+                    <span className="text-muted-foreground">Transfer code:</span>{' '}
+                    <span className="font-mono text-xs">{pendingTransfer.transfer_code}</span>
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowCancelDialog(false)} className="flex-1">
+                    Keep Transfer
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={cancelTransfer} 
+                    disabled={cancelling}
+                    className="flex-1"
+                  >
+                    {cancelling ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cancelling...</>
+                    ) : (
+                      'Cancel Transfer'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
       <CardContent className="p-0">
         <div className="flex flex-col lg:flex-row">
           {/* QR Code Section */}
@@ -552,7 +649,7 @@ const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferCom
                   Print
                 </Button>
 
-                {ticket.status === 'active' && (
+                {ticket.status === 'active' && !hasPendingTransfer && (
                   <>
                     <Dialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
                       <DialogTrigger asChild>
@@ -645,7 +742,36 @@ const TicketCard = ({ ticket, onTransferComplete }: { ticket: any; onTransferCom
 };
 
 const MyTickets = () => {
-  const { data: tickets, isLoading } = useMyTickets();
+  const { data: tickets, isLoading, refetch } = useMyTickets();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch pending transfers for all user's tickets
+  const { data: pendingTransfers } = useQuery({
+    queryKey: ['pending-transfers', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('ticket_transfers')
+        .select('*')
+        .eq('from_user_id', user.id)
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString());
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const getPendingTransfer = (ticketId: string) => {
+    return pendingTransfers?.find((t: any) => t.ticket_id === ticketId) || null;
+  };
+
+  const handleTransferComplete = () => {
+    refetch();
+    queryClient.invalidateQueries({ queryKey: ['pending-transfers'] });
+  };
 
   return (
     <DashboardLayout>
@@ -693,7 +819,12 @@ const MyTickets = () => {
         ) : tickets && tickets.length > 0 ? (
           <div className="space-y-4">
             {tickets.map((ticket: any) => (
-              <TicketCard key={ticket.id} ticket={ticket} onTransferComplete={() => {}} />
+              <TicketCard 
+                key={ticket.id} 
+                ticket={ticket} 
+                pendingTransfer={getPendingTransfer(ticket.id)}
+                onTransferComplete={handleTransferComplete} 
+              />
             ))}
           </div>
         ) : (
