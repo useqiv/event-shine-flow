@@ -5,7 +5,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useMyVotes } from '@/hooks/useContests';
 import RefundRequestDialog from '@/components/RefundRequestDialog';
-import { Vote, Trophy, RotateCcw } from 'lucide-react';
+import { VoteReceipt } from '@/components/dashboard/VoteReceipt';
+import { QuickRevote } from '@/components/dashboard/QuickRevote';
+import { VotingAnalytics } from '@/components/dashboard/VotingAnalytics';
+import { Vote, Trophy, RotateCcw, Receipt } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
 
 const MyVotes = () => {
@@ -21,6 +24,9 @@ const MyVotes = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">My Votes</h1>
+
+        {/* Voting Analytics */}
+        <VotingAnalytics />
 
         {isLoading ? (
           <div className="space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
@@ -42,8 +48,22 @@ const MyVotes = () => {
                       <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
                     </div>
                   </div>
-                  {canRequestRefund(vote) && (
-                    <div className="mt-3 pt-3 border-t border-border flex justify-end">
+                  
+                  {/* Actions Row */}
+                  <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center justify-end gap-2">
+                    {/* Vote Receipt */}
+                    <VoteReceipt vote={vote}>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                        <Receipt className="h-4 w-4 mr-1" />
+                        Receipt
+                      </Button>
+                    </VoteReceipt>
+                    
+                    {/* Quick Re-vote */}
+                    <QuickRevote vote={vote} />
+                    
+                    {/* Refund Request */}
+                    {canRequestRefund(vote) && (
                       <RefundRequestDialog
                         transactionType="vote"
                         transactionId={vote.id}
@@ -55,8 +75,8 @@ const MyVotes = () => {
                           Request Refund
                         </Button>
                       </RefundRequestDialog>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
