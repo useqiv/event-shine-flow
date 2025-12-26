@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { useCreateEvent } from '@/hooks/useOrganization';
+import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
 import { Calendar, MapPin, FileText } from 'lucide-react';
 
 const categories = [
@@ -56,9 +57,15 @@ const CreateEvent = () => {
   return (
     <OrganizationLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Create New Event</h1>
-          <p className="text-muted-foreground">Set up an event and sell tickets.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Create New Event</h1>
+            <p className="text-muted-foreground">Set up an event and sell tickets.</p>
+          </div>
+          <EventTemplateSelector
+            currentData={{ title: formData.title, description: formData.description, category: formData.category, image_url: formData.image_url, venue: formData.venue, address: formData.address }}
+            onLoadTemplate={(data) => setFormData(prev => ({ ...prev, ...data }))}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
