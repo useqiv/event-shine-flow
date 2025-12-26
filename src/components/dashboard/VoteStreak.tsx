@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { useVoteStreak } from '@/hooks/useVoteStreak';
 import { Flame, Trophy, Gift, Calendar, Zap } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, startOfDay } from 'date-fns';
 
 export const VoteStreak = () => {
   const { data: streak, isLoading } = useVoteStreak();
@@ -36,9 +36,11 @@ export const VoteStreak = () => {
   const totalBonuses = streak?.total_streak_bonuses_earned || 0;
   const lastVoteDate = streak?.last_vote_date;
 
-  // Calculate days until streak breaks
-  const daysUntilBreak = lastVoteDate 
-    ? Math.max(0, 1 - differenceInDays(new Date(), parseISO(lastVoteDate)))
+  // Calculate days until streak breaks (use startOfDay to avoid timezone issues)
+  const today = startOfDay(new Date());
+  const lastVoteParsed = lastVoteDate ? startOfDay(parseISO(lastVoteDate)) : null;
+  const daysUntilBreak = lastVoteParsed 
+    ? Math.max(0, 1 - differenceInDays(today, lastVoteParsed))
     : null;
 
   // Calculate progress to next bonus (every 7 days)
