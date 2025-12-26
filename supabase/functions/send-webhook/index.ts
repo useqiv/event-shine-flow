@@ -48,7 +48,7 @@ serve(async (req) => {
       }
 
       const payload = { event: eventType, timestamp: new Date().toISOString(), data };
-      const results = await Promise.all(webhooks.map((w: Record<string, unknown>) => sendWebhook(w, payload, supabase)));
+      const results = await Promise.all(webhooks.map((w) => sendWebhook(w, payload, supabase)));
       return new Response(JSON.stringify({ sent: results.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
@@ -59,27 +59,28 @@ serve(async (req) => {
   }
 });
 
-async function sendWebhook(webhook: Record<string, unknown>, payload: Record<string, unknown>, supabase: ReturnType<typeof createClient>) {
+// deno-lint-ignore no-explicit-any
+async function sendWebhook(webhook: any, payload: Record<string, unknown>, supabase: any) {
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     
     if (webhook.secret) {
       const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey('raw', encoder.encode(webhook.secret as string), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const key = await crypto.subtle.importKey('raw', encoder.encode(webhook.secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
       const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(JSON.stringify(payload)));
       headers['X-Webhook-Signature'] = `sha256=${Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')}`;
     }
 
-    const response = await fetch(webhook.url as string, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const response = await fetch(webhook.url, { method: 'POST', headers, body: JSON.stringify(payload) });
     const success = response.ok;
 
-    await supabase.from('webhook_logs').insert({ webhook_id: webhook.id, event_type: payload.event, payload, response_status: response.status, success } as never);
-    await supabase.from('organization_webhooks').update({ last_triggered_at: new Date().toISOString(), failure_count: success ? 0 : ((webhook.failure_count as number) || 0) + 1 } as never).eq('id', webhook.id as string);
+    await supabase.from('webhook_logs').insert({ webhook_id: webhook.id, event_type: payload.event, payload, response_status: response.status, success });
+    await supabase.from('organization_webhooks').update({ last_triggered_at: new Date().toISOString(), failure_count: success ? 0 : (webhook.failure_count || 0) + 1 }).eq('id', webhook.id);
 
     return { success, status: response.status };
   } catch (e) {
     console.error('Webhook failed:', e);
-    await supabase.from('webhook_logs').insert({ webhook_id: webhook.id, event_type: payload.event, payload, success: false } as never);
+    await supabase.from('webhook_logs').insert({ webhook_id: webhook.id, event_type: payload.event, payload, success: false });
     return { success: false };
   }
 }
