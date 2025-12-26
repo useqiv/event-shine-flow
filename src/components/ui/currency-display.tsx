@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency, useConversionDisplay, getCurrencySymbol } from '@/components/ui/currency-selector';
+import { useUserCurrency } from '@/hooks/useUserCurrency';
 
 interface CurrencyDisplayProps {
   amount: number;
@@ -13,23 +14,27 @@ interface CurrencyDisplayProps {
 
 /**
  * CurrencyDisplay component that shows an amount in a specified currency
- * with an optional tooltip showing the USD equivalent (or other target currency)
+ * with an optional tooltip showing the equivalent in user's preferred currency
  */
 const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   amount,
   currency,
   showConversion = true,
-  conversionCurrency = 'USD',
+  conversionCurrency,
   className = '',
   size = 'md',
 }) => {
-  const { convert, isLive, rates } = useConversionDisplay();
+  const { convert, isLive } = useConversionDisplay();
+  const { preferredCurrency } = useUserCurrency();
+  
+  // Use provided conversion currency or fall back to user's preferred currency
+  const targetCurrency = conversionCurrency || preferredCurrency;
   
   const formattedAmount = formatCurrency(amount, currency);
   
   // Don't show conversion if already in target currency or amount is 0
   const shouldShowConversion = showConversion && 
-    currency !== conversionCurrency && 
+    currency !== targetCurrency && 
     amount > 0;
 
   const sizeClasses = {
@@ -42,8 +47,8 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
     return <span className={`${sizeClasses[size]} ${className}`}>{formattedAmount}</span>;
   }
 
-  const convertedAmount = convert(amount, currency, conversionCurrency);
-  const conversionSymbol = getCurrencySymbol(conversionCurrency);
+  const convertedAmount = convert(amount, currency, targetCurrency);
+  const conversionSymbol = getCurrencySymbol(targetCurrency);
 
   return (
     <TooltipProvider>
@@ -56,7 +61,7 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
         <TooltipContent>
           <div className="text-xs space-y-1">
             <p className="font-medium">
-              ≈ {conversionSymbol}{convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {conversionCurrency}
+              ≈ {conversionSymbol}{convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {targetCurrency}
             </p>
             <p className="text-muted-foreground">
               {isLive ? 'Live rate' : 'Estimated rate'}

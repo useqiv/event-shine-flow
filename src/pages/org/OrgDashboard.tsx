@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import RevenueChart from '@/components/org/RevenueChart';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
   Wallet, 
   Trophy, 
@@ -228,7 +229,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(totalRevenue, 'NGN')}
+                      <CurrencyDisplay amount={totalRevenue} currency="NGN" size="lg" />
                     </p>
                   )}
                 </div>
@@ -266,7 +267,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {formatCurrency(netRevenue, 'NGN')}
+                      <CurrencyDisplay amount={netRevenue} currency="NGN" size="lg" className="text-green-600 dark:text-green-400" />
                     </p>
                   )}
                 </div>
@@ -301,7 +302,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {formatCurrency(stats?.voteRevenue || 0, 'NGN')} in revenue
+                <CurrencyDisplay amount={stats?.voteRevenue || 0} currency="NGN" size="sm" /> in revenue
               </p>
             </CardContent>
           </Card>
@@ -325,7 +326,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {formatCurrency(stats?.ticketRevenue || 0, 'NGN')} in revenue
+                <CurrencyDisplay amount={stats?.ticketRevenue || 0} currency="NGN" size="sm" /> in revenue
               </p>
             </CardContent>
           </Card>
@@ -365,7 +366,7 @@ const OrgDashboard = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(stats?.pendingPayouts || 0, 'NGN')}
+                    <CurrencyDisplay amount={stats?.pendingPayouts || 0} currency="NGN" size="lg" />
                   </p>
                 </div>
                 <CreditCard className="h-8 w-8 text-muted-foreground" />

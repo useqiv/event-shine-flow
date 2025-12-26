@@ -5,6 +5,8 @@ import { currencies } from '@/components/ui/currency-selector';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { useConversionDisplay } from '@/components/ui/currency-selector';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CurrencyPreferenceSelectorProps {
   showLiveIndicator?: boolean;
@@ -21,7 +23,22 @@ const CurrencyPreferenceSelector: React.FC<CurrencyPreferenceSelectorProps> = ({
   return (
     <div className={className}>
       <div className="flex items-center justify-between mb-2">
-        <Label className="text-sm text-muted-foreground">Display Currency</Label>
+        <div className="flex items-center gap-1">
+          <Label className="text-sm text-muted-foreground">Preferred Currency</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  When viewing amounts in other currencies, you'll see a conversion tooltip 
+                  showing the approximate value in your preferred currency.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         {showLiveIndicator && (
           <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
         )}
@@ -38,8 +55,8 @@ const CurrencyPreferenceSelector: React.FC<CurrencyPreferenceSelectorProps> = ({
           ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-muted-foreground mt-1">
-        Prices will show conversions to this currency
+      <p className="text-xs text-muted-foreground mt-2">
+        Hover over amounts to see conversions to {currencies.find(c => c.code === preferredCurrency)?.name || preferredCurrency}
       </p>
     </div>
   );

@@ -13,6 +13,7 @@ import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, In
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencyDisplay from '@/components/ui/currency-display';
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
@@ -174,7 +175,9 @@ const ManageEvents = () => {
                           <DollarSign className="h-3 w-3" />
                           <span>Total Revenue</span>
                         </div>
-                        <span className="font-medium">{formatCurrency(totalRevenue, eventCurrency)}</span>
+                        <span className="font-medium">
+                          <CurrencyDisplay amount={totalRevenue} currency={eventCurrency} size="sm" />
+                        </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -194,7 +197,9 @@ const ManageEvents = () => {
                             </Tooltip>
                           </TooltipProvider>
                         </div>
-                        <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(netRevenue, eventCurrency)}</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">
+                          <CurrencyDisplay amount={netRevenue} currency={eventCurrency} size="sm" className="text-green-600 dark:text-green-400" />
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {eventData.ticketsSold} tickets sold
