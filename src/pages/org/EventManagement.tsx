@@ -13,16 +13,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone, Pencil } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone, Pencil, TrendingUp, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
-
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 const categories = [
   'Music', 'Party', 'Conference', 'Workshop', 'Sports',
   'Festival', 'Networking', 'Concert', 'Exhibition', 'Other'
@@ -30,6 +33,7 @@ const categories = [
 
 const EventManagement = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: event, isLoading } = useEvent(id || '');
   const { data: ticketTypes, isLoading: ticketTypesLoading } = useEventTicketTypes(id || '');
   const { data: tickets, isLoading: ticketsLoading } = useEventTickets(id || '');
@@ -37,6 +41,40 @@ const EventManagement = () => {
   const updateEvent = useUpdateEvent();
   const createTicketType = useCreateTicketType();
 
+  // Fetch commission rates
+  const { data: orgApproval } = useQuery({
+    queryKey: ['org-approval-commission', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('organization_approvals')
+        .select('ticket_commission_rate, special_commission_rate')
+        .eq('organization_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: platformSettings } = useQuery({
+    queryKey: ['platform-commission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .eq('category', 'commission');
+      if (error) throw error;
+      const settings: Record<string, number> = {};
+      data?.forEach((s: any) => {
+        settings[s.setting_key] = Number(s.setting_value) || 0;
+      });
+      return settings;
+    },
+  });
+
+  const platformTicketCommission = platformSettings?.ticket_commission_percentage || platformSettings?.platform_commission_percentage || 10;
+  const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
   const [isAddTicketTypeOpen, setIsAddTicketTypeOpen] = useState(false);
   const [editingTicketType, setEditingTicketType] = useState<any>(null);
   const [newTicketType, setNewTicketType] = useState({
@@ -167,7 +205,9 @@ const EventManagement = () => {
   };
 
   const totalTicketsSold = ticketTypes?.reduce((sum: number, t: any) => sum + (t.quantity_sold || 0), 0) || 0;
-  const totalRevenue = tickets?.reduce((sum: number, t: any) => sum + Number(t.amount_paid), 0) || 0;
+  const totalRevenue = tickets?.reduce((sum: number, t: any) => sum + Number(t.amount_paid || 0), 0) || 0;
+  const netRevenue = totalRevenue * (1 - ticketCommission / 100);
+  const commissionDeducted = totalRevenue - netRevenue;
 
   if (isLoading) {
     return (
@@ -265,10 +305,25 @@ const EventManagement = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Ticket Types</p>
-                  <p className="text-2xl font-bold">{ticketTypes?.length || 0}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            {ticketCommission}% commission<br/>
+                            Deducted: ₦{commissionDeducted.toLocaleString()}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">₦{netRevenue.toLocaleString()}</p>
                 </div>
-                <Users className="h-8 w-8 text-muted-foreground" />
+                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
             </CardContent>
           </Card>
