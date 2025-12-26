@@ -29,6 +29,7 @@ import PaymentCallback from "./pages/PaymentCallback";
 import AcceptTransfer from "./pages/AcceptTransfer";
 import EmbedLeaderboard from "./pages/EmbedLeaderboard";
 import FavoriteContestants from "./pages/FavoriteContestants";
+import ResetPassword from "./pages/ResetPassword";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -134,6 +135,7 @@ const AppRoutes = () => (
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+    <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
     <Route path="/contests/:id" element={<ProtectedRoute><ContestDetail /></ProtectedRoute>} />
