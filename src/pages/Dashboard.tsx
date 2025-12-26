@@ -21,6 +21,9 @@ import { TicketReminders } from '@/components/dashboard/TicketReminders';
 import { ContestCountdowns } from '@/components/dashboard/ContestCountdowns';
 import { EventCalendar } from '@/components/dashboard/EventCalendar';
 import { VoteStreak } from '@/components/dashboard/VoteStreak';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { DashboardSearch } from '@/components/dashboard/DashboardSearch';
+import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
 import { 
   Wallet, 
   Trophy, 
@@ -154,11 +157,19 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Welcome Section */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+        {/* Welcome Section with Search */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+          </div>
+          <div className="w-full md:w-80">
+            <DashboardSearch />
+          </div>
         </div>
+
+        {/* Quick Actions */}
+        <QuickActions />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -434,63 +445,8 @@ const Dashboard = () => {
         {/* Voting Analytics */}
         <VotingAnalytics />
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Vote className="h-5 w-5" />
-              My Recent Votes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {votesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : myVotes && myVotes.length > 0 ? (
-              <div className="space-y-3">
-                {myVotes.slice(0, 5).map((vote: any) => (
-                  <div key={vote.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Vote className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Voted for {vote.contestant?.name || 'Contestant'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {vote.contest?.title || 'Contest'} • {vote.quantity} vote(s)
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">₦{vote.amount_paid.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(vote.created_at), 'MMM d, HH:mm')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                <Link to="/my-votes">
-                  <Button variant="outline" size="sm" className="w-full">
-                    View All Votes
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Vote className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No votes yet</p>
-                <Link to="/contests">
-                  <Button variant="outline" size="sm" className="mt-3">
-                    Browse Contests
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Recent Activity Feed */}
+        <RecentActivityFeed />
       </div>
     </DashboardLayout>
   );
