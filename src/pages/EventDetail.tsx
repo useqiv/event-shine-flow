@@ -328,19 +328,24 @@ const EventDetail = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
-                  Cancel
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
+                    Cancel
+                  </Button>
+                  {wallet && wallet.balance >= totalAmount && (
+                    <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
+                      {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+                    </Button>
+                  )}
+                </div>
+                <Button 
+                  variant={wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
+                  onClick={handleProceedToPayment} 
+                  className="w-full"
+                >
+                  Pay with Card/Bank/Crypto
                 </Button>
-                {wallet && wallet.balance >= totalAmount ? (
-                  <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
-                    {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
-                  </Button>
-                ) : (
-                  <Button onClick={handleProceedToPayment} className="flex-1">
-                    Other Payment Options
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
