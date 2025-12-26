@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatCurrency, useConversionDisplay, getCurrencySymbol } from '@/components/ui/currency-selector';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeftRight } from 'lucide-react';
 
 interface CurrencyDisplayProps {
   amount: number;
@@ -10,6 +12,8 @@ interface CurrencyDisplayProps {
   conversionCurrency?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  showBadge?: boolean;
+  showToggle?: boolean;
 }
 
 /**
@@ -23,7 +27,10 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   conversionCurrency,
   className = '',
   size = 'md',
+  showBadge = false,
+  showToggle = false,
 }) => {
+  const [showConverted, setShowConverted] = useState(false);
   const { convert, isLive } = useConversionDisplay();
   const { preferredCurrency } = useUserCurrency();
   
@@ -33,9 +40,13 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
   const formattedAmount = formatCurrency(amount, currency);
   
   // Don't show conversion if already in target currency or amount is 0
-  const shouldShowConversion = showConversion && 
+  const canConvert = showConversion && 
     currency !== targetCurrency && 
     amount > 0;
+
+  const convertedAmount = canConvert ? convert(amount, currency, targetCurrency) : 0;
+  const conversionSymbol = getCurrencySymbol(targetCurrency);
+  const formattedConverted = `${conversionSymbol}${convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 
   const sizeClasses = {
     sm: 'text-sm',
@@ -43,28 +54,69 @@ const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
     lg: 'text-2xl font-bold',
   };
 
-  if (!shouldShowConversion) {
-    return <span className={`${sizeClasses[size]} ${className}`}>{formattedAmount}</span>;
-  }
+  const badgeSizeClasses = {
+    sm: 'text-[10px] px-1 py-0',
+    md: 'text-xs px-1.5 py-0.5',
+    lg: 'text-sm px-2 py-0.5',
+  };
 
-  const convertedAmount = convert(amount, currency, targetCurrency);
-  const conversionSymbol = getCurrencySymbol(targetCurrency);
+  const displayAmount = showConverted && canConvert ? formattedConverted : formattedAmount;
+  const displayCurrency = showConverted && canConvert ? targetCurrency : currency;
+
+  // Simple display without conversion features
+  if (!canConvert) {
+    return (
+      <span className={`inline-flex items-center gap-1.5 ${className}`}>
+        <span className={sizeClasses[size]}>{formattedAmount}</span>
+        {showBadge && (
+          <Badge variant="outline" className={`${badgeSizeClasses[size]} font-normal`}>
+            {currency}
+          </Badge>
+        )}
+      </span>
+    );
+  }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className={`${sizeClasses[size]} ${className} cursor-help border-b border-dotted border-muted-foreground/50`}>
-            {formattedAmount}
+          <span className={`inline-flex items-center gap-1.5 ${className}`}>
+            <span className={`${sizeClasses[size]} cursor-help border-b border-dotted border-muted-foreground/50`}>
+              {displayAmount}
+            </span>
+            {showBadge && (
+              <Badge variant="outline" className={`${badgeSizeClasses[size]} font-normal`}>
+                {displayCurrency}
+              </Badge>
+            )}
+            {showToggle && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowConverted(!showConverted);
+                }}
+                className="p-0.5 rounded hover:bg-muted transition-colors"
+                aria-label="Toggle currency display"
+              >
+                <ArrowLeftRight className={size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4'} />
+              </button>
+            )}
           </span>
         </TooltipTrigger>
         <TooltipContent>
           <div className="text-xs space-y-1">
             <p className="font-medium">
-              ≈ {conversionSymbol}{convertedAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })} {targetCurrency}
+              {showConverted ? (
+                <>Original: {formattedAmount} {currency}</>
+              ) : (
+                <>≈ {formattedConverted} {targetCurrency}</>
+              )}
             </p>
             <p className="text-muted-foreground">
               {isLive ? 'Live rate' : 'Estimated rate'}
+              {showToggle && ' • Click toggle to switch'}
             </p>
           </div>
         </TooltipContent>
