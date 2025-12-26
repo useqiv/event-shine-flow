@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import CurrencySelector, { getCurrencySymbol } from '@/components/ui/currency-selector';
 import { useUpdateTicketType, useDeleteTicketType } from '@/hooks/useOrganization';
 import { Loader2, Trash2 } from 'lucide-react';
 
@@ -12,6 +13,7 @@ interface TicketType {
   id: string;
   name: string;
   price: number;
+  currency?: string;
   quantity_available: number;
   quantity_sold: number;
   description: string | null;
@@ -34,6 +36,7 @@ const EditTicketTypeDialog: React.FC<EditTicketTypeDialogProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     price: '',
+    currency: 'USD',
     quantity_available: '',
     description: '',
   });
@@ -43,6 +46,7 @@ const EditTicketTypeDialog: React.FC<EditTicketTypeDialogProps> = ({
       setFormData({
         name: ticketType.name,
         price: String(ticketType.price),
+        currency: ticketType.currency || 'USD',
         quantity_available: String(ticketType.quantity_available),
         description: ticketType.description || '',
       });
@@ -56,6 +60,7 @@ const EditTicketTypeDialog: React.FC<EditTicketTypeDialogProps> = ({
       id: ticketType.id,
       name: formData.name,
       price: Number(formData.price),
+      currency: formData.currency,
       quantity_available: Number(formData.quantity_available),
       description: formData.description || undefined,
     });
@@ -69,6 +74,7 @@ const EditTicketTypeDialog: React.FC<EditTicketTypeDialogProps> = ({
   };
 
   const canDelete = ticketType && ticketType.quantity_sold === 0;
+  const currencySymbol = getCurrencySymbol(formData.currency);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,29 +98,39 @@ const EditTicketTypeDialog: React.FC<EditTicketTypeDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Price (₦) *</Label>
+              <Label>Currency *</Label>
+              <CurrencySelector
+                value={formData.currency}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Price ({currencySymbol}) *</Label>
               <Input
                 type="number"
                 placeholder="0"
+                min="0"
+                step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Total Quantity *</Label>
-              <Input
-                type="number"
-                placeholder="100"
-                value={formData.quantity_available}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity_available: e.target.value }))}
-                min={ticketType?.quantity_sold || 0}
-              />
-              {ticketType && ticketType.quantity_sold > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Minimum: {ticketType.quantity_sold} (already sold)
-                </p>
-              )}
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Total Quantity *</Label>
+            <Input
+              type="number"
+              placeholder="100"
+              value={formData.quantity_available}
+              onChange={(e) => setFormData(prev => ({ ...prev, quantity_available: e.target.value }))}
+              min={ticketType?.quantity_sold || 0}
+            />
+            {ticketType && ticketType.quantity_sold > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Minimum: {ticketType.quantity_sold} (already sold)
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

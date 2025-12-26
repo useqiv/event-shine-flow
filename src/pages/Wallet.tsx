@@ -11,13 +11,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import CurrencySelector, { getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
 import { useWallet, useWalletTransactions, useRedeemVoucher, useUpdateLowBalanceThreshold } from '@/hooks/useWallet';
 import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
 import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket, CreditCard, Loader2, Filter, CalendarIcon, Bell, Settings, X } from 'lucide-react';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import ReferralCard from '@/components/ReferralCard';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,7 @@ const WalletPage = () => {
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [fundAmount, setFundAmount] = useState('');
+  const [fundCurrency, setFundCurrency] = useState('USD');
   const [voucherCode, setVoucherCode] = useState('');
   
   // Filter states
@@ -105,7 +107,7 @@ const WalletPage = () => {
       await flutterwavePayment.mutateAsync({
         type: 'wallet',
         amount,
-        currency: 'NGN',
+        currency: fundCurrency,
         email: user.email,
         name: profile?.full_name || user.email,
         user_id: user.id,
@@ -114,6 +116,7 @@ const WalletPage = () => {
       
       setIsFundModalOpen(false);
       setFundAmount('');
+      setFundCurrency('USD');
     } catch (error: any) {
       toast({ 
         title: 'Failed to initiate payment', 
@@ -162,7 +165,13 @@ const WalletPage = () => {
     }
   };
 
-  const quickAmounts = [1000, 2000, 5000, 10000];
+  const quickAmounts = fundCurrency === 'USD' 
+    ? [10, 25, 50, 100] 
+    : fundCurrency === 'NGN' 
+      ? [1000, 2000, 5000, 10000] 
+      : [10, 50, 100, 200];
+
+  const currencySymbol = getCurrencySymbol(fundCurrency);
 
   const transactionTypes: { value: TransactionType; label: string }[] = [
     { value: 'all', label: 'All Types' },
@@ -345,16 +354,25 @@ const WalletPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div>
-              <Label>Amount (₦)</Label>
-              <Input 
-                type="number" 
-                value={fundAmount} 
-                onChange={e => setFundAmount(e.target.value)} 
-                placeholder="Enter amount" 
-                className="mt-2"
-                min={100}
-              />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-1 space-y-2">
+                <Label>Currency</Label>
+                <CurrencySelector
+                  value={fundCurrency}
+                  onValueChange={setFundCurrency}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Amount ({currencySymbol})</Label>
+                <Input 
+                  type="number" 
+                  value={fundAmount} 
+                  onChange={e => setFundAmount(e.target.value)} 
+                  placeholder="Enter amount" 
+                  min={fundCurrency === 'USD' ? 1 : 100}
+                  step={fundCurrency === 'USD' ? 0.01 : 1}
+                />
+              </div>
             </div>
             
             <div>
@@ -368,7 +386,7 @@ const WalletPage = () => {
                     size="sm"
                     onClick={() => setFundAmount(String(amount))}
                   >
-                    ₦{amount.toLocaleString()}
+                    {currencySymbol}{amount.toLocaleString()}
                   </Button>
                 ))}
               </div>
@@ -399,7 +417,7 @@ const WalletPage = () => {
               ) : (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pay ₦{parseFloat(fundAmount || '0').toLocaleString()}
+                  Pay {currencySymbol}{parseFloat(fundAmount || '0').toLocaleString()}
                 </>
               )}
             </Button>

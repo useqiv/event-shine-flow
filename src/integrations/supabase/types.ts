@@ -1571,6 +1571,7 @@ export type Database = {
       ticket_types: {
         Row: {
           created_at: string
+          currency: string
           description: string | null
           event_id: string
           id: string
@@ -1581,6 +1582,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency?: string
           description?: string | null
           event_id: string
           id?: string
@@ -1591,6 +1593,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency?: string
           description?: string | null
           event_id?: string
           id?: string

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import CurrencySelector, { getCurrencySymbol } from '@/components/ui/currency-selector';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs } from '@/hooks/useOrganization';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
@@ -80,6 +81,7 @@ const EventManagement = () => {
   const [newTicketType, setNewTicketType] = useState({
     name: '',
     price: '',
+    currency: 'USD',
     quantity_available: '',
     description: '',
   });
@@ -131,11 +133,12 @@ const EventManagement = () => {
         event_id: id,
         name: newTicketType.name,
         price: Number(newTicketType.price),
+        currency: newTicketType.currency,
         quantity_available: Number(newTicketType.quantity_available),
         description: newTicketType.description,
       });
       setIsAddTicketTypeOpen(false);
-      setNewTicketType({ name: '', price: '', quantity_available: '', description: '' });
+      setNewTicketType({ name: '', price: '', currency: 'USD', quantity_available: '', description: '' });
     } catch (error) {
       console.error('Failed to add ticket type:', error);
     }
@@ -372,12 +375,21 @@ const EventManagement = () => {
                         onChange={(e) => setNewTicketType(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label>Price (₦) *</Label>
+                        <Label>Currency *</Label>
+                        <CurrencySelector
+                          value={newTicketType.currency}
+                          onValueChange={(value) => setNewTicketType(prev => ({ ...prev, currency: value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Price ({getCurrencySymbol(newTicketType.currency)}) *</Label>
                         <Input
                           type="number"
                           placeholder="0"
+                          min="0"
+                          step="0.01"
                           value={newTicketType.price}
                           onChange={(e) => setNewTicketType(prev => ({ ...prev, price: e.target.value }))}
                         />
