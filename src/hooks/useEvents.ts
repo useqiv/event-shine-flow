@@ -23,6 +23,7 @@ export interface TicketType {
   name: string;
   description: string | null;
   price: number;
+  currency: string;
   quantity_available: number;
   quantity_sold: number;
   created_at: string;

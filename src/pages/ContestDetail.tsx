@@ -16,6 +16,7 @@ import { CountdownTimer } from '@/components/ui/countdown-timer';
 import PaymentModal from '@/components/PaymentModal';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import confetti from 'canvas-confetti';
+import { formatCurrency, formatWithConversion } from '@/components/ui/currency-selector';
 import { 
   Trophy, 
   Calendar, 
@@ -239,7 +240,10 @@ const ContestDetail = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Vote Price</p>
-                  <p className="text-xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
+                  <p className="text-xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
+                  {contest.vote_currency && contest.vote_currency !== 'USD' && (
+                    <p className="text-xs text-muted-foreground">{formatWithConversion(Number(contest.vote_price), contest.vote_currency, 'USD')}</p>
+                  )}
                 </div>
                 <div className="col-span-2 md:col-span-1">
                   <CountdownTimer 
