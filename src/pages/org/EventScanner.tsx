@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { useEvent } from '@/hooks/useEvents';
 import { useEventTicketTypes, useQRScanLogs } from '@/hooks/useOrganization';
 import QRCodeScanner from '@/components/org/QRCodeScanner';
 import ManualTicketLookup from '@/components/org/ManualTicketLookup';
-import { ArrowLeft, Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard } from 'lucide-react';
+import { Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard, Users, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventScanner = () => {
@@ -21,6 +22,8 @@ const EventScanner = () => {
 
   const totalTicketsSold = ticketTypes?.reduce((sum: number, t: any) => sum + (t.quantity_sold || 0), 0) || 0;
   const successfulScans = scanLogs?.filter((log: any) => log.scan_result === 'success').length || 0;
+  const pendingCheckins = totalTicketsSold - successfulScans;
+  const checkInRate = totalTicketsSold > 0 ? Math.round((successfulScans / totalTicketsSold) * 100) : 0;
 
   const handleScanComplete = () => {
     refetchLogs();
@@ -53,19 +56,41 @@ const EventScanner = () => {
   return (
     <OrganizationLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/org/dashboard">Dashboard</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/org/events">Events</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={`/org/events/${id}`}>{event.title}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Scanner</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link to={`/org/events/${id}`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
+        <div className="flex items-center justify-between">
+          <div>
             <h1 className="text-xl font-bold text-foreground">Event Check-in</h1>
             <p className="text-sm text-muted-foreground">{event.title}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link to={`/org/events/${id}/dashboard`}>
+            <Link to={`/org/events/${id}/checkin`}>
               <Button variant="outline" size="sm">
                 <LayoutDashboard className="h-4 w-4 mr-1" />
                 Dashboard
@@ -105,20 +130,42 @@ const EventScanner = () => {
           </CardContent>
         </Card>
 
-        {/* Check-in Progress */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Quick Stats Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card>
-            <CardContent className="p-4 text-center">
-              <Ticket className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-              <p className="text-2xl font-bold">{totalTicketsSold}</p>
-              <p className="text-xs text-muted-foreground">Tickets Sold</p>
+            <CardContent className="p-3 text-center">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                <Ticket className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-xl font-bold">{totalTicketsSold}</p>
+              <p className="text-xs text-muted-foreground">Total Tickets</p>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200 dark:border-green-800">
+            <CardContent className="p-3 text-center">
+              <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-2">
+                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
+              <p className="text-xl font-bold text-green-600 dark:text-green-400">{successfulScans}</p>
+              <p className="text-xs text-muted-foreground">Checked In</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <QrCode className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-              <p className="text-2xl font-bold">{successfulScans}</p>
-              <p className="text-xs text-muted-foreground">Checked In</p>
+            <CardContent className="p-3 text-center">
+              <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-2">
+                <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              </div>
+              <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{pendingCheckins}</p>
+              <p className="text-xs text-muted-foreground">Pending</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 text-center">
+              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-2">
+                <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{checkInRate}%</p>
+              <p className="text-xs text-muted-foreground">Check-in Rate</p>
             </CardContent>
           </Card>
         </div>
