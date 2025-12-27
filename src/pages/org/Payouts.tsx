@@ -15,6 +15,7 @@ import {
   useOrganizationSettings,
   useUpdateOrganizationSettings
 } from '@/hooks/useOrganization';
+import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import { CreditCard, Wallet, Building, Bitcoin, PlusCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -98,6 +99,9 @@ const Payouts = () => {
 
   const hasBankSetup = settings?.bank_name && settings?.account_number;
   const hasUsdtSetup = settings?.usdt_address;
+  
+  const defaultCurrency = settings?.default_currency || 'USD';
+  const currencySymbol = getCurrencySymbol(defaultCurrency);
 
   return (
     <OrganizationLayout>
@@ -121,11 +125,11 @@ const Payouts = () => {
               <div className="space-y-4">
                 <div className="p-4 rounded-lg bg-secondary">
                   <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <p className="text-2xl font-bold">₦{stats?.availableBalance?.toLocaleString() || '0'}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats?.availableBalance || 0, defaultCurrency)}</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Amount (₦)</Label>
+                  <Label>Amount ({currencySymbol})</Label>
                   <Input
                     type="number"
                     placeholder="Enter amount"
@@ -184,7 +188,7 @@ const Payouts = () => {
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      ₦{stats?.availableBalance?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.availableBalance || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -202,7 +206,7 @@ const Payouts = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      ₦{stats?.pendingPayouts?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.pendingPayouts || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -220,7 +224,7 @@ const Payouts = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      ₦{stats?.completedPayouts?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.completedPayouts || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>

@@ -2,11 +2,17 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRevenueTrends } from '@/hooks/useRevenueTrends';
+import { useOrganizationSettings } from '@/hooks/useOrganization';
+import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
 const RevenueChart = () => {
   const { data: trends, isLoading } = useRevenueTrends(30);
+  const { data: orgSettings } = useOrganizationSettings();
+  
+  const defaultCurrency = orgSettings?.default_currency || 'USD';
+  const currencySymbol = getCurrencySymbol(defaultCurrency);
 
   if (isLoading) {
     return (
@@ -36,7 +42,7 @@ const RevenueChart = () => {
             Revenue Trends (Last 30 Days)
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">₦{totalRevenue.toLocaleString()}</span>
+            Total: <span className="font-semibold text-foreground">{formatCurrency(totalRevenue, defaultCurrency)}</span>
           </p>
         </div>
       </CardHeader>
@@ -69,7 +75,7 @@ const RevenueChart = () => {
                   tickLine={false}
                   axisLine={false}
                   className="text-muted-foreground"
-                  tickFormatter={(value) => `₦${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                  tickFormatter={(value) => `${currencySymbol}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -79,7 +85,7 @@ const RevenueChart = () => {
                     color: 'hsl(var(--popover-foreground))',
                   }}
                   formatter={(value: number, name: string) => [
-                    `₦${value.toLocaleString()}`,
+                    formatCurrency(value, defaultCurrency),
                     name === 'tickets' ? 'Ticket Sales' : 'Vote Revenue'
                   ]}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
