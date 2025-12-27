@@ -2212,6 +2212,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      send_notification: {
+        Args: {
+          p_message: string
+          p_reference_id?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       track_campaign_view: {
         Args: { p_campaign_id: string; p_source?: string }
         Returns: undefined
