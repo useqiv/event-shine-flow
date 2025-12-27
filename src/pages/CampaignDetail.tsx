@@ -16,8 +16,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, Wallet } from 'lucide-react';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
+import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
@@ -25,9 +28,12 @@ const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
 const CampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { data: profile } = useProfile();
   const { data: campaign, isLoading } = useCampaign(id!);
   const { data: donations } = useCampaignDonations(id!);
   const createDonation = useCreateDonation();
+  
+  const isOwner = user && campaign?.creator_id === user.id;
   
   const [donationAmount, setDonationAmount] = useState<number>(25);
   const [customAmount, setCustomAmount] = useState('');
@@ -96,7 +102,7 @@ const CampaignDetail: React.FC = () => {
     }
 
     try {
-      await createDonation.mutateAsync({
+      const donationResult = await createDonation.mutateAsync({
         campaign_id: campaign.id,
         amount,
         currency: campaign.currency,
@@ -104,6 +110,28 @@ const CampaignDetail: React.FC = () => {
         is_anonymous: isAnonymous,
         donor_message: message || undefined,
       });
+      
+      // Send donation receipt email
+      if (profile?.email) {
+        try {
+          await supabase.functions.invoke('send-donation-receipt', {
+            body: {
+              donationId: donationResult.id,
+              donorEmail: profile.email,
+              donorName: profile.full_name || 'Supporter',
+              campaignTitle: campaign.title,
+              amount,
+              currency: campaign.currency,
+              donationDate: new Date().toISOString(),
+              isAnonymous,
+            },
+          });
+        } catch (emailError) {
+          console.error('Failed to send receipt email:', emailError);
+          // Don't fail the donation if email fails
+        }
+      }
+      
       setShowDonateDialog(false);
       setCustomAmount('');
       setMessage('');
@@ -210,6 +238,13 @@ const CampaignDetail: React.FC = () => {
                   <div className="prose prose-sm max-w-none">
                     {campaign.description || campaign.short_description || 'No description provided.'}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Campaign Updates */}
+              <Card>
+                <CardContent className="pt-6">
+                  <CampaignUpdatesManager campaignId={id!} isOwner={!!isOwner} />
                 </CardContent>
               </Card>
 
