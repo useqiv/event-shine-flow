@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -23,7 +24,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminPayouts, useApprovePayout, useRejectPayout } from '@/hooks/useAdminData';
-import { Search, CheckCircle, XCircle, Download, Clock, Wallet } from 'lucide-react';
+import { useBulkApprovePayouts, useBulkRejectPayouts, useLogAdminActivity } from '@/hooks/useAdminActivityLog';
+import { Search, CheckCircle, XCircle, Download, Clock, Wallet, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import CurrencyDisplay from '@/components/ui/currency-display';
@@ -32,11 +34,20 @@ const AdminPayouts: React.FC = () => {
   const { data: payouts, isLoading } = useAdminPayouts();
   const approvePayout = useApprovePayout();
   const rejectPayout = useRejectPayout();
+  const bulkApprove = useBulkApprovePayouts();
+  const bulkReject = useBulkRejectPayouts();
+  const logActivity = useLogAdminActivity();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPayout, setSelectedPayout] = useState<any>(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [referenceId, setReferenceId] = useState('');
+  const [selectedPayouts, setSelectedPayouts] = useState<Set<string>>(new Set());
+  const [bulkActionDialogOpen, setBulkActionDialogOpen] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState<'approve' | 'reject'>('approve');
+
+  // Platform default currency
+  const platformCurrency = 'NGN';
 
   const pendingPayouts = payouts?.filter(p => p.status === 'pending') || [];
   const completedPayouts = payouts?.filter(p => p.status === 'completed') || [];
@@ -53,17 +64,57 @@ const AdminPayouts: React.FC = () => {
       payoutId: selectedPayout.id, 
       referenceId: referenceId || undefined 
     });
+    await logActivity.mutateAsync({
+      actionType: 'approve_payout',
+      entityType: 'payout',
+      entityId: selectedPayout.id,
+      description: `Approved payout of ₦${selectedPayout.amount.toLocaleString()} to ${selectedPayout.organization?.full_name}`,
+      metadata: { amount: selectedPayout.amount, reference_id: referenceId }
+    });
     setApproveDialogOpen(false);
     setReferenceId('');
     setSelectedPayout(null);
   };
 
-  const handleReject = async (payoutId: string) => {
-    await rejectPayout.mutateAsync(payoutId);
+  const handleReject = async (payout: any) => {
+    await rejectPayout.mutateAsync(payout.id);
+    await logActivity.mutateAsync({
+      actionType: 'reject_payout',
+      entityType: 'payout',
+      entityId: payout.id,
+      description: `Rejected payout of ₦${payout.amount.toLocaleString()} to ${payout.organization?.full_name}`,
+      metadata: { amount: payout.amount }
+    });
   };
 
-  // Platform default currency
-  const platformCurrency = 'NGN';
+  const handleSelectPayout = (payoutId: string, checked: boolean) => {
+    const newSelected = new Set(selectedPayouts);
+    if (checked) {
+      newSelected.add(payoutId);
+    } else {
+      newSelected.delete(payoutId);
+    }
+    setSelectedPayouts(newSelected);
+  };
+
+  const handleSelectAllPending = (checked: boolean) => {
+    if (checked) {
+      setSelectedPayouts(new Set(filteredPayouts(pendingPayouts).map(p => p.id)));
+    } else {
+      setSelectedPayouts(new Set());
+    }
+  };
+
+  const handleBulkAction = async () => {
+    const payoutIds = Array.from(selectedPayouts);
+    if (bulkActionType === 'approve') {
+      await bulkApprove.mutateAsync(payoutIds);
+    } else {
+      await bulkReject.mutateAsync(payoutIds);
+    }
+    setSelectedPayouts(new Set());
+    setBulkActionDialogOpen(false);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -76,11 +127,19 @@ const AdminPayouts: React.FC = () => {
     }
   };
 
-  const PayoutTable = ({ payouts }: { payouts: any[] }) => (
+  const PayoutTable = ({ payouts, showCheckbox = false }: { payouts: any[]; showCheckbox?: boolean }) => (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
+            {showCheckbox && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedPayouts.size === payouts.length && payouts.length > 0}
+                  onCheckedChange={handleSelectAllPending}
+                />
+              </TableHead>
+            )}
             <TableHead>Organization</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Method</TableHead>
@@ -93,6 +152,14 @@ const AdminPayouts: React.FC = () => {
         <TableBody>
           {payouts.map((payout) => (
             <TableRow key={payout.id}>
+              {showCheckbox && (
+                <TableCell>
+                  <Checkbox
+                    checked={selectedPayouts.has(payout.id)}
+                    onCheckedChange={(checked) => handleSelectPayout(payout.id, !!checked)}
+                  />
+                </TableCell>
+              )}
               <TableCell>
                 <div>
                   <p className="font-medium">{payout.organization?.full_name || 'Unknown'}</p>
@@ -135,7 +202,7 @@ const AdminPayouts: React.FC = () => {
                     <Button 
                       size="sm" 
                       variant="destructive"
-                      onClick={() => handleReject(payout.id)}
+                      onClick={() => handleReject(payout)}
                       disabled={rejectPayout.isPending}
                     >
                       <XCircle className="h-4 w-4 mr-1" />
@@ -153,7 +220,7 @@ const AdminPayouts: React.FC = () => {
           ))}
           {payouts.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={showCheckbox ? 8 : 7} className="text-center text-muted-foreground py-8">
                 No payouts found
               </TableCell>
             </TableRow>
@@ -251,10 +318,36 @@ const AdminPayouts: React.FC = () => {
                 <CardTitle>All Payouts</CardTitle>
                 <CardDescription>Review and process payout requests</CardDescription>
               </div>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
+              <div className="flex gap-2">
+                {selectedPayouts.size > 0 && (
+                  <>
+                    <Button 
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={() => {
+                        setBulkActionType('approve');
+                        setBulkActionDialogOpen(true);
+                      }}
+                    >
+                      <CheckSquare className="h-4 w-4 mr-2" />
+                      Approve {selectedPayouts.size}
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => {
+                        setBulkActionType('reject');
+                        setBulkActionDialogOpen(true);
+                      }}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject {selectedPayouts.size}
+                    </Button>
+                  </>
+                )}
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -284,7 +377,7 @@ const AdminPayouts: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="pending" className="mt-4">
-                <PayoutTable payouts={filteredPayouts(pendingPayouts)} />
+                <PayoutTable payouts={filteredPayouts(pendingPayouts)} showCheckbox />
               </TabsContent>
               <TabsContent value="completed" className="mt-4">
                 <PayoutTable payouts={filteredPayouts(completedPayouts)} />
@@ -352,6 +445,45 @@ const AdminPayouts: React.FC = () => {
                 disabled={approvePayout.isPending}
               >
                 Confirm Payment
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Action Dialog */}
+        <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {bulkActionType === 'approve' ? 'Bulk Approve Payouts' : 'Bulk Reject Payouts'}
+              </DialogTitle>
+              <DialogDescription>
+                {bulkActionType === 'approve' 
+                  ? `You are about to approve ${selectedPayouts.size} payouts.`
+                  : `You are about to reject ${selectedPayouts.size} payouts.`}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-muted-foreground">
+                Total amount: <span className="font-bold text-foreground">
+                  <CurrencyDisplay 
+                    amount={payouts?.filter(p => selectedPayouts.has(p.id)).reduce((sum, p) => sum + p.amount, 0) || 0} 
+                    currency={platformCurrency} 
+                  />
+                </span>
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBulkActionDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant={bulkActionType === 'approve' ? 'default' : 'destructive'}
+                className={bulkActionType === 'approve' ? 'bg-green-500 hover:bg-green-600' : ''}
+                onClick={handleBulkAction}
+                disabled={bulkApprove.isPending || bulkReject.isPending}
+              >
+                {bulkActionType === 'approve' ? 'Approve All' : 'Reject All'}
               </Button>
             </DialogFooter>
           </DialogContent>
