@@ -77,7 +77,7 @@ const AdminPayouts: React.FC = () => {
   };
 
   const handleReject = async (payout: any) => {
-    await rejectPayout.mutateAsync(payout.id);
+    await rejectPayout.mutateAsync({ payoutId: payout.id, reason: 'Rejected by admin' });
     await logActivity.mutateAsync({
       actionType: 'reject_payout',
       entityType: 'payout',
