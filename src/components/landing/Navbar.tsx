@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Vote, Search, SlidersHorizontal } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +54,8 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Right Section */}
-          <div className="hidden md:flex items-center gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-2 shrink-0">
+            <ThemeToggle />
             <Link to="/auth">
               <Button variant="ghost">Sign In</Button>
             </Link>

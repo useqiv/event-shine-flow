@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -37,6 +38,7 @@ import CreateCampaign from "./pages/CreateCampaign";
 import MyCampaigns from "./pages/MyCampaigns";
 import DonationHistory from "./pages/DonationHistory";
 import CampaignDashboard from "./pages/CampaignDashboard";
+import Install from "./pages/Install";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -170,6 +172,7 @@ const AppRoutes = () => (
     <Route path="/campaigns/my" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
     <Route path="/campaigns/:id/dashboard" element={<ProtectedRoute><CampaignDashboard /></ProtectedRoute>} />
     <Route path="/donations/history" element={<ProtectedRoute><DonationHistory /></ProtectedRoute>} />
+    <Route path="/install" element={<Install />} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
@@ -223,19 +226,21 @@ const App = () => {
   
   return (
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <InfluencerTracker>
-                <AppRoutes />
-              </InfluencerTracker>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <InfluencerTracker>
+                  <AppRoutes />
+                </InfluencerTracker>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </HelmetProvider>
   );
 };
