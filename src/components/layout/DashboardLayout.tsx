@@ -30,7 +30,8 @@ import {
   HelpCircle,
   Bookmark,
   Heart,
-  Megaphone
+  Megaphone,
+  HandHeart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { path: '/contests', label: 'Contests', icon: Trophy },
     { path: '/events', label: 'Events', icon: Calendar },
     { path: '/campaigns/create', label: 'Create Campaign', icon: Megaphone },
+    { path: '/donations/history', label: 'My Donations', icon: HandHeart },
     { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/my-tickets', label: 'My Tickets', icon: Ticket },
     { path: '/my-votes', label: 'My Votes', icon: Vote },

@@ -897,6 +897,45 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_campaign_milestones: boolean
+          email_donation_updates: boolean
+          email_new_donations: boolean
+          email_weekly_summary: boolean
+          id: string
+          push_campaign_milestones: boolean
+          push_donation_updates: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_campaign_milestones?: boolean
+          email_donation_updates?: boolean
+          email_new_donations?: boolean
+          email_weekly_summary?: boolean
+          id?: string
+          push_campaign_milestones?: boolean
+          push_donation_updates?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_campaign_milestones?: boolean
+          email_donation_updates?: boolean
+          email_new_donations?: boolean
+          email_weekly_summary?: boolean
+          id?: string
+          push_campaign_milestones?: boolean
+          push_donation_updates?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
