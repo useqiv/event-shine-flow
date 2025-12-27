@@ -43,11 +43,13 @@ import {
   Globe,
   ExternalLink,
   Edit,
-  BarChart3
+  BarChart3,
+  Megaphone
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import { CampaignEmbedGenerator } from '@/components/CampaignEmbedGenerator';
+import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -230,10 +232,11 @@ const CampaignDashboard: React.FC = () => {
         </Card>
 
         <Tabs defaultValue="trends" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="donors">Donors</TabsTrigger>
             <TabsTrigger value="traffic">Traffic</TabsTrigger>
+            <TabsTrigger value="updates">Updates</TabsTrigger>
             <TabsTrigger value="share">Share</TabsTrigger>
           </TabsList>
 
@@ -549,6 +552,23 @@ const CampaignDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="updates" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Megaphone className="h-5 w-5" />
+                  Campaign Updates
+                </CardTitle>
+                <CardDescription>
+                  Keep your donors informed about your campaign progress
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CampaignUpdatesManager campaignId={campaign.id} isOwner={true} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="share" className="space-y-4">
