@@ -50,6 +50,7 @@ import { format } from 'date-fns';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import { CampaignEmbedGenerator } from '@/components/CampaignEmbedGenerator';
 import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
+import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -134,7 +135,11 @@ const CampaignDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ExtendDeadlineDialog 
+              campaignId={campaign.id}
+              currentEndDate={campaign.end_date}
+            />
             <Button variant="outline" size="sm" asChild>
               <Link to={`/campaigns/${id}`}>
                 <ExternalLink className="h-4 w-4 mr-2" />
