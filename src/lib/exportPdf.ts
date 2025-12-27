@@ -582,3 +582,219 @@ export const generateDonationReceiptPdf = (donation: {
     };
   }
 };
+
+/**
+ * Export revenue analytics data as a PDF report
+ */
+interface RevenueDataPoint {
+  date: string;
+  tickets: number;
+  votes: number;
+  total: number;
+}
+
+interface RevenueReportOptions {
+  data: RevenueDataPoint[];
+  currency: string;
+  dateRange: number;
+  companyName?: string;
+  totalRevenue: number;
+  ticketRevenue: number;
+  voteRevenue: number;
+  netRevenue: number;
+  commissionRate: number;
+}
+
+export const exportRevenuePdf = ({
+  data,
+  currency,
+  dateRange,
+  companyName = 'Your Organization',
+  totalRevenue,
+  ticketRevenue,
+  voteRevenue,
+  netRevenue,
+  commissionRate,
+}: RevenueReportOptions) => {
+  const formatCurrencyLocal = (amount: number) => {
+    const symbol = currency === 'NGN' ? '₦' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+    return `${symbol}${amount.toLocaleString()}`;
+  };
+
+  const tableRows = data.map(row => `
+    <tr>
+      <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb;">${row.date}</td>
+      <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrencyLocal(row.tickets)}</td>
+      <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrencyLocal(row.votes)}</td>
+      <td style="padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${formatCurrencyLocal(row.total)}</td>
+    </tr>
+  `).join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Revenue Analytics Report - ${companyName}</title>
+      <style>
+        @page { size: portrait; margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          padding: 30px;
+          color: #1f2937;
+          max-width: 800px;
+          margin: 0 auto;
+          background: #fff;
+        }
+        .header { 
+          text-align: center; 
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 3px solid #7c3aed;
+        }
+        .header h1 { 
+          font-size: 26px;
+          font-weight: 700;
+          color: #1f2937;
+          margin-bottom: 8px;
+        }
+        .header .org-name {
+          font-size: 18px;
+          color: #7c3aed;
+          font-weight: 600;
+        }
+        .header .date-info {
+          font-size: 13px;
+          color: #6b7280;
+          margin-top: 8px;
+        }
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+          margin-bottom: 30px;
+        }
+        .summary-card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 16px;
+          text-align: center;
+        }
+        .summary-card.net {
+          background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+          border-color: #22c55e;
+        }
+        .summary-card h3 { 
+          margin-bottom: 6px; 
+          font-size: 11px; 
+          color: #64748b; 
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .summary-card .value { 
+          font-size: 18px; 
+          font-weight: 700; 
+          color: #1f2937; 
+        }
+        .summary-card.net .value { color: #16a34a; }
+        .section-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 15px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid #e5e7eb;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          font-size: 13px;
+          margin-bottom: 30px;
+        }
+        th { 
+          background: #7c3aed; 
+          color: white;
+          padding: 12px 8px; 
+          text-align: left;
+          font-weight: 600;
+        }
+        th:not(:first-child) { text-align: right; }
+        tr:nth-child(even) { background: #f9fafb; }
+        .footer { 
+          margin-top: 30px; 
+          text-align: center; 
+          font-size: 11px; 
+          color: #9ca3af;
+          padding-top: 20px;
+          border-top: 1px solid #e5e7eb;
+        }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Revenue Analytics Report</h1>
+        <p class="org-name">${companyName}</p>
+        <p class="date-info">Last ${dateRange} Days • Generated on ${new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', month: 'long', day: 'numeric' 
+        })}</p>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h3>Total Revenue</h3>
+          <div class="value">${formatCurrencyLocal(totalRevenue)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>Ticket Sales</h3>
+          <div class="value">${formatCurrencyLocal(ticketRevenue)}</div>
+        </div>
+        <div class="summary-card">
+          <h3>Vote Revenue</h3>
+          <div class="value">${formatCurrencyLocal(voteRevenue)}</div>
+        </div>
+        <div class="summary-card net">
+          <h3>Net (${100 - commissionRate}%)</h3>
+          <div class="value">${formatCurrencyLocal(netRevenue)}</div>
+        </div>
+      </div>
+
+      <h2 class="section-title">Daily Breakdown</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Ticket Sales</th>
+            <th>Vote Revenue</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <p>Commission Rate: ${commissionRate}% • Currency: ${currency}</p>
+        <p style="margin-top: 4px;">Report generated by VotePass • Confidential</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+  }
+  
+  return `revenue-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+};

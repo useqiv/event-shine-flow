@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.send-donation-receipt]
 verify_jwt = true
+
+[functions.send-payout-notification]
+verify_jwt = false
