@@ -52,6 +52,7 @@ import { CampaignEmbedGenerator } from '@/components/CampaignEmbedGenerator';
 import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
 import { AdjustGoalDialog } from '@/components/AdjustGoalDialog';
+import { CampaignStatusToggle } from '@/components/CampaignStatusToggle';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -136,7 +137,11 @@ const CampaignDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <CampaignStatusToggle
+              campaignId={campaign.id}
+              currentStatus={campaign.status}
+            />
             <AdjustGoalDialog
               campaignId={campaign.id}
               currentGoal={campaign.goal_amount}
