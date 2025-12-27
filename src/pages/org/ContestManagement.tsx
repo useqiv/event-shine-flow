@@ -21,9 +21,7 @@ import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
-import { SocialPostingCard } from '@/components/org/SocialPostingCard';
-import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
-import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
+
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
@@ -47,7 +45,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info, DollarSign } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info, DollarSign, Megaphone } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
@@ -555,7 +553,13 @@ const ContestManagement = () => {
                 Analytics
               </Button>
             </Link>
-            <ShareButtons 
+            <Link to={`/org/contests/${id}/social`}>
+              <Button variant="outline">
+                <Megaphone className="mr-2 h-4 w-4" />
+                Social Media
+              </Button>
+            </Link>
+            <ShareButtons
               title={contest.title}
               description={contest.description || `Vote now in ${contest.title}`}
               url={`${window.location.origin}/contests/${id}`}
@@ -1252,37 +1256,6 @@ const ContestManagement = () => {
                 })) || []}
               />
             </div>
-
-            {/* Social Media Posting */}
-            {contestants && contestants.length > 0 && (
-              <SocialPostingCard
-                contest={{
-                  id: contest.id,
-                  title: contest.title,
-                  custom_slug: editForm.custom_slug || null,
-                  brand_primary_color: editForm.brand_primary_color,
-                }}
-                contestants={contestants.map((c: any) => ({
-                  id: c.id,
-                  name: c.name,
-                  vote_count: c.vote_count,
-                  photo_url: c.photo_url,
-                }))}
-              />
-            )}
-
-            {/* Auto-Posting Manager */}
-            <SocialAutoPostManager
-              entityId={contest.id}
-              entityType="contest"
-              entityTitle={contest.title}
-            />
-
-            {/* Social Media Analytics */}
-            <SocialAnalyticsCard
-              contestId={contest.id}
-              organizationId={(contest as any).organization_id || ''}
-            />
 
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
