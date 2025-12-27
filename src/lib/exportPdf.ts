@@ -322,3 +322,263 @@ export const generateRevenueReportPdf = (
     };
   }
 };
+
+/**
+ * Generate a donation receipt PDF
+ */
+export const generateDonationReceiptPdf = (donation: {
+  id: string;
+  amount: number;
+  currency: string;
+  created_at: string;
+  donor_message?: string | null;
+  payment_method: string;
+  status: string;
+  campaign: {
+    title: string;
+    image_url?: string | null;
+  };
+  donor?: {
+    name?: string | null;
+    email?: string | null;
+  };
+}) => {
+  const formatCurrency = (amount: number, currency: string) => {
+    const symbol = currency === 'NGN' ? '₦' : currency === 'USD' ? '$' : currency;
+    return `${symbol}${amount.toLocaleString()}`;
+  };
+
+  const formattedDate = new Date(donation.created_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const receiptNumber = `DON-${donation.id.slice(0, 8).toUpperCase()}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Donation Receipt - ${receiptNumber}</title>
+      <style>
+        @page { size: portrait; margin: 20mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          padding: 40px;
+          color: #1f2937;
+          max-width: 600px;
+          margin: 0 auto;
+          background: #fff;
+        }
+        .receipt {
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 40px;
+        }
+        .header { 
+          text-align: center; 
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 2px dashed #e5e7eb;
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: 800;
+          color: #2563eb;
+          margin-bottom: 8px;
+        }
+        .receipt-title {
+          font-size: 14px;
+          color: #6b7280;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+        }
+        .receipt-number {
+          font-size: 12px;
+          color: #9ca3af;
+          margin-top: 8px;
+        }
+        .amount-section {
+          text-align: center;
+          padding: 30px 0;
+          background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 100%);
+          border-radius: 12px;
+          margin-bottom: 30px;
+        }
+        .amount-label {
+          font-size: 14px;
+          color: #6b7280;
+          margin-bottom: 8px;
+        }
+        .amount {
+          font-size: 42px;
+          font-weight: 700;
+          color: #1f2937;
+        }
+        .status {
+          display: inline-block;
+          margin-top: 12px;
+          padding: 6px 16px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          background: ${donation.status === 'completed' ? '#dcfce7' : '#fef9c3'};
+          color: ${donation.status === 'completed' ? '#166534' : '#854d0e'};
+        }
+        .details {
+          margin-bottom: 30px;
+        }
+        .detail-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .detail-row:last-child {
+          border-bottom: none;
+        }
+        .detail-label {
+          color: #6b7280;
+          font-size: 14px;
+        }
+        .detail-value {
+          font-weight: 600;
+          font-size: 14px;
+          text-align: right;
+          max-width: 60%;
+        }
+        .campaign-section {
+          background: #f9fafb;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 30px;
+        }
+        .campaign-label {
+          font-size: 12px;
+          color: #6b7280;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+        }
+        .campaign-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #1f2937;
+        }
+        .message-section {
+          background: #fefce8;
+          border-left: 4px solid #facc15;
+          padding: 16px;
+          border-radius: 0 8px 8px 0;
+          margin-bottom: 30px;
+        }
+        .message-label {
+          font-size: 12px;
+          color: #854d0e;
+          font-weight: 600;
+          margin-bottom: 4px;
+        }
+        .message-text {
+          font-size: 14px;
+          color: #713f12;
+          font-style: italic;
+        }
+        .footer {
+          text-align: center;
+          padding-top: 20px;
+          border-top: 2px dashed #e5e7eb;
+        }
+        .thank-you {
+          font-size: 20px;
+          font-weight: 600;
+          color: #2563eb;
+          margin-bottom: 8px;
+        }
+        .footer-text {
+          font-size: 12px;
+          color: #9ca3af;
+        }
+        @media print {
+          body { padding: 0; }
+          .receipt { border: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="receipt">
+        <div class="header">
+          <div class="logo">VotePass</div>
+          <div class="receipt-title">Donation Receipt</div>
+          <div class="receipt-number">${receiptNumber}</div>
+        </div>
+
+        <div class="amount-section">
+          <div class="amount-label">Donation Amount</div>
+          <div class="amount">${formatCurrency(donation.amount, donation.currency)}</div>
+          <span class="status">${donation.status === 'completed' ? '✓ Completed' : donation.status}</span>
+        </div>
+
+        <div class="campaign-section">
+          <div class="campaign-label">Donated to</div>
+          <div class="campaign-title">${donation.campaign.title}</div>
+        </div>
+
+        <div class="details">
+          <div class="detail-row">
+            <span class="detail-label">Date</span>
+            <span class="detail-value">${formattedDate}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Payment Method</span>
+            <span class="detail-value">${donation.payment_method.charAt(0).toUpperCase() + donation.payment_method.slice(1)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Transaction ID</span>
+            <span class="detail-value">${donation.id.slice(0, 12).toUpperCase()}</span>
+          </div>
+          ${donation.donor?.name ? `
+          <div class="detail-row">
+            <span class="detail-label">Donor</span>
+            <span class="detail-value">${donation.donor.name}</span>
+          </div>
+          ` : ''}
+          ${donation.donor?.email ? `
+          <div class="detail-row">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">${donation.donor.email}</span>
+          </div>
+          ` : ''}
+        </div>
+
+        ${donation.donor_message ? `
+        <div class="message-section">
+          <div class="message-label">Your Message</div>
+          <div class="message-text">"${donation.donor_message}"</div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <div class="thank-you">Thank You! 💙</div>
+          <div class="footer-text">Your generosity makes a difference.</div>
+          <div class="footer-text" style="margin-top: 8px;">This receipt was generated on ${new Date().toLocaleDateString()}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+  }
+};
