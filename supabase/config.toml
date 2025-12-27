@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.get-exchange-rates]
 verify_jwt = false
+
+[functions.send-donation-receipt]
+verify_jwt = true
