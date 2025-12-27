@@ -647,6 +647,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          logo_url: string | null
           organization_id: string | null
           title: string
           updated_at: string
@@ -662,6 +663,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          logo_url?: string | null
           organization_id?: string | null
           title: string
           updated_at?: string
@@ -677,6 +679,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          logo_url?: string | null
           organization_id?: string | null
           title?: string
           updated_at?: string

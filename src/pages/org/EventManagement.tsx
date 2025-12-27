@@ -99,6 +99,7 @@ const EventManagement = () => {
     description: '',
     category: '',
     image_url: '',
+    logo_url: '',
     event_date: '',
     venue: '',
     address: '',
@@ -112,6 +113,7 @@ const EventManagement = () => {
         description: event.description || '',
         category: event.category || '',
         image_url: event.image_url || '',
+        logo_url: (event as any).logo_url || '',
         event_date: event.event_date ? new Date(event.event_date).toISOString().slice(0, 16) : '',
         venue: event.venue || '',
         address: event.address || '',
@@ -652,6 +654,13 @@ const EventManagement = () => {
                   value={editForm.image_url}
                   onChange={(url) => setEditForm(prev => ({ ...prev, image_url: url }))}
                   label="Event Banner Image"
+                />
+
+                <ImageUpload
+                  bucket="event-images"
+                  value={editForm.logo_url}
+                  onChange={(url) => setEditForm(prev => ({ ...prev, logo_url: url }))}
+                  label="Event Logo"
                 />
               </CardContent>
             </Card>
