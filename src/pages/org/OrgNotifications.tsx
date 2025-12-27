@@ -148,7 +148,7 @@ const OrgNotifications = () => {
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">
-              Unread {unreadCount > 0 && <Badge className="ml-2 h-5 px-1.5">{unreadCount}</Badge>}
+              Unread {unreadCount > 0 && <span className="ml-2 inline-flex h-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-medium text-primary-foreground">{unreadCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
             <TabsTrigger value="failures">Failures</TabsTrigger>
