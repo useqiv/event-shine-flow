@@ -52,7 +52,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     { path: '/dashboard', label: 'Home', icon: LayoutDashboard },
     { path: '/contests', label: 'Contests', icon: Trophy },
     { path: '/events', label: 'Events', icon: Calendar },
-    { path: '/campaigns/my', label: 'My Campaigns', icon: Megaphone },
+    { path: '/campaigns/create', label: 'Create Campaign', icon: Megaphone },
     { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/my-tickets', label: 'My Tickets', icon: Ticket },
     { path: '/my-votes', label: 'My Votes', icon: Vote },
