@@ -8,12 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts, useOrganizationSettings } from '@/hooks/useOrganization';
+import { useOrgRealtimeStats } from '@/hooks/useOrgRealtimeStats';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import RevenueChart from '@/components/org/RevenueChart';
+import AdvancedRevenueChart from '@/components/org/AdvancedRevenueChart';
 import TopPerformersWidget from '@/components/org/TopPerformersWidget';
-import { formatCurrency, currencies, useConversionDisplay } from '@/components/ui/currency-selector';
-import CurrencyDisplay from '@/components/ui/currency-display';
+import EventCountdownWidget from '@/components/org/EventCountdownWidget';
+import GoalTrackingWidget from '@/components/org/GoalTrackingWidget';
+import PayoutStatusAlert from '@/components/org/PayoutStatusAlert';
+import { formatCurrency, currencies } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
   Trophy, 
@@ -28,7 +31,8 @@ import {
   BarChart3,
   PlusCircle,
   TrendingDown,
-  Info
+  Info,
+  Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -38,7 +42,9 @@ const OrgDashboard = () => {
   const { data: events, isLoading: eventsLoading } = useOrganizationEvents();
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
   const { data: orgSettings, isLoading: orgSettingsLoading } = useOrganizationSettings();
-  const { convert, isLive } = useConversionDisplay();
+
+  // Enable real-time updates
+  useOrgRealtimeStats();
 
   // Currency state - defaults to org's default currency, then allows switching
   const [displayCurrency, setDisplayCurrency] = useState<string>('USD');
@@ -221,7 +227,13 @@ const OrgDashboard = () => {
         {/* Welcome Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Zap className="h-3 w-3 text-green-500" />
+                Live
+              </Badge>
+            </div>
             <p className="text-muted-foreground">Manage your contests, events, and finances.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -269,6 +281,14 @@ const OrgDashboard = () => {
             </Link>
           </div>
         </div>
+
+        {/* Payout Status Alerts */}
+        {payouts && payouts.length > 0 && (
+          <PayoutStatusAlert 
+            payouts={payouts} 
+            currency={orgSettings?.default_currency || 'USD'} 
+          />
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -423,8 +443,21 @@ const OrgDashboard = () => {
           </Card>
         </div>
 
-        {/* Revenue Trends Chart */}
-        <RevenueChart />
+        {/* Goal Tracking Widget */}
+        <GoalTrackingWidget
+          totalRevenue={displayTotalRevenue}
+          totalVotes={stats?.totalVotes || 0}
+          ticketsSold={stats?.ticketsSold || 0}
+          currency={displayCurrency}
+        />
+
+        {/* Advanced Revenue Chart */}
+        <AdvancedRevenueChart currency={displayCurrency} onCurrencyChange={setDisplayCurrency} />
+
+        {/* Event Countdown Widget */}
+        {events && events.length > 0 && (
+          <EventCountdownWidget events={events} />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Contests */}
@@ -553,7 +586,7 @@ const OrgDashboard = () => {
         {/* Top Performers Widget */}
         <TopPerformersWidget />
 
-        {/* Pending Payouts */}
+        {/* Pending Payouts - Legacy view for detailed list */}
         {pendingPayouts.length > 0 && (
           <Card>
             <CardHeader>
