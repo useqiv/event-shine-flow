@@ -20,6 +20,7 @@ import { SortableContestantCard } from '@/components/org/SortableContestantCard'
 import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
+import { BrandingPreview } from '@/components/org/BrandingPreview';
 import { SocialPostingCard } from '@/components/org/SocialPostingCard';
 import { ScheduledPostingCard } from '@/components/org/ScheduledPostingCard';
 import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
@@ -930,6 +931,7 @@ const ContestManagement = () => {
                         isSelected={selectedContestants.has(contestant.id)}
                         contestId={id || ''}
                         contestTitle={contest?.title || ''}
+                        brandPrimaryColor={editForm.brand_primary_color}
                         onSelect={handleSelectContestant}
                         onEdit={handleEditContestant}
                         onDelete={(c) => {
@@ -1038,7 +1040,16 @@ const ContestManagement = () => {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Leaderboard</CardTitle>
+                  <div className="flex items-center gap-3">
+                    {editForm.brand_logo_url && (
+                      <img 
+                        src={editForm.brand_logo_url} 
+                        alt="Contest Logo" 
+                        className="h-8 object-contain"
+                      />
+                    )}
+                    <CardTitle>Leaderboard</CardTitle>
+                  </div>
                   <Button variant="outline" size="sm" onClick={handleExportLeaderboard}>
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
@@ -1049,13 +1060,23 @@ const ContestManagement = () => {
                 {contestants && contestants.length > 0 ? (
                   <div className="space-y-2">
                     {contestants.map((contestant: any, index: number) => (
-                      <div key={contestant.id} className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                          index === 0 ? 'bg-yellow-500 text-yellow-950' :
-                          index === 1 ? 'bg-gray-400 text-gray-900' :
-                          index === 2 ? 'bg-orange-400 text-orange-950' :
-                          'bg-secondary text-muted-foreground'
-                        }`}>
+                      <div 
+                        key={contestant.id} 
+                        className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 transition-all"
+                        style={index === 0 ? { 
+                          borderLeft: `4px solid ${editForm.brand_primary_color}`,
+                          backgroundColor: `${editForm.brand_primary_color}10`
+                        } : undefined}
+                      >
+                        <span 
+                          className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white"
+                          style={{ 
+                            backgroundColor: index === 0 ? editForm.brand_primary_color :
+                                            index === 1 ? editForm.brand_secondary_color :
+                                            index === 2 ? `${editForm.brand_primary_color}80` :
+                                            'hsl(var(--muted-foreground))'
+                          }}
+                        >
                           {index + 1}
                         </span>
                         <div className="h-10 w-10 rounded-full bg-secondary overflow-hidden flex-shrink-0">
@@ -1070,7 +1091,14 @@ const ContestManagement = () => {
                         <div className="flex-1">
                           <p className="font-medium">{contestant.name}</p>
                         </div>
-                        <Badge variant="secondary">
+                        <Badge 
+                          variant="secondary"
+                          style={index === 0 ? { 
+                            backgroundColor: `${editForm.brand_primary_color}20`,
+                            color: editForm.brand_primary_color,
+                            borderColor: editForm.brand_primary_color
+                          } : undefined}
+                        >
                           {contestant.vote_count.toLocaleString()} votes
                         </Badge>
                       </div>
@@ -1188,16 +1216,31 @@ const ContestManagement = () => {
             </Card>
 
             {/* Branding */}
-            <ContestBrandingForm
-              values={{
-                custom_slug: editForm.custom_slug,
-                brand_primary_color: editForm.brand_primary_color,
-                brand_secondary_color: editForm.brand_secondary_color,
-                brand_logo_url: editForm.brand_logo_url,
-              }}
-              onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
-              contestId={id}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ContestBrandingForm
+                values={{
+                  custom_slug: editForm.custom_slug,
+                  brand_primary_color: editForm.brand_primary_color,
+                  brand_secondary_color: editForm.brand_secondary_color,
+                  brand_logo_url: editForm.brand_logo_url,
+                }}
+                onChange={(field, value) => setEditForm(prev => ({ ...prev, [field]: value }))}
+                contestId={id}
+              />
+              
+              {/* Live Branding Preview */}
+              <BrandingPreview
+                contestTitle={editForm.title || contest.title}
+                brandLogoUrl={editForm.brand_logo_url}
+                primaryColor={editForm.brand_primary_color}
+                secondaryColor={editForm.brand_secondary_color}
+                contestants={contestants?.slice(0, 3).map((c: any) => ({
+                  name: c.name,
+                  photo_url: c.photo_url,
+                  vote_count: c.vote_count,
+                })) || []}
+              />
+            </div>
 
             {/* Social Media Posting */}
             {contestants && contestants.length > 0 && (
