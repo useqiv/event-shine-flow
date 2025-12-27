@@ -3,10 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
 import { useEvent } from '@/hooks/useEvents';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventSocialMedia = () => {
@@ -59,18 +60,38 @@ const EventSocialMedia = () => {
           </div>
         </div>
 
-        {/* Auto-Posting Manager */}
-        <SocialAutoPostManager
-          entityId={event.id}
-          entityType="event"
-          entityTitle={event.title}
-        />
+        {/* Tabs */}
+        <Tabs defaultValue="auto-posting" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="auto-posting" className="gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Auto-Posting</span>
+              <span className="sm:hidden">Auto</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Legacy Settings</span>
+              <span className="sm:hidden">Settings</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Legacy Event Auto-Posting Card (for backwards compatibility) */}
-        <EventAutoPostingCard
-          eventId={event.id}
-          eventTitle={event.title}
-        />
+          {/* Auto-Posting Tab */}
+          <TabsContent value="auto-posting" className="space-y-6">
+            <SocialAutoPostManager
+              entityId={event.id}
+              entityType="event"
+              entityTitle={event.title}
+            />
+          </TabsContent>
+
+          {/* Legacy Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <EventAutoPostingCard
+              eventId={event.id}
+              eventTitle={event.title}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </OrganizationLayout>
   );
