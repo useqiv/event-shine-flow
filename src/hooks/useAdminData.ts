@@ -426,14 +426,21 @@ export const useApprovePayout = () => {
 
   return useMutation({
     mutationFn: async ({ payoutId, referenceId }: { payoutId: string; referenceId?: string }) => {
-      // First get payout details for email notification
+      // First get payout details
       const { data: payout, error: fetchError } = await supabase
         .from('payouts')
-        .select('*, profiles:organization_id(email, full_name)')
+        .select('*')
         .eq('id', payoutId)
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Get organization email from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', payout.organization_id)
+        .single();
 
       const { error } = await supabase
         .from('payouts')
@@ -447,18 +454,22 @@ export const useApprovePayout = () => {
       if (error) throw error;
 
       // Send email notification
-      const profile = payout.profiles as { email: string; full_name: string } | null;
       if (profile?.email) {
-        await supabase.functions.invoke('send-payout-notification', {
+        console.log('Sending payout notification to:', profile.email);
+        const { error: fnError } = await supabase.functions.invoke('send-payout-notification', {
           body: {
             payout_id: payoutId,
             status: 'completed',
             amount: payout.amount,
             currency: 'NGN',
             organization_email: profile.email,
-            organization_name: profile.full_name || 'Organization'
+            organization_name: profile.full_name || 'Organization',
+            payment_method: payout.payment_method
           }
         });
+        if (fnError) console.error('Failed to send payout notification:', fnError);
+      } else {
+        console.warn('No email found for organization:', payout.organization_id);
       }
     },
     onSuccess: () => {
@@ -477,14 +488,21 @@ export const useRejectPayout = () => {
 
   return useMutation({
     mutationFn: async ({ payoutId, reason }: { payoutId: string; reason?: string }) => {
-      // First get payout details for email notification
+      // First get payout details
       const { data: payout, error: fetchError } = await supabase
         .from('payouts')
-        .select('*, profiles:organization_id(email, full_name)')
+        .select('*')
         .eq('id', payoutId)
         .single();
 
       if (fetchError) throw fetchError;
+
+      // Get organization email from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', payout.organization_id)
+        .single();
 
       const { error } = await supabase
         .from('payouts')
@@ -494,9 +512,9 @@ export const useRejectPayout = () => {
       if (error) throw error;
 
       // Send email notification
-      const profile = payout.profiles as { email: string; full_name: string } | null;
       if (profile?.email) {
-        await supabase.functions.invoke('send-payout-notification', {
+        console.log('Sending payout rejection notification to:', profile.email);
+        const { error: fnError } = await supabase.functions.invoke('send-payout-notification', {
           body: {
             payout_id: payoutId,
             status: 'rejected',
@@ -504,9 +522,13 @@ export const useRejectPayout = () => {
             currency: 'NGN',
             organization_email: profile.email,
             organization_name: profile.full_name || 'Organization',
-            rejection_reason: reason
+            rejection_reason: reason,
+            payment_method: payout.payment_method
           }
         });
+        if (fnError) console.error('Failed to send payout notification:', fnError);
+      } else {
+        console.warn('No email found for organization:', payout.organization_id);
       }
     },
     onSuccess: () => {
