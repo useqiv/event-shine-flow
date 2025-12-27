@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Vote, Search, SlidersHorizontal } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -7,6 +7,16 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsOpen(false);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,19 +49,21 @@ const Navbar = () => {
           </a>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-lg">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg">
             <div className="relative w-full">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search organizers, events, venues..."
                 className="w-full pl-12 pr-12 py-3 bg-card border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-colors">
-                <SlidersHorizontal className="h-5 w-5 text-primary" />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-colors">
+                <Search className="h-5 w-5 text-primary" />
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
@@ -82,17 +94,19 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-border bg-card/95 backdrop-blur-md animate-fade-in">
             {/* Mobile Search */}
-            <div className="relative mb-4">
+            <form onSubmit={handleSearch} className="relative mb-4">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search organizers, events..."
                 className="w-full pl-12 pr-12 py-3 bg-background border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5">
-                <SlidersHorizontal className="h-5 w-5 text-primary" />
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5">
+                <Search className="h-5 w-5 text-primary" />
               </button>
-            </div>
+            </form>
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
