@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts } from '@/hooks/useOrganization';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts, useOrganizationSettings } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import RevenueChart from '@/components/org/RevenueChart';
-import { formatCurrency } from '@/components/ui/currency-selector';
+import { formatCurrency, currencies, useConversionDisplay } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
   Wallet, 
@@ -35,6 +36,18 @@ const OrgDashboard = () => {
   const { data: contests, isLoading: contestsLoading } = useOrganizationContests();
   const { data: events, isLoading: eventsLoading } = useOrganizationEvents();
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
+  const { data: orgSettings, isLoading: orgSettingsLoading } = useOrganizationSettings();
+  const { convert, isLive } = useConversionDisplay();
+
+  // Currency state - defaults to org's default currency, then allows switching
+  const [displayCurrency, setDisplayCurrency] = useState<string>('USD');
+  
+  // Update display currency when org settings load
+  useEffect(() => {
+    if (orgSettings?.default_currency) {
+      setDisplayCurrency(orgSettings.default_currency);
+    }
+  }, [orgSettings?.default_currency]);
 
   // Fetch platform commission settings
   const { data: commissionSettings } = useQuery({
@@ -94,7 +107,19 @@ const OrgDashboard = () => {
   const netTicketRevenue = ticketRevenue * (1 - ticketCommission / 100);
   const netRevenue = netVoteRevenue + netTicketRevenue;
   const totalCommissionDeducted = totalRevenue - netRevenue;
-  
+
+  // Helper to convert amounts from NGN to display currency
+  const convertToDisplayCurrency = (amount: number, fromCurrency: string = 'NGN') => {
+    if (fromCurrency === displayCurrency) return amount;
+    return convert(amount, fromCurrency, displayCurrency);
+  };
+
+  const displayTotalRevenue = convertToDisplayCurrency(totalRevenue);
+  const displayNetRevenue = convertToDisplayCurrency(netRevenue);
+  const displayTotalCommission = convertToDisplayCurrency(totalCommissionDeducted);
+  const displayVoteRevenue = convertToDisplayCurrency(voteRevenue);
+  const displayTicketRevenue = convertToDisplayCurrency(ticketRevenue);
+  const displayPendingPayouts = convertToDisplayCurrency(stats?.pendingPayouts || 0);
   // Show full page skeleton during initial load
   const isInitialLoading = statsLoading && contestsLoading && eventsLoading;
 
@@ -201,7 +226,39 @@ const OrgDashboard = () => {
             <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
             <p className="text-muted-foreground">Manage your contests, events, and finances.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            {/* Currency Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground hidden sm:inline">Display in:</span>
+              <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {currencies.map((currency) => (
+                    <SelectItem key={currency.code} value={currency.code}>
+                      {currency.symbol} {currency.code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {displayCurrency !== 'NGN' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="text-xs">
+                        {isLive ? 'Live' : 'Est.'}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        {isLive ? 'Using live exchange rates' : 'Using estimated exchange rates'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
             <Link to="/org/contests/create">
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -229,7 +286,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      <CurrencyDisplay amount={totalRevenue} currency="NGN" size="lg" />
+                      {formatCurrency(displayTotalRevenue, displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -257,7 +314,7 @@ const OrgDashboard = () => {
                             After platform commission:<br/>
                             • Votes: {voteCommission}% commission<br/>
                             • Tickets: {ticketCommission}% commission<br/>
-                            Total deducted: {formatCurrency(totalCommissionDeducted, 'NGN')}
+                            Total deducted: {formatCurrency(displayTotalCommission, displayCurrency)}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -267,7 +324,7 @@ const OrgDashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      <CurrencyDisplay amount={netRevenue} currency="NGN" size="lg" className="text-green-600 dark:text-green-400" />
+                      {formatCurrency(displayNetRevenue, displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -297,7 +354,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                <CurrencyDisplay amount={stats?.voteRevenue || 0} currency="NGN" size="sm" /> in revenue
+                {formatCurrency(displayVoteRevenue, displayCurrency)} in revenue
               </p>
             </CardContent>
           </Card>
@@ -321,7 +378,7 @@ const OrgDashboard = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                <CurrencyDisplay amount={stats?.ticketRevenue || 0} currency="NGN" size="sm" /> in revenue
+                {formatCurrency(displayTicketRevenue, displayCurrency)} in revenue
               </p>
             </CardContent>
           </Card>
@@ -361,7 +418,7 @@ const OrgDashboard = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-2xl font-bold text-foreground">
-                    <CurrencyDisplay amount={stats?.pendingPayouts || 0} currency="NGN" size="lg" />
+                    {formatCurrency(displayPendingPayouts, displayCurrency)}
                   </p>
                 </div>
                 <CreditCard className="h-8 w-8 text-muted-foreground" />
