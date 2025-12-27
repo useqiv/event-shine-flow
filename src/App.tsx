@@ -226,7 +226,7 @@ const App = () => {
   
   return (
     <HelmetProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
