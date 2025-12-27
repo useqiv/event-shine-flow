@@ -54,6 +54,7 @@ import OrgNotifications from "./pages/org/OrgNotifications";
 import TeamMembers from "./pages/org/TeamMembers";
 import EventCheckinDashboard from "./pages/org/EventCheckinDashboard";
 import ContestAnalytics from "./pages/org/ContestAnalytics";
+import ManageCampaigns from "./pages/org/ManageCampaigns";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -182,6 +183,7 @@ const AppRoutes = () => (
     <Route path="/org/team" element={<ProtectedRoute><TeamMembers /></ProtectedRoute>} />
     <Route path="/org/events/:id/checkin" element={<ProtectedRoute><EventCheckinDashboard /></ProtectedRoute>} />
     <Route path="/org/contests/:id/analytics" element={<ProtectedRoute><ContestAnalytics /></ProtectedRoute>} />
+    <Route path="/org/campaigns" element={<ProtectedRoute><ManageCampaigns /></ProtectedRoute>} />
     
     {/* Admin Dashboard Routes */}
     <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

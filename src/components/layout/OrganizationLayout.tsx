@@ -56,6 +56,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
     { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
     { path: '/org/events', label: 'Manage Events', icon: Calendar },
+    { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
     { path: '/org/event-scanner', label: 'QR Scanner', icon: QrCode },
     { path: '/org/wallet', label: 'Wallet & Finance', icon: Wallet },
     { path: '/org/payouts', label: 'Payouts', icon: CreditCard },
