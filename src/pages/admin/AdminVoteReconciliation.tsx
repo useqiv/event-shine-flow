@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import CurrencyDisplay from '@/components/ui/currency-display';
 
 interface DuplicateVoteGroup {
   user_id: string;
@@ -267,13 +268,8 @@ const AdminVoteReconciliation: React.FC = () => {
     deleteAllSelectedMutation.mutate(groupsToDelete);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  // Platform default currency
+  const platformCurrency = 'NGN';
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('en-NG', {
@@ -390,7 +386,7 @@ const AdminVoteReconciliation: React.FC = () => {
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Amount:</span>
-                                <p className="font-medium">{formatCurrency(group.amount_paid)}</p>
+                                <p className="font-medium"><CurrencyDisplay amount={group.amount_paid} currency={platformCurrency} /></p>
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground">

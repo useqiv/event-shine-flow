@@ -26,6 +26,7 @@ import { useAdminPayouts, useApprovePayout, useRejectPayout } from '@/hooks/useA
 import { Search, CheckCircle, XCircle, Download, Clock, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import CurrencyDisplay from '@/components/ui/currency-display';
 
 const AdminPayouts: React.FC = () => {
   const { data: payouts, isLoading } = useAdminPayouts();
@@ -61,13 +62,8 @@ const AdminPayouts: React.FC = () => {
     await rejectPayout.mutateAsync(payoutId);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  // Platform default currency
+  const platformCurrency = 'NGN';
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -103,7 +99,9 @@ const AdminPayouts: React.FC = () => {
                   <p className="text-xs text-muted-foreground">{payout.organization?.email}</p>
                 </div>
               </TableCell>
-              <TableCell className="font-medium">{formatCurrency(payout.amount)}</TableCell>
+              <TableCell className="font-medium">
+                <CurrencyDisplay amount={payout.amount} currency={platformCurrency} />
+              </TableCell>
               <TableCell>
                 <Badge variant="outline" className="capitalize">{payout.payment_method}</Badge>
               </TableCell>
@@ -212,7 +210,7 @@ const AdminPayouts: React.FC = () => {
                 <Wallet className="h-5 w-5 text-yellow-500" />
                 <div>
                   <div className="text-2xl font-bold">
-                    {formatCurrency(pendingPayouts.reduce((sum, p) => sum + p.amount, 0))}
+                    <CurrencyDisplay amount={pendingPayouts.reduce((sum, p) => sum + p.amount, 0)} currency={platformCurrency} size="lg" />
                   </div>
                   <p className="text-xs text-muted-foreground">Pending Amount</p>
                 </div>
@@ -236,7 +234,7 @@ const AdminPayouts: React.FC = () => {
                 <Wallet className="h-5 w-5 text-green-500" />
                 <div>
                   <div className="text-2xl font-bold">
-                    {formatCurrency(completedPayouts.reduce((sum, p) => sum + p.amount, 0))}
+                    <CurrencyDisplay amount={completedPayouts.reduce((sum, p) => sum + p.amount, 0)} currency={platformCurrency} size="lg" />
                   </div>
                   <p className="text-xs text-muted-foreground">Total Paid</p>
                 </div>
@@ -317,7 +315,7 @@ const AdminPayouts: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Amount</p>
-                      <p className="font-medium text-lg">{formatCurrency(selectedPayout.amount)}</p>
+                      <p className="font-medium text-lg"><CurrencyDisplay amount={selectedPayout.amount} currency={platformCurrency} /></p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Payment Method</p>

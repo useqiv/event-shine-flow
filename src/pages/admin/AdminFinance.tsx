@@ -26,33 +26,92 @@ import {
   Cell,
   Legend
 } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 const AdminFinance: React.FC = () => {
-  const { data: stats, isLoading } = useAdminStatistics();
+  const { data: stats, isLoading: statsLoading } = useAdminStatistics();
 
   // Default currency for admin pages (platform default)
   const platformCurrency = 'NGN';
 
-  // Mock data for charts - in production, this would come from actual data
-  const revenueData = [
-    { month: 'Jan', votes: 45000, tickets: 32000 },
-    { month: 'Feb', votes: 52000, tickets: 41000 },
-    { month: 'Mar', votes: 48000, tickets: 38000 },
-    { month: 'Apr', votes: 61000, tickets: 45000 },
-    { month: 'May', votes: 55000, tickets: 51000 },
-    { month: 'Jun', votes: 67000, tickets: 55000 },
-  ];
+  // Fetch real monthly revenue data from votes and tickets
+  const { data: revenueData = [], isLoading: revenueLoading } = useQuery({
+    queryKey: ['admin-monthly-revenue'],
+    queryFn: async () => {
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const date = subMonths(new Date(), i);
+        const start = startOfMonth(date);
+        const end = endOfMonth(date);
+        
+        // Get votes revenue for this month
+        const { data: votes } = await supabase
+          .from('votes')
+          .select('amount_paid')
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+        
+        // Get tickets revenue for this month
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('amount_paid')
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+        
+        const votesRevenue = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
+        const ticketsRevenue = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+        
+        months.push({
+          month: format(date, 'MMM'),
+          votes: votesRevenue,
+          tickets: ticketsRevenue,
+        });
+      }
+      return months;
+    },
+  });
 
-  const revenueBreakdown = [
-    { name: 'Votes', value: 65, color: 'hsl(var(--chart-1))' },
-    { name: 'Tickets', value: 30, color: 'hsl(var(--chart-2))' },
-    { name: 'Premium Features', value: 3, color: 'hsl(var(--chart-3))' },
-    { name: 'API Access', value: 2, color: 'hsl(var(--chart-4))' },
+  // Fetch actual revenue breakdown from database
+  const { data: actualBreakdown } = useQuery({
+    queryKey: ['admin-revenue-breakdown'],
+    queryFn: async () => {
+      const { data: votes } = await supabase
+        .from('votes')
+        .select('amount_paid');
+      
+      const { data: tickets } = await supabase
+        .from('tickets')
+        .select('amount_paid');
+      
+      const votesTotal = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
+      const ticketsTotal = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+      const total = votesTotal + ticketsTotal;
+      
+      if (total === 0) {
+        return [
+          { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
+          { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
+        ];
+      }
+      
+      return [
+        { name: 'Votes', value: Math.round((votesTotal / total) * 100), color: 'hsl(var(--chart-1))' },
+        { name: 'Tickets', value: Math.round((ticketsTotal / total) * 100), color: 'hsl(var(--chart-2))' },
+      ];
+    },
+  });
+
+  const revenueBreakdown = actualBreakdown || [
+    { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
+    { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
   ];
 
   const commissionRate = 10; // Default commission rate
   const totalRevenue = stats?.total_revenue || 0;
   const platformEarnings = totalRevenue * (commissionRate / 100);
+  const isLoading = statsLoading || revenueLoading;
 
   if (isLoading) {
     return (
@@ -249,34 +308,18 @@ const AdminFinance: React.FC = () => {
               <CardDescription>Detailed breakdown of platform revenue</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-1))]" />
-                  <span>Vote Revenue</span>
+              {revenueBreakdown.map((item, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span>{item.name} Revenue</span>
+                  </div>
+                  <span className="font-medium">
+                    <CurrencyDisplay amount={totalRevenue * (item.value / 100)} currency={platformCurrency} />
+                    <span className="text-muted-foreground text-sm ml-1">({item.value}%)</span>
+                  </span>
                 </div>
-                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.65} currency={platformCurrency} /></span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-2))]" />
-                  <span>Ticket Revenue</span>
-                </div>
-                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.30} currency={platformCurrency} /></span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-3))]" />
-                  <span>Premium Features</span>
-                </div>
-                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.03} currency={platformCurrency} /></span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-[hsl(var(--chart-4))]" />
-                  <span>API Access</span>
-                </div>
-                <span className="font-medium"><CurrencyDisplay amount={totalRevenue * 0.02} currency={platformCurrency} /></span>
-              </div>
+              ))}
             </CardContent>
           </Card>
 
