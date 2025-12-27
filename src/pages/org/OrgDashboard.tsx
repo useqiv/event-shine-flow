@@ -11,6 +11,7 @@ import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, u
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import RevenueChart from '@/components/org/RevenueChart';
+import TopPerformersWidget from '@/components/org/TopPerformersWidget';
 import { formatCurrency, currencies, useConversionDisplay } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
@@ -548,6 +549,9 @@ const OrgDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Top Performers Widget */}
+        <TopPerformersWidget />
 
         {/* Pending Payouts */}
         {pendingPayouts.length > 0 && (
