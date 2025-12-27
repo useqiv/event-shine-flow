@@ -150,8 +150,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setMfaState({ required: false, factorId: null });
+    try {
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      setMfaState({ required: false, factorId: null });
+      
+      // Sign out from Supabase (this clears tokens from storage)
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error('Sign out error:', error.message);
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Even if there's an error, ensure local state is cleared
+      setUser(null);
+      setSession(null);
+      setMfaState({ required: false, factorId: null });
+    }
   };
 
   return (
