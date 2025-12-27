@@ -31,7 +31,8 @@ import {
   HelpCircle,
   CreditCard,
   Users,
-  QrCode
+  QrCode,
+  HandHeart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/org/dashboard', label: 'Overview', icon: LayoutDashboard },
     { path: '/org/contests/create', label: 'Create Contest', icon: PlusCircle },
     { path: '/org/events/create', label: 'Create Event', icon: PlusCircle },
+    { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
     { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
     { path: '/org/events', label: 'Manage Events', icon: Calendar },
     { path: '/org/event-scanner', label: 'QR Scanner', icon: QrCode },
