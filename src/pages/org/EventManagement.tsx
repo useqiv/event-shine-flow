@@ -264,6 +264,12 @@ const EventManagement = () => {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Link to={`/org/events/${id}/social`}>
+              <Button variant="outline">
+                <Megaphone className="mr-2 h-4 w-4" />
+                Social Media
+              </Button>
+            </Link>
             <Link to={`/org/events/${id}/checkin`}>
               <Button variant="outline">
                 <Users className="mr-2 h-4 w-4" />
