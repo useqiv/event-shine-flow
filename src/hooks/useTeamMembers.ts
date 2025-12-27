@@ -14,6 +14,8 @@ export interface TeamMember {
     can_edit_contests: boolean;
     can_view_events: boolean;
     can_edit_events: boolean;
+    can_view_campaigns: boolean;
+    can_edit_campaigns: boolean;
     can_scan_tickets: boolean;
     can_view_analytics: boolean;
     can_manage_payouts: boolean;
