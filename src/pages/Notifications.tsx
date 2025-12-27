@@ -3,14 +3,16 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '@/hooks/useNotifications';
+import { useRespondToInvite } from '@/hooks/useTeamMembers';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Vote, Ticket, Wallet, CheckCheck } from 'lucide-react';
+import { Bell, Vote, Ticket, Wallet, CheckCheck, UserPlus, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Notifications = () => {
   const { data: notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
+  const respondToInvite = useRespondToInvite();
 
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
@@ -19,8 +21,19 @@ const Notifications = () => {
       case 'vote': return <Vote className="h-4 w-4 text-primary" />;
       case 'ticket': return <Ticket className="h-4 w-4 text-accent" />;
       case 'wallet': return <Wallet className="h-4 w-4 text-green-500" />;
+      case 'team_invite': return <UserPlus className="h-4 w-4 text-primary" />;
       default: return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
+  };
+
+  const handleAcceptInvite = async (notificationId: string, teamMemberId: string) => {
+    await respondToInvite.mutateAsync({ teamMemberId, accept: true });
+    markAsRead.mutate(notificationId);
+  };
+
+  const handleDeclineInvite = async (notificationId: string, teamMemberId: string) => {
+    await respondToInvite.mutateAsync({ teamMemberId, accept: false });
+    markAsRead.mutate(notificationId);
   };
 
   return (
@@ -45,7 +58,7 @@ const Notifications = () => {
                   <div 
                     key={notification.id} 
                     className={`p-4 flex gap-4 ${!notification.is_read ? 'bg-primary/5' : ''}`}
-                    onClick={() => !notification.is_read && markAsRead.mutate(notification.id)}
+                    onClick={() => notification.type !== 'team_invite' && !notification.is_read && markAsRead.mutate(notification.id)}
                   >
                     <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                       {getIcon(notification.type)}
@@ -54,6 +67,35 @@ const Notifications = () => {
                       <p className="font-medium">{notification.title}</p>
                       <p className="text-sm text-muted-foreground">{notification.message}</p>
                       <p className="text-xs text-muted-foreground mt-1">{format(new Date(notification.created_at), 'MMM d, yyyy HH:mm')}</p>
+                      
+                      {/* Team invite accept/decline buttons */}
+                      {notification.type === 'team_invite' && !notification.is_read && notification.reference_id && (
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptInvite(notification.id, notification.reference_id!);
+                            }}
+                            disabled={respondToInvite.isPending}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeclineInvite(notification.id, notification.reference_id!);
+                            }}
+                            disabled={respondToInvite.isPending}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Decline
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     {!notification.is_read && <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-2" />}
                   </div>
