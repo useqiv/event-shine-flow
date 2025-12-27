@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -97,12 +98,27 @@ const postTypes = {
     { id: 'contestant_spotlight', name: 'Contestant Spotlight', description: 'Feature a contestant' },
     { id: 'voting_reminder', name: 'Voting Reminder', description: 'Remind followers to vote' },
     { id: 'milestone', name: 'Vote Milestone', description: 'Celebrate vote milestones' },
+    { id: 'behind_scenes', name: 'Behind the Scenes', description: 'Exclusive backstage content' },
+    { id: 'contestant_intro', name: 'Contestant Introduction', description: 'Introduce a new contestant' },
+    { id: 'voting_closes', name: 'Voting Closes Soon', description: 'Urgent last-call to vote' },
+    { id: 'winner_teaser', name: 'Winner Teaser', description: 'Build suspense for results' },
+    { id: 'thank_you', name: 'Thank You Post', description: 'Thank voters and supporters' },
+    { id: 'engagement', name: 'Engagement Post', description: 'Ask questions, polls, interact' },
+    { id: 'custom', name: 'Custom Post', description: 'Write your own type' },
   ],
   event: [
     { id: 'event_countdown', name: 'Event Countdown', description: 'Days until event' },
     { id: 'tickets_selling', name: 'Tickets Update', description: 'Ticket sales info' },
     { id: 'event_reminder', name: 'Event Reminder', description: 'Remind about the event' },
     { id: 'event_announcement', name: 'Announcement', description: 'General updates' },
+    { id: 'early_bird', name: 'Early Bird Special', description: 'Limited time ticket offers' },
+    { id: 'lineup_reveal', name: 'Lineup Reveal', description: 'Announce performers/speakers' },
+    { id: 'venue_spotlight', name: 'Venue Spotlight', description: 'Highlight the venue' },
+    { id: 'tickets_almost_gone', name: 'Tickets Almost Gone', description: 'Scarcity/urgency post' },
+    { id: 'event_live', name: 'Event is Live', description: 'Announce event has started' },
+    { id: 'post_event', name: 'Post-Event Recap', description: 'Thank attendees, share highlights' },
+    { id: 'engagement', name: 'Engagement Post', description: 'Ask questions, polls, interact' },
+    { id: 'custom', name: 'Custom Post', description: 'Write your own type' },
   ],
 };
 
@@ -118,6 +134,8 @@ const toneOptions = [
   { id: 'professional', name: 'Professional', description: 'Formal and trustworthy' },
   { id: 'casual', name: 'Casual', description: 'Friendly and relaxed' },
   { id: 'urgent', name: 'Urgent', description: 'Time-sensitive, FOMO' },
+  { id: 'humorous', name: 'Humorous', description: 'Fun and playful' },
+  { id: 'inspirational', name: 'Inspirational', description: 'Motivating and uplifting' },
 ];
 
 export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
@@ -143,22 +161,30 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
     tone: 'exciting',
     includeHashtags: true,
     postType: postTypes[entityType][0].id,
+    customPostType: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  const [newPostCustomType, setNewPostCustomType] = useState('');
 
   // AI Generate post
   const handleGeneratePost = async () => {
     setIsGenerating(true);
     try {
+      // Build custom context including custom post type if selected
+      let customContext = customPost.message ? `Current draft: ${customPost.message}` : undefined;
+      if (customPost.postType === 'custom' && customPost.customPostType) {
+        customContext = customPost.customPostType + (customContext ? `. ${customContext}` : '');
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-social-post', {
         body: {
           contentType: entityType,
           contestTitle: entityType === 'contest' ? entityTitle : undefined,
           eventTitle: entityType === 'event' ? entityTitle : undefined,
-          postType: customPost.postType,
+          postType: customPost.postType === 'custom' ? customPost.customPostType || 'general' : customPost.postType,
           platform: customPost.platform,
-          customContext: customPost.message ? `Current draft: ${customPost.message}` : undefined,
+          customContext,
         }
       });
 
@@ -466,7 +492,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                 <Label>Post Type (for AI context)</Label>
                 <Select
                   value={customPost.postType}
-                  onValueChange={(v) => setCustomPost({ ...customPost, postType: v })}
+                  onValueChange={(v) => setCustomPost({ ...customPost, postType: v, customPostType: v === 'custom' ? customPost.customPostType : '' })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -479,6 +505,17 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* Custom post type input */}
+                {customPost.postType === 'custom' && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Describe your post type (e.g., 'Fan appreciation post', 'Sponsor shoutout')"
+                      value={customPost.customPostType}
+                      onChange={(e) => setCustomPost({ ...customPost, customPostType: e.target.value })}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Tone Selection */}
@@ -666,7 +703,10 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                       type="button"
                       variant={newPost.post_type === type.id ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setNewPost({ ...newPost, post_type: type.id })}
+                      onClick={() => {
+                        setNewPost({ ...newPost, post_type: type.id });
+                        if (type.id !== 'custom') setNewPostCustomType('');
+                      }}
                       className="h-auto py-2 flex-col items-start text-left"
                     >
                       <span className="font-medium">{type.name}</span>
@@ -674,6 +714,16 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                     </Button>
                   ))}
                 </div>
+                
+                {/* Custom post type input for schedules */}
+                {newPost.post_type === 'custom' && (
+                  <Input
+                    className="mt-2"
+                    placeholder="Describe your custom post type..."
+                    value={newPostCustomType}
+                    onChange={(e) => setNewPostCustomType(e.target.value)}
+                  />
+                )}
               </div>
 
               <div className="space-y-2">
