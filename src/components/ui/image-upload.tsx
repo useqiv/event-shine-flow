@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
-  bucket: 'contest-images' | 'event-images' | 'contestant-images';
+  bucket: 'contest-images' | 'event-images' | 'contestant-images' | 'campaign-images' | 'avatars';
   value?: string;
   onChange: (url: string) => void;
   label?: string;
