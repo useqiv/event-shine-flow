@@ -416,25 +416,34 @@ const ContestManagement = () => {
   };
 
   const handleSaveContestDetails = async () => {
-    if (!contest) return;
+    if (!contest) {
+      toast.error('Contest data not loaded. Please refresh the page.');
+      return;
+    }
+    
+    if (!editForm.title.trim()) {
+      toast.error('Contest title is required');
+      return;
+    }
+    
     try {
       await updateContest.mutateAsync({
         id: contest.id,
-        title: editForm.title,
-        description: editForm.description,
+        title: editForm.title.trim(),
+        description: editForm.description?.trim() || null,
         category: editForm.category,
-        image_url: editForm.image_url,
-        start_date: editForm.start_date,
-        end_date: editForm.end_date,
-        vote_price: Number(editForm.vote_price),
-        custom_slug: editForm.custom_slug || null,
-        brand_primary_color: editForm.brand_primary_color,
-        brand_secondary_color: editForm.brand_secondary_color,
+        image_url: editForm.image_url || null,
+        start_date: editForm.start_date ? new Date(editForm.start_date).toISOString() : contest.start_date,
+        end_date: editForm.end_date ? new Date(editForm.end_date).toISOString() : contest.end_date,
+        vote_price: Number(editForm.vote_price) || 100,
+        custom_slug: editForm.custom_slug?.trim() || null,
+        brand_primary_color: editForm.brand_primary_color || '#7c3aed',
+        brand_secondary_color: editForm.brand_secondary_color || '#f97316',
         brand_logo_url: editForm.brand_logo_url || null,
       });
-      toast.success('Contest details updated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update contest:', error);
+      toast.error(error?.message || 'Failed to update contest');
     }
   };
 

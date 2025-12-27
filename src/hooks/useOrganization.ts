@@ -923,12 +923,15 @@ export const useUpdateContest = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updateData }: { id: string; [key: string]: any }) => {
-      const { error } = await supabase
+      const { data, error, count } = await supabase
         .from('contests')
         .update(updateData)
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
       
       if (error) throw error;
+      if (!data) throw new Error('Contest not found or you do not have permission to update it');
       return id;
     },
     onSuccess: (contestId) => {
@@ -937,11 +940,11 @@ export const useUpdateContest = () => {
       queryClient.invalidateQueries({ queryKey: ['contests'] });
       queryClient.invalidateQueries({ queryKey: ['contest', contestId] });
       queryClient.invalidateQueries({ queryKey: ['admin-contests'] });
-      toast.success('Contest updated');
+      toast.success('Contest updated successfully');
     },
-    onError: (error) => {
-      toast.error('Failed to update contest');
-      console.error(error);
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to update contest');
+      console.error('Update contest error:', error);
     },
   });
 };
