@@ -33,6 +33,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Campaigns from "./pages/Campaigns";
 import CampaignDetail from "./pages/CampaignDetail";
 import CreateCampaign from "./pages/CreateCampaign";
+import MyCampaigns from "./pages/MyCampaigns";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -160,6 +161,7 @@ const AppRoutes = () => (
     <Route path="/campaigns" element={<Campaigns />} />
     <Route path="/campaigns/:id" element={<CampaignDetail />} />
     <Route path="/campaigns/create" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
+    <Route path="/campaigns/my" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />

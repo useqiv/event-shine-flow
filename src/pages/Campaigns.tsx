@@ -61,12 +61,20 @@ const Campaigns: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {user ? (
-                  <Button asChild size="lg">
-                    <Link to="/campaigns/create">
-                      <Plus className="h-5 w-5 mr-2" />
-                      Start a Campaign
-                    </Link>
-                  </Button>
+                  <>
+                    <Button asChild size="lg">
+                      <Link to="/campaigns/create">
+                        <Plus className="h-5 w-5 mr-2" />
+                        Start a Campaign
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="lg" asChild>
+                      <Link to="/campaigns/my">
+                        <Heart className="h-5 w-5 mr-2" />
+                        My Campaigns
+                      </Link>
+                    </Button>
+                  </>
                 ) : (
                   <Button asChild size="lg">
                     <Link to="/auth">
