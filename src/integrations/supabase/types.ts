@@ -58,6 +58,56 @@ export type Database = {
           },
         ]
       }
+      campaign_analytics: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          date: string
+          donations_amount: number
+          donations_count: number
+          hour: number | null
+          id: string
+          shares_count: number
+          source: string | null
+          unique_visitors: number
+          views: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          date?: string
+          donations_amount?: number
+          donations_count?: number
+          hour?: number | null
+          id?: string
+          shares_count?: number
+          source?: string | null
+          unique_visitors?: number
+          views?: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          date?: string
+          donations_amount?: number
+          donations_count?: number
+          hour?: number | null
+          id?: string
+          shares_count?: number
+          source?: string | null
+          unique_visitors?: number
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           category: string
@@ -2081,6 +2131,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      track_campaign_view: {
+        Args: { p_campaign_id: string; p_source?: string }
+        Returns: undefined
       }
     }
     Enums: {

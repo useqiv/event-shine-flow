@@ -35,10 +35,11 @@ import {
   Trash2,
   Search,
   CheckCircle,
-  XCircle
+  BarChart3
 } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
+import EditCampaignDialog from '@/components/org/EditCampaignDialog';
+import { formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -57,6 +58,8 @@ const ManageCampaigns: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [campaignToEdit, setCampaignToEdit] = useState<Campaign | null>(null);
 
   const filteredCampaigns = campaigns?.filter(c => {
     const matchesTab = activeTab === 'all' || c.status === activeTab;
@@ -234,6 +237,10 @@ const ManageCampaigns: React.FC = () => {
                 onStatusChange={handleStatusChange}
                 onShare={handleShare}
                 onDelete={openDeleteDialog}
+                onEdit={(c) => {
+                  setCampaignToEdit(c);
+                  setEditDialogOpen(true);
+                }}
               />
             ))}
           </div>
@@ -277,6 +284,13 @@ const ManageCampaigns: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Edit Campaign Dialog */}
+        <EditCampaignDialog
+          campaign={campaignToEdit}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
       </div>
     </OrganizationLayout>
   );
@@ -287,13 +301,15 @@ interface CampaignCardProps {
   onStatusChange: (campaign: Campaign, status: string) => void;
   onShare: (campaign: Campaign) => void;
   onDelete: (campaign: Campaign) => void;
+  onEdit: (campaign: Campaign) => void;
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ 
   campaign, 
   onStatusChange,
   onShare,
-  onDelete
+  onDelete,
+  onEdit
 }) => {
   const progress = campaign.goal_amount > 0 
     ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100) 
@@ -353,6 +369,16 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                     <Link to={`/campaigns/${campaign.id}`}>
                       <Eye className="h-4 w-4 mr-2" />
                       View Campaign
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(campaign)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Campaign
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to={`/org/campaigns/${campaign.id}/analytics`}>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      View Analytics
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onShare(campaign)}>

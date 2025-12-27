@@ -1,0 +1,165 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface CampaignAnalytics {
+  id: string;
+  campaign_id: string;
+  date: string;
+  hour: number | null;
+  views: number;
+  unique_visitors: number;
+  donations_count: number;
+  donations_amount: number;
+  shares_count: number;
+  source: string | null;
+  created_at: string;
+}
+
+export interface DonationTrend {
+  date: string;
+  donations: number;
+  amount: number;
+}
+
+export interface SourceData {
+  source: string;
+  views: number;
+  donations: number;
+}
+
+export const useCampaignAnalytics = (campaignId: string) => {
+  return useQuery({
+    queryKey: ['campaign-analytics', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_analytics')
+        .select('*')
+        .eq('campaign_id', campaignId)
+        .order('date', { ascending: true });
+      
+      if (error) throw error;
+      return data as CampaignAnalytics[];
+    },
+    enabled: !!campaignId,
+  });
+};
+
+export const useCampaignDonationTrends = (campaignId: string, days: number = 30) => {
+  return useQuery({
+    queryKey: ['campaign-donation-trends', campaignId, days],
+    queryFn: async () => {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      const { data, error } = await supabase
+        .from('donations')
+        .select('amount, created_at')
+        .eq('campaign_id', campaignId)
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Group by date
+      const trendMap = new Map<string, { donations: number; amount: number }>();
+      
+      (data || []).forEach(donation => {
+        const date = new Date(donation.created_at).toLocaleDateString('en-CA');
+        const existing = trendMap.get(date) || { donations: 0, amount: 0 };
+        trendMap.set(date, {
+          donations: existing.donations + 1,
+          amount: existing.amount + Number(donation.amount),
+        });
+      });
+      
+      // Fill in missing dates
+      const trends: DonationTrend[] = [];
+      for (let i = days; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString('en-CA');
+        const existing = trendMap.get(dateStr);
+        trends.push({
+          date: dateStr,
+          donations: existing?.donations || 0,
+          amount: existing?.amount || 0,
+        });
+      }
+      
+      return trends;
+    },
+    enabled: !!campaignId,
+  });
+};
+
+export const useCampaignDonorStats = (campaignId: string) => {
+  return useQuery({
+    queryKey: ['campaign-donor-stats', campaignId],
+    queryFn: async () => {
+      const { data: donations, error } = await supabase
+        .from('donations')
+        .select('donor_id, amount, is_anonymous, created_at')
+        .eq('campaign_id', campaignId)
+        .eq('status', 'completed');
+      
+      if (error) throw error;
+      
+      const donorMap = new Map<string, { total: number; count: number; firstDonation: string }>();
+      
+      (donations || []).forEach(d => {
+        const existing = donorMap.get(d.donor_id);
+        if (existing) {
+          donorMap.set(d.donor_id, {
+            total: existing.total + Number(d.amount),
+            count: existing.count + 1,
+            firstDonation: existing.firstDonation,
+          });
+        } else {
+          donorMap.set(d.donor_id, {
+            total: Number(d.amount),
+            count: 1,
+            firstDonation: d.created_at,
+          });
+        }
+      });
+      
+      const donors = Array.from(donorMap.values());
+      const totalDonors = donors.length;
+      const repeatDonors = donors.filter(d => d.count > 1).length;
+      const averageDonation = donations?.length 
+        ? donations.reduce((sum, d) => sum + Number(d.amount), 0) / donations.length 
+        : 0;
+      
+      // Donation size distribution
+      const amounts = donations?.map(d => Number(d.amount)) || [];
+      const distribution = {
+        small: amounts.filter(a => a < 5000).length,
+        medium: amounts.filter(a => a >= 5000 && a < 20000).length,
+        large: amounts.filter(a => a >= 20000 && a < 50000).length,
+        major: amounts.filter(a => a >= 50000).length,
+      };
+      
+      return {
+        totalDonors,
+        repeatDonors,
+        repeatDonorRate: totalDonors ? (repeatDonors / totalDonors) * 100 : 0,
+        averageDonation,
+        distribution,
+        anonymousDonations: donations?.filter(d => d.is_anonymous).length || 0,
+      };
+    },
+    enabled: !!campaignId,
+  });
+};
+
+export const trackCampaignView = async (campaignId: string, source: string = 'direct') => {
+  try {
+    await supabase.rpc('track_campaign_view', {
+      p_campaign_id: campaignId,
+      p_source: source,
+    });
+  } catch (error) {
+    console.error('Failed to track campaign view:', error);
+  }
+};
