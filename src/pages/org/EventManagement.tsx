@@ -332,6 +332,24 @@ const EventManagement = () => {
                     </TooltipProvider>
                   </div>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, ticketTypes?.[0]?.currency || 'NGN')}</p>
+                  {netRevenue > 0 && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="mt-2">
+                          <DollarSign className="mr-1 h-3 w-3" />
+                          Request Payout
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <EventPayoutRequest
+                          netRevenue={netRevenue}
+                          currency={ticketTypes?.[0]?.currency || 'NGN'}
+                          itemType="event"
+                          itemTitle={event.title}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
