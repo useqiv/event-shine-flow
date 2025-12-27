@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,9 +28,12 @@ import {
   Sparkles,
   Loader2,
   Pencil,
-  RefreshCw
+  RefreshCw,
+  CalendarIcon,
+  Repeat
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import { SocialAccountsConfig } from './SocialAccountsConfig';
 import { useOrganizationSocialAccounts } from '@/hooks/useOrganizationSocialAccounts';
 import { toast } from 'sonner';
@@ -123,6 +128,7 @@ const postTypes = {
 };
 
 const scheduleIntervals = [
+  { id: 'once', name: 'One-Time', description: 'Post once at scheduled time' },
   { id: 'hourly', name: 'Every Hour', description: 'Post once every hour' },
   { id: 'twice_daily', name: 'Twice Daily', description: 'Post at 9am and 6pm' },
   { id: 'daily', name: 'Daily', description: 'Post once per day' },
@@ -152,6 +158,8 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
     post_type: postTypes[entityType][0].id,
     schedule_interval: 'daily',
     custom_message: '',
+    scheduled_date: undefined as Date | undefined,
+    scheduled_time: '09:00',
   });
   
   // Custom post state
@@ -285,20 +293,34 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (postData: typeof newPost) => {
-      const nextPostAt = new Date();
-      switch (postData.schedule_interval) {
-        case 'hourly':
-          nextPostAt.setHours(nextPostAt.getHours() + 1);
-          break;
-        case 'twice_daily':
-          nextPostAt.setHours(nextPostAt.getHours() + 12);
-          break;
-        case 'daily':
-          nextPostAt.setDate(nextPostAt.getDate() + 1);
-          break;
-        case 'weekly':
-          nextPostAt.setDate(nextPostAt.getDate() + 7);
-          break;
+      let nextPostAt: Date;
+      
+      // If a specific date/time is set, use that
+      if (postData.scheduled_date) {
+        const [hours, minutes] = postData.scheduled_time.split(':').map(Number);
+        nextPostAt = new Date(postData.scheduled_date);
+        nextPostAt.setHours(hours, minutes, 0, 0);
+      } else {
+        // Otherwise calculate based on interval
+        nextPostAt = new Date();
+        switch (postData.schedule_interval) {
+          case 'once':
+            // For one-time without date, schedule 1 hour from now
+            nextPostAt.setHours(nextPostAt.getHours() + 1);
+            break;
+          case 'hourly':
+            nextPostAt.setHours(nextPostAt.getHours() + 1);
+            break;
+          case 'twice_daily':
+            nextPostAt.setHours(nextPostAt.getHours() + 12);
+            break;
+          case 'daily':
+            nextPostAt.setDate(nextPostAt.getDate() + 1);
+            break;
+          case 'weekly':
+            nextPostAt.setDate(nextPostAt.getDate() + 7);
+            break;
+        }
       }
 
       if (entityType === 'contest') {
@@ -339,7 +361,10 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
         post_type: postTypes[entityType][0].id,
         schedule_interval: 'daily',
         custom_message: '',
+        scheduled_date: undefined,
+        scheduled_time: '09:00',
       });
+      toast.success('Schedule created successfully!');
     },
   });
 
@@ -672,7 +697,10 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Frequency</Label>
+                  <Label className="flex items-center gap-2">
+                    <Repeat className="h-4 w-4" />
+                    Frequency
+                  </Label>
                   <Select 
                     value={newPost.schedule_interval} 
                     onValueChange={(v) => setNewPost({ ...newPost, schedule_interval: v })}
@@ -691,6 +719,92 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Date and Time Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border border-border bg-muted/30">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {newPost.schedule_interval === 'once' ? 'Post Date' : 'Start Date (optional)'}
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !newPost.scheduled_date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {newPost.scheduled_date ? (
+                          format(newPost.scheduled_date, "PPP")
+                        ) : (
+                          <span>{newPost.schedule_interval === 'once' ? 'Pick a date' : 'Start immediately'}</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={newPost.scheduled_date}
+                        onSelect={(date) => setNewPost({ ...newPost, scheduled_date: date })}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {newPost.scheduled_date && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setNewPost({ ...newPost, scheduled_date: undefined })}
+                      className="text-xs text-muted-foreground"
+                    >
+                      Clear date
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    {newPost.schedule_interval === 'once' ? 'Post Time' : 'Start Time'}
+                  </Label>
+                  <Select 
+                    value={newPost.scheduled_time} 
+                    onValueChange={(v) => setNewPost({ ...newPost, scheduled_time: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hour = i.toString().padStart(2, '0');
+                        return (
+                          <React.Fragment key={hour}>
+                            <SelectItem value={`${hour}:00`}>
+                              {format(new Date().setHours(i, 0), 'h:00 a')}
+                            </SelectItem>
+                            <SelectItem value={`${hour}:30`}>
+                              {format(new Date().setHours(i, 30), 'h:30 a')}
+                            </SelectItem>
+                          </React.Fragment>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {newPost.schedule_interval === 'once' 
+                      ? 'One-time post at this time' 
+                      : newPost.schedule_interval === 'twice_daily'
+                        ? 'First post at this time, second 12 hours later'
+                        : `Posts will be scheduled at this time ${newPost.schedule_interval === 'hourly' ? 'starting from' : 'each'} ${scheduleIntervals.find(i => i.id === newPost.schedule_interval)?.name.toLowerCase()}`
+                    }
+                  </p>
                 </div>
               </div>
 
@@ -740,7 +854,13 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
               </div>
 
               <Button 
-                onClick={() => createMutation.mutate(newPost)}
+                onClick={() => {
+                  if (newPost.schedule_interval === 'once' && !newPost.scheduled_date) {
+                    toast.error('Please select a date for one-time posts');
+                    return;
+                  }
+                  createMutation.mutate(newPost);
+                }}
                 disabled={createMutation.isPending}
                 className="w-full"
               >
