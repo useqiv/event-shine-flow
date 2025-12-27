@@ -20,22 +20,27 @@ interface DonorLeaderboardProps {
 }
 
 const DonorLeaderboard: React.FC<DonorLeaderboardProps> = ({ donations, currency }) => {
-  // Aggregate donations by donor (using index for anonymous to keep them separate)
+  // Aggregate donations by donor (all anonymous donations are combined into one entry)
   const donorTotals = donations.reduce((acc, donation, idx) => {
-    const donorKey = donation.is_anonymous ? `anonymous-${idx}` : (donation.donor?.full_name || `unknown-${idx}`);
+    // Use a single key for all anonymous donations, unique keys for named donors
+    const donorKey = donation.is_anonymous 
+      ? 'anonymous' 
+      : (donation.donor?.full_name || `unknown-${idx}`);
     
     if (!acc[donorKey]) {
       acc[donorKey] = {
         id: donorKey,
-        name: donation.is_anonymous ? 'Anonymous' : (donation.donor?.full_name || 'Anonymous'),
+        name: donation.is_anonymous ? 'Anonymous Donors' : (donation.donor?.full_name || 'Anonymous'),
         avatar_url: donation.is_anonymous ? null : donation.donor?.avatar_url,
         total: 0,
         isAnonymous: donation.is_anonymous,
+        count: 0,
       };
     }
     acc[donorKey].total += donation.amount;
+    acc[donorKey].count += 1;
     return acc;
-  }, {} as Record<string, { id: string; name: string; avatar_url: string | null; total: number; isAnonymous: boolean }>);
+  }, {} as Record<string, { id: string; name: string; avatar_url: string | null; total: number; isAnonymous: boolean; count: number }>);
 
   // Sort by total and get top 10
   const topDonors = Object.values(donorTotals)
