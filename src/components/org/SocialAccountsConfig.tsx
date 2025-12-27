@@ -7,8 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Settings, Link, Unlink, Trash2, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Settings, Link, Unlink, Trash2, ExternalLink, CheckCircle2, Send, Loader2 } from 'lucide-react';
 import { useOrganizationSocialAccounts, useConnectSocialAccount, useDisconnectSocialAccount, useDeleteSocialAccount } from '@/hooks/useOrganizationSocialAccounts';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 // Platform icons
 const TwitterIcon = () => (
@@ -42,7 +45,8 @@ const platforms = [
     icon: TwitterIcon,
     color: 'bg-black',
     description: 'Post updates and leaderboards to Twitter',
-    available: true
+    apiLink: 'https://developer.twitter.com',
+    apiLinkText: 'Get Twitter API access'
   },
   { 
     id: 'facebook', 
@@ -50,7 +54,8 @@ const platforms = [
     icon: FacebookIcon,
     color: 'bg-blue-600',
     description: 'Share to your Facebook page',
-    available: false
+    apiLink: 'https://developers.facebook.com',
+    apiLinkText: 'Get Facebook API access'
   },
   { 
     id: 'instagram', 
@@ -58,7 +63,8 @@ const platforms = [
     icon: InstagramIcon,
     color: 'bg-gradient-to-br from-purple-600 to-pink-500',
     description: 'Post to Instagram (via Meta Business)',
-    available: false
+    apiLink: 'https://developers.facebook.com/docs/instagram-api',
+    apiLinkText: 'Get Instagram API access'
   },
   { 
     id: 'tiktok', 
@@ -66,7 +72,8 @@ const platforms = [
     icon: TikTokIcon,
     color: 'bg-black',
     description: 'Share videos to TikTok',
-    available: false
+    apiLink: 'https://developers.tiktok.com',
+    apiLinkText: 'Get TikTok API access'
   },
 ];
 
@@ -93,6 +100,16 @@ const ConnectDialog = ({ platform, onConnect, isLoading }: ConnectDialogProps) =
     setAccessToken('');
   };
 
+  const getPlaceholder = () => {
+    switch (platform.id) {
+      case 'twitter': return '@yourusername';
+      case 'facebook': return 'Your Page name';
+      case 'instagram': return '@yourusername';
+      case 'tiktok': return '@yourusername';
+      default: return 'Your account name';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -116,34 +133,127 @@ const ConnectDialog = ({ platform, onConnect, isLoading }: ConnectDialogProps) =
             <Label htmlFor="account-name">Account Name / Handle</Label>
             <Input
               id="account-name"
-              placeholder={platform.id === 'twitter' ? '@yourusername' : 'Your account name'}
+              placeholder={getPlaceholder()}
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
             />
           </div>
-          {platform.id === 'twitter' && (
-            <div className="space-y-2">
-              <Label htmlFor="access-token">API Access Token (Optional)</Label>
-              <Input
-                id="access-token"
-                type="password"
-                placeholder="Your API access token"
-                value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                For full automation, you'll need Twitter API credentials. 
-                <a href="https://developer.twitter.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1">
-                  Get API access <ExternalLink className="h-3 w-3 inline" />
-                </a>
-              </p>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="access-token">API Access Token</Label>
+            <Input
+              id="access-token"
+              type="password"
+              placeholder="Your API access token"
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              For full automation, you'll need {platform.name} API credentials. 
+              <a href={platform.apiLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1">
+                {platform.apiLinkText} <ExternalLink className="h-3 w-3 inline" />
+              </a>
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={!accountName.trim() || isLoading}>
             {isLoading ? 'Connecting...' : 'Connect Account'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface TestPostDialogProps {
+  platform: typeof platforms[0];
+  accountName: string;
+}
+
+const TestPostDialog = ({ platform, accountName }: TestPostDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState(`🎉 Test post from our contest platform! This is a test to verify ${platform.name} integration is working correctly.`);
+  const [isSending, setIsSending] = useState(false);
+
+  const handleTestPost = async () => {
+    setIsSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('social-post', {
+        body: {
+          platform: platform.id,
+          message,
+          isTest: true
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Test post sent to ${platform.name}!`, {
+          description: `Posted to ${accountName}`
+        });
+        setOpen(false);
+      } else {
+        throw new Error(data?.error || 'Failed to send test post');
+      }
+    } catch (error: any) {
+      console.error('Test post error:', error);
+      toast.error(`Failed to send test post`, {
+        description: error.message || 'Please check your API credentials and try again'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-2">
+          <Send className="h-4 w-4" />
+          Test
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <platform.icon />
+            Send Test Post to {platform.name}
+          </DialogTitle>
+          <DialogDescription>
+            Verify your {platform.name} connection by sending a test post to {accountName}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="test-message">Test Message</Label>
+            <Textarea
+              id="test-message"
+              placeholder="Enter your test message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+            />
+            <p className="text-xs text-muted-foreground">
+              This will post a real message to your {platform.name} account.
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleTestPost} disabled={!message.trim() || isSending}>
+            {isSending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Send Test Post
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -207,9 +317,6 @@ export const SocialAccountsConfig = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{platform.name}</span>
-                    {!platform.available && (
-                      <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-                    )}
                     {isConnected && (
                       <Badge variant="default" className="text-xs bg-green-500 hover:bg-green-600">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -224,55 +331,49 @@ export const SocialAccountsConfig = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                {platform.available ? (
-                  isConnected ? (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => disconnectMutation.mutate(account.id)}
-                        disabled={disconnectMutation.isPending}
-                      >
-                        <Unlink className="h-4 w-4 mr-1" />
-                        Disconnect
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Account</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove this {platform.name} account? This will delete all associated settings.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(account.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  ) : (
-                    <ConnectDialog
-                      platform={platform}
-                      onConnect={connectMutation.mutate}
-                      isLoading={connectMutation.isPending}
-                    />
-                  )
+                {isConnected ? (
+                  <>
+                    <TestPostDialog platform={platform} accountName={account.account_name || ''} />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => disconnectMutation.mutate(account.id)}
+                      disabled={disconnectMutation.isPending}
+                    >
+                      <Unlink className="h-4 w-4 mr-1" />
+                      Disconnect
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove Account</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to remove this {platform.name} account? This will delete all associated settings.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteMutation.mutate(account.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
                 ) : (
-                  <Button size="sm" variant="outline" disabled>
-                    <XCircle className="h-4 w-4 mr-1" />
-                    Not Available
-                  </Button>
+                  <ConnectDialog
+                    platform={platform}
+                    onConnect={connectMutation.mutate}
+                    isLoading={connectMutation.isPending}
+                  />
                 )}
               </div>
             </div>
