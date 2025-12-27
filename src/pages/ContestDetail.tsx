@@ -31,6 +31,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useMemo } from 'react';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -89,6 +90,17 @@ const ContestDetail = () => {
       previousLeaderRef.current = currentLeader;
     }
   }, [contestants, initializeVoteCounts]);
+
+  // Brand colors with fallbacks
+  const primaryColor = (contest as any)?.brand_primary_color || '#7c3aed';
+  const secondaryColor = (contest as any)?.brand_secondary_color || '#f97316';
+  const brandLogoUrl = (contest as any)?.brand_logo_url;
+  
+  // Generate CSS variables for branding
+  const brandStyles = useMemo(() => ({
+    '--brand-primary': primaryColor,
+    '--brand-secondary': secondaryColor,
+  } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
@@ -205,7 +217,7 @@ const ContestDetail = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={brandStyles}>
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="space-y-6">
@@ -218,7 +230,7 @@ const ContestDetail = () => {
           </Link>
 
         {/* Contest Header */}
-        <Card>
+        <Card className="overflow-hidden">
           <div className="relative h-64 md:h-80 bg-secondary rounded-t-lg overflow-hidden">
             {contest.image_url ? (
               <img 
@@ -227,13 +239,28 @@ const ContestDetail = () => {
                 className="h-full w-full object-cover" 
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center">
-                <Trophy className="h-24 w-24 text-muted-foreground" />
+              <div className="h-full w-full flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                <Trophy className="h-24 w-24 text-white/80" />
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+            {/* Brand Logo */}
+            {brandLogoUrl && (
+              <div className="absolute top-4 left-4">
+                <img 
+                  src={brandLogoUrl} 
+                  alt="Contest Logo" 
+                  className="h-10 md:h-12 object-contain bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2"
+                />
+              </div>
+            )}
             <div className="absolute bottom-4 left-4 right-4">
-              <Badge className="mb-2">{contest.category}</Badge>
+              <Badge 
+                className="mb-2" 
+                style={{ backgroundColor: primaryColor, color: 'white' }}
+              >
+                {contest.category}
+              </Badge>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">{contest.title}</h1>
             </div>
             {isEnded && (
@@ -353,6 +380,7 @@ const ContestDetail = () => {
                       className="w-full mt-4" 
                       onClick={() => handleVoteClick(contestant)}
                       disabled={isEnded}
+                      style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                     >
                       {isEnded ? 'Voting Ended' : 'Vote Now'}
                     </Button>
