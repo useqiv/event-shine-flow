@@ -21,6 +21,7 @@ interface SortableContestantCardProps {
   isSelected: boolean;
   contestId: string;
   contestTitle: string;
+  brandPrimaryColor?: string;
   onSelect: (id: string, selected: boolean) => void;
   onEdit: (contestant: Contestant) => void;
   onDelete: (contestant: Contestant) => void;
@@ -33,6 +34,7 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
   isSelected,
   contestId,
   contestTitle,
+  brandPrimaryColor,
   onSelect,
   onEdit,
   onDelete,
@@ -112,8 +114,10 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
             </div>
             <p className="text-sm text-muted-foreground line-clamp-2">{contestant.bio}</p>
             <div className="flex items-center gap-2 mt-2">
-              <Vote className="h-4 w-4 text-primary" />
-              <span className="font-medium">{contestant.vote_count.toLocaleString()} votes</span>
+              <Vote className="h-4 w-4" style={brandPrimaryColor ? { color: brandPrimaryColor } : undefined} />
+              <span className="font-medium" style={brandPrimaryColor ? { color: brandPrimaryColor } : undefined}>
+                {contestant.vote_count.toLocaleString()} votes
+              </span>
             </div>
           </div>
         </div>
