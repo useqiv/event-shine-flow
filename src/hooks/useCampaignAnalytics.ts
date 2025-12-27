@@ -163,3 +163,62 @@ export const trackCampaignView = async (campaignId: string, source: string = 'di
     console.error('Failed to track campaign view:', error);
   }
 };
+
+export const useCampaignTrafficSources = (campaignId: string) => {
+  return useQuery({
+    queryKey: ['campaign-traffic-sources', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_analytics')
+        .select('source, views, donations_count, donations_amount')
+        .eq('campaign_id', campaignId);
+      
+      if (error) throw error;
+      
+      // Aggregate by source
+      const sourceMap = new Map<string, { views: number; donations: number; amount: number }>();
+      
+      (data || []).forEach(row => {
+        const source = row.source || 'direct';
+        const existing = sourceMap.get(source) || { views: 0, donations: 0, amount: 0 };
+        sourceMap.set(source, {
+          views: existing.views + (row.views || 0),
+          donations: existing.donations + (row.donations_count || 0),
+          amount: existing.amount + (row.donations_amount || 0),
+        });
+      });
+      
+      return Array.from(sourceMap.entries()).map(([source, stats]) => ({
+        source,
+        ...stats,
+        conversionRate: stats.views > 0 ? (stats.donations / stats.views) * 100 : 0,
+      })).sort((a, b) => b.views - a.views);
+    },
+    enabled: !!campaignId,
+  });
+};
+
+export const useCampaignViewStats = (campaignId: string) => {
+  return useQuery({
+    queryKey: ['campaign-view-stats', campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_analytics')
+        .select('views, unique_visitors, shares_count, date')
+        .eq('campaign_id', campaignId);
+      
+      if (error) throw error;
+      
+      const totalViews = data?.reduce((sum, r) => sum + (r.views || 0), 0) || 0;
+      const uniqueVisitors = data?.reduce((sum, r) => sum + (r.unique_visitors || 0), 0) || 0;
+      const totalShares = data?.reduce((sum, r) => sum + (r.shares_count || 0), 0) || 0;
+      
+      return {
+        totalViews,
+        uniqueVisitors,
+        totalShares,
+      };
+    },
+    enabled: !!campaignId,
+  });
+};
