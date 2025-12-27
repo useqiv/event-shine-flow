@@ -11,11 +11,25 @@ import { Wallet, AlertCircle, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
+type PayoutRequestMode = 'card' | 'dialog';
+
+type ButtonVariant = React.ComponentProps<typeof Button>['variant'];
+type ButtonSize = React.ComponentProps<typeof Button>['size'];
+
 interface EventPayoutRequestProps {
   netRevenue: number;
   currency: string;
   itemType: 'event' | 'contest';
   itemTitle: string;
+  /**
+   * - card: full card UI (used in the Payout tab)
+   * - dialog: renders only a button that opens the payout request dialog (used inside Net Revenue cards)
+   */
+  mode?: PayoutRequestMode;
+  triggerLabel?: string;
+  triggerVariant?: ButtonVariant;
+  triggerSize?: ButtonSize;
+  triggerClassName?: string;
 }
 
 const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
@@ -23,6 +37,11 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
   currency,
   itemType,
   itemTitle,
+  mode = 'card',
+  triggerLabel = 'Request Payout',
+  triggerVariant = 'default',
+  triggerSize = 'default',
+  triggerClassName,
 }) => {
   const { data: settings, isLoading: settingsLoading } = useOrganizationSettings();
   const requestPayout = useRequestPayout();
@@ -78,6 +97,121 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
     return null;
   }
 
+  const dialogBody = (
+    <>
+      <DialogHeader>
+        <DialogTitle>Request Payout from {itemTitle}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
+        <div className="p-4 rounded-lg bg-secondary">
+          <p className="text-sm text-muted-foreground">Available from this {itemType}</p>
+          <p className="text-2xl font-bold">{formatCurrency(netRevenue, currency)}</p>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <Label>Amount</Label>
+            <Button variant="ghost" size="sm" onClick={handleMaxAmount}>
+              Max
+            </Button>
+          </div>
+          <Input
+            type="number"
+            placeholder="Enter amount"
+            value={payoutAmount}
+            onChange={(e) => setPayoutAmount(e.target.value)}
+            max={netRevenue}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Payment Method</Label>
+          <Select value={payoutMethod} onValueChange={setPayoutMethod}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="bank">Bank Transfer</SelectItem>
+              <SelectItem value="usdt">USDT (Crypto)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {payoutMethod === 'bank' && !hasBankSetup && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm">Please set up your bank details first</p>
+              <Link to="/org/payouts" className="text-xs underline">
+                Go to Payouts settings
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {payoutMethod === 'usdt' && !hasUsdtSetup && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm">Please set up your USDT address first</p>
+              <Link to="/org/payouts" className="text-xs underline">
+                Go to Payouts settings
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {payoutMethod === 'bank' && hasBankSetup && (
+          <div className="p-3 rounded-lg bg-muted text-sm">
+            <p className="font-medium">{settings.bank_name}</p>
+            <p className="text-muted-foreground">{settings.account_number} - {settings.account_name}</p>
+          </div>
+        )}
+
+        {payoutMethod === 'usdt' && hasUsdtSetup && (
+          <div className="p-3 rounded-lg bg-muted text-sm">
+            <p className="font-medium">USDT (TRC20)</p>
+            <p className="text-muted-foreground font-mono text-xs break-all">{settings.usdt_address}</p>
+          </div>
+        )}
+
+        <Button
+          onClick={handleRequestPayout}
+          className="w-full"
+          disabled={
+            requestPayout.isPending ||
+            (payoutMethod === 'bank' && !hasBankSetup) ||
+            (payoutMethod === 'usdt' && !hasUsdtSetup) ||
+            !payoutAmount ||
+            Number(payoutAmount) <= 0 ||
+            Number(payoutAmount) > netRevenue
+          }
+        >
+          {requestPayout.isPending ? 'Processing...' : 'Submit Payout Request'}
+        </Button>
+      </div>
+    </>
+  );
+
+  if (mode === 'dialog') {
+    return (
+      <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+        <DialogTrigger asChild>
+          <Button
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+            disabled={netRevenue <= 0}
+          >
+            <Wallet className="mr-2 h-4 w-4" />
+            {triggerLabel}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>{dialogBody}</DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -85,9 +219,7 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
           <Banknote className="h-5 w-5" />
           Request Payout
         </CardTitle>
-        <CardDescription>
-          Request a payout from this {itemType}'s earnings
-        </CardDescription>
+        <CardDescription>Request a payout from this {itemType}'s earnings</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="p-4 rounded-lg bg-primary/10">
@@ -100,102 +232,10 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
           <DialogTrigger asChild>
             <Button className="w-full" disabled={netRevenue <= 0}>
               <Wallet className="mr-2 h-4 w-4" />
-              Request Payout
+              {triggerLabel}
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Request Payout from {itemTitle}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg bg-secondary">
-                <p className="text-sm text-muted-foreground">Available from this {itemType}</p>
-                <p className="text-2xl font-bold">{formatCurrency(netRevenue, currency)}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>Amount</Label>
-                  <Button variant="ghost" size="sm" onClick={handleMaxAmount}>
-                    Max
-                  </Button>
-                </div>
-                <Input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={payoutAmount}
-                  onChange={(e) => setPayoutAmount(e.target.value)}
-                  max={netRevenue}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select value={payoutMethod} onValueChange={setPayoutMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
-                    <SelectItem value="usdt">USDT (Crypto)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {payoutMethod === 'bank' && !hasBankSetup && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm">Please set up your bank details first</p>
-                    <Link to="/org/payouts" className="text-xs underline">
-                      Go to Payouts settings
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {payoutMethod === 'usdt' && !hasUsdtSetup && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm">Please set up your USDT address first</p>
-                    <Link to="/org/payouts" className="text-xs underline">
-                      Go to Payouts settings
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {payoutMethod === 'bank' && hasBankSetup && (
-                <div className="p-3 rounded-lg bg-muted text-sm">
-                  <p className="font-medium">{settings.bank_name}</p>
-                  <p className="text-muted-foreground">{settings.account_number} - {settings.account_name}</p>
-                </div>
-              )}
-
-              {payoutMethod === 'usdt' && hasUsdtSetup && (
-                <div className="p-3 rounded-lg bg-muted text-sm">
-                  <p className="font-medium">USDT (TRC20)</p>
-                  <p className="text-muted-foreground font-mono text-xs break-all">{settings.usdt_address}</p>
-                </div>
-              )}
-
-              <Button 
-                onClick={handleRequestPayout} 
-                className="w-full" 
-                disabled={
-                  requestPayout.isPending || 
-                  (payoutMethod === 'bank' && !hasBankSetup) || 
-                  (payoutMethod === 'usdt' && !hasUsdtSetup) ||
-                  !payoutAmount ||
-                  Number(payoutAmount) <= 0 ||
-                  Number(payoutAmount) > netRevenue
-                }
-              >
-                {requestPayout.isPending ? 'Processing...' : 'Submit Payout Request'}
-              </Button>
-            </div>
-          </DialogContent>
+          <DialogContent>{dialogBody}</DialogContent>
         </Dialog>
 
         <p className="text-xs text-muted-foreground text-center">

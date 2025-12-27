@@ -615,7 +615,22 @@ const ContestManagement = () => {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, contest.vote_currency || 'NGN')}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(netRevenue, contest.vote_currency || 'NGN')}
+                  </p>
+                  <div className="mt-2">
+                    <EventPayoutRequest
+                      mode="dialog"
+                      netRevenue={netRevenue}
+                      currency={contest.vote_currency || 'NGN'}
+                      itemType="contest"
+                      itemTitle={contest.title}
+                      triggerLabel="Request payout"
+                      triggerVariant="outline"
+                      triggerSize="sm"
+                      triggerClassName="w-full"
+                    />
+                  </div>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
