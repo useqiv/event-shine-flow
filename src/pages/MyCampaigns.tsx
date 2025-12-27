@@ -279,6 +279,12 @@ const CampaignManagementCard: React.FC<CampaignManagementCardProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
+                    <Link to={`/campaigns/${campaign.id}/dashboard`}>
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link to={`/campaigns/${campaign.id}`}>
                       <Eye className="h-4 w-4 mr-2" />
                       View
