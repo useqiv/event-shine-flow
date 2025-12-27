@@ -929,10 +929,14 @@ export const useUpdateContest = () => {
         .eq('id', id);
       
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (contestId) => {
+      // Invalidate all contest-related queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ['organization-contests'] });
       queryClient.invalidateQueries({ queryKey: ['contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contest', contestId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-contests'] });
       toast.success('Contest updated');
     },
     onError: (error) => {
