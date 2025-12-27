@@ -19,10 +19,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
-  Heart, 
-  Users, 
+  Heart,
+  Users,
   Target, 
   Clock, 
   Plus, 
@@ -32,23 +31,17 @@ import {
   MoreVertical,
   Share2,
   Eye,
-  DollarSign,
   Trash2,
   Search,
   CheckCircle,
   BarChart3,
-  Copy,
-  TrendingUp,
-  Info
+  Copy
 } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import EditCampaignDialog from '@/components/org/EditCampaignDialog';
 import { DuplicateCampaignDialog } from '@/components/DuplicateCampaignDialog';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -60,7 +53,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 const ManageCampaigns: React.FC = () => {
   const { data: campaigns, isLoading } = useMyCampaigns();
-  const { user } = useAuth();
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
   const [activeTab, setActiveTab] = useState('all');
@@ -72,59 +64,12 @@ const ManageCampaigns: React.FC = () => {
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [campaignToDuplicate, setCampaignToDuplicate] = useState<Campaign | null>(null);
 
-  // Fetch commission rates
-  const { data: orgApproval } = useQuery({
-    queryKey: ['org-approval-commission-campaigns', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data, error } = await supabase
-        .from('organization_approvals')
-        .select('special_commission_rate')
-        .eq('organization_id', user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const { data: platformSettings } = useQuery({
-    queryKey: ['platform-commission-settings-campaigns'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      if (error) throw error;
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
-  });
-
-  const platformCommission = platformSettings?.donation_commission_percentage || platformSettings?.platform_commission_percentage || 10;
-  const commission = orgApproval?.special_commission_rate ?? platformCommission;
-
   const filteredCampaigns = campaigns?.filter(c => {
     const matchesTab = activeTab === 'all' || c.status === activeTab;
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
-
-  const totalRaised = campaigns?.reduce((sum, c) => sum + c.current_amount, 0) || 0;
-  const netRevenue = totalRaised * (1 - commission / 100);
-  const commissionDeducted = totalRaised - netRevenue;
-
-  const stats = {
-    totalCampaigns: campaigns?.length || 0,
-    activeCampaigns: campaigns?.filter(c => c.status === 'active').length || 0,
-    totalRaised,
-    netRevenue,
-    totalDonors: campaigns?.reduce((sum, c) => sum + c.donor_count, 0) || 0,
-  };
 
   const handleStatusChange = async (campaign: Campaign, newStatus: string) => {
     try {
@@ -183,89 +128,6 @@ const ManageCampaigns: React.FC = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Heart className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Campaigns</p>
-                  <p className="text-2xl font-bold">{stats.totalCampaigns}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <Play className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold">{stats.activeCampaigns}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Raised</p>
-                  <p className="text-2xl font-bold">₦{stats.totalRaised.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm text-muted-foreground">Net Revenue</p>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            {commission}% commission<br />
-                            Deducted: ₦{commissionDeducted.toLocaleString()}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <p className="text-2xl font-bold text-emerald-600">₦{stats.netRevenue.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
-                  <Users className="h-5 w-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Donors</p>
-                  <p className="text-2xl font-bold">{stats.totalDonors}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Search & Tabs */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
