@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useOrganizationEvents } from '@/hooks/useOrganization';
+import { useOrganizationEvents, useDuplicateEvent } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info } from 'lucide-react';
+import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
@@ -17,6 +17,7 @@ import CurrencyDisplay from '@/components/ui/currency-display';
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
+  const duplicateEvent = useDuplicateEvent();
   const { user } = useAuth();
 
   // Fetch ticket revenue per event with currency info
@@ -213,6 +214,23 @@ const ManageEvents = () => {
                           Manage
                         </Button>
                       </Link>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => duplicateEvent.mutate(event.id)}
+                              disabled={duplicateEvent.isPending}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Duplicate event</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Link to={`/events/${event.id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />

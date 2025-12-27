@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { subDays, format, startOfDay } from 'date-fns';
+import { subDays, format } from 'date-fns';
 
 interface DailyRevenue {
   date: string;
@@ -10,11 +10,11 @@ interface DailyRevenue {
   total: number;
 }
 
-export const useRevenueTrends = (days: number = 30) => {
+export const useRevenueTrends = (days: number = 30, currency?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['revenue-trends', user?.id, days],
+    queryKey: ['revenue-trends', user?.id, days, currency],
     queryFn: async (): Promise<DailyRevenue[]> => {
       const startDate = subDays(new Date(), days);
       
@@ -26,27 +26,43 @@ export const useRevenueTrends = (days: number = 30) => {
       
       const eventIds = events?.map(e => e.id) || [];
       
-      // Get organization's contests
+      // Get organization's contests with currency
       const { data: contests } = await supabase
         .from('contests')
-        .select('id')
+        .select('id, vote_currency')
         .eq('organization_id', user!.id);
       
-      const contestIds = contests?.map(c => c.id) || [];
+      // Filter contests by currency if specified
+      const filteredContests = currency 
+        ? contests?.filter(c => c.vote_currency === currency) 
+        : contests;
+      const contestIds = filteredContests?.map(c => c.id) || [];
       
-      // Get tickets from the last N days
+      // Get ticket types with currency to filter
       let ticketsByDate: Record<string, number> = {};
       if (eventIds.length > 0) {
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select('amount_paid, created_at')
-          .in('event_id', eventIds)
-          .gte('created_at', startDate.toISOString());
+        const { data: ticketTypes } = await supabase
+          .from('ticket_types')
+          .select('id, currency, event_id')
+          .in('event_id', eventIds);
         
-        tickets?.forEach(ticket => {
-          const dateKey = format(new Date(ticket.created_at), 'yyyy-MM-dd');
-          ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + Number(ticket.amount_paid);
-        });
+        // Filter ticket types by currency if specified
+        const filteredTicketTypeIds = currency
+          ? ticketTypes?.filter(tt => tt.currency === currency).map(tt => tt.id)
+          : ticketTypes?.map(tt => tt.id);
+        
+        if (filteredTicketTypeIds && filteredTicketTypeIds.length > 0) {
+          const { data: tickets } = await supabase
+            .from('tickets')
+            .select('amount_paid, created_at, ticket_type_id')
+            .in('ticket_type_id', filteredTicketTypeIds)
+            .gte('created_at', startDate.toISOString());
+          
+          tickets?.forEach(ticket => {
+            const dateKey = format(new Date(ticket.created_at), 'yyyy-MM-dd');
+            ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + Number(ticket.amount_paid);
+          });
+        }
       }
       
       // Get votes from the last N days

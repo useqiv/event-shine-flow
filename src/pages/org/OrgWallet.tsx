@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents, useOrganizationSettings } from '@/hooks/useOrganization';
-import { formatCurrency } from '@/components/ui/currency-selector';
+import { formatCurrency, getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
   ArrowRight, 
@@ -16,10 +16,11 @@ import {
   Vote, 
   CreditCard,
   Download,
-  DollarSign
+  DollarSign,
+  Coins
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +34,18 @@ const OrgWallet = () => {
   const { user } = useAuth();
   
   const defaultCurrency = orgSettings?.default_currency || 'USD';
+
+  // Get all currencies that have revenue
+  const allCurrenciesWithRevenue = React.useMemo(() => {
+    const currencySet = new Set<string>();
+    if (stats?.ticketRevenueByCurrency) {
+      Object.keys(stats.ticketRevenueByCurrency).forEach(c => currencySet.add(c));
+    }
+    if (stats?.voteRevenueByCurrency) {
+      Object.keys(stats.voteRevenueByCurrency).forEach(c => currencySet.add(c));
+    }
+    return Array.from(currencySet).sort();
+  }, [stats]);
 
   const handleExportReport = async () => {
     if (!user) return;
@@ -48,7 +61,7 @@ const OrgWallet = () => {
       if (eventIds.length > 0) {
         const { data } = await supabase
           .from('tickets')
-          .select('*, events(title), ticket_types(name)')
+          .select('*, events(title), ticket_types(name, currency)')
           .in('event_id', eventIds);
         tickets = data || [];
       }
@@ -56,25 +69,31 @@ const OrgWallet = () => {
       if (contestIds.length > 0) {
         const { data } = await supabase
           .from('votes')
-          .select('*, contests(title), contestants(name)')
+          .select('*, contests(title, vote_currency), contestants(name)')
           .in('contest_id', contestIds);
         votes = data || [];
       }
 
-      // Prepare comprehensive report data
+      // Prepare comprehensive report data with currency info
       const reportData = [
-        // Summary section
-        { category: 'Summary', item: 'Total Revenue', amount: stats?.totalRevenue || 0, date: '', details: '' },
-        { category: 'Summary', item: 'Ticket Revenue', amount: stats?.ticketRevenue || 0, date: '', details: `${stats?.ticketsSold || 0} tickets sold` },
-        { category: 'Summary', item: 'Vote Revenue', amount: stats?.voteRevenue || 0, date: '', details: `${stats?.totalVotes || 0} votes` },
-        { category: 'Summary', item: 'Available Balance', amount: stats?.availableBalance || 0, date: '', details: '' },
-        { category: 'Summary', item: 'Pending Payouts', amount: stats?.pendingPayouts || 0, date: '', details: '' },
-        { category: 'Summary', item: 'Completed Payouts', amount: stats?.completedPayouts || 0, date: '', details: '' },
+        // Summary section per currency
+        ...allCurrenciesWithRevenue.map(currency => ({
+          category: 'Summary',
+          item: `Total Revenue (${currency})`,
+          amount: (stats?.ticketRevenueByCurrency?.[currency] || 0) + (stats?.voteRevenueByCurrency?.[currency] || 0),
+          currency,
+          date: '',
+          details: ''
+        })),
+        { category: 'Summary', item: 'Available Balance', amount: stats?.availableBalance || 0, currency: defaultCurrency, date: '', details: '' },
+        { category: 'Summary', item: 'Pending Payouts', amount: stats?.pendingPayouts || 0, currency: defaultCurrency, date: '', details: '' },
+        { category: 'Summary', item: 'Completed Payouts', amount: stats?.completedPayouts || 0, currency: defaultCurrency, date: '', details: '' },
         // Add tickets
         ...tickets.map(t => ({
           category: 'Ticket Sale',
           item: t.events?.title || 'Unknown Event',
           amount: t.amount_paid,
+          currency: t.ticket_types?.currency || 'USD',
           date: formatDateForExport(t.created_at),
           details: `${t.quantity}x ${t.ticket_types?.name || 'Standard'}`
         })),
@@ -83,6 +102,7 @@ const OrgWallet = () => {
           category: 'Vote',
           item: v.contests?.title || 'Unknown Contest',
           amount: v.amount_paid,
+          currency: v.contests?.vote_currency || 'NGN',
           date: formatDateForExport(v.created_at),
           details: `${v.quantity} votes for ${v.contestants?.name || 'Unknown'}`
         })),
@@ -91,6 +111,7 @@ const OrgWallet = () => {
           category: 'Payout',
           item: p.payment_method === 'bank' ? 'Bank Transfer' : 'USDT',
           amount: -p.amount,
+          currency: defaultCurrency,
           date: formatDateForExport(p.created_at),
           details: `Status: ${p.status}`
         }))
@@ -99,7 +120,8 @@ const OrgWallet = () => {
       exportToCsv(reportData, `financial-report-${format(new Date(), 'yyyy-MM-dd')}`, [
         { key: 'category', label: 'Category' },
         { key: 'item', label: 'Item' },
-        { key: 'amount', label: 'Amount (₦)' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'currency', label: 'Currency' },
         { key: 'date', label: 'Date' },
         { key: 'details', label: 'Details' }
       ]);
@@ -207,6 +229,51 @@ const OrgWallet = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Multi-Currency Balance Breakdown */}
+        {allCurrenciesWithRevenue.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="h-5 w-5" />
+                Balance by Currency
+              </CardTitle>
+              <CardDescription>Revenue breakdown across different currencies</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {statsLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-20" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {allCurrenciesWithRevenue.map((currency) => {
+                    const ticketRev = stats?.ticketRevenueByCurrency?.[currency] || 0;
+                    const voteRev = stats?.voteRevenueByCurrency?.[currency] || 0;
+                    const total = ticketRev + voteRev;
+                    const currencyInfo = currencies.find(c => c.code === currency);
+                    
+                    return (
+                      <div key={currency} className="bg-secondary/50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg font-semibold">{currencyInfo?.symbol || currency}</span>
+                          <span className="text-sm text-muted-foreground">{currency}</span>
+                        </div>
+                        <p className="text-2xl font-bold">{formatCurrency(total, currency)}</p>
+                        <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                          <span>Tickets: {formatCurrency(ticketRev, currency)}</span>
+                          <span>Votes: {formatCurrency(voteRev, currency)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Revenue Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

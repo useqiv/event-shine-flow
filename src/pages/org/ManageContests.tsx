@@ -6,17 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useOrganizationContests } from '@/hooks/useOrganization';
+import { useOrganizationContests, useDuplicateContest } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
-import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info } from 'lucide-react';
+import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ManageContests = () => {
   const { data: contests, isLoading } = useOrganizationContests();
+  const duplicateContest = useDuplicateContest();
   const { user } = useAuth();
 
   // Fetch vote revenue per contest
@@ -196,6 +197,23 @@ const ManageContests = () => {
                           Manage
                         </Button>
                       </Link>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => duplicateContest.mutate(contest.id)}
+                              disabled={duplicateContest.isPending}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Duplicate contest</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Link to={`/contests/${contest.id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
