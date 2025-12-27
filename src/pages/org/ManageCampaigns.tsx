@@ -35,10 +35,12 @@ import {
   Trash2,
   Search,
   CheckCircle,
-  BarChart3
+  BarChart3,
+  Copy
 } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import EditCampaignDialog from '@/components/org/EditCampaignDialog';
+import { DuplicateCampaignDialog } from '@/components/DuplicateCampaignDialog';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -60,6 +62,8 @@ const ManageCampaigns: React.FC = () => {
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [campaignToEdit, setCampaignToEdit] = useState<Campaign | null>(null);
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [campaignToDuplicate, setCampaignToDuplicate] = useState<Campaign | null>(null);
 
   const filteredCampaigns = campaigns?.filter(c => {
     const matchesTab = activeTab === 'all' || c.status === activeTab;
@@ -241,6 +245,10 @@ const ManageCampaigns: React.FC = () => {
                   setCampaignToEdit(c);
                   setEditDialogOpen(true);
                 }}
+                onDuplicate={(c) => {
+                  setCampaignToDuplicate(c);
+                  setDuplicateDialogOpen(true);
+                }}
               />
             ))}
           </div>
@@ -291,6 +299,13 @@ const ManageCampaigns: React.FC = () => {
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
         />
+
+        {/* Duplicate Campaign Dialog */}
+        <DuplicateCampaignDialog
+          campaign={campaignToDuplicate}
+          open={duplicateDialogOpen}
+          onOpenChange={setDuplicateDialogOpen}
+        />
       </div>
     </OrganizationLayout>
   );
@@ -302,6 +317,7 @@ interface CampaignCardProps {
   onShare: (campaign: Campaign) => void;
   onDelete: (campaign: Campaign) => void;
   onEdit: (campaign: Campaign) => void;
+  onDuplicate: (campaign: Campaign) => void;
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ 
@@ -309,7 +325,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
   onStatusChange,
   onShare,
   onDelete,
-  onEdit
+  onEdit,
+  onDuplicate
 }) => {
   const progress = campaign.goal_amount > 0 
     ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100) 
@@ -384,6 +401,10 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                   <DropdownMenuItem onClick={() => onShare(campaign)}>
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDuplicate(campaign)}>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {campaign.status === 'active' && (
