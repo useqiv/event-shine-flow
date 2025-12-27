@@ -20,6 +20,7 @@ import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTicke
 import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
+import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone, Pencil, TrendingUp, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -354,6 +355,7 @@ const EventManagement = () => {
             <TabsTrigger value="tickets">Ticket Types</TabsTrigger>
             <TabsTrigger value="attendees">Attendees</TabsTrigger>
             <TabsTrigger value="scans">QR Scan Logs</TabsTrigger>
+            <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="marketing">Marketing</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -569,6 +571,15 @@ const EventManagement = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payout" className="space-y-6">
+            <EventPayoutRequest
+              netRevenue={netRevenue}
+              currency={ticketTypes?.[0]?.currency || 'NGN'}
+              itemType="event"
+              itemTitle={event.title}
+            />
           </TabsContent>
 
           <TabsContent value="marketing" className="space-y-6">

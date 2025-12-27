@@ -27,6 +27,10 @@ import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import EventPayoutRequest from '@/components/org/EventPayoutRequest';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { 
   DndContext, 
   closestCenter, 
@@ -42,8 +46,9 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -56,6 +61,7 @@ const categories = [
 
 const ContestManagement = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: contest, isLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const updateContest = useUpdateContest();
@@ -68,6 +74,45 @@ const ContestManagement = () => {
   // Enable real-time updates
   useRealtimeContestants(id || '');
   useRealtimeContest(id || '');
+
+  // Fetch commission rates
+  const { data: orgApproval } = useQuery({
+    queryKey: ['org-approval-commission-contest', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('organization_approvals')
+        .select('vote_commission_rate, special_commission_rate')
+        .eq('organization_id', user.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: platformSettings } = useQuery({
+    queryKey: ['platform-commission-settings-contest'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .eq('category', 'commission');
+      if (error) throw error;
+      const settings: Record<string, number> = {};
+      data?.forEach((s: any) => {
+        settings[s.setting_key] = Number(s.setting_value) || 0;
+      });
+      return settings;
+    },
+  });
+
+  const platformVoteCommission = platformSettings?.vote_commission_percentage || platformSettings?.platform_commission_percentage || 10;
+  const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
+
+  // Calculate revenue with commission
+  const totalRevenue = contest ? contest.total_votes * Number(contest.vote_price) : 0;
+  const netRevenue = totalRevenue * (1 - voteCommission / 100);
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [isEditContestantOpen, setIsEditContestantOpen] = useState(false);
@@ -554,10 +599,25 @@ const ContestManagement = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(contest.total_votes * Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="h-3 w-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            {voteCommission}% commission<br/>
+                            Total: {formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, contest.vote_currency || 'NGN')}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
             </CardContent>
           </Card>
@@ -567,6 +627,7 @@ const ContestManagement = () => {
           <TabsList>
             <TabsTrigger value="contestants">Contestants</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+            <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -783,7 +844,7 @@ const ContestManagement = () => {
                             width={100} 
                             tick={{ fontSize: 12 }}
                           />
-                          <Tooltip 
+                          <RechartsTooltip 
                             formatter={(value: number) => [value.toLocaleString(), 'Votes']}
                             labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
                             contentStyle={{ 
@@ -986,6 +1047,15 @@ const ContestManagement = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payout" className="space-y-6">
+            <EventPayoutRequest
+              netRevenue={netRevenue}
+              currency={contest.vote_currency || 'NGN'}
+              itemType="contest"
+              itemTitle={contest.title}
+            />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
