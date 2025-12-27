@@ -24,6 +24,8 @@ import {
   Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { SocialAccountsConfig } from './SocialAccountsConfig';
+import { useOrganizationSocialAccounts } from '@/hooks/useOrganizationSocialAccounts';
 
 // Platform icons
 const TwitterIcon = ({ className }: { className?: string }) => (
@@ -113,7 +115,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'create'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'settings'>('queue');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPost, setNewPost] = useState({
     platform: 'twitter',
@@ -121,6 +123,13 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
     schedule_interval: 'daily',
     custom_message: '',
   });
+
+  // Fetch connected social accounts
+  const { data: socialAccounts } = useOrganizationSocialAccounts();
+  
+  const isAccountConnected = (platformId: string) => {
+    return socialAccounts?.some(a => a.platform === platformId && a.is_connected);
+  };
 
   // Fetch auto posts
   const { data: autoPosts, isLoading } = useQuery({
@@ -298,9 +307,9 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
               <Link2 className="h-4 w-4" />
               Channels
             </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center gap-2">
+            <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              Settings
+              Accounts
             </TabsTrigger>
           </TabsList>
         </div>
@@ -548,11 +557,14 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
             <div className="space-y-3">
               {platforms.map((platform) => {
                 const Icon = platform.icon;
+                const connected = isAccountConnected(platform.id);
+                const account = socialAccounts?.find(a => a.platform === platform.id);
+                
                 return (
                   <div 
                     key={platform.id}
                     className={`flex items-center justify-between p-4 rounded-lg border ${
-                      platform.comingSoon ? 'border-dashed border-muted' : 'border-border'
+                      platform.comingSoon ? 'border-dashed border-muted' : connected ? 'border-green-500/50 bg-green-500/5' : 'border-border'
                     }`}
                   >
                     <div className="flex items-center gap-4">
@@ -567,79 +579,42 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                           {platform.comingSoon && (
                             <Badge variant="secondary">Coming Soon</Badge>
                           )}
+                          {connected && (
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Connected
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {platform.comingSoon 
                             ? 'Integration in development'
-                            : platform.connected 
-                              ? 'Connected' 
-                              : 'Not connected'
+                            : connected 
+                              ? account?.account_name || 'Connected' 
+                              : 'Not connected - Go to Accounts tab to connect'
                           }
                         </p>
                       </div>
                     </div>
-                    {!platform.comingSoon && (
-                      <Button variant={platform.connected ? 'outline' : 'default'} size="sm">
-                        {platform.connected ? 'Disconnect' : 'Connect'}
-                      </Button>
-                    )}
                   </div>
                 );
               })}
             </div>
 
-            <div className="p-4 rounded-lg bg-muted/50 mt-4">
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
               <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Twitter/X Setup
+                Connect Your Accounts
               </h4>
-              <p className="text-xs text-muted-foreground mb-2">
-                Add these secrets to your Supabase Edge Functions:
+              <p className="text-sm text-muted-foreground">
+                Go to the <strong>Accounts</strong> tab to connect your social media accounts. 
+                Once connected, you can create auto-post schedules for your {entityType}.
               </p>
-              <div className="grid grid-cols-2 gap-2 text-xs font-mono bg-background p-2 rounded">
-                <div>TWITTER_CONSUMER_KEY</div>
-                <div>TWITTER_CONSUMER_SECRET</div>
-                <div>TWITTER_ACCESS_TOKEN</div>
-                <div>TWITTER_ACCESS_TOKEN_SECRET</div>
-              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="create" className="m-0 space-y-4">
-            <div className="space-y-4">
-              <div className="p-4 rounded-lg border border-border">
-                <h4 className="font-medium mb-2">Default Post Settings</h4>
-                <p className="text-sm text-muted-foreground">
-                  Configure default settings for all auto-posts
-                </p>
-              </div>
-
-              <div className="p-4 rounded-lg border border-border">
-                <h4 className="font-medium mb-2">Post Templates</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Templates used for auto-generated posts:
-                </p>
-                <div className="space-y-2">
-                  {postTypes[entityType].map((type) => (
-                    <div key={type.id} className="p-3 bg-muted/50 rounded text-sm">
-                      <span className="font-medium">{type.name}:</span>
-                      <span className="text-muted-foreground ml-2">{type.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  Pro Tip
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  For best engagement, schedule posts during peak hours (9am-11am and 6pm-9pm local time).
-                  Use the "Twice Daily" option to automatically post at these optimal times.
-                </p>
-              </div>
-            </div>
+          <TabsContent value="settings" className="m-0">
+            <SocialAccountsConfig />
           </TabsContent>
         </CardContent>
       </Tabs>

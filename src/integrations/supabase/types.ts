@@ -1097,6 +1097,53 @@ export type Database = {
           },
         ]
       }
+      organization_social_accounts: {
+        Row: {
+          access_token: string | null
+          account_name: string | null
+          created_at: string
+          id: string
+          is_connected: boolean
+          organization_id: string
+          platform: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          organization_id: string
+          platform: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          organization_id?: string
+          platform?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_social_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_webhooks: {
         Row: {
           created_at: string
