@@ -525,7 +525,76 @@ export const useCreateContest = () => {
   });
 };
 
-// Create Event
+// Duplicate Contest
+export const useDuplicateContest = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (contestId: string) => {
+      // Fetch the original contest
+      const { data: original, error: fetchError } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('id', contestId)
+        .single();
+      
+      if (fetchError || !original) throw fetchError || new Error('Contest not found');
+      
+      // Create a new contest with copied data
+      const { data, error } = await supabase
+        .from('contests')
+        .insert({
+          organization_id: user!.id,
+          title: `${original.title} (Copy)`,
+          description: original.description,
+          category: original.category,
+          image_url: original.image_url,
+          start_date: original.start_date,
+          end_date: original.end_date,
+          vote_price: original.vote_price,
+          vote_currency: original.vote_currency,
+          custom_slug: null, // Reset slug to avoid conflicts
+          brand_primary_color: original.brand_primary_color,
+          brand_secondary_color: original.brand_secondary_color,
+          brand_logo_url: original.brand_logo_url,
+          is_active: false, // Start as inactive
+          is_featured: false,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Optionally copy contestants
+      const { data: contestants } = await supabase
+        .from('contestants')
+        .select('name, bio, photo_url, performance, display_order')
+        .eq('contest_id', contestId);
+      
+      if (contestants && contestants.length > 0) {
+        const newContestants = contestants.map(c => ({
+          ...c,
+          contest_id: data.id,
+          vote_count: 0,
+        }));
+        
+        await supabase.from('contestants').insert(newContestants);
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contests'] });
+      toast.success('Contest duplicated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to duplicate contest');
+      console.error(error);
+    },
+  });
+};
 export const useCreateEvent = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -556,6 +625,72 @@ export const useCreateEvent = () => {
     },
     onError: (error) => {
       toast.error('Failed to create event');
+      console.error(error);
+    },
+  });
+};
+
+// Duplicate Event
+export const useDuplicateEvent = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      // Fetch the original event
+      const { data: original, error: fetchError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      if (fetchError || !original) throw fetchError || new Error('Event not found');
+      
+      // Create a new event with copied data
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          organization_id: user!.id,
+          title: `${original.title} (Copy)`,
+          description: original.description,
+          category: original.category,
+          image_url: original.image_url,
+          event_date: original.event_date,
+          venue: original.venue,
+          address: original.address,
+          is_active: false, // Start as inactive
+          is_featured: false,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Copy ticket types
+      const { data: ticketTypes } = await supabase
+        .from('ticket_types')
+        .select('name, description, price, currency, quantity_available')
+        .eq('event_id', eventId);
+      
+      if (ticketTypes && ticketTypes.length > 0) {
+        const newTicketTypes = ticketTypes.map(tt => ({
+          ...tt,
+          event_id: data.id,
+          quantity_sold: 0,
+        }));
+        
+        await supabase.from('ticket_types').insert(newTicketTypes);
+      }
+      
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Event duplicated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to duplicate event');
       console.error(error);
     },
   });

@@ -1,18 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRevenueTrends } from '@/hooks/useRevenueTrends';
 import { useOrganizationSettings } from '@/hooks/useOrganization';
-import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
+import { formatCurrency, getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 
-const RevenueChart = () => {
-  const { data: trends, isLoading } = useRevenueTrends(30);
+interface RevenueChartProps {
+  currency?: string;
+  onCurrencyChange?: (currency: string) => void;
+}
+
+const RevenueChart = ({ currency, onCurrencyChange }: RevenueChartProps) => {
   const { data: orgSettings } = useOrganizationSettings();
+  const [displayCurrency, setDisplayCurrency] = useState<string>(currency || 'USD');
   
-  const defaultCurrency = orgSettings?.default_currency || 'USD';
-  const currencySymbol = getCurrencySymbol(defaultCurrency);
+  // Update display currency when org settings load or prop changes
+  useEffect(() => {
+    if (currency) {
+      setDisplayCurrency(currency);
+    } else if (orgSettings?.default_currency) {
+      setDisplayCurrency(orgSettings.default_currency);
+    }
+  }, [orgSettings?.default_currency, currency]);
+
+  const { data: trends, isLoading } = useRevenueTrends(30, displayCurrency);
+  const currencySymbol = getCurrencySymbol(displayCurrency);
+
+  const handleCurrencyChange = (value: string) => {
+    setDisplayCurrency(value);
+    onCurrencyChange?.(value);
+  };
 
   if (isLoading) {
     return (
@@ -36,14 +56,28 @@ const RevenueChart = () => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <TrendingUp className="h-5 w-5" />
             Revenue Trends (Last 30 Days)
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Total: <span className="font-semibold text-foreground">{formatCurrency(totalRevenue, defaultCurrency)}</span>
-          </p>
+          <div className="flex items-center gap-3">
+            <Select value={displayCurrency} onValueChange={handleCurrencyChange}>
+              <SelectTrigger className="w-[120px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {currencies.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.symbol} {c.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Total: <span className="font-semibold text-foreground">{formatCurrency(totalRevenue, displayCurrency)}</span>
+            </p>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -85,7 +119,7 @@ const RevenueChart = () => {
                     color: 'hsl(var(--popover-foreground))',
                   }}
                   formatter={(value: number, name: string) => [
-                    formatCurrency(value, defaultCurrency),
+                    formatCurrency(value, displayCurrency),
                     name === 'tickets' ? 'Ticket Sales' : 'Vote Revenue'
                   ]}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
@@ -114,7 +148,7 @@ const RevenueChart = () => {
           <div className="h-[250px] flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No revenue data in the last 30 days</p>
+              <p>No revenue data in {displayCurrency} for the last 30 days</p>
               <p className="text-sm">Start selling tickets and votes to see trends</p>
             </div>
           </div>
