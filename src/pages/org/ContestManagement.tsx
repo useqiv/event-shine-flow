@@ -27,7 +27,7 @@ import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
-import { formatCurrency } from '@/components/ui/currency-selector';
+import CurrencySelector, { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -237,6 +237,7 @@ const ContestManagement = () => {
     start_date: '',
     end_date: '',
     vote_price: 100,
+    vote_currency: 'NGN',
     custom_slug: '',
     brand_primary_color: '#7c3aed',
     brand_secondary_color: '#f97316',
@@ -257,6 +258,7 @@ const ContestManagement = () => {
         start_date: contest.start_date ? new Date(contest.start_date).toISOString().slice(0, 16) : '',
         end_date: contest.end_date ? new Date(contest.end_date).toISOString().slice(0, 16) : '',
         vote_price: Number(contest.vote_price) || 100,
+        vote_currency: contest.vote_currency || 'NGN',
         custom_slug: (contest as any).custom_slug || '',
         brand_primary_color: (contest as any).brand_primary_color || '#7c3aed',
         brand_secondary_color: (contest as any).brand_secondary_color || '#f97316',
@@ -437,6 +439,7 @@ const ContestManagement = () => {
         start_date: editForm.start_date ? new Date(editForm.start_date).toISOString() : contest.start_date,
         end_date: editForm.end_date ? new Date(editForm.end_date).toISOString() : contest.end_date,
         vote_price: Number(editForm.vote_price) || 100,
+        vote_currency: editForm.vote_currency || 'NGN',
         custom_slug: editForm.custom_slug?.trim() || null,
         brand_primary_color: editForm.brand_primary_color || '#7c3aed',
         brand_secondary_color: editForm.brand_secondary_color || '#f97316',
@@ -1165,13 +1168,21 @@ const ContestManagement = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-vote-price">Price per Vote (₦) *</Label>
+                    <Label htmlFor="edit-vote-price">Price per Vote ({getCurrencySymbol(editForm.vote_currency)}) *</Label>
                     <Input
                       id="edit-vote-price"
                       type="number"
                       min="1"
                       value={editForm.vote_price}
                       onChange={(e) => setEditForm(prev => ({ ...prev, vote_price: Number(e.target.value) }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Currency *</Label>
+                    <CurrencySelector
+                      value={editForm.vote_currency}
+                      onValueChange={(value) => setEditForm(prev => ({ ...prev, vote_currency: value }))}
                     />
                   </div>
                 </div>
