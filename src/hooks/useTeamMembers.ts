@@ -85,13 +85,18 @@ export const useInviteTeamMember = () => {
       if (error) throw error;
 
       // Send in-app notification using the database function (bypasses RLS)
-      await supabase.rpc('send_notification', {
+      const { error: notifError } = await supabase.rpc('send_notification', {
         p_user_id: existingUser.id,
         p_title: 'Team Invitation',
         p_message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}. Click to accept or decline.`,
         p_type: 'team_invite',
         p_reference_id: teamMember.id,
       });
+      
+      if (notifError) {
+        console.error('Failed to send notification:', notifError);
+        // Don't throw - team member was created, just notification failed
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
