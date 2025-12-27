@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, Wallet } from 'lucide-react';
 import SocialShareButtons from '@/components/SocialShareButtons';
+import DonorLeaderboard from '@/components/DonorLeaderboard';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
@@ -248,6 +249,11 @@ const CampaignDetail: React.FC = () => {
                   <CampaignUpdatesManager campaignId={id!} isOwner={!!isOwner} />
                 </CardContent>
               </Card>
+
+              {/* Donor Leaderboard */}
+              {donations && donations.length > 0 && (
+                <DonorLeaderboard donations={donations} currency={campaign.currency} />
+              )}
 
               {/* Recent Donations */}
               <Card>
