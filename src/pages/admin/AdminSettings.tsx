@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, AlertTriangle } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, AlertTriangle, Shield, Database } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import TwoFactorEnforcement from '@/components/auth/TwoFactorEnforcement';
+import DatabaseBackupManager from '@/components/admin/DatabaseBackupManager';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -402,7 +404,7 @@ const AdminSettings: React.FC = () => {
         </AlertDialog>
 
         <Tabs value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="commission">
               Commission
               {commissionFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
@@ -416,6 +418,14 @@ const AdminSettings: React.FC = () => {
               {cryptoFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
             </TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="h-4 w-4 mr-1" />
+              Security
+            </TabsTrigger>
+            <TabsTrigger value="backups">
+              <Database className="h-4 w-4 mr-1" />
+              Backups
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="commission" className="space-y-6 mt-6">
@@ -1285,6 +1295,60 @@ const AdminSettings: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6 mt-6">
+            <TwoFactorEnforcement isRequired={true} />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Admin Security Settings
+                </CardTitle>
+                <CardDescription>Configure security settings for admin accounts</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Require 2FA for all Admins</p>
+                    <p className="text-sm text-muted-foreground">Force all admin accounts to enable two-factor authentication</p>
+                  </div>
+                  <Switch checked={getSetting('require_admin_2fa') === 'true'} onCheckedChange={(checked) => handleUpdate('require_admin_2fa', String(checked))} />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Require 2FA for Organizations</p>
+                    <p className="text-sm text-muted-foreground">Force all organization accounts to enable two-factor authentication</p>
+                  </div>
+                  <Switch checked={getSetting('require_org_2fa') === 'true'} onCheckedChange={(checked) => handleUpdate('require_org_2fa', String(checked))} />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Session Timeout (minutes)</p>
+                    <p className="text-sm text-muted-foreground">Auto-logout inactive admin sessions</p>
+                  </div>
+                  <Select 
+                    value={getSetting('admin_session_timeout') || '60'} 
+                    onValueChange={(value) => handleUpdate('admin_session_timeout', value)}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">15 min</SelectItem>
+                      <SelectItem value="30">30 min</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                      <SelectItem value="120">2 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="backups" className="space-y-6 mt-6">
+            <DatabaseBackupManager />
           </TabsContent>
         </Tabs>
       </div>
