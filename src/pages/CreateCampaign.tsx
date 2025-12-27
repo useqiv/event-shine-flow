@@ -9,13 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Heart, CalendarIcon, ArrowLeft, Loader2, Target, FileText, Image } from 'lucide-react';
+import { Heart, CalendarIcon, ArrowLeft, Loader2, Target, FileText, Image, Eye, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { CampaignPreview } from '@/components/CampaignPreview';
 
 const CATEGORIES = [
   { value: 'medical', label: 'Medical & Health' },
@@ -47,7 +48,7 @@ const CreateCampaign: React.FC = () => {
   });
 
   const [step, setStep] = useState(1);
-
+  const [showPreview, setShowPreview] = useState(false);
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -292,97 +293,135 @@ const CreateCampaign: React.FC = () => {
 
             {/* Step 3: Media & Launch */}
             {step === 3 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Image className="h-5 w-5" />
-                    Media & Launch
-                  </CardTitle>
-                  <CardDescription>Add an image and launch your campaign</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="image_url">Cover Image URL</Label>
-                    <Input
-                      id="image_url"
-                      placeholder="https://example.com/image.jpg"
-                      value={formData.image_url}
-                      onChange={(e) => updateField('image_url', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Paste a URL to an image. Recommended size: 1200x630 pixels
-                    </p>
+              <div className="space-y-4">
+                {/* Preview Toggle */}
+                <div className="flex justify-center">
+                  <div className="inline-flex rounded-lg border p-1 bg-muted/50">
+                    <Button
+                      variant={!showPreview ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setShowPreview(false)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant={showPreview ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setShowPreview(true)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
                   </div>
+                </div>
 
-                  {formData.image_url && (
-                    <div className="rounded-lg overflow-hidden bg-muted aspect-video">
-                      <img 
-                        src={formData.image_url} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
+                {showPreview ? (
+                  <CampaignPreview
+                    title={formData.title}
+                    short_description={formData.short_description}
+                    description={formData.description}
+                    goal_amount={formData.goal_amount}
+                    currency={formData.currency}
+                    category={formData.category}
+                    image_url={formData.image_url}
+                    end_date={formData.end_date}
+                  />
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Image className="h-5 w-5" />
+                        Media & Launch
+                      </CardTitle>
+                      <CardDescription>Add an image and launch your campaign</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="image_url">Cover Image URL</Label>
+                        <Input
+                          id="image_url"
+                          placeholder="https://example.com/image.jpg"
+                          value={formData.image_url}
+                          onChange={(e) => updateField('image_url', e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Paste a URL to an image. Recommended size: 1200x630 pixels
+                        </p>
+                      </div>
 
-                  {/* Summary */}
-                  <Card className="bg-muted/50">
-                    <CardContent className="pt-4">
-                      <h4 className="font-medium mb-3">Campaign Summary</h4>
-                      <dl className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <dt className="text-muted-foreground">Title:</dt>
-                          <dd className="font-medium">{formData.title}</dd>
+                      {formData.image_url && (
+                        <div className="rounded-lg overflow-hidden bg-muted aspect-video">
+                          <img 
+                            src={formData.image_url} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                         </div>
-                        <div className="flex justify-between">
-                          <dt className="text-muted-foreground">Category:</dt>
-                          <dd>{CATEGORIES.find(c => c.value === formData.category)?.label}</dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-muted-foreground">Goal:</dt>
-                          <dd className="font-medium">{formData.currency} {formData.goal_amount}</dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-muted-foreground">End Date:</dt>
-                          <dd>{formData.end_date ? format(formData.end_date, 'PP') : 'No deadline'}</dd>
-                        </div>
-                      </dl>
+                      )}
+
+                      {/* Summary */}
+                      <Card className="bg-muted/50">
+                        <CardContent className="pt-4">
+                          <h4 className="font-medium mb-3">Campaign Summary</h4>
+                          <dl className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <dt className="text-muted-foreground">Title:</dt>
+                              <dd className="font-medium">{formData.title}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-muted-foreground">Category:</dt>
+                              <dd>{CATEGORIES.find(c => c.value === formData.category)?.label}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-muted-foreground">Goal:</dt>
+                              <dd className="font-medium">{formData.currency} {formData.goal_amount}</dd>
+                            </div>
+                            <div className="flex justify-between">
+                              <dt className="text-muted-foreground">End Date:</dt>
+                              <dd>{formData.end_date ? format(formData.end_date, 'PP') : 'No deadline'}</dd>
+                            </div>
+                          </dl>
+                        </CardContent>
+                      </Card>
                     </CardContent>
                   </Card>
+                )}
 
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
-                      Back
-                    </Button>
-                    <Button 
-                      variant="secondary"
-                      onClick={() => handleSubmit(true)}
-                      disabled={createCampaign.isPending}
-                    >
-                      Save as Draft
-                    </Button>
-                    <Button 
-                      onClick={() => handleSubmit(false)}
-                      disabled={createCampaign.isPending}
-                      className="flex-1"
-                    >
-                      {createCampaign.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Launching...
-                        </>
-                      ) : (
-                        <>
-                          <Heart className="h-4 w-4 mr-2" />
-                          Launch Campaign
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                {/* Action Buttons - Always visible */}
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                    Back
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => handleSubmit(true)}
+                    disabled={createCampaign.isPending}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button 
+                    onClick={() => handleSubmit(false)}
+                    disabled={createCampaign.isPending}
+                    className="flex-1"
+                  >
+                    {createCampaign.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Launching...
+                      </>
+                    ) : (
+                      <>
+                        <Heart className="h-4 w-4 mr-2" />
+                        Launch Campaign
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
