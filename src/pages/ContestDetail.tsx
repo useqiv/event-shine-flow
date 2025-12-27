@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -166,24 +167,29 @@ const ContestDetail = () => {
 
   if (contestLoading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-64 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-48 w-full" />
-            ))}
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-48 w-full" />
+              ))}
+            </div>
           </div>
-        </div>
-      </DashboardLayout>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   if (!contest) {
     return (
-      <DashboardLayout>
-        <div className="text-center py-12">
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center">
           <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold">Contest not found</h2>
           <Link to="/contests">
@@ -192,21 +198,24 @@ const ContestDetail = () => {
               Back to Contests
             </Button>
           </Link>
-        </div>
-      </DashboardLayout>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Back Button */}
-        <Link to="/contests">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Contests
-          </Button>
-        </Link>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* Back Button */}
+          <Link to="/contests">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Contests
+            </Button>
+          </Link>
 
         {/* Contest Header */}
         <Card>
@@ -463,9 +472,7 @@ const ContestDetail = () => {
             )}
           </div>
         )}
-      </div>
-
-      {/* Vote Selection Dialog */}
+        </div>
       {isVoteSelectionOpen && selectedContestant && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
@@ -550,7 +557,9 @@ const ContestDetail = () => {
           }}
         />
       )}
-    </DashboardLayout>
+      </main>
+      <Footer />
+    </div>
   );
 };
 

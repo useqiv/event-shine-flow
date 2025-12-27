@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -95,19 +96,24 @@ const EventDetail = () => {
 
   if (eventLoading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </DashboardLayout>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   if (!event) {
     return (
-      <DashboardLayout>
-        <div className="text-center py-12">
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center">
           <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold">Event not found</h2>
           <Link to="/events">
@@ -116,24 +122,27 @@ const EventDetail = () => {
               Back to Events
             </Button>
           </Link>
-        </div>
-      </DashboardLayout>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Back Button */}
-        <Link to="/events">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Events
-          </Button>
-        </Link>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="space-y-6">
+          {/* Back Button */}
+          <Link to="/events">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Events
+            </Button>
+          </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Event Details */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Event Details */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="overflow-hidden">
               <div className="relative h-64 md:h-96 bg-secondary">
@@ -267,8 +276,6 @@ const EventDetail = () => {
             )}
           </div>
         </div>
-      </div>
-
       {/* Purchase Selection Dialog */}
       {isPurchaseModalOpen && selectedTicketType && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -363,7 +370,10 @@ const EventDetail = () => {
           }}
         />
       )}
-    </DashboardLayout>
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 };
 
