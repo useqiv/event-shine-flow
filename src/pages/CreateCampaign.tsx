@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Heart, CalendarIcon, ArrowLeft, Loader2, Target, FileText, Image, Eye, Edit } from 'lucide-react';
+import { Heart, CalendarIcon, ArrowLeft, Loader2, Target, FileText, Image, Eye, Edit, Link as LinkIcon } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Navbar from '@/components/landing/Navbar';
@@ -337,31 +339,50 @@ const CreateCampaign: React.FC = () => {
                       <CardDescription>Add an image and launch your campaign</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="image_url">Cover Image URL</Label>
-                        <Input
-                          id="image_url"
-                          placeholder="https://example.com/image.jpg"
-                          value={formData.image_url}
-                          onChange={(e) => updateField('image_url', e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Paste a URL to an image. Recommended size: 1200x630 pixels
-                        </p>
+                      <div className="space-y-4">
+                        <Label>Cover Image</Label>
+                        <Tabs defaultValue="upload" className="w-full">
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="upload">Upload Image</TabsTrigger>
+                            <TabsTrigger value="url">Image URL</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="upload" className="mt-4">
+                            <ImageUpload
+                              bucket="campaign-images"
+                              value={formData.image_url}
+                              onChange={(url) => updateField('image_url', url)}
+                              label=""
+                            />
+                          </TabsContent>
+                          <TabsContent value="url" className="mt-4 space-y-2">
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <Input
+                                  id="image_url"
+                                  placeholder="https://example.com/image.jpg"
+                                  value={formData.image_url}
+                                  onChange={(e) => updateField('image_url', e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Paste a URL to an image. Recommended size: 1200x630 pixels
+                            </p>
+                            {formData.image_url && (
+                              <div className="rounded-lg overflow-hidden bg-muted aspect-video">
+                                <img 
+                                  src={formData.image_url} 
+                                  alt="Preview" 
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </TabsContent>
+                        </Tabs>
                       </div>
-
-                      {formData.image_url && (
-                        <div className="rounded-lg overflow-hidden bg-muted aspect-video">
-                          <img 
-                            src={formData.image_url} 
-                            alt="Preview" 
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
 
                       {/* Summary */}
                       <Card className="bg-muted/50">
