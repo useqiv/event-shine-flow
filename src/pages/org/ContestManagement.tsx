@@ -22,7 +22,7 @@ import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
 import { SocialPostingCard } from '@/components/org/SocialPostingCard';
-import { ScheduledPostingCard } from '@/components/org/ScheduledPostingCard';
+import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
@@ -1271,10 +1271,11 @@ const ContestManagement = () => {
               />
             )}
 
-            {/* Scheduled Auto-Posting */}
-            <ScheduledPostingCard
-              contestId={contest.id}
-              contestTitle={contest.title}
+            {/* Auto-Posting Manager */}
+            <SocialAutoPostManager
+              entityId={contest.id}
+              entityType="contest"
+              entityTitle={contest.title}
             />
 
             {/* Social Media Analytics */}

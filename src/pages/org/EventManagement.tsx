@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import CurrencySelector, { getCurrencySymbol, formatCurrency } from '@/components/ui/currency-selector';
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs, useOrganizationSettings } from '@/hooks/useOrganization';
-import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
+import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
@@ -603,7 +603,7 @@ const EventManagement = () => {
           </TabsContent>
 
           <TabsContent value="marketing" className="space-y-6">
-            <EventAutoPostingCard eventId={id!} eventTitle={event.title} />
+            <SocialAutoPostManager entityId={id!} entityType="event" entityTitle={event.title} />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
