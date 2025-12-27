@@ -115,7 +115,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'queue' | 'channels' | 'settings'>('queue');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'queue' | 'channels'>('accounts');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPost, setNewPost] = useState({
     platform: 'twitter',
@@ -268,6 +268,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 
   const activeSchedules = autoPosts?.filter(p => p.is_active) || [];
   const pausedSchedules = autoPosts?.filter(p => !p.is_active) || [];
+  const connectedAccountsCount = socialAccounts?.filter(a => a.is_connected).length || 0;
 
   return (
     <Card className="overflow-hidden">
@@ -294,6 +295,15 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <div className="px-6 pt-4">
           <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="accounts" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Accounts
+              {connectedAccountsCount === 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-[10px]">
+                  Setup
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="queue" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Queue
@@ -306,10 +316,6 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
             <TabsTrigger value="channels" className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
               Channels
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Accounts
             </TabsTrigger>
           </TabsList>
         </div>
@@ -423,6 +429,30 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
           )}
 
           <TabsContent value="queue" className="m-0 space-y-4">
+            {/* Setup prompt when no accounts connected */}
+            {connectedAccountsCount === 0 && (
+              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-amber-700 dark:text-amber-400">Connect your social accounts first</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Before creating auto-post schedules, you need to connect at least one social media account.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2 border-amber-500/50 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+                      onClick={() => setActiveTab('accounts')}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Go to Accounts
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
@@ -613,7 +643,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="m-0">
+          <TabsContent value="accounts" className="m-0">
             <SocialAccountsConfig />
           </TabsContent>
         </CardContent>
