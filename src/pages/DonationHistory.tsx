@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Heart, Calendar, DollarSign, TrendingUp, ExternalLink } from "lucide-react";
+import { Heart, Calendar, DollarSign, TrendingUp, ExternalLink, Download } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDonationHistory, useDonationStats } from "@/hooks/useDonationHistory";
+import { useDonationHistory, useDonationStats, DonationWithCampaign } from "@/hooks/useDonationHistory";
+import { generateDonationReceiptPdf } from "@/lib/exportPdf";
 
 const DonationHistory = () => {
   const { data: donations, isLoading } = useDonationHistory();
@@ -24,6 +25,22 @@ const DonationHistory = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const handleDownloadReceipt = (donation: DonationWithCampaign) => {
+    generateDonationReceiptPdf({
+      id: donation.id,
+      amount: donation.amount,
+      currency: donation.currency,
+      created_at: donation.created_at,
+      donor_message: donation.donor_message,
+      payment_method: donation.payment_method,
+      status: donation.status,
+      campaign: {
+        title: donation.campaign?.title ?? "Unknown Campaign",
+        image_url: donation.campaign?.image_url,
+      },
+    });
   };
 
   return (
@@ -148,13 +165,23 @@ const DonationHistory = () => {
                           "{donation.donor_message}"
                         </p>
                       )}
-                      <div className="mt-3 flex gap-2">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {donation.campaign && (
                           <Button variant="outline" size="sm" asChild>
                             <Link to={`/campaigns/${donation.campaign.id}`}>
                               <ExternalLink className="h-3 w-3 mr-1" />
                               View Campaign
                             </Link>
+                          </Button>
+                        )}
+                        {donation.status === "completed" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadReceipt(donation)}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Receipt
                           </Button>
                         )}
                       </div>
