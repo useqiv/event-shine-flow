@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents } from '@/hooks/useOrganization';
+import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents, useOrganizationSettings } from '@/hooks/useOrganization';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
   ArrowRight, 
@@ -28,7 +29,10 @@ const OrgWallet = () => {
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
   const { data: contests } = useOrganizationContests();
   const { data: events } = useOrganizationEvents();
+  const { data: orgSettings } = useOrganizationSettings();
   const { user } = useAuth();
+  
+  const defaultCurrency = orgSettings?.default_currency || 'USD';
 
   const handleExportReport = async () => {
     if (!user) return;
@@ -140,7 +144,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      ₦{stats?.totalRevenue?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.totalRevenue || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -158,7 +162,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{stats?.availableBalance?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.availableBalance || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -176,7 +180,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{stats?.pendingPayouts?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.pendingPayouts || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -194,7 +198,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{stats?.completedPayouts?.toLocaleString() || '0.00'}
+                      {formatCurrency(stats?.completedPayouts || 0, defaultCurrency)}
                     </p>
                   )}
                 </div>
@@ -217,7 +221,7 @@ const OrgWallet = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">₦{stats?.ticketRevenue?.toLocaleString() || '0'}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(stats?.ticketRevenue || 0, defaultCurrency)}</p>
                   <p className="text-sm text-muted-foreground">{stats?.ticketsSold || 0} tickets sold</p>
                 </div>
                 <Link to="/org/events">
@@ -240,7 +244,7 @@ const OrgWallet = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">₦{stats?.voteRevenue?.toLocaleString() || '0'}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(stats?.voteRevenue || 0, defaultCurrency)}</p>
                   <p className="text-sm text-muted-foreground">{stats?.totalVotes || 0} votes received</p>
                 </div>
                 <Link to="/org/contests">
@@ -278,7 +282,7 @@ const OrgWallet = () => {
                 {payouts.slice(0, 5).map((payout) => (
                   <div key={payout.id} className="flex items-center justify-between p-4 rounded-lg border border-border">
                     <div>
-                      <p className="font-semibold">₦{payout.amount.toLocaleString()}</p>
+                      <p className="font-semibold">{formatCurrency(payout.amount, defaultCurrency)}</p>
                       <p className="text-sm text-muted-foreground">
                         {payout.payment_method === 'bank' ? 'Bank Transfer' : 'USDT'} • {format(new Date(payout.created_at), 'MMM d, yyyy')}
                       </p>

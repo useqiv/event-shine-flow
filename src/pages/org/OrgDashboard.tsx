@@ -563,7 +563,7 @@ const OrgDashboard = () => {
                 {pendingPayouts.slice(0, 3).map((payout) => (
                   <div key={payout.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                     <div>
-                      <p className="font-medium">₦{payout.amount.toLocaleString()}</p>
+                      <p className="font-medium">{formatCurrency(payout.amount, orgSettings?.default_currency || 'USD')}</p>
                       <p className="text-xs text-muted-foreground">
                         Requested {format(new Date(payout.created_at), 'MMM d, yyyy')}
                       </p>
