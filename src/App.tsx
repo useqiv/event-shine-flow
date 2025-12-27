@@ -151,10 +151,10 @@ const AppRoutes = () => (
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-    <Route path="/contests" element={<ProtectedRoute><Contests /></ProtectedRoute>} />
-    <Route path="/contests/:id" element={<ProtectedRoute><ContestDetail /></ProtectedRoute>} />
-    <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-    <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+    <Route path="/contests" element={<Contests />} />
+    <Route path="/contests/:id" element={<ContestDetail />} />
+    <Route path="/events" element={<Events />} />
+    <Route path="/events/:id" element={<EventDetail />} />
     <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
     <Route path="/my-tickets" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
     <Route path="/my-votes" element={<ProtectedRoute><MyVotes /></ProtectedRoute>} />
