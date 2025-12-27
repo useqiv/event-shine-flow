@@ -98,28 +98,34 @@ const OrgDashboard = () => {
   const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
   const hasCustomRate = orgApproval?.vote_commission_rate != null || orgApproval?.ticket_commission_rate != null || orgApproval?.special_commission_rate != null;
   
-  const voteRevenue = stats?.voteRevenue || 0;
-  const ticketRevenue = stats?.ticketRevenue || 0;
-  const totalRevenue = stats?.totalRevenue || 0;
-  
-  // Calculate net revenue using appropriate commission rates
-  const netVoteRevenue = voteRevenue * (1 - voteCommission / 100);
-  const netTicketRevenue = ticketRevenue * (1 - ticketCommission / 100);
-  const netRevenue = netVoteRevenue + netTicketRevenue;
-  const totalCommissionDeducted = totalRevenue - netRevenue;
-
-  // Helper to convert amounts from NGN to display currency
-  const convertToDisplayCurrency = (amount: number, fromCurrency: string = 'NGN') => {
+  // Helper to convert amounts from any currency to display currency
+  const convertToDisplayCurrency = (amount: number, fromCurrency: string) => {
     if (fromCurrency === displayCurrency) return amount;
     return convert(amount, fromCurrency, displayCurrency);
   };
 
-  const displayTotalRevenue = convertToDisplayCurrency(totalRevenue);
-  const displayNetRevenue = convertToDisplayCurrency(netRevenue);
-  const displayTotalCommission = convertToDisplayCurrency(totalCommissionDeducted);
-  const displayVoteRevenue = convertToDisplayCurrency(voteRevenue);
-  const displayTicketRevenue = convertToDisplayCurrency(ticketRevenue);
-  const displayPendingPayouts = convertToDisplayCurrency(stats?.pendingPayouts || 0);
+  // Convert revenue by currency breakdown to display currency
+  const convertRevenueByCurrency = (revenueByCurrency: Record<string, number> | undefined) => {
+    if (!revenueByCurrency) return 0;
+    return Object.entries(revenueByCurrency).reduce((total, [currency, amount]) => {
+      return total + convertToDisplayCurrency(amount, currency);
+    }, 0);
+  };
+
+  // Calculate totals properly using currency breakdown
+  const displayVoteRevenue = convertRevenueByCurrency(stats?.voteRevenueByCurrency);
+  const displayTicketRevenue = convertRevenueByCurrency(stats?.ticketRevenueByCurrency);
+  const displayTotalRevenue = displayVoteRevenue + displayTicketRevenue;
+  
+  // Calculate net revenue with proper commission rates
+  const displayNetVoteRevenue = displayVoteRevenue * (1 - voteCommission / 100);
+  const displayNetTicketRevenue = displayTicketRevenue * (1 - ticketCommission / 100);
+  const displayNetRevenue = displayNetVoteRevenue + displayNetTicketRevenue;
+  const displayTotalCommission = displayTotalRevenue - displayNetRevenue;
+  
+  // Pending payouts - assume stored in org's default currency or NGN
+  const orgDefaultCurrency = orgSettings?.default_currency || 'USD';
+  const displayPendingPayouts = convertToDisplayCurrency(stats?.pendingPayouts || 0, orgDefaultCurrency);
   // Show full page skeleton during initial load
   const isInitialLoading = statsLoading && contestsLoading && eventsLoading;
 

@@ -372,7 +372,7 @@ export const useOrganizationStats = () => {
   return useQuery({
     queryKey: ['organization-stats', user?.id],
     queryFn: async () => {
-      // Get all events
+      // Get all events with their ticket types for currency info
       const { data: events } = await supabase
         .from('events')
         .select('id, is_active, event_date')
@@ -381,42 +381,57 @@ export const useOrganizationStats = () => {
       const eventIds = events?.map(e => e.id) || [];
       const activeEvents = events?.filter(e => e.is_active && new Date(e.event_date) > new Date()).length || 0;
       
-      let ticketRevenue = 0;
+      // Revenue by currency for tickets
+      const ticketRevenueByCurrency: Record<string, number> = {};
       let ticketsSold = 0;
       
       if (eventIds.length > 0) {
+        // Get tickets with their ticket_type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid, quantity')
+          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency)')
           .in('event_id', eventIds);
         
-        ticketRevenue = tickets?.reduce((sum, t) => sum + Number(t.amount_paid), 0) || 0;
-        ticketsSold = tickets?.reduce((sum, t) => sum + t.quantity, 0) || 0;
+        tickets?.forEach((t: any) => {
+          const currency = t.ticket_types?.currency || 'USD';
+          ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(t.amount_paid);
+          ticketsSold += t.quantity;
+        });
       }
       
-      // Get all contests
+      // Get all contests with their currency
       const { data: contests } = await supabase
         .from('contests')
-        .select('id, is_active, end_date')
+        .select('id, is_active, end_date, vote_currency')
         .eq('organization_id', user!.id);
       
       const contestIds = contests?.map(c => c.id) || [];
       const activeContests = contests?.filter(c => c.is_active && new Date(c.end_date) > new Date()).length || 0;
       
-      let voteRevenue = 0;
+      // Create a map of contest_id -> vote_currency
+      const contestCurrencyMap: Record<string, string> = {};
+      contests?.forEach(c => {
+        contestCurrencyMap[c.id] = c.vote_currency || 'NGN';
+      });
+      
+      // Revenue by currency for votes
+      const voteRevenueByCurrency: Record<string, number> = {};
       let totalVotes = 0;
       
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, quantity')
+          .select('amount_paid, quantity, contest_id')
           .in('contest_id', contestIds);
         
-        voteRevenue = votes?.reduce((sum, v) => sum + Number(v.amount_paid), 0) || 0;
-        totalVotes = votes?.reduce((sum, v) => sum + v.quantity, 0) || 0;
+        votes?.forEach((v: any) => {
+          const currency = contestCurrencyMap[v.contest_id] || 'NGN';
+          voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(v.amount_paid);
+          totalVotes += v.quantity;
+        });
       }
       
-      // Get pending payouts
+      // Get pending payouts (these are stored in the org's default currency typically)
       const { data: payouts } = await supabase
         .from('payouts')
         .select('amount, status')
@@ -430,17 +445,20 @@ export const useOrganizationStats = () => {
         .from('organization_approvals')
         .select('ticket_commission_rate, vote_commission_rate')
         .eq('organization_id', user!.id)
-        .single();
+        .maybeSingle();
       
       // Default commission rates (10% if not set)
       const ticketCommissionRate = approval?.ticket_commission_rate ?? 10;
       const voteCommissionRate = approval?.vote_commission_rate ?? 10;
       
+      // Sum up raw totals (for backwards compatibility - these are mixed currencies)
+      const ticketRevenue = Object.values(ticketRevenueByCurrency).reduce((a, b) => a + b, 0);
+      const voteRevenue = Object.values(voteRevenueByCurrency).reduce((a, b) => a + b, 0);
+      const totalRevenue = ticketRevenue + voteRevenue;
+      
       // Calculate net revenue after platform commission
       const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
       const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
-      
-      const totalRevenue = ticketRevenue + voteRevenue;
       const netRevenue = netTicketRevenue + netVoteRevenue;
       const availableBalance = netRevenue - completedPayouts - pendingPayouts;
       
@@ -455,6 +473,11 @@ export const useOrganizationStats = () => {
         availableBalance,
         activeContests,
         activeEvents,
+        // New: revenue breakdown by currency for proper conversion
+        ticketRevenueByCurrency,
+        voteRevenueByCurrency,
+        ticketCommissionRate,
+        voteCommissionRate,
       };
     },
     enabled: !!user,
