@@ -275,11 +275,6 @@ const OrgDashboard = () => {
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-              <Link to="/org/payouts">
-                <Button variant="link" className="px-0 mt-2">
-                  Request Payout <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              </Link>
             </CardContent>
           </Card>
 
