@@ -16,9 +16,8 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
+    { name: "Campaigns", href: "/campaigns" },
     { name: "Features", href: "#features" },
-    { name: "For Organizers", href: "#organizers" },
-    { name: "For Users", href: "#users" },
     { name: "How It Works", href: "#how-it-works" },
   ];
 
@@ -94,14 +93,14 @@ const Navbar = () => {
             </div>
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.name}
-                  href={link.href}
+                  to={link.href}
                   className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.name}
-                </a>
+                </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
                 <Link to="/auth" onClick={() => setIsOpen(false)}>

@@ -30,6 +30,9 @@ import AcceptTransfer from "./pages/AcceptTransfer";
 import EmbedLeaderboard from "./pages/EmbedLeaderboard";
 import FavoriteContestants from "./pages/FavoriteContestants";
 import ResetPassword from "./pages/ResetPassword";
+import Campaigns from "./pages/Campaigns";
+import CampaignDetail from "./pages/CampaignDetail";
+import CreateCampaign from "./pages/CreateCampaign";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -154,6 +157,9 @@ const AppRoutes = () => (
     <Route path="/payment-callback" element={<PaymentCallback />} />
     <Route path="/accept-transfer" element={<AcceptTransfer />} />
     <Route path="/account-setup" element={<ProtectedRoute><AccountTypeSelection /></ProtectedRoute>} />
+    <Route path="/campaigns" element={<Campaigns />} />
+    <Route path="/campaigns/:id" element={<CampaignDetail />} />
+    <Route path="/campaigns/create" element={<ProtectedRoute><CreateCampaign /></ProtectedRoute>} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
