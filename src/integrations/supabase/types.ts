@@ -58,6 +58,66 @@ export type Database = {
           },
         ]
       }
+      campaigns: {
+        Row: {
+          category: string
+          created_at: string
+          creator_id: string
+          currency: string
+          current_amount: number
+          description: string | null
+          donor_count: number
+          end_date: string | null
+          goal_amount: number
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          short_description: string | null
+          start_date: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          creator_id: string
+          currency?: string
+          current_amount?: number
+          description?: string | null
+          donor_count?: number
+          end_date?: string | null
+          goal_amount?: number
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          short_description?: string | null
+          start_date?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          creator_id?: string
+          currency?: string
+          current_amount?: number
+          description?: string | null
+          donor_count?: number
+          end_date?: string | null
+          goal_amount?: number
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          short_description?: string | null
+          start_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_moderation: {
         Row: {
           content_type: string
@@ -332,6 +392,63 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donations: {
+        Row: {
+          amount: number
+          campaign_id: string
+          created_at: string
+          currency: string
+          donor_id: string
+          donor_message: string | null
+          id: string
+          is_anonymous: boolean
+          payment_method: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          campaign_id: string
+          created_at?: string
+          currency?: string
+          donor_id: string
+          donor_message?: string | null
+          id?: string
+          is_anonymous?: boolean
+          payment_method: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string
+          created_at?: string
+          currency?: string
+          donor_id?: string
+          donor_message?: string | null
+          id?: string
+          is_anonymous?: boolean
+          payment_method?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
             referencedColumns: ["id"]
           },
         ]
