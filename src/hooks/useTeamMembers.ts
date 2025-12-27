@@ -58,41 +58,49 @@ export const useInviteTeamMember = () => {
       organizationName?: string;
       inviterName?: string;
     }) => {
-      const { error } = await supabase
+      // First check if user with this email exists - they must sign up first
+      const { data: existingUser, error: lookupError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('email', memberData.email)
+        .single();
+
+      if (lookupError || !existingUser) {
+        throw new Error('USER_NOT_FOUND');
+      }
+
+      // Get the team member record to get its ID for the notification
+      const { data: teamMember, error } = await supabase
         .from('team_members')
         .insert({
           organization_id: user!.id,
           email: memberData.email,
-          name: memberData.name,
+          name: memberData.name || existingUser.full_name,
           role: memberData.role,
           permissions: memberData.permissions,
-        });
+        })
+        .select('id')
+        .single();
       
       if (error) throw error;
 
-      // Check if user with this email exists and send in-app notification
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', memberData.email)
-        .single();
-
-      if (existingUser) {
-        await supabase.from('notifications').insert({
-          user_id: existingUser.id,
-          title: 'Team Invitation',
-          message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}.`,
-          type: 'team_invite',
-          reference_id: user!.id,
-        });
-      }
+      // Send in-app notification to accept/decline
+      await supabase.from('notifications').insert({
+        user_id: existingUser.id,
+        title: 'Team Invitation',
+        message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}. Click to accept or decline.`,
+        type: 'team_invite',
+        reference_id: teamMember.id, // Store team_member ID for accept/decline
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
-      toast.success('Team member invited successfully');
+      toast.success('Invitation sent! They will receive a notification to accept or decline.');
     },
     onError: (error: any) => {
-      if (error.code === '23505') {
+      if (error.message === 'USER_NOT_FOUND') {
+        toast.error('This user must sign up first before they can be invited');
+      } else if (error.code === '23505') {
         toast.error('This email has already been invited');
       } else {
         toast.error('Failed to invite team member');
@@ -143,6 +151,48 @@ export const useRemoveTeamMember = () => {
     },
     onError: (error) => {
       toast.error('Failed to remove team member');
+      console.error(error);
+    },
+  });
+};
+
+export const useRespondToInvite = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  
+  return useMutation({
+    mutationFn: async ({ teamMemberId, accept }: { teamMemberId: string; accept: boolean }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      if (accept) {
+        // Accept the invitation - update status and link user_id
+        const { error } = await supabase
+          .from('team_members')
+          .update({ 
+            status: 'accepted',
+            user_id: user.id,
+            accepted_at: new Date().toISOString(),
+          })
+          .eq('id', teamMemberId);
+        
+        if (error) throw error;
+      } else {
+        // Decline - delete the team member record
+        const { error } = await supabase
+          .from('team_members')
+          .delete()
+          .eq('id', teamMemberId);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { accept }) => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success(accept ? 'Invitation accepted!' : 'Invitation declined');
+    },
+    onError: (error) => {
+      toast.error('Failed to respond to invitation');
       console.error(error);
     },
   });
