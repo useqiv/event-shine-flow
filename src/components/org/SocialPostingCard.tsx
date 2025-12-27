@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Twitter, Facebook, Instagram, Send, Clock, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Share2, Twitter, Facebook, Instagram, Send, Clock, CheckCircle2, AlertCircle, ExternalLink, ImagePlus, X } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 interface Contestant {
   id: string;
@@ -43,6 +44,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
   const [customMessage, setCustomMessage] = useState('');
   const [postStatus, setPostStatus] = useState<PostStatus>('idle');
   const [selectedPlatform, setSelectedPlatform] = useState('twitter');
+  const [postImage, setPostImage] = useState<string>('');
 
   const contestUrl = contest.custom_slug 
     ? `${window.location.origin}/c/${contest.custom_slug}`
@@ -111,6 +113,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
           message,
           contestId: contest.id,
           contestUrl,
+          imageUrl: postImage || undefined,
         },
       });
 
@@ -200,12 +203,51 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
           </div>
         )}
 
+        {/* Image Upload */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <ImagePlus className="h-4 w-4" />
+            Attach Image (Optional)
+          </Label>
+          {postImage ? (
+            <div className="relative inline-block">
+              <img 
+                src={postImage} 
+                alt="Post image" 
+                className="max-w-[200px] max-h-[200px] rounded-lg object-cover border border-border"
+              />
+              <Button
+                variant="destructive"
+                size="icon"
+                className="absolute -top-2 -right-2 h-6 w-6"
+                onClick={() => setPostImage('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <ImageUpload
+              bucket="contest-images"
+              value={postImage}
+              onChange={setPostImage}
+              className="max-w-[300px]"
+            />
+          )}
+        </div>
+
         {/* Message Preview */}
         {previewMessage && (
           <div className="space-y-2">
             <Label>Preview</Label>
             <div className="p-4 rounded-lg bg-secondary/50 border border-border">
               <pre className="whitespace-pre-wrap text-sm font-sans">{previewMessage}</pre>
+              {postImage && (
+                <img 
+                  src={postImage} 
+                  alt="Preview" 
+                  className="mt-3 max-w-full max-h-[150px] rounded-lg object-cover"
+                />
+              )}
             </div>
           </div>
         )}
