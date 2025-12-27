@@ -1,9 +1,10 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from "recharts";
-import { Activity, TrendingUp, Share2, CheckCircle, XCircle, MousePointerClick, Eye, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Line, Area, AreaChart } from "recharts";
+import { Activity, Share2, CheckCircle, XCircle, MousePointerClick, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react";
 import { format, subDays } from "date-fns";
 
 interface SocialAnalyticsCardProps {
@@ -11,21 +12,16 @@ interface SocialAnalyticsCardProps {
   organizationId: string;
 }
 
-const StatCard = ({ 
-  icon: Icon, 
-  label, 
-  value, 
-  trend, 
-  trendUp,
-  iconBg 
-}: { 
-  icon: React.ElementType; 
-  label: string; 
-  value: number | string; 
+interface StatCardProps {
+  icon: React.ElementType;
+  label: string;
+  value: number | string;
   trend?: string;
   trendUp?: boolean;
   iconBg: string;
-}) => (
+}
+
+const StatCard = ({ icon: Icon, label, value, trend, trendUp, iconBg }: StatCardProps) => (
   <div className="relative p-5 rounded-2xl bg-gradient-to-br from-card to-muted/30 border border-border/50 overflow-hidden group hover:shadow-lg transition-all duration-300">
     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     <div className="relative flex items-start justify-between">
