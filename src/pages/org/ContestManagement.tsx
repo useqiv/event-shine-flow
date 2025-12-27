@@ -46,7 +46,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
@@ -561,7 +561,7 @@ const ContestManagement = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -599,6 +599,17 @@ const ContestManagement = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200 dark:border-green-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
                   <div className="flex items-center gap-1">
                     <p className="text-sm text-muted-foreground">Net Revenue</p>
                     <TooltipProvider>
@@ -608,8 +619,7 @@ const ContestManagement = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">
-                            {voteCommission}% commission<br/>
-                            Total: {formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}
+                            {voteCommission}% commission deducted
                           </p>
                         </TooltipContent>
                       </Tooltip>
