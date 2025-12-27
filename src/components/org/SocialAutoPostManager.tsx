@@ -21,11 +21,16 @@ import {
   Link2,
   Send,
   Settings,
-  Zap
+  Zap,
+  Sparkles,
+  Loader2,
+  Pencil,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { SocialAccountsConfig } from './SocialAccountsConfig';
 import { useOrganizationSocialAccounts } from '@/hooks/useOrganizationSocialAccounts';
+import { toast } from 'sonner';
 
 // Platform icons
 const TwitterIcon = ({ className }: { className?: string }) => (
@@ -81,9 +86,9 @@ interface SocialAutoPostManagerProps {
 
 const platforms: Platform[] = [
   { id: 'twitter', name: 'X (Twitter)', icon: TwitterIcon, connected: false, color: 'bg-black text-white' },
-  { id: 'facebook', name: 'Facebook', icon: FacebookIcon, connected: false, color: 'bg-[#1877F2] text-white', comingSoon: true },
-  { id: 'instagram', name: 'Instagram', icon: InstagramIcon, connected: false, color: 'bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white', comingSoon: true },
-  { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, connected: false, color: 'bg-black text-white', comingSoon: true },
+  { id: 'facebook', name: 'Facebook', icon: FacebookIcon, connected: false, color: 'bg-[#1877F2] text-white' },
+  { id: 'instagram', name: 'Instagram', icon: InstagramIcon, connected: false, color: 'bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] text-white' },
+  { id: 'tiktok', name: 'TikTok', icon: TikTokIcon, connected: false, color: 'bg-black text-white' },
 ];
 
 const postTypes = {
@@ -108,6 +113,13 @@ const scheduleIntervals = [
   { id: 'weekly', name: 'Weekly', description: 'Post once per week' },
 ];
 
+const toneOptions = [
+  { id: 'exciting', name: 'Exciting', description: 'Energetic and enthusiastic' },
+  { id: 'professional', name: 'Professional', description: 'Formal and trustworthy' },
+  { id: 'casual', name: 'Casual', description: 'Friendly and relaxed' },
+  { id: 'urgent', name: 'Urgent', description: 'Time-sensitive, FOMO' },
+];
+
 export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
   entityId,
   entityType,
@@ -115,7 +127,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'accounts' | 'queue' | 'channels'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'create' | 'queue' | 'channels'>('accounts');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newPost, setNewPost] = useState({
     platform: 'twitter',
@@ -123,6 +135,94 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
     schedule_interval: 'daily',
     custom_message: '',
   });
+  
+  // Custom post state
+  const [customPost, setCustomPost] = useState({
+    platform: 'twitter',
+    message: '',
+    tone: 'exciting',
+    includeHashtags: true,
+    postType: postTypes[entityType][0].id,
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+
+  // AI Generate post
+  const handleGeneratePost = async () => {
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-social-post', {
+        body: {
+          contentType: entityType,
+          contestTitle: entityType === 'contest' ? entityTitle : undefined,
+          eventTitle: entityType === 'event' ? entityTitle : undefined,
+          postType: customPost.postType,
+          platform: customPost.platform,
+          customContext: customPost.message ? `Current draft: ${customPost.message}` : undefined,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.post) {
+        setCustomPost(prev => ({ ...prev, message: data.post }));
+        toast.success('AI generated a post for you!');
+      } else if (data?.error) {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      console.error('Generate post error:', error);
+      toast.error('Failed to generate post', {
+        description: error.message || 'Please try again'
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Send custom post now
+  const handlePostNow = async () => {
+    if (!customPost.message.trim()) {
+      toast.error('Please write or generate a message first');
+      return;
+    }
+
+    const account = socialAccounts?.find(a => a.platform === customPost.platform && a.is_connected);
+    if (!account) {
+      toast.error('Please connect your account first', {
+        description: `Go to Accounts tab to connect your ${platforms.find(p => p.id === customPost.platform)?.name} account`
+      });
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('social-post', {
+        body: {
+          platform: customPost.platform,
+          message: customPost.message,
+          contestId: entityType === 'contest' ? entityId : undefined,
+          eventId: entityType === 'event' ? entityId : undefined,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Posted to ${platforms.find(p => p.id === customPost.platform)?.name}!`);
+        setCustomPost(prev => ({ ...prev, message: '' }));
+      } else {
+        throw new Error(data?.error || 'Failed to post');
+      }
+    } catch (error: any) {
+      console.error('Post error:', error);
+      toast.error('Failed to post', {
+        description: error.message || 'Please check your API credentials'
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  };
 
   // Fetch connected social accounts
   const { data: socialAccounts } = useOrganizationSocialAccounts();
@@ -294,7 +394,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <div className="px-6 pt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="accounts" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Accounts
@@ -303,6 +403,10 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                   Setup
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center gap-2">
+              <Pencil className="h-4 w-4" />
+              Create Post
             </TabsTrigger>
             <TabsTrigger value="queue" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -321,7 +425,179 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
         </div>
 
         <CardContent className="pt-6">
-          {/* Create Form Modal */}
+          {/* Create Post Tab */}
+          <TabsContent value="create" className="m-0 space-y-4">
+            <div className="p-4 border rounded-lg bg-card space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Create Custom Post</h3>
+              </div>
+              
+              {/* Platform Selection */}
+              <div className="space-y-2">
+                <Label>Platform</Label>
+                <div className="flex flex-wrap gap-2">
+                  {platforms.map((platform) => {
+                    const Icon = platform.icon;
+                    const isSelected = customPost.platform === platform.id;
+                    const isConnected = socialAccounts?.some(a => a.platform === platform.id && a.is_connected);
+                    return (
+                      <Button
+                        key={platform.id}
+                        type="button"
+                        variant={isSelected ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCustomPost({ ...customPost, platform: platform.id })}
+                        className={`flex items-center gap-2 ${isSelected ? platform.color : ''}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {platform.name}
+                        {isConnected && (
+                          <CheckCircle2 className="h-3 w-3 text-green-400" />
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Post Type for AI context */}
+              <div className="space-y-2">
+                <Label>Post Type (for AI context)</Label>
+                <Select
+                  value={customPost.postType}
+                  onValueChange={(v) => setCustomPost({ ...customPost, postType: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {postTypes[entityType].map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.name} - {type.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Tone Selection */}
+              <div className="space-y-2">
+                <Label>Tone</Label>
+                <div className="flex flex-wrap gap-2">
+                  {toneOptions.map((tone) => (
+                    <Button
+                      key={tone.id}
+                      type="button"
+                      variant={customPost.tone === tone.id ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCustomPost({ ...customPost, tone: tone.id })}
+                    >
+                      {tone.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Include Hashtags Toggle */}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="hashtags">Include Hashtags</Label>
+                <Switch
+                  id="hashtags"
+                  checked={customPost.includeHashtags}
+                  onCheckedChange={(checked) => setCustomPost({ ...customPost, includeHashtags: checked })}
+                />
+              </div>
+
+              {/* Message Textarea */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Your Message</Label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGeneratePost}
+                    disabled={isGenerating}
+                    className="gap-2"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Generate with AI
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <Textarea
+                  value={customPost.message}
+                  onChange={(e) => setCustomPost({ ...customPost, message: e.target.value })}
+                  placeholder="Write your post or click 'Generate with AI' to create one automatically..."
+                  rows={5}
+                  className="resize-none"
+                />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{customPost.message.length} characters</span>
+                  {customPost.platform === 'twitter' && customPost.message.length > 280 && (
+                    <span className="text-destructive">Exceeds Twitter limit (280)</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleGeneratePost}
+                  disabled={isGenerating}
+                  className="flex-1"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
+                  Regenerate
+                </Button>
+                <Button
+                  onClick={handlePostNow}
+                  disabled={isPosting || !customPost.message.trim()}
+                  className="flex-1"
+                >
+                  {isPosting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Post Now
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Account connection warning */}
+              {!socialAccounts?.some(a => a.platform === customPost.platform && a.is_connected) && (
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                        {platforms.find(p => p.id === customPost.platform)?.name} not connected
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Connect your account in the Accounts tab to post.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Create Schedule Form Modal */}
           {showCreateForm && (
             <div className="mb-6 p-4 border border-primary/20 rounded-lg bg-primary/5 space-y-4">
               <div className="flex items-center justify-between">
@@ -347,15 +623,11 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                           type="button"
                           variant={isSelected ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => !platform.comingSoon && setNewPost({ ...newPost, platform: platform.id })}
-                          disabled={platform.comingSoon}
+                          onClick={() => setNewPost({ ...newPost, platform: platform.id })}
                           className={`flex items-center gap-2 ${isSelected ? platform.color : ''}`}
                         >
                           <Icon className="h-4 w-4" />
                           {platform.name}
-                          {platform.comingSoon && (
-                            <Badge variant="outline" className="text-[10px] px-1">Soon</Badge>
-                          )}
                         </Button>
                       );
                     })}
