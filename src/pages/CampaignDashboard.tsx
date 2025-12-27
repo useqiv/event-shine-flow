@@ -51,6 +51,7 @@ import SocialShareButtons from '@/components/SocialShareButtons';
 import { CampaignEmbedGenerator } from '@/components/CampaignEmbedGenerator';
 import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
+import { AdjustGoalDialog } from '@/components/AdjustGoalDialog';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -136,6 +137,12 @@ const CampaignDashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <AdjustGoalDialog
+              campaignId={campaign.id}
+              currentGoal={campaign.goal_amount}
+              currentAmount={campaign.current_amount}
+              currency={campaign.currency}
+            />
             <ExtendDeadlineDialog 
               campaignId={campaign.id}
               currentEndDate={campaign.end_date}
