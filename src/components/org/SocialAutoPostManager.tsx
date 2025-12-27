@@ -30,8 +30,11 @@ import {
   Pencil,
   RefreshCw,
   CalendarIcon,
-  Repeat
+  Repeat,
+  ImagePlus,
+  X
 } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { SocialAccountsConfig } from './SocialAccountsConfig';
@@ -170,6 +173,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
     includeHashtags: true,
     postType: postTypes[entityType][0].id,
     customPostType: '',
+    imageUrl: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
@@ -237,6 +241,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
           message: customPost.message,
           contestId: entityType === 'contest' ? entityId : undefined,
           eventId: entityType === 'event' ? entityId : undefined,
+          imageUrl: customPost.imageUrl || undefined,
         }
       });
 
@@ -244,7 +249,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
 
       if (data?.success) {
         toast.success(`Posted to ${platforms.find(p => p.id === customPost.platform)?.name}!`);
-        setCustomPost(prev => ({ ...prev, message: '' }));
+        setCustomPost(prev => ({ ...prev, message: '', imageUrl: '' }));
       } else {
         throw new Error(data?.error || 'Failed to post');
       }
@@ -608,6 +613,38 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                     <span className="text-destructive">Exceeds Twitter limit (280)</span>
                   )}
                 </div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4" />
+                  Attach Image (Optional)
+                </Label>
+                {customPost.imageUrl ? (
+                  <div className="relative inline-block">
+                    <img 
+                      src={customPost.imageUrl} 
+                      alt="Post image" 
+                      className="max-w-[200px] max-h-[200px] rounded-lg object-cover border border-border"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => setCustomPost({ ...customPost, imageUrl: '' })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <ImageUpload
+                    bucket={entityType === 'contest' ? 'contest-images' : 'event-images'}
+                    value={customPost.imageUrl}
+                    onChange={(url) => setCustomPost({ ...customPost, imageUrl: url })}
+                    className="max-w-[300px]"
+                  />
+                )}
               </div>
 
               {/* Action Buttons */}
