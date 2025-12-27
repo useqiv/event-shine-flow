@@ -56,6 +56,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
     { path: '/admin/users', label: 'User Management', icon: Users },
     { path: '/admin/organizations', label: 'Organizations', icon: Building2 },
+    { path: '/admin/org-reports', label: 'Org Revenue Reports', icon: BarChart3 },
     { path: '/admin/contests', label: 'Contests', icon: Trophy },
     { path: '/admin/events', label: 'Events', icon: Calendar },
     { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
@@ -67,6 +68,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
     { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
     { path: '/admin/activity-log', label: 'Activity Log', icon: History },
+    { path: '/admin/system-health', label: 'System Health', icon: Bell },
   ];
 
   const bottomNavItems = [

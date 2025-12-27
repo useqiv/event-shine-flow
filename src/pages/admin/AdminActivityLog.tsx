@@ -20,10 +20,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useAdminActivityLogs } from '@/hooks/useAdminActivityLog';
-import { Search, History, RefreshCw, UserX, UserCheck, CheckCircle, XCircle, Shield, Settings, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, History, RefreshCw, UserX, UserCheck, CheckCircle, XCircle, Shield, Settings, Edit, Trash2, Eye, Download, FileText, FileDown } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
+import { exportToPdf } from '@/lib/exportPdf';
+import { toast } from 'sonner';
 
 const AdminActivityLog: React.FC = () => {
   const { data: logs, isLoading, refetch, isFetching } = useAdminActivityLogs(200);
@@ -95,6 +104,67 @@ const AdminActivityLog: React.FC = () => {
     );
   }
 
+  const handleExportCsv = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const exportData = filteredLogs.map(log => ({
+      admin_name: log.admin?.full_name || 'Unknown',
+      admin_email: log.admin?.email || '',
+      action_type: log.action_type,
+      description: log.description,
+      entity_type: log.entity_type || '',
+      entity_id: log.entity_id || '',
+      timestamp: formatDateForExport(log.created_at),
+      ip_address: log.ip_address || '',
+    }));
+
+    exportToCsv(exportData, `admin-activity-log-${format(new Date(), 'yyyy-MM-dd')}`, [
+      { key: 'admin_name', label: 'Admin Name' },
+      { key: 'admin_email', label: 'Admin Email' },
+      { key: 'action_type', label: 'Action Type' },
+      { key: 'description', label: 'Description' },
+      { key: 'entity_type', label: 'Entity Type' },
+      { key: 'entity_id', label: 'Entity ID' },
+      { key: 'timestamp', label: 'Timestamp' },
+      { key: 'ip_address', label: 'IP Address' },
+    ]);
+
+    toast.success('Activity log exported as CSV');
+  };
+
+  const handleExportPdf = () => {
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
+
+    const exportData = filteredLogs.map(log => ({
+      admin_name: log.admin?.full_name || 'Unknown',
+      action_type: log.action_type.replace(/_/g, ' '),
+      description: log.description.substring(0, 60) + (log.description.length > 60 ? '...' : ''),
+      entity_type: log.entity_type || '-',
+      timestamp: format(new Date(log.created_at), 'MMM d, yyyy HH:mm'),
+    }));
+
+    exportToPdf(exportData, [
+      { key: 'admin_name', label: 'Admin', width: '15%' },
+      { key: 'action_type', label: 'Action', width: '15%' },
+      { key: 'description', label: 'Description', width: '35%' },
+      { key: 'entity_type', label: 'Entity', width: '15%' },
+      { key: 'timestamp', label: 'Time', width: '20%' },
+    ], {
+      title: 'Admin Activity Audit Log',
+      subtitle: `Generated on ${format(new Date(), 'MMMM d, yyyy')} • ${filteredLogs.length} records`,
+      filename: `admin-activity-log-${format(new Date(), 'yyyy-MM-dd')}`,
+      orientation: 'landscape',
+    });
+
+    toast.success('Activity log exported as PDF');
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -104,10 +174,30 @@ const AdminActivityLog: React.FC = () => {
             <h1 className="text-2xl font-bold">Activity Log</h1>
             <p className="text-muted-foreground">Track all admin actions and changes</p>
           </div>
-          <Button onClick={() => refetch()} variant="outline" disabled={isFetching}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCsv}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPdf}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => refetch()} variant="outline" disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
