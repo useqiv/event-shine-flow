@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, Wallet } from 'lucide-react';
+import SocialShareButtons from '@/components/SocialShareButtons';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
@@ -435,10 +436,15 @@ const CampaignDetail: React.FC = () => {
                   </Dialog>
 
                   {/* Share */}
-                  <Button variant="outline" className="w-full" onClick={handleShare}>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Campaign
-                  </Button>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-center">Share this campaign</p>
+                    <SocialShareButtons 
+                      url={pageUrl}
+                      title={campaign.title}
+                      description={ogDescription}
+                      className="justify-center"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </div>

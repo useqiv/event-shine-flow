@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,11 +8,21 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Users, Target, Clock, Search, Plus, TrendingUp } from 'lucide-react';
+import { Heart, Users, Target, Clock, Search, Plus, TrendingUp, Filter, SlidersHorizontal } from 'lucide-react';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 
 const CATEGORIES = [
   { value: 'all', label: 'All Categories' },
@@ -26,18 +36,71 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'most-funded', label: 'Most Funded' },
+  { value: 'least-funded', label: 'Least Funded' },
+  { value: 'ending-soon', label: 'Ending Soon' },
+  { value: 'most-donors', label: 'Most Donors' },
+];
+
 const Campaigns: React.FC = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [goalRange, setGoalRange] = useState([0, 10000000]);
+  const [progressFilter, setProgressFilter] = useState('all');
   const { data: campaigns, isLoading } = useCampaigns({ category, status: 'active' });
 
-  const filteredCampaigns = campaigns?.filter(c => 
-    c.title.toLowerCase().includes(search.toLowerCase()) ||
-    c.short_description?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredAndSortedCampaigns = useMemo(() => {
+    if (!campaigns) return [];
+
+    let result = campaigns.filter(c => {
+      // Search filter
+      const matchesSearch = c.title.toLowerCase().includes(search.toLowerCase()) ||
+        c.short_description?.toLowerCase().includes(search.toLowerCase());
+      
+      // Goal range filter
+      const matchesGoal = c.goal_amount >= goalRange[0] && c.goal_amount <= goalRange[1];
+      
+      // Progress filter
+      const progress = c.goal_amount > 0 ? (c.current_amount / c.goal_amount) * 100 : 0;
+      let matchesProgress = true;
+      if (progressFilter === 'just-started') matchesProgress = progress < 25;
+      else if (progressFilter === 'gaining-momentum') matchesProgress = progress >= 25 && progress < 75;
+      else if (progressFilter === 'almost-there') matchesProgress = progress >= 75 && progress < 100;
+      else if (progressFilter === 'fully-funded') matchesProgress = progress >= 100;
+
+      return matchesSearch && matchesGoal && matchesProgress;
+    });
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'most-funded':
+          return b.current_amount - a.current_amount;
+        case 'least-funded':
+          return a.current_amount - b.current_amount;
+        case 'ending-soon':
+          if (!a.end_date) return 1;
+          if (!b.end_date) return -1;
+          return new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
+        case 'most-donors':
+          return b.donor_count - a.donor_count;
+        default: // newest
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [campaigns, search, goalRange, progressFilter, sortBy]);
 
   const featuredCampaigns = campaigns?.filter(c => c.is_featured).slice(0, 3);
+  const activeFiltersCount = (category !== 'all' ? 1 : 0) + (progressFilter !== 'all' ? 1 : 0) + (goalRange[0] > 0 || goalRange[1] < 10000000 ? 1 : 0);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -115,28 +178,135 @@ const Campaigns: React.FC = () => {
         <section id="campaigns" className="py-12">
           <div className="container mx-auto px-4">
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search campaigns..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="flex flex-col gap-4 mb-8">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search campaigns..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map(cat => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Filters
+                      {activeFiltersCount > 0 && (
+                        <Badge variant="secondary" className="ml-1">
+                          {activeFiltersCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Filter Campaigns</SheetTitle>
+                      <SheetDescription>
+                        Narrow down campaigns to find exactly what you're looking for
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-6 mt-6">
+                      {/* Progress Filter */}
+                      <div className="space-y-3">
+                        <Label>Funding Progress</Label>
+                        <Select value={progressFilter} onValueChange={setProgressFilter}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Any progress" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Any Progress</SelectItem>
+                            <SelectItem value="just-started">Just Started (&lt;25%)</SelectItem>
+                            <SelectItem value="gaining-momentum">Gaining Momentum (25-75%)</SelectItem>
+                            <SelectItem value="almost-there">Almost There (75-100%)</SelectItem>
+                            <SelectItem value="fully-funded">Fully Funded (100%+)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Goal Range */}
+                      <div className="space-y-3">
+                        <Label>Goal Amount Range</Label>
+                        <div className="pt-2">
+                          <Slider
+                            value={goalRange}
+                            onValueChange={setGoalRange}
+                            min={0}
+                            max={10000000}
+                            step={100000}
+                            className="mb-2"
+                          />
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span>₦{goalRange[0].toLocaleString()}</span>
+                            <span>₦{goalRange[1].toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Reset Filters */}
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setCategory('all');
+                          setProgressFilter('all');
+                          setGoalRange([0, 10000000]);
+                          setSortBy('newest');
+                        }}
+                      >
+                        Reset All Filters
+                      </Button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(cat => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              {/* Active filters display */}
+              {(category !== 'all' || progressFilter !== 'all') && (
+                <div className="flex flex-wrap gap-2">
+                  {category !== 'all' && (
+                    <Badge variant="secondary" className="gap-1">
+                      {CATEGORIES.find(c => c.value === category)?.label}
+                      <button onClick={() => setCategory('all')} className="ml-1 hover:text-destructive">×</button>
+                    </Badge>
+                  )}
+                  {progressFilter !== 'all' && (
+                    <Badge variant="secondary" className="gap-1">
+                      {progressFilter === 'just-started' && 'Just Started'}
+                      {progressFilter === 'gaining-momentum' && 'Gaining Momentum'}
+                      {progressFilter === 'almost-there' && 'Almost There'}
+                      {progressFilter === 'fully-funded' && 'Fully Funded'}
+                      <button onClick={() => setProgressFilter('all')} className="ml-1 hover:text-destructive">×</button>
+                    </Badge>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Campaign Grid */}
@@ -154,9 +324,9 @@ const Campaigns: React.FC = () => {
                   </Card>
                 ))}
               </div>
-            ) : filteredCampaigns && filteredCampaigns.length > 0 ? (
+            ) : filteredAndSortedCampaigns && filteredAndSortedCampaigns.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCampaigns.map(campaign => (
+                {filteredAndSortedCampaigns.map(campaign => (
                   <CampaignCard key={campaign.id} campaign={campaign} />
                 ))}
               </div>
@@ -166,13 +336,25 @@ const Campaigns: React.FC = () => {
                   <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No campaigns found</h3>
                   <p className="text-muted-foreground mb-4">
-                    {search ? 'Try adjusting your search terms' : 'Be the first to start a campaign!'}
+                    {search ? 'Try adjusting your search terms or filters' : 'Be the first to start a campaign!'}
                   </p>
-                  {user && (
-                    <Button asChild>
-                      <Link to="/campaigns/create">Start a Campaign</Link>
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {(search || category !== 'all' || progressFilter !== 'all') && (
+                      <Button variant="outline" onClick={() => {
+                        setSearch('');
+                        setCategory('all');
+                        setProgressFilter('all');
+                        setGoalRange([0, 10000000]);
+                      }}>
+                        Clear Filters
+                      </Button>
+                    )}
+                    {user && (
+                      <Button asChild>
+                        <Link to="/campaigns/create">Start a Campaign</Link>
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}
