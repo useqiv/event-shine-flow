@@ -61,6 +61,7 @@ import TeamMembers from "./pages/org/TeamMembers";
 import EventCheckinDashboard from "./pages/org/EventCheckinDashboard";
 import ContestAnalytics from "./pages/org/ContestAnalytics";
 import ContestSocialMedia from "./pages/org/ContestSocialMedia";
+import EventSocialMedia from "./pages/org/EventSocialMedia";
 import ManageCampaigns from "./pages/org/ManageCampaigns";
 import CampaignAnalytics from "./pages/org/CampaignAnalytics";
 
@@ -195,6 +196,7 @@ const AppRoutes = () => (
     <Route path="/org/notifications" element={<ProtectedRoute><OrgNotifications /></ProtectedRoute>} />
     <Route path="/org/team" element={<ProtectedRoute><TeamMembers /></ProtectedRoute>} />
     <Route path="/org/events/:id/checkin" element={<ProtectedRoute><EventCheckinDashboard /></ProtectedRoute>} />
+    <Route path="/org/events/:id/social" element={<ProtectedRoute><EventSocialMedia /></ProtectedRoute>} />
     <Route path="/org/contests/:id/analytics" element={<ProtectedRoute><ContestAnalytics /></ProtectedRoute>} />
     <Route path="/org/contests/:id/social" element={<ProtectedRoute><ContestSocialMedia /></ProtectedRoute>} />
     <Route path="/org/campaigns" element={<ProtectedRoute><ManageCampaigns /></ProtectedRoute>} />
