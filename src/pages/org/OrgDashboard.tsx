@@ -98,23 +98,15 @@ const OrgDashboard = () => {
   const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
   const hasCustomRate = orgApproval?.vote_commission_rate != null || orgApproval?.ticket_commission_rate != null || orgApproval?.special_commission_rate != null;
   
-  // Helper to convert amounts from any currency to display currency
-  const convertToDisplayCurrency = (amount: number, fromCurrency: string) => {
-    if (fromCurrency === displayCurrency) return amount;
-    return convert(amount, fromCurrency, displayCurrency);
-  };
-
-  // Convert revenue by currency breakdown to display currency
-  const convertRevenueByCurrency = (revenueByCurrency: Record<string, number> | undefined) => {
+  // Filter revenue by selected currency - only show revenue from contests/events natively set in that currency
+  const getRevenueForCurrency = (revenueByCurrency: Record<string, number> | undefined) => {
     if (!revenueByCurrency) return 0;
-    return Object.entries(revenueByCurrency).reduce((total, [currency, amount]) => {
-      return total + convertToDisplayCurrency(amount, currency);
-    }, 0);
+    return revenueByCurrency[displayCurrency] || 0;
   };
 
-  // Calculate totals properly using currency breakdown
-  const displayVoteRevenue = convertRevenueByCurrency(stats?.voteRevenueByCurrency);
-  const displayTicketRevenue = convertRevenueByCurrency(stats?.ticketRevenueByCurrency);
+  // Get revenue only for the selected currency (no conversion, pure filtering)
+  const displayVoteRevenue = getRevenueForCurrency(stats?.voteRevenueByCurrency);
+  const displayTicketRevenue = getRevenueForCurrency(stats?.ticketRevenueByCurrency);
   const displayTotalRevenue = displayVoteRevenue + displayTicketRevenue;
   
   // Calculate net revenue with proper commission rates
@@ -123,9 +115,8 @@ const OrgDashboard = () => {
   const displayNetRevenue = displayNetVoteRevenue + displayNetTicketRevenue;
   const displayTotalCommission = displayTotalRevenue - displayNetRevenue;
   
-  // Pending payouts - assume stored in org's default currency or NGN
-  const orgDefaultCurrency = orgSettings?.default_currency || 'USD';
-  const displayPendingPayouts = convertToDisplayCurrency(stats?.pendingPayouts || 0, orgDefaultCurrency);
+  // Pending payouts - show only if in selected currency
+  const displayPendingPayouts = displayCurrency === (orgSettings?.default_currency || 'USD') ? (stats?.pendingPayouts || 0) : 0;
   // Show full page skeleton during initial load
   const isInitialLoading = statsLoading && contestsLoading && eventsLoading;
 
@@ -248,22 +239,20 @@ const OrgDashboard = () => {
                   ))}
                 </SelectContent>
               </Select>
-              {displayCurrency !== 'NGN' && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Badge variant="outline" className="text-xs">
-                        {isLive ? 'Live' : 'Est.'}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">
-                        {isLive ? 'Using live exchange rates' : 'Using estimated exchange rates'}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="outline" className="text-xs">
+                      Filtered
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      Showing only contests/events with {displayCurrency} as their native currency
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Link to="/org/contests/create">
               <Button>
