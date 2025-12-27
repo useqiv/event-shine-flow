@@ -28,6 +28,7 @@ import ReferralLeaderboard from "./pages/ReferralLeaderboard";
 import PaymentCallback from "./pages/PaymentCallback";
 import AcceptTransfer from "./pages/AcceptTransfer";
 import EmbedLeaderboard from "./pages/EmbedLeaderboard";
+import EmbedCampaign from "./pages/EmbedCampaign";
 import FavoriteContestants from "./pages/FavoriteContestants";
 import ResetPassword from "./pages/ResetPassword";
 import Campaigns from "./pages/Campaigns";
@@ -144,6 +145,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
+    <Route path="/embed/campaign/:campaignId" element={<EmbedCampaign />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import SocialShareButtons from '@/components/SocialShareButtons';
+import { CampaignEmbedGenerator } from '@/components/CampaignEmbedGenerator';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -601,6 +602,12 @@ const CampaignDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Embed Widget Generator */}
+            <CampaignEmbedGenerator 
+              campaignId={campaign.id}
+              campaignTitle={campaign.title}
+            />
           </TabsContent>
         </Tabs>
       </div>
