@@ -31,9 +31,11 @@ import {
   Bell,
   PieChart,
   RotateCcw,
-  GitCompare
+  GitCompare,
+  History
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut } = useAuth();
@@ -41,6 +43,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { data: profile } = useProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  // Enable real-time notifications for admins
+  useAdminRealtime();
 
   const handleSignOut = async () => {
     await signOut();
@@ -61,6 +66,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
     { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
+    { path: '/admin/activity-log', label: 'Activity Log', icon: History },
   ];
 
   const bottomNavItems = [

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -29,7 +30,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { useAllUsers, useSuspendUser, useActivateUser } from '@/hooks/useAdminData';
-import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle, Pencil } from 'lucide-react';
+import { useBulkSuspendUsers, useBulkActivateUsers, useLogAdminActivity } from '@/hooks/useAdminActivityLog';
+import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle, Pencil, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import EditUserDialog from '@/components/admin/EditUserDialog';
@@ -38,6 +40,9 @@ const AdminUsers: React.FC = () => {
   const { data: users, isLoading } = useAllUsers();
   const suspendUser = useSuspendUser();
   const activateUser = useActivateUser();
+  const bulkSuspend = useBulkSuspendUsers();
+  const bulkActivate = useBulkActivateUsers();
+  const logActivity = useLogAdminActivity();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -45,6 +50,9 @@ const AdminUsers: React.FC = () => {
   const [suspendReason, setSuspendReason] = useState('');
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [bulkSuspendDialogOpen, setBulkSuspendDialogOpen] = useState(false);
+  const [bulkSuspendReason, setBulkSuspendReason] = useState('');
 
   const filteredUsers = users?.filter(user => 
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,14 +62,64 @@ const AdminUsers: React.FC = () => {
   const handleSuspend = async () => {
     if (!selectedUser || !suspendReason) return;
     await suspendUser.mutateAsync({ userId: selectedUser.id, reason: suspendReason });
+    await logActivity.mutateAsync({
+      actionType: 'suspend_user',
+      entityType: 'user',
+      entityId: selectedUser.id,
+      description: `Suspended user ${selectedUser.full_name || selectedUser.email}`,
+      metadata: { reason: suspendReason }
+    });
     setSuspendDialogOpen(false);
     setSuspendReason('');
     setSelectedUser(null);
   };
 
-  const handleActivate = async (userId: string) => {
-    await activateUser.mutateAsync(userId);
+  const handleActivate = async (user: any) => {
+    await activateUser.mutateAsync(user.id);
+    await logActivity.mutateAsync({
+      actionType: 'activate_user',
+      entityType: 'user',
+      entityId: user.id,
+      description: `Activated user ${user.full_name || user.email}`
+    });
   };
+
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    const newSelected = new Set(selectedUsers);
+    if (checked) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(new Set(filteredUsers.map(u => u.id)));
+    } else {
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const handleBulkSuspend = async () => {
+    if (!bulkSuspendReason) return;
+    await bulkSuspend.mutateAsync({ 
+      userIds: Array.from(selectedUsers), 
+      reason: bulkSuspendReason 
+    });
+    setSelectedUsers(new Set());
+    setBulkSuspendDialogOpen(false);
+    setBulkSuspendReason('');
+  };
+
+  const handleBulkActivate = async () => {
+    await bulkActivate.mutateAsync(Array.from(selectedUsers));
+    setSelectedUsers(new Set());
+  };
+
+  const selectedActiveUsers = users?.filter(u => selectedUsers.has(u.id) && !u.is_suspended) || [];
+  const selectedSuspendedUsers = users?.filter(u => selectedUsers.has(u.id) && u.is_suspended) || [];
 
   const getRoleBadge = (role: string) => {
     const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -137,8 +195,35 @@ const AdminUsers: React.FC = () => {
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Users</CardTitle>
-            <CardDescription>View and manage user accounts</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>All Users</CardTitle>
+                <CardDescription>View and manage user accounts</CardDescription>
+              </div>
+              {selectedUsers.size > 0 && (
+                <div className="flex gap-2">
+                  {selectedActiveUsers.length > 0 && (
+                    <Button 
+                      variant="destructive"
+                      onClick={() => setBulkSuspendDialogOpen(true)}
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Suspend {selectedActiveUsers.length}
+                    </Button>
+                  )}
+                  {selectedSuspendedUsers.length > 0 && (
+                    <Button 
+                      className="bg-green-500 hover:bg-green-600"
+                      onClick={handleBulkActivate}
+                      disabled={bulkActivate.isPending}
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Activate {selectedSuspendedUsers.length}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {/* Search */}
@@ -159,6 +244,12 @@ const AdminUsers: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
@@ -171,6 +262,12 @@ const AdminUsers: React.FC = () => {
                 <TableBody>
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedUsers.has(user.id)}
+                          onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -220,7 +317,7 @@ const AdminUsers: React.FC = () => {
                               Edit User
                             </DropdownMenuItem>
                             {user.is_suspended ? (
-                              <DropdownMenuItem onClick={() => handleActivate(user.id)}>
+                              <DropdownMenuItem onClick={() => handleActivate(user)}>
                                 <UserCheck className="mr-2 h-4 w-4" />
                                 Activate User
                               </DropdownMenuItem>
@@ -287,6 +384,51 @@ const AdminUsers: React.FC = () => {
                 disabled={!suspendReason || suspendUser.isPending}
               >
                 Suspend User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Suspend Dialog */}
+        <Dialog open={bulkSuspendDialogOpen} onOpenChange={setBulkSuspendDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bulk Suspend Users</DialogTitle>
+              <DialogDescription>
+                You are about to suspend {selectedActiveUsers.length} users.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="max-h-32 overflow-y-auto space-y-2">
+                {selectedActiveUsers.map(user => (
+                  <div key={user.id} className="flex items-center gap-2 text-sm">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback>{user.full_name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <span>{user.full_name || user.email}</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Suspension Reason (for all)</label>
+                <Textarea
+                  value={bulkSuspendReason}
+                  onChange={(e) => setBulkSuspendReason(e.target.value)}
+                  placeholder="Enter reason for suspension..."
+                  className="mt-2"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBulkSuspendDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleBulkSuspend}
+                disabled={!bulkSuspendReason || bulkSuspend.isPending}
+              >
+                Suspend All
               </Button>
             </DialogFooter>
           </DialogContent>
