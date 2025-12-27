@@ -39,6 +39,7 @@ import MyCampaigns from "./pages/MyCampaigns";
 import DonationHistory from "./pages/DonationHistory";
 import CampaignDashboard from "./pages/CampaignDashboard";
 import Install from "./pages/Install";
+import Search from "./pages/Search";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -173,6 +174,7 @@ const AppRoutes = () => (
     <Route path="/campaigns/:id/dashboard" element={<ProtectedRoute><CampaignDashboard /></ProtectedRoute>} />
     <Route path="/donations/history" element={<ProtectedRoute><DonationHistory /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
+    <Route path="/search" element={<Search />} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
