@@ -426,6 +426,15 @@ export const useApprovePayout = () => {
 
   return useMutation({
     mutationFn: async ({ payoutId, referenceId }: { payoutId: string; referenceId?: string }) => {
+      // First get payout details for email notification
+      const { data: payout, error: fetchError } = await supabase
+        .from('payouts')
+        .select('*, profiles:organization_id(email, full_name)')
+        .eq('id', payoutId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from('payouts')
         .update({
@@ -436,11 +445,26 @@ export const useApprovePayout = () => {
         .eq('id', payoutId);
 
       if (error) throw error;
+
+      // Send email notification
+      const profile = payout.profiles as { email: string; full_name: string } | null;
+      if (profile?.email) {
+        await supabase.functions.invoke('send-payout-notification', {
+          body: {
+            payout_id: payoutId,
+            status: 'completed',
+            amount: payout.amount,
+            currency: 'NGN',
+            organization_email: profile.email,
+            organization_name: profile.full_name || 'Organization'
+          }
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
-      toast.success('Payout approved');
+      toast.success('Payout approved and notification sent');
     },
     onError: () => {
       toast.error('Failed to approve payout');
@@ -452,18 +476,43 @@ export const useRejectPayout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payoutId: string) => {
+    mutationFn: async ({ payoutId, reason }: { payoutId: string; reason?: string }) => {
+      // First get payout details for email notification
+      const { data: payout, error: fetchError } = await supabase
+        .from('payouts')
+        .select('*, profiles:organization_id(email, full_name)')
+        .eq('id', payoutId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       const { error } = await supabase
         .from('payouts')
         .update({ status: 'rejected' })
         .eq('id', payoutId);
 
       if (error) throw error;
+
+      // Send email notification
+      const profile = payout.profiles as { email: string; full_name: string } | null;
+      if (profile?.email) {
+        await supabase.functions.invoke('send-payout-notification', {
+          body: {
+            payout_id: payoutId,
+            status: 'rejected',
+            amount: payout.amount,
+            currency: 'NGN',
+            organization_email: profile.email,
+            organization_name: profile.full_name || 'Organization',
+            rejection_reason: reason
+          }
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
-      toast.success('Payout rejected');
+      toast.success('Payout rejected and notification sent');
     },
     onError: () => {
       toast.error('Failed to reject payout');
