@@ -1,16 +1,20 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useCampaign } from '@/hooks/useCampaigns';
 import { 
   useCampaignDonationTrends, 
   useCampaignDonorStats 
 } from '@/hooks/useCampaignAnalytics';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   LineChart,
   Line,
@@ -36,7 +40,9 @@ import {
   Target,
   Heart,
   Repeat,
-  Eye
+  Eye,
+  Wallet,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -44,9 +50,38 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 
 const CampaignAnalytics: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: campaign, isLoading: campaignLoading } = useCampaign(id!);
   const { data: donationTrends, isLoading: trendsLoading } = useCampaignDonationTrends(id!, 30);
   const { data: donorStats, isLoading: statsLoading } = useCampaignDonorStats(id!);
+
+  // Fetch commission rates
+  const { data: commissionData } = useQuery({
+    queryKey: ['campaign-commission', user?.id],
+    queryFn: async () => {
+      // Get org-specific rate
+      const { data: orgApproval } = await supabase
+        .from('organization_approvals')
+        .select('special_commission_rate')
+        .eq('organization_id', user?.id)
+        .single();
+      
+      // Get platform default rate
+      const { data: platformSettings } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['donation_commission_percentage', 'platform_commission_percentage']);
+      
+      const donationCommission = platformSettings?.find(s => s.setting_key === 'donation_commission_percentage');
+      const platformCommission = platformSettings?.find(s => s.setting_key === 'platform_commission_percentage');
+      
+      const defaultRate = parseFloat(donationCommission?.setting_value || platformCommission?.setting_value || '10');
+      const commissionRate = orgApproval?.special_commission_rate ?? defaultRate;
+      
+      return { commissionRate };
+    },
+    enabled: !!user?.id,
+  });
 
   if (campaignLoading) {
     return (
@@ -78,6 +113,10 @@ const CampaignAnalytics: React.FC = () => {
     ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100) 
     : 0;
 
+  const commissionRate = commissionData?.commissionRate ?? 10;
+  const commissionDeducted = (campaign.current_amount * commissionRate) / 100;
+  const netRevenue = campaign.current_amount - commissionDeducted;
+
   const distributionData = donorStats ? [
     { name: '< ₦5,000', value: donorStats.distribution.small },
     { name: '₦5,000 - ₦20,000', value: donorStats.distribution.medium },
@@ -102,7 +141,7 @@ const CampaignAnalytics: React.FC = () => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -112,6 +151,33 @@ const CampaignAnalytics: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Raised</p>
                   <p className="text-2xl font-bold">₦{campaign.current_amount.toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500/10 rounded-lg">
+                  <Wallet className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <p className="text-2xl font-bold">₦{Math.round(netRevenue).toLocaleString()}</p>
+                  </div>
+                  <TooltipProvider>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>After {commissionRate}% commission</p>
+                        <p className="text-muted-foreground">-₦{Math.round(commissionDeducted).toLocaleString()}</p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             </CardContent>
