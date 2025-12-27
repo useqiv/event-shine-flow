@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { WebhooksManager } from '@/components/org/WebhooksManager';
 import { EmbedCodeGenerator } from '@/components/org/EmbedCodeGenerator';
 import CurrencySelector from '@/components/ui/currency-selector';
+import TwoFactorEnforcement from '@/components/auth/TwoFactorEnforcement';
 
 const OrgSettings = () => {
   const { data: profile } = useProfile();
@@ -275,6 +276,9 @@ const OrgSettings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Two-Factor Authentication */}
+        <TwoFactorEnforcement isRequired={true} />
 
         {/* Webhooks */}
         <WebhooksManager />

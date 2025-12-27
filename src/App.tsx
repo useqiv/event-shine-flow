@@ -69,6 +69,8 @@ import AdminContestDetail from "./pages/admin/AdminContestDetail";
 import AdminEventDetail from "./pages/admin/AdminEventDetail";
 import AdminVoteReconciliation from "./pages/admin/AdminVoteReconciliation";
 import AdminActivityLog from "./pages/admin/AdminActivityLog";
+import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
+import AdminOrgReports from "./pages/admin/AdminOrgReports";
 import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -190,6 +192,8 @@ const AppRoutes = () => (
         <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
         <Route path="/admin/vote-reconciliation" element={<ProtectedRoute><AdminVoteReconciliation /></ProtectedRoute>} />
         <Route path="/admin/activity-log" element={<ProtectedRoute><AdminActivityLog /></ProtectedRoute>} />
+        <Route path="/admin/system-health" element={<ProtectedRoute><AdminSystemHealth /></ProtectedRoute>} />
+        <Route path="/admin/org-reports" element={<ProtectedRoute><AdminOrgReports /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
