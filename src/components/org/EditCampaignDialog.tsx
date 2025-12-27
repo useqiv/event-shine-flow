@@ -137,7 +137,7 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="goal_amount">Goal Amount (₦) *</Label>
+              <Label htmlFor="goal_amount">Goal Amount ({campaign?.currency === 'USD' ? '$' : campaign?.currency === 'EUR' ? '€' : campaign?.currency === 'GBP' ? '£' : '₦'}) *</Label>
               <Input
                 id="goal_amount"
                 type="number"
