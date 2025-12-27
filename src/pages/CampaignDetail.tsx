@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useCampaign, useCampaignDonations, useCreateDonation } from '@/hooks/useCampaigns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -124,8 +125,37 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
+  const pageUrl = `${window.location.origin}/campaigns/${campaign.id}`;
+  const ogImage = campaign.image_url || `${window.location.origin}/placeholder.svg`;
+  const ogDescription = campaign.short_description || campaign.description?.substring(0, 160) || `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
+
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>{campaign.title} | Fundraising Campaign</title>
+        <meta name="description" content={ogDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content={campaign.title} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={pageUrl} />
+        <meta name="twitter:title" content={campaign.title} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        
+        {/* Campaign specific meta */}
+        <meta property="og:site_name" content="VoteWaves Campaigns" />
+        <link rel="canonical" href={pageUrl} />
+      </Helmet>
+
       <Navbar />
       
       <main className="flex-1">
