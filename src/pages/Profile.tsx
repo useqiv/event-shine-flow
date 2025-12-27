@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import CurrencyPreferenceSelector from '@/components/ui/currency-preference-selector';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import NotificationPreferencesCard from '@/components/NotificationPreferencesCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -294,6 +295,8 @@ const Profile = () => {
             )}
           </CardContent>
         </Card>
+
+        <NotificationPreferencesCard />
 
         <Card>
           <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
