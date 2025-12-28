@@ -28,18 +28,24 @@ interface Recommendations {
 }
 
 export const useRecommendations = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   return useQuery({
     queryKey: ['recommendations', user?.id],
     queryFn: async (): Promise<Recommendations> => {
+      // Ensure we have a valid session before calling
+      if (!session?.access_token) {
+        throw new Error('No valid session');
+      }
+      
       const { data, error } = await supabase.functions.invoke('get-recommendations');
       
       if (error) throw error;
       return data as Recommendations;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!session?.access_token,
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
     refetchOnWindowFocus: false,
+    retry: false, // Don't retry on auth errors
   });
 };
