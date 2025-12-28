@@ -1,8 +1,8 @@
-import { forwardRef } from "react";
+import type { HTMLAttributes } from "react";
 import { Vote, Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const Footer = forwardRef<HTMLElement>((props, ref) => {
+const Footer = (props: HTMLAttributes<HTMLElement>) => {
   const footerLinks = {
     product: [
       { name: "Features", href: "#features" },
@@ -42,7 +42,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
   ];
 
   return (
-    <footer ref={ref} {...props} className="bg-card border-t border-border">
+    <footer {...props} className="bg-card border-t border-border">
       <div className="w-full px-4 md:px-6 lg:px-8 py-16 lg:py-20">
         <div className="max-w-[1600px] mx-auto">
           {/* Newsletter Section */}
@@ -177,7 +177,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
       </div>
     </footer>
   );
-});
+};
 
 Footer.displayName = "Footer";
 
