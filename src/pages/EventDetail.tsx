@@ -321,7 +321,7 @@ const EventDetail = () => {
                       <Wallet className="h-4 w-4" />
                       <span className="text-sm">Wallet Balance</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
+                    <span className="font-medium">{formatCurrency(wallet?.balance || 0, selectedTicketType?.currency || 'NGN')}</span>
                   </div>
                 )}
 

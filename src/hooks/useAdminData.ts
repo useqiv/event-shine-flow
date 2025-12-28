@@ -442,6 +442,15 @@ export const useApprovePayout = () => {
         .eq('id', payout.organization_id)
         .single();
 
+      // Get organization's default currency
+      const { data: orgSettings } = await supabase
+        .from('organization_settings')
+        .select('default_currency')
+        .eq('organization_id', payout.organization_id)
+        .single();
+
+      const orgCurrency = orgSettings?.default_currency || 'USD';
+
       const { error } = await supabase
         .from('payouts')
         .update({
@@ -461,7 +470,7 @@ export const useApprovePayout = () => {
             payout_id: payoutId,
             status: 'completed',
             amount: payout.amount,
-            currency: 'NGN',
+            currency: orgCurrency,
             organization_email: profile.email,
             organization_name: profile.full_name || 'Organization',
             payment_method: payout.payment_method
@@ -504,6 +513,15 @@ export const useRejectPayout = () => {
         .eq('id', payout.organization_id)
         .single();
 
+      // Get organization's default currency
+      const { data: orgSettings } = await supabase
+        .from('organization_settings')
+        .select('default_currency')
+        .eq('organization_id', payout.organization_id)
+        .single();
+
+      const orgCurrency = orgSettings?.default_currency || 'USD';
+
       const { error } = await supabase
         .from('payouts')
         .update({ status: 'rejected' })
@@ -519,7 +537,7 @@ export const useRejectPayout = () => {
             payout_id: payoutId,
             status: 'rejected',
             amount: payout.amount,
-            currency: 'NGN',
+            currency: orgCurrency,
             organization_email: profile.email,
             organization_name: profile.full_name || 'Organization',
             rejection_reason: reason,

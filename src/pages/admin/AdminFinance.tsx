@@ -2,6 +2,7 @@ import React from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStatistics } from '@/hooks/useAdminData';
+import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
@@ -33,8 +34,8 @@ import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 const AdminFinance: React.FC = () => {
   const { data: stats, isLoading: statsLoading } = useAdminStatistics();
 
-  // Default currency for admin pages (platform default)
-  const platformCurrency = 'NGN';
+  // Default currency for admin pages (from platform settings)
+  const platformCurrency = usePlatformCurrency();
 
   // Fetch real monthly revenue data from votes and tickets
   const { data: revenueData = [], isLoading: revenueLoading } = useQuery({

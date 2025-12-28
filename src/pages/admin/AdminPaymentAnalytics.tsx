@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import RevenueForecast from '@/components/admin/RevenueForecast';
@@ -23,8 +24,8 @@ const AdminPaymentAnalytics = () => {
   useRealtimePayments();
   const [timeRange, setTimeRange] = React.useState('7d');
   
-  // Platform default currency
-  const platformCurrency = 'NGN';
+  // Platform default currency from settings
+  const platformCurrency = usePlatformCurrency();
 
   // Fetch votes
   const { data: votes, isLoading: votesLoading } = useQuery({
