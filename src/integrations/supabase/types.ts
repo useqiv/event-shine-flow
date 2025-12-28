@@ -780,6 +780,51 @@ export type Database = {
           },
         ]
       }
+      fraud_rules: {
+        Row: {
+          auto_block: boolean
+          auto_flag: boolean
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          rule_name: string
+          rule_type: string
+          severity: string
+          threshold_unit: string | null
+          threshold_value: number
+          updated_at: string
+        }
+        Insert: {
+          auto_block?: boolean
+          auto_flag?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          rule_name: string
+          rule_type: string
+          severity?: string
+          threshold_unit?: string | null
+          threshold_value: number
+          updated_at?: string
+        }
+        Update: {
+          auto_block?: boolean
+          auto_flag?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          rule_name?: string
+          rule_type?: string
+          severity?: string
+          threshold_unit?: string | null
+          threshold_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       influencer_clicks: {
         Row: {
           clicked_at: string
