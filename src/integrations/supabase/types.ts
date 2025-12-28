@@ -2164,6 +2164,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          currency: string
           description: string | null
           id: string
           reference_id: string | null
@@ -2175,6 +2176,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           reference_id?: string | null
@@ -2186,6 +2188,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          currency?: string
           description?: string | null
           id?: string
           reference_id?: string | null
@@ -2207,6 +2210,7 @@ export type Database = {
       wallets: {
         Row: {
           balance: number
+          balance_currency: string
           created_at: string
           id: string
           low_balance_threshold: number | null
@@ -2218,6 +2222,7 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          balance_currency?: string
           created_at?: string
           id?: string
           low_balance_threshold?: number | null
@@ -2229,6 +2234,7 @@ export type Database = {
         }
         Update: {
           balance?: number
+          balance_currency?: string
           created_at?: string
           id?: string
           low_balance_threshold?: number | null

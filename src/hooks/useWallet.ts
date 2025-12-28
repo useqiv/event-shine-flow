@@ -20,6 +20,7 @@ export interface WalletTransaction {
   user_id: string;
   type: 'deposit' | 'withdrawal' | 'vote' | 'ticket' | 'referral' | 'voucher';
   amount: number;
+  currency: string;
   description: string | null;
   reference_id: string | null;
   status: 'pending' | 'completed' | 'failed';
