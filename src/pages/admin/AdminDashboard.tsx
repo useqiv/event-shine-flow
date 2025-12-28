@@ -10,6 +10,7 @@ import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWid
 import RecentActivityWidget from '@/components/admin/RecentActivityWidget';
 import AdminNotificationCenter from '@/components/admin/AdminNotificationCenter';
 import WebhookLogsViewer from '@/components/admin/WebhookLogsViewer';
+import { SystemMetricsWidget } from '@/components/admin/SystemMetricsWidget';
 import { 
   Users, 
   Building2, 
@@ -296,10 +297,11 @@ const AdminDashboard: React.FC = () => {
         {/* Payment Statistics Widget */}
         <PaymentStatsWidget />
 
-        {/* Activity & Notifications Grid */}
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* Activity, Notifications & System Metrics Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
           <RecentActivityWidget />
           <AdminNotificationCenter />
+          <SystemMetricsWidget />
         </div>
 
         {/* Webhook Logs Viewer */}

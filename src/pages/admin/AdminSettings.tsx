@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlatformSettings, useUpdatePlatformSetting } from '@/hooks/useAdminData';
-import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, AlertTriangle, Shield, Database } from 'lucide-react';
+import { Settings, CreditCard, Percent, Wallet, Bitcoin, Mail, Loader2, CheckCircle, XCircle, RefreshCw, Receipt, Download, CalendarIcon, TrendingUp, DollarSign, ShoppingCart, Ticket, ArrowUpDown, AlertTriangle, Shield, Database, ShieldCheck, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import TwoFactorEnforcement from '@/components/auth/TwoFactorEnforcement';
 import DatabaseBackupManager from '@/components/admin/DatabaseBackupManager';
+import { FraudRulesManager } from '@/components/admin/FraudRulesManager';
+import { AdminRoleManager } from '@/components/admin/AdminRoleManager';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -404,7 +406,7 @@ const AdminSettings: React.FC = () => {
         </AlertDialog>
 
         <Tabs value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="commission">
               Commission
               {commissionFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
@@ -416,6 +418,14 @@ const AdminSettings: React.FC = () => {
             <TabsTrigger value="crypto">
               Crypto
               {cryptoFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
+            </TabsTrigger>
+            <TabsTrigger value="fraud-rules">
+              <Shield className="h-4 w-4 mr-1" />
+              Fraud Rules
+            </TabsTrigger>
+            <TabsTrigger value="roles">
+              <ShieldCheck className="h-4 w-4 mr-1" />
+              Roles
             </TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">
@@ -1349,6 +1359,14 @@ const AdminSettings: React.FC = () => {
 
           <TabsContent value="backups" className="space-y-6 mt-6">
             <DatabaseBackupManager />
+          </TabsContent>
+
+          <TabsContent value="fraud-rules" className="space-y-6 mt-6">
+            <FraudRulesManager />
+          </TabsContent>
+
+          <TabsContent value="roles" className="space-y-6 mt-6">
+            <AdminRoleManager />
           </TabsContent>
         </Tabs>
       </div>
