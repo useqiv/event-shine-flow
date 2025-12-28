@@ -27,17 +27,19 @@ const PaymentStatsWidget: React.FC = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get Flutterwave transactions
+      // Get Flutterwave transactions (only completed)
       const { data: flutterwaveData } = await supabase
         .from('wallet_transactions')
         .select('amount, status')
-        .ilike('description', '%flutterwave%');
+        .ilike('description', '%flutterwave%')
+        .eq('status', 'completed');
 
-      // Get Crypto transactions
+      // Get Crypto transactions (only completed)
       const { data: cryptoData } = await supabase
         .from('wallet_transactions')
         .select('amount, status')
-        .or('description.ilike.%USDT%,description.ilike.%USDC%,description.ilike.%crypto%');
+        .or('description.ilike.%USDT%,description.ilike.%USDC%,description.ilike.%crypto%')
+        .eq('status', 'completed');
 
       // Get today's transactions
       const { data: todayData } = await supabase

@@ -299,6 +299,7 @@ const AdminSettings: React.FC = () => {
         .from('wallet_transactions')
         .select('*, wallets(user_id, profiles:user_id(full_name, email))')
         .in('type', types)
+        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (dateRange.from) {
