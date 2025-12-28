@@ -49,10 +49,10 @@ export const VoteStreak = () => {
 
   // Get streak tier based on current streak
   const getStreakTier = () => {
-    if (currentStreak >= 30) return { name: 'Legendary', color: 'text-amber-500', bg: 'bg-amber-500/10' };
-    if (currentStreak >= 14) return { name: 'Champion', color: 'text-purple-500', bg: 'bg-purple-500/10' };
-    if (currentStreak >= 7) return { name: 'Rising Star', color: 'text-blue-500', bg: 'bg-blue-500/10' };
-    if (currentStreak >= 3) return { name: 'Enthusiast', color: 'text-green-500', bg: 'bg-green-500/10' };
+    if (currentStreak >= 30) return { name: 'Legendary', color: 'text-primary', bg: 'bg-primary/10' };
+    if (currentStreak >= 14) return { name: 'Champion', color: 'text-accent-foreground', bg: 'bg-accent' };
+    if (currentStreak >= 7) return { name: 'Rising Star', color: 'text-primary', bg: 'bg-primary/10' };
+    if (currentStreak >= 3) return { name: 'Enthusiast', color: 'text-foreground', bg: 'bg-secondary' };
     return { name: 'Beginner', color: 'text-muted-foreground', bg: 'bg-secondary' };
   };
 
