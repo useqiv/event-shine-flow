@@ -127,14 +127,6 @@ const ContestDetail = () => {
   }, [voteForContestant, contestants]);
 
   const handleVoteClick = (contestant: any) => {
-    if (!user) {
-      toast({
-        title: 'Login Required',
-        description: 'Please login to vote for a contestant.',
-        variant: 'destructive',
-      });
-      return;
-    }
     setSelectedContestant(contestant);
     setVoteQuantity(1);
     setIsVoteSelectionOpen(true);
@@ -535,14 +527,16 @@ const ContestDetail = () => {
                 </div>
               </div>
 
-              {/* Wallet Balance */}
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  <span className="text-sm">Wallet Balance</span>
+              {/* Wallet Balance - Only show for logged in users */}
+              {user && (
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    <span className="text-sm">Wallet Balance</span>
+                  </div>
+                  <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
                 </div>
-                <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
-              </div>
+              )}
 
               {/* Actions */}
               <div className="space-y-3">
@@ -550,14 +544,14 @@ const ContestDetail = () => {
                   <Button variant="outline" onClick={() => setIsVoteSelectionOpen(false)} className="flex-1">
                     Cancel
                   </Button>
-                  {wallet && wallet.balance >= totalAmount && (
+                  {user && wallet && wallet.balance >= totalAmount && (
                     <Button onClick={handleWalletPayment} disabled={vote.isPending} className="flex-1">
                       {vote.isPending ? 'Processing...' : 'Pay with Wallet'}
                     </Button>
                   )}
                 </div>
                 <Button 
-                  variant={wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
+                  variant={user && wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
                   onClick={handleProceedToPayment} 
                   className="w-full"
                 >
