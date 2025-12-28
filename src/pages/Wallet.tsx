@@ -64,11 +64,14 @@ const WalletPage = () => {
   // Check for low balance and show alert
   const isLowBalance = wallet && wallet.low_balance_threshold !== null && wallet.balance < wallet.low_balance_threshold;
 
-  // Filtered transactions
+  // Filtered transactions - exclude pending/failed transactions from display
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
     
     return transactions.filter(tx => {
+      // Only show completed transactions (not pending or failed)
+      if (tx.status !== 'completed') return false;
+      
       // Type filter
       if (typeFilter !== 'all' && tx.type !== typeFilter) return false;
       

@@ -105,6 +105,29 @@ const handler = async (req: Request): Promise<Response> => {
       }
     } else {
       console.log("Payment not successful or missing transaction_id:", { status, transaction_id });
+      
+      // Mark transaction as failed/cancelled if we have a tx_ref
+      if (tx_ref && (status === "cancelled" || status === "failed" || !isSuccessful)) {
+        try {
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          const { error: updateError } = await supabase
+            .from("wallet_transactions")
+            .update({ status: "failed" })
+            .eq("reference_id", tx_ref)
+            .eq("status", "pending");
+            
+          if (updateError) {
+            console.error("Failed to mark transaction as failed:", updateError.message);
+          } else {
+            console.log("Marked transaction as failed for tx_ref:", tx_ref);
+          }
+        } catch (e: any) {
+          console.error("Error updating failed transaction:", e.message);
+        }
+      }
     }
 
     // Redirect to app with payment status
