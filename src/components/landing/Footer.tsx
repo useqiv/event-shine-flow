@@ -1,7 +1,8 @@
-import { Vote, Ticket, Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, ArrowRight } from "lucide-react";
+import { forwardRef } from "react";
+import { Vote, Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement>((props, ref) => {
   const footerLinks = {
     product: [
       { name: "Features", href: "#features" },
@@ -176,6 +177,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;
