@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { usePromoCodes, useCreatePromoCode, useDeletePromoCode, useOrganizationEvents } from '@/hooks/useOrganization';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { MarketingAnalyticsDashboard } from '@/components/org/MarketingAnalyticsDashboard';
 import { PromoCodeAnalytics } from '@/components/org/PromoCodeAnalytics';
@@ -28,6 +29,7 @@ interface TicketType {
 }
 
 const Marketing = () => {
+  const { confirm } = useConfirmDialog();
   const { data: promoCodes, isLoading } = usePromoCodes();
   const { data: events } = useOrganizationEvents();
   const createPromoCode = useCreatePromoCode();
@@ -107,7 +109,13 @@ const Marketing = () => {
   };
 
   const handleDeletePromo = async (id: string) => {
-    if (confirm('Are you sure you want to delete this promo code?')) {
+    const confirmed = await confirm({
+      title: 'Delete Promo Code',
+      description: 'Are you sure you want to delete this promo code? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       await deletePromoCode.mutateAsync(id);
     }
   };

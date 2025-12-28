@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -153,6 +154,7 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
   entityTitle,
 }) => {
   const { user } = useAuth();
+  const { confirm } = useConfirmDialog();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'accounts' | 'create' | 'queue' | 'channels'>('accounts');
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -985,8 +987,14 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => {
-                                if (confirm('Delete this schedule?')) {
+                              onClick={async () => {
+                                const confirmed = await confirm({
+                                  title: 'Delete Schedule',
+                                  description: 'Are you sure you want to delete this schedule? This action cannot be undone.',
+                                  confirmText: 'Delete',
+                                  variant: 'destructive',
+                                });
+                                if (confirmed) {
                                   deleteMutation.mutate(post.id);
                                 }
                               }}
@@ -1032,8 +1040,14 @@ export const SocialAutoPostManager: React.FC<SocialAutoPostManagerProps> = ({
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive"
-                              onClick={() => {
-                                if (confirm('Delete this schedule?')) {
+                              onClick={async () => {
+                                const confirmed = await confirm({
+                                  title: 'Delete Schedule',
+                                  description: 'Are you sure you want to delete this schedule? This action cannot be undone.',
+                                  confirmText: 'Delete',
+                                  variant: 'destructive',
+                                });
+                                if (confirmed) {
                                   deleteMutation.mutate(post.id);
                                 }
                               }}
