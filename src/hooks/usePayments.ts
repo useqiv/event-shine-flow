@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface FlutterwavePaymentParams {
-  type: 'vote' | 'ticket' | 'wallet';
+  type: 'vote' | 'ticket' | 'wallet' | 'donation';
   amount: number;
   currency: string;
   email: string;
@@ -16,6 +16,10 @@ interface FlutterwavePaymentParams {
   event_id?: string;
   ticket_type_id?: string;
   ticket_quantity?: number;
+  // Donation specific
+  campaign_id?: string;
+  is_anonymous?: boolean;
+  donor_message?: string;
   redirect_url?: string;
 }
 

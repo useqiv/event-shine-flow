@@ -34,6 +34,10 @@ interface FlutterwaveWebhookData {
       ticket_type_id?: string;
       ticket_quantity?: number;
       funding_amount?: number;
+      // Donation specific
+      campaign_id?: string;
+      is_anonymous?: boolean;
+      donor_message?: string;
     };
   };
 }
@@ -264,6 +268,9 @@ async function processSuccessfulPayment(paymentData: any) {
     ticket_type_id,
     ticket_quantity,
     funding_amount,
+    campaign_id,
+    is_anonymous,
+    donor_message,
   } = meta;
   const customer = paymentData.customer || {};
 
@@ -549,6 +556,111 @@ async function processSuccessfulPayment(paymentData: any) {
         transaction_ref: paymentData.tx_ref,
         new_balance: newBalance,
       });
+    }
+  } else if (type === "donation" && campaign_id && user_id) {
+    console.log("Processing donation...");
+
+    // Get campaign details
+    const { data: campaign } = await supabase
+      .from("campaigns")
+      .select("id, title, current_amount, donor_count, currency")
+      .eq("id", campaign_id)
+      .single();
+
+    if (!campaign) {
+      console.error("Campaign not found:", campaign_id);
+      return;
+    }
+
+    // Check for duplicate donation using transaction reference
+    if (db_transaction_id) {
+      const { data: existingDonation } = await supabase
+        .from("donations")
+        .select("id")
+        .eq("transaction_id", db_transaction_id)
+        .maybeSingle();
+
+      if (existingDonation?.id) {
+        console.log("Donation already recorded for wallet transaction:", db_transaction_id);
+        return;
+      }
+    }
+
+    // Record donation
+    const { data: donationData, error: donationError } = await supabase.from("donations").insert({
+      campaign_id,
+      donor_id: user_id,
+      amount: paymentData.amount,
+      currency: paymentData.currency || campaign.currency || "NGN",
+      payment_method: payment_method,
+      is_anonymous: is_anonymous || false,
+      donor_message: donor_message || null,
+      status: "completed",
+      transaction_id: db_transaction_id,
+    }).select().single();
+
+    if (donationError) {
+      const isDuplicate = donationError.message.includes("duplicate") || donationError.code === "23505";
+      if (isDuplicate) {
+        console.log("Donation already recorded for this transaction (idempotency check)");
+      } else {
+        console.error("Error recording donation:", donationError.message);
+      }
+    } else {
+      console.log("Donation recorded successfully");
+
+      // Update campaign current_amount and donor_count
+      const newAmount = Number(campaign.current_amount) + paymentData.amount;
+      const newDonorCount = Number(campaign.donor_count) + 1;
+      
+      const { error: updateError } = await supabase
+        .from("campaigns")
+        .update({ 
+          current_amount: newAmount, 
+          donor_count: newDonorCount,
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", campaign_id);
+
+      if (updateError) {
+        console.error("Error updating campaign totals:", updateError.message);
+      } else {
+        console.log("Campaign updated - new amount:", newAmount, "donors:", newDonorCount);
+      }
+
+      // Create notification
+      await supabase.from("notifications").insert({
+        user_id,
+        title: "Donation Successful",
+        message: `Thank you! Your donation of ${paymentData.currency || "NGN"} ${paymentData.amount.toLocaleString()} to "${campaign.title}" was successful.`,
+        type: "system",
+        reference_id: campaign_id,
+      });
+
+      // Send donation receipt email
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        await fetch(`${supabaseUrl}/functions/v1/send-donation-receipt`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            donationId: donationData.id,
+            donorEmail: customer.email,
+            donorName: customer.name || "Supporter",
+            campaignTitle: campaign.title,
+            amount: paymentData.amount,
+            currency: paymentData.currency || campaign.currency || "NGN",
+            donationDate: new Date().toISOString(),
+            isAnonymous: is_anonymous || false,
+          }),
+        });
+        console.log("Donation receipt email sent");
+      } catch (emailError: any) {
+        console.error("Failed to send donation receipt:", emailError.message);
+      }
     }
   } else {
     console.log("Unable to process payment - missing required meta fields");

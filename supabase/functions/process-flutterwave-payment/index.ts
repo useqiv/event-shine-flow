@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PaymentRequest {
-  type: "vote" | "ticket" | "wallet";
+  type: "vote" | "ticket" | "wallet" | "donation";
   amount: number;
   currency: string;
   email: string;
@@ -22,6 +22,10 @@ interface PaymentRequest {
   event_id?: string;
   ticket_type_id?: string;
   ticket_quantity?: number;
+  // Donation specific
+  campaign_id?: string;
+  is_anonymous?: boolean;
+  donor_message?: string;
   redirect_url?: string;
 }
 
@@ -135,6 +139,10 @@ const handler = async (req: Request): Promise<Response> => {
       meta.ticket_quantity = payload.ticket_quantity;
     } else if (payload.type === "wallet") {
       meta.funding_amount = payload.amount;
+    } else if (payload.type === "donation") {
+      meta.campaign_id = payload.campaign_id;
+      meta.is_anonymous = payload.is_anonymous;
+      meta.donor_message = payload.donor_message;
     }
 
     // Use the current app URL for redirect
@@ -146,6 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
         case "vote": return "Vote Purchase";
         case "ticket": return "Ticket Purchase";
         case "wallet": return "Wallet Funding";
+        case "donation": return "Campaign Donation";
         default: return "Payment";
       }
     };
@@ -155,6 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
         case "vote": return `Purchase ${payload.vote_quantity || 1} vote(s)`;
         case "ticket": return `Purchase ${payload.ticket_quantity || 1} ticket(s)`;
         case "wallet": return `Fund wallet with ${payload.currency || defaultCurrency} ${payload.amount}`;
+        case "donation": return `Donate ${payload.currency || defaultCurrency} ${payload.amount} to campaign`;
         default: return "Payment";
       }
     };
