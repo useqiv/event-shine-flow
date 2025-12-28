@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
+import { AIChatWidget } from "@/components/AIChatWidget";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -241,6 +242,7 @@ const App = () => {
               <BrowserRouter>
                 <InfluencerTracker>
                   <AppRoutes />
+                  <AIChatWidget />
                 </InfluencerTracker>
               </BrowserRouter>
             </TooltipProvider>
