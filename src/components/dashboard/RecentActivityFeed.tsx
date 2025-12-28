@@ -59,8 +59,11 @@ export const RecentActivityFeed = () => {
       });
     });
 
-    // Add wallet transactions (only deposits, vouchers, referrals)
+    // Add wallet transactions (only completed deposits, vouchers, referrals)
     transactions?.forEach((tx: any) => {
+      // Only show completed transactions
+      if (tx.status !== 'completed') return;
+      
       if (tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral') {
         items.push({
           id: `tx-${tx.id}`,
