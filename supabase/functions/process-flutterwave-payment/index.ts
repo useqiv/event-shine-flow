@@ -226,6 +226,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (wallet) {
       // Map wallet funding to 'deposit' type for DB constraint
       const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
+      const transactionCurrency = payload.currency || defaultCurrency;
       const { error: txError } = await supabase.from("wallet_transactions").insert({
         user_id: payload.user_id,
         wallet_id: wallet.id,
@@ -233,8 +234,9 @@ const handler = async (req: Request): Promise<Response> => {
         type: transactionType,
         status: "pending",
         reference_id: tx_ref,
+        currency: transactionCurrency,
         description: payload.type === "wallet" 
-          ? `Wallet funding via Flutterwave` 
+          ? `Wallet funding via Flutterwave (${transactionCurrency})`
           : `Pending ${payload.type} payment via Flutterwave`,
       });
 

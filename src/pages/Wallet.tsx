@@ -323,7 +323,7 @@ const WalletPage = () => {
                     </div>
                     <div className="text-right">
                       <p className={`font-medium ${tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral' ? 'text-green-500' : 'text-destructive'}`}>
-                        {tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral' ? '+' : '-'}₦{Math.abs(tx.amount).toLocaleString()}
+                        {tx.type === 'deposit' || tx.type === 'voucher' || tx.type === 'referral' ? '+' : '-'}{getCurrencySymbol(tx.currency || 'NGN')}{Math.abs(tx.amount).toLocaleString()}
                       </p>
                       <p className="text-xs text-muted-foreground">{format(new Date(tx.created_at), 'MMM d, HH:mm')}</p>
                     </div>
