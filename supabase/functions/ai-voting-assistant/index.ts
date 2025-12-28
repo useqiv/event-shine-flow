@@ -60,7 +60,7 @@ serve(async (req) => {
 - Discover active contests and vote for their favorite contestants
 - Find upcoming events and buy tickets
 - Understand how voting works (paid voting system with wallet balance)
-- Learn about features like vote streaks, referral bonuses, and promo codes
+- Learn about features like referral bonuses and promo codes
 
 Current Platform Data:
 ${contestContext}

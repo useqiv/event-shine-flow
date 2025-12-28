@@ -20,7 +20,6 @@ import { VotingAnalytics } from '@/components/dashboard/VotingAnalytics';
 import { TicketReminders } from '@/components/dashboard/TicketReminders';
 import { ContestCountdowns } from '@/components/dashboard/ContestCountdowns';
 import { EventCalendar } from '@/components/dashboard/EventCalendar';
-import { VoteStreak } from '@/components/dashboard/VoteStreak';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { DashboardSearch } from '@/components/dashboard/DashboardSearch';
 import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
@@ -437,9 +436,6 @@ const Dashboard = () => {
           <PersonalizedRecommendations />
           <FavoriteContestantsQuickView />
         </div>
-
-        {/* Vote Streak */}
-        <VoteStreak />
 
         {/* New Feature Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
