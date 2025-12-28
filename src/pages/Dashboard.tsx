@@ -24,6 +24,8 @@ import { VoteStreak } from '@/components/dashboard/VoteStreak';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { DashboardSearch } from '@/components/dashboard/DashboardSearch';
 import { RecentActivityFeed } from '@/components/dashboard/RecentActivityFeed';
+import { PersonalizedRecommendations } from '@/components/dashboard/PersonalizedRecommendations';
+import { FavoriteContestantsQuickView } from '@/components/dashboard/FavoriteContestantsQuickView';
 import { 
   Wallet, 
   Trophy, 
@@ -428,6 +430,12 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Personalized Recommendations & Favorites */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PersonalizedRecommendations />
+          <FavoriteContestantsQuickView />
         </div>
 
         {/* Vote Streak */}
