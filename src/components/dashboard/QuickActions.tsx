@@ -31,7 +31,7 @@ export const QuickActions = () => {
       label: 'Leaderboard',
       description: 'Referral rankings',
       icon: Users,
-      href: '/referral-leaderboard',
+      href: '/leaderboard',
       color: 'bg-chart-4/10 text-chart-4',
     },
   ];
