@@ -357,7 +357,7 @@ const EventDetail = () => {
             onOpenChange={setIsPaymentModalOpen}
             type="ticket"
             amount={totalAmount}
-            currency="NGN"
+            currency={selectedTicketType.currency || 'NGN'}
             itemDetails={{
               event_id: event.id,
               ticket_type_id: selectedTicketType.id,
