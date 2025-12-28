@@ -11,6 +11,7 @@ import RecentActivityWidget from '@/components/admin/RecentActivityWidget';
 import AdminNotificationCenter from '@/components/admin/AdminNotificationCenter';
 import WebhookLogsViewer from '@/components/admin/WebhookLogsViewer';
 import { SystemMetricsWidget } from '@/components/admin/SystemMetricsWidget';
+import DashboardExportButton from '@/components/admin/DashboardExportButton';
 import { 
   Users, 
   Building2, 
@@ -199,9 +200,12 @@ const AdminDashboard: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">Admin Overview</h1>
-          <p className="text-muted-foreground">Platform management dashboard</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Admin Overview</h1>
+            <p className="text-muted-foreground">Platform management dashboard</p>
+          </div>
+          <DashboardExportButton stats={stats} />
         </div>
 
         {/* Key Stats Grid */}
