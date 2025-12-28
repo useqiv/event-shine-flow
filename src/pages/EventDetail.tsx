@@ -267,104 +267,105 @@ const EventDetail = () => {
               </Card>
             )}
           </div>
+          </div>
         </div>
-      {/* Purchase Selection Dialog */}
-      {isPurchaseModalOpen && selectedTicketType && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Purchase {selectedTicketType.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Quantity */}
-              <div>
-                <p className="text-sm font-medium mb-2">Quantity</p>
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setQuantity(Math.min(availableTickets, quantity + 1))}
-                    disabled={quantity >= availableTickets}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
 
-              {/* Total */}
-              <div className="p-4 rounded-lg bg-secondary">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Amount</span>
-                  <div className="text-right">
-                    <span className="text-xl font-bold">
-                      <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" showBadge showToggle />
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wallet Balance - Only show for logged in users */}
-              {user && (
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    <span className="text-sm">Wallet Balance</span>
-                  </div>
-                  <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  {user && wallet && wallet.balance >= totalAmount && (
-                    <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
-                      {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+        {/* Purchase Selection Dialog */}
+        {isPurchaseModalOpen && selectedTicketType && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <CardTitle>Purchase {selectedTicketType.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Quantity */}
+                <div>
+                  <p className="text-sm font-medium mb-2">Quantity</p>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      <Minus className="h-4 w-4" />
                     </Button>
-                  )}
+                    <span className="text-xl font-bold w-8 text-center">{quantity}</span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setQuantity(Math.min(availableTickets, quantity + 1))}
+                      disabled={quantity >= availableTickets}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  variant={user && wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
-                  onClick={handleProceedToPayment} 
-                  className="w-full"
-                >
-                  Pay with Card/Bank/Crypto
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
-      {/* Payment Modal for external payments */}
-      {selectedTicketType && event && (
-        <PaymentModal
-          open={isPaymentModalOpen}
-          onOpenChange={setIsPaymentModalOpen}
-          type="ticket"
-          amount={totalAmount}
-          currency="NGN"
-          itemDetails={{
-            event_id: event.id,
-            ticket_type_id: selectedTicketType.id,
-            ticket_quantity: quantity,
-            name: selectedTicketType.name,
-          }}
-        />
-      )}
-        </div>
+                {/* Total */}
+                <div className="p-4 rounded-lg bg-secondary">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Amount</span>
+                    <div className="text-right">
+                      <span className="text-xl font-bold">
+                        <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" showBadge showToggle />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wallet Balance - Only show for logged in users */}
+                {user && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      <span className="text-sm">Wallet Balance</span>
+                    </div>
+                    <span className="font-medium">{formatCurrency(wallet?.balance || 0, 'NGN')}</span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
+                      Cancel
+                    </Button>
+                    {user && wallet && wallet.balance >= totalAmount && (
+                      <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
+                        {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+                      </Button>
+                    )}
+                  </div>
+                  <Button 
+                    variant={user && wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
+                    onClick={handleProceedToPayment} 
+                    className="w-full"
+                  >
+                    Pay with Card/Bank/Crypto
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Payment Modal for external payments */}
+        {selectedTicketType && event && (
+          <PaymentModal
+            open={isPaymentModalOpen}
+            onOpenChange={setIsPaymentModalOpen}
+            type="ticket"
+            amount={totalAmount}
+            currency="NGN"
+            itemDetails={{
+              event_id: event.id,
+              ticket_type_id: selectedTicketType.id,
+              ticket_quantity: quantity,
+              name: selectedTicketType.name,
+            }}
+          />
+        )}
       </main>
       <Footer />
     </div>
