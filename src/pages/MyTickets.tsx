@@ -63,6 +63,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
   const [transferEmail, setTransferEmail] = useState('');
   const [transferName, setTransferName] = useState('');
   const printRef = useRef<HTMLDivElement>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -270,6 +271,10 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
       return;
     }
 
+    // Get the QR code SVG from the hidden ref element
+    const svg = qrRef.current?.querySelector('svg');
+    const svgData = svg ? new XMLSerializer().serializeToString(svg) : '';
+
     const eventDate = format(new Date(ticket.event?.event_date), 'EEEE, MMMM d, yyyy');
     const eventTime = format(new Date(ticket.event?.event_date), 'h:mm a');
 
@@ -316,7 +321,6 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           .qr-code {
             width: 150px;
             height: 150px;
-            background: #f3f4f6;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -366,7 +370,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           </div>
           <div class="content">
             <div class="qr-section">
-              <div class="qr-code" id="qr-container"></div>
+              <div class="qr-code">${svgData}</div>
               <p class="qr-label">Scan for entry</p>
             </div>
             <div class="details">
@@ -393,14 +397,8 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             <span>Amount Paid: ₦${Number(ticket.amount_paid).toLocaleString()}</span>
           </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
         <script>
-          QRCode.toCanvas(document.createElement('canvas'), '${ticket.qr_code}', { width: 150 }, function(error, canvas) {
-            if (!error) {
-              document.getElementById('qr-container').appendChild(canvas);
-              setTimeout(function() { window.print(); window.close(); }, 500);
-            }
-          });
+          window.onload = function() { window.print(); window.close(); };
         </script>
       </body>
       </html>
@@ -409,7 +407,18 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
   };
 
   return (
-    <Card className={`overflow-hidden ${hasPendingTransfer ? 'ring-2 ring-amber-500/50' : ''}`}>
+    <>
+      {/* Hidden QR code for print extraction */}
+      <div ref={qrRef} className="sr-only" aria-hidden="true">
+        <QRCodeSVG
+          value={ticket.qr_code}
+          size={150}
+          level="H"
+          includeMargin={true}
+        />
+      </div>
+      
+      <Card className={`overflow-hidden ${hasPendingTransfer ? 'ring-2 ring-amber-500/50' : ''}`}>
       {/* Pending Transfer Banner */}
       {hasPendingTransfer && (
         <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -821,6 +830,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
         </div>
       </CardContent>
     </Card>
+    </>
   );
 };
 
