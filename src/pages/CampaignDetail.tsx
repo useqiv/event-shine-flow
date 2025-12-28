@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useCampaign, useCampaignDonations, useCreateDonation } from '@/hooks/useCampaigns';
+import { useCampaign, useCampaignDonations } from '@/hooks/useCampaigns';
+import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, Wallet } from 'lucide-react';
+import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, CreditCard } from 'lucide-react';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import DonorLeaderboard from '@/components/DonorLeaderboard';
 import Navbar from '@/components/landing/Navbar';
@@ -22,7 +23,6 @@ import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
@@ -33,7 +33,7 @@ const CampaignDetail: React.FC = () => {
   const { data: profile } = useProfile();
   const { data: campaign, isLoading } = useCampaign(id!);
   const { data: donations } = useCampaignDonations(id!);
-  const createDonation = useCreateDonation();
+  const flutterwavePayment = useFlutterwavePayment();
   
   const isOwner = user && campaign?.creator_id === user.id;
   
@@ -103,40 +103,24 @@ const CampaignDetail: React.FC = () => {
       return;
     }
 
+    if (!profile?.email) {
+      toast.error('Email is required for payment');
+      return;
+    }
+
     try {
-      const donationResult = await createDonation.mutateAsync({
-        campaign_id: campaign.id,
+      await flutterwavePayment.mutateAsync({
+        type: 'donation',
         amount,
         currency: campaign.currency,
-        payment_method: 'wallet',
+        email: profile.email,
+        name: profile.full_name || 'Donor',
+        user_id: user.id,
+        campaign_id: campaign.id,
         is_anonymous: isAnonymous,
         donor_message: message || undefined,
+        redirect_url: `${window.location.origin}/payment-callback?type=donation&campaign_id=${campaign.id}`,
       });
-      
-      // Send donation receipt email
-      if (profile?.email) {
-        try {
-          await supabase.functions.invoke('send-donation-receipt', {
-            body: {
-              donationId: donationResult.id,
-              donorEmail: profile.email,
-              donorName: profile.full_name || 'Supporter',
-              campaignTitle: campaign.title,
-              amount,
-              currency: campaign.currency,
-              donationDate: new Date().toISOString(),
-              isAnonymous,
-            },
-          });
-        } catch (emailError) {
-          console.error('Failed to send receipt email:', emailError);
-          // Don't fail the donation if email fails
-        }
-      }
-      
-      setShowDonateDialog(false);
-      setCustomAmount('');
-      setMessage('');
     } catch (error) {
       // Error handled by mutation
     }
@@ -426,10 +410,10 @@ const CampaignDetail: React.FC = () => {
                           className="w-full" 
                           size="lg"
                           onClick={handleDonate}
-                          disabled={createDonation.isPending}
+                          disabled={flutterwavePayment.isPending}
                         >
-                          <Wallet className="h-5 w-5 mr-2" />
-                          {createDonation.isPending ? 'Processing...' : `Donate ${campaign.currency} ${customAmount || donationAmount}`}
+                          <CreditCard className="h-5 w-5 mr-2" />
+                          {flutterwavePayment.isPending ? 'Redirecting to Payment...' : `Donate ${campaign.currency} ${customAmount || donationAmount}`}
                         </Button>
 
                         {!user && (
