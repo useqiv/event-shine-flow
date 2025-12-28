@@ -227,23 +227,23 @@ const OrgDashboard = () => {
     <OrganizationLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">Organization Dashboard</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Organization Dashboard</h1>
               <Badge variant="outline" className="gap-1 text-xs">
                 <Zap className="h-3 w-3 text-green-500" />
                 Live
               </Badge>
             </div>
-            <p className="text-muted-foreground">Manage your contests, events, and finances.</p>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage your contests, events, and finances.</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Currency Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground hidden sm:inline">Display in:</span>
+              <span className="text-sm text-muted-foreground hidden lg:inline">Display in:</span>
               <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[100px] sm:w-[120px]">
                   <SelectValue placeholder="Currency" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover">
@@ -257,7 +257,7 @@ const OrgDashboard = () => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs hidden sm:flex">
                       Filtered
                     </Badge>
                   </TooltipTrigger>
@@ -271,15 +271,15 @@ const OrgDashboard = () => {
             </div>
             <ExportRevenueButton currency={displayCurrency} />
             <Link to="/org/contests/create">
-              <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Contest
+              <Button size="sm" className="sm:size-default">
+                <PlusCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Contest</span>
               </Button>
             </Link>
             <Link to="/org/events/create">
-              <Button variant="outline">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Event
+              <Button variant="outline" size="sm" className="sm:size-default">
+                <PlusCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Event</span>
               </Button>
             </Link>
           </div>

@@ -68,7 +68,7 @@ const Stats = () => {
                   </div>
                   
                   {/* Value */}
-                  <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-2 group-hover:scale-105 transition-transform origin-left">
+                  <div className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-2 group-hover:scale-105 transition-transform origin-left">
                     {stat.value}
                   </div>
                   

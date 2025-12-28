@@ -229,7 +229,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
             <aside 
-              className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-lg overflow-y-auto"
+              className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-lg flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Mobile Logo */}
@@ -249,7 +249,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               </div>
 
               {/* Mobile Navigation */}
-              <nav className="p-4">
+              <nav className="flex-1 p-4 overflow-y-auto">
                 <p className="text-xs font-medium text-muted-foreground mb-4 px-3">Dashboard</p>
                 <div className="space-y-1">
                   {mainNavItems.map((item) => (
@@ -272,7 +272,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               </nav>
 
               {/* Mobile Bottom Section */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
+              <div className="p-4 border-t border-border bg-card shrink-0">
                 <div className="space-y-1">
                   {bottomNavItems.map((item) => (
                     <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}>

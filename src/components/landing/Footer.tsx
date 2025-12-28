@@ -161,16 +161,16 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
 
           {/* Bottom Bar */}
           <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} VotePass. All rights reserved.
             </p>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <span className="h-2 w-2 bg-green-500 rounded-full" />
                 All systems operational
               </div>
-              <span className="text-sm text-muted-foreground">🌍 50+ currencies</span>
-              <span className="text-sm text-muted-foreground">🔒 SSL Secured</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">🌍 50+ currencies</span>
+              <span className="text-xs sm:text-sm text-muted-foreground">🔒 SSL Secured</span>
             </div>
           </div>
         </div>

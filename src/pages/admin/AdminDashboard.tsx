@@ -200,10 +200,10 @@ const AdminDashboard: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Admin Overview</h1>
-            <p className="text-muted-foreground">Platform management dashboard</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Admin Overview</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Platform management dashboard</p>
           </div>
           <DashboardExportButton stats={stats} />
         </div>

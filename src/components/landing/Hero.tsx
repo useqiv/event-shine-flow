@@ -188,12 +188,12 @@ const Hero = () => {
               </div>
 
               {/* Floating Badge */}
-              <div className="absolute -bottom-4 -left-4 lg:-left-8 flex items-center gap-3 px-5 py-3 bg-card border border-border rounded-2xl shadow-xl">
-                <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                  <Users className="h-5 w-5 text-primary-foreground" />
+              <div className="absolute -bottom-4 left-0 sm:-left-4 lg:-left-8 flex items-center gap-3 px-4 sm:px-5 py-2 sm:py-3 bg-card border border-border rounded-2xl shadow-xl">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-primary flex items-center justify-center">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-foreground">500+ Organizers</div>
+                  <div className="text-xs sm:text-sm font-bold text-foreground">500+ Organizers</div>
                   <div className="text-xs text-muted-foreground">Trust VotePass</div>
                 </div>
               </div>
