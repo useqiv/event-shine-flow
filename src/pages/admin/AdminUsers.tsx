@@ -31,10 +31,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useAllUsers, useSuspendUser, useActivateUser } from '@/hooks/useAdminData';
 import { useBulkSuspendUsers, useBulkActivateUsers, useLogAdminActivity } from '@/hooks/useAdminActivityLog';
-import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle, Pencil, CheckSquare } from 'lucide-react';
+import { Search, MoreHorizontal, UserX, UserCheck, Eye, AlertTriangle, Pencil, CheckSquare, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import EditUserDialog from '@/components/admin/EditUserDialog';
+import RewardReferralDialog from '@/components/admin/RewardReferralDialog';
 
 const AdminUsers: React.FC = () => {
   const { data: users, isLoading } = useAllUsers();
@@ -50,6 +51,7 @@ const AdminUsers: React.FC = () => {
   const [suspendReason, setSuspendReason] = useState('');
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [rewardDialogOpen, setRewardDialogOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [bulkSuspendDialogOpen, setBulkSuspendDialogOpen] = useState(false);
   const [bulkSuspendReason, setBulkSuspendReason] = useState('');
@@ -316,6 +318,13 @@ const AdminUsers: React.FC = () => {
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit User
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedUser(user);
+                              setRewardDialogOpen(true);
+                            }}>
+                              <Gift className="mr-2 h-4 w-4" />
+                              Reward Referral
+                            </DropdownMenuItem>
                             {user.is_suspended ? (
                               <DropdownMenuItem onClick={() => handleActivate(user)}>
                                 <UserCheck className="mr-2 h-4 w-4" />
@@ -505,6 +514,13 @@ const AdminUsers: React.FC = () => {
         <EditUserDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
+          user={selectedUser}
+        />
+
+        {/* Reward Referral Dialog */}
+        <RewardReferralDialog
+          open={rewardDialogOpen}
+          onOpenChange={setRewardDialogOpen}
           user={selectedUser}
         />
       </div>
