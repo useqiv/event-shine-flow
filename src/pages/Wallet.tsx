@@ -192,11 +192,11 @@ const WalletPage = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Wallet</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold">Wallet</h1>
           <Button variant="outline" size="sm" onClick={() => setIsSettingsModalOpen(true)}>
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+            <Settings className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Settings</span>
           </Button>
         </div>
 

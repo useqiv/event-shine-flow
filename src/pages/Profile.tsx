@@ -165,8 +165,8 @@ const Profile = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-2xl">
-        <h1 className="text-2xl font-bold">Profile</h1>
+      <div className="space-y-6 max-w-2xl mx-auto px-0 sm:px-0">
+        <h1 className="text-xl sm:text-2xl font-bold">Profile</h1>
 
         <Card>
           <CardHeader><CardTitle>Personal Information</CardTitle></CardHeader>
