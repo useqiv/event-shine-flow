@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganizationContests, useOrganizationEvents } from '@/hooks/useOrganization';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link2, PlusCircle, Trash2, Copy, TrendingUp, MousePointerClick, DollarSign, Users } from 'lucide-react';
@@ -36,6 +37,7 @@ interface InfluencerLink {
 
 export const InfluencerLinksManager: React.FC = () => {
   const { user } = useAuth();
+  const { confirm } = useConfirmDialog();
   const queryClient = useQueryClient();
   const { data: contests } = useOrganizationContests();
   const { data: events } = useOrganizationEvents();
@@ -383,8 +385,14 @@ export const InfluencerLinksManager: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => {
-                          if (confirm('Delete this link?')) {
+                        onClick={async () => {
+                          const confirmed = await confirm({
+                            title: 'Delete Link',
+                            description: 'Are you sure you want to delete this influencer link? This action cannot be undone.',
+                            confirmText: 'Delete',
+                            variant: 'destructive',
+                          });
+                          if (confirmed) {
                             deleteMutation.mutate(link.id);
                           }
                         }}

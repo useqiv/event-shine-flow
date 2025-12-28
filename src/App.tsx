@@ -10,6 +10,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
+import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -237,14 +238,16 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <InfluencerTracker>
-                  <AppRoutes />
-                  <AIChatWidget />
-                </InfluencerTracker>
-              </BrowserRouter>
+              <ConfirmDialogProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <InfluencerTracker>
+                    <AppRoutes />
+                    <AIChatWidget />
+                  </InfluencerTracker>
+                </BrowserRouter>
+              </ConfirmDialogProvider>
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>

@@ -13,6 +13,7 @@ import {
   useUpdateEventAutoPost, 
   useDeleteEventAutoPost 
 } from '@/hooks/useEventAutoPosts';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { Clock, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -69,6 +70,7 @@ const scheduleIntervals = [
 ];
 
 export const EventAutoPostingCard: React.FC<EventAutoPostingCardProps> = ({ eventId, eventTitle }) => {
+  const { confirm } = useConfirmDialog();
   const { data: autoPosts, isLoading } = useEventAutoPosts(eventId);
   const createAutoPost = useCreateEventAutoPost();
   const updateAutoPost = useUpdateEventAutoPost();
@@ -102,7 +104,13 @@ export const EventAutoPostingCard: React.FC<EventAutoPostingCardProps> = ({ even
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this auto-post schedule?')) {
+    const confirmed = await confirm({
+      title: 'Delete Auto-Post Schedule',
+      description: 'Are you sure you want to delete this auto-post schedule? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'destructive',
+    });
+    if (confirmed) {
       await deleteAutoPost.mutateAsync(id);
     }
   };
