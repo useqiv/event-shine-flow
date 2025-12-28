@@ -42,7 +42,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
   ];
 
   return (
-    <footer className="bg-card border-t border-border">
+    <footer ref={ref} {...props} className="bg-card border-t border-border">
       <div className="w-full px-4 md:px-6 lg:px-8 py-16 lg:py-20">
         <div className="max-w-[1600px] mx-auto">
           {/* Newsletter Section */}
