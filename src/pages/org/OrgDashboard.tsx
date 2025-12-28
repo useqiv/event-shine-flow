@@ -16,6 +16,8 @@ import TopPerformersWidget from '@/components/org/TopPerformersWidget';
 import EventCountdownWidget from '@/components/org/EventCountdownWidget';
 import GoalTrackingWidget from '@/components/org/GoalTrackingWidget';
 import PayoutStatusAlert from '@/components/org/PayoutStatusAlert';
+import RevenueForecastWidget from '@/components/org/RevenueForecastWidget';
+import ExportRevenueButton from '@/components/org/ExportRevenueButton';
 import { formatCurrency, currencies } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
@@ -267,6 +269,7 @@ const OrgDashboard = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
+            <ExportRevenueButton currency={displayCurrency} />
             <Link to="/org/contests/create">
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -453,6 +456,9 @@ const OrgDashboard = () => {
 
         {/* Advanced Revenue Chart */}
         <AdvancedRevenueChart currency={displayCurrency} onCurrencyChange={setDisplayCurrency} />
+
+        {/* Revenue Forecast Widget */}
+        <RevenueForecastWidget currency={displayCurrency} />
 
         {/* Event Countdown Widget */}
         {events && events.length > 0 && (
