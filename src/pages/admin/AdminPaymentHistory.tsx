@@ -102,6 +102,7 @@ const AdminPaymentHistory = () => {
         .from('wallet_transactions')
         .select('*')
         .in('type', ['vote_purchase', 'ticket_purchase', 'crypto_payment'])
+        .eq('status', 'completed')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
