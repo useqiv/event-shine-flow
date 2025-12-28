@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { CalendarIcon, Download, Search, Filter, CreditCard, Wallet } from 'lucide-react';
@@ -33,8 +34,8 @@ interface PaymentTransaction {
 }
 
 const AdminPaymentHistory = () => {
-  // Platform default currency
-  const platformCurrency = 'NGN';
+  // Platform default currency from settings
+  const platformCurrency = usePlatformCurrency();
   
   // Enable real-time payment updates
   useRealtimePayments();

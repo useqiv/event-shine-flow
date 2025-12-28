@@ -28,6 +28,7 @@ import { useBulkApprovePayouts, useBulkRejectPayouts, useLogAdminActivity } from
 import { Search, CheckCircle, XCircle, Download, Clock, Wallet, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import CurrencyDisplay from '@/components/ui/currency-display';
 
 const AdminPayouts: React.FC = () => {
@@ -46,8 +47,8 @@ const AdminPayouts: React.FC = () => {
   const [bulkActionDialogOpen, setBulkActionDialogOpen] = useState(false);
   const [bulkActionType, setBulkActionType] = useState<'approve' | 'reject'>('approve');
 
-  // Platform default currency
-  const platformCurrency = 'NGN';
+  // Platform default currency from settings
+  const platformCurrency = usePlatformCurrency();
 
   const pendingPayouts = payouts?.filter(p => p.status === 'pending') || [];
   const completedPayouts = payouts?.filter(p => p.status === 'completed') || [];
