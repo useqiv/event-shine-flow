@@ -34,7 +34,6 @@ const ALL_TABLES: TableInfo[] = [
   { name: 'profiles', label: 'User Profiles', category: 'users' },
   { name: 'user_roles', label: 'User Roles', category: 'users' },
   { name: 'wallets', label: 'Wallets', category: 'users' },
-  { name: 'user_vote_streaks', label: 'Vote Streaks', category: 'users' },
   { name: 'saved_items', label: 'Saved Items', category: 'users' },
   { name: 'favorite_contestants', label: 'Favorite Contestants', category: 'users' },
   
