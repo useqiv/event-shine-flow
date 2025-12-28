@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
+import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWidget';
+import RecentActivityWidget from '@/components/admin/RecentActivityWidget';
+import AdminNotificationCenter from '@/components/admin/AdminNotificationCenter';
+import WebhookLogsViewer from '@/components/admin/WebhookLogsViewer';
 import { 
   Users, 
   Building2, 
@@ -286,8 +290,22 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Period Comparison Widget */}
+        <DashboardComparisonWidget />
+
         {/* Payment Statistics Widget */}
         <PaymentStatsWidget />
+
+        {/* Activity & Notifications Grid */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <RecentActivityWidget />
+          <AdminNotificationCenter />
+        </div>
+
+        {/* Webhook Logs Viewer */}
+        <WebhookLogsViewer />
+
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
