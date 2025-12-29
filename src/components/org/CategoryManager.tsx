@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ImageUpload } from '@/components/ui/image-upload';
 import { 
   useContestCategories, 
   useCreateCategory, 
@@ -14,7 +16,9 @@ import {
   useDeleteCategory,
   ContestCategory 
 } from '@/hooks/useContestCategories';
-import { FolderPlus, Pencil, Trash2, GripVertical, Layers } from 'lucide-react';
+import { useCreateContestant } from '@/hooks/useOrganization';
+import { useContestants } from '@/hooks/useContests';
+import { FolderPlus, Pencil, Trash2, GripVertical, Layers, ChevronDown, ChevronRight, UserPlus, Users } from 'lucide-react';
 
 interface CategoryManagerProps {
   contestId: string;
@@ -22,20 +26,48 @@ interface CategoryManagerProps {
 
 export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) => {
   const { data: categories, isLoading } = useContestCategories(contestId);
+  const { data: contestants } = useContestants(contestId);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const createContestant = useCreateContestant();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ContestCategory | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ContestCategory | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  // Add contestant to category state
+  const [addContestantCategoryId, setAddContestantCategoryId] = useState<string | null>(null);
+  const [newContestant, setNewContestant] = useState({
+    name: '',
+    bio: '',
+    photo_url: '',
+    performance: '',
+  });
 
   const [newCategory, setNewCategory] = useState({
     name: '',
     description: '',
   });
+
+  const toggleExpanded = (categoryId: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
+
+  const getContestantsForCategory = (categoryId: string) => {
+    return contestants?.filter((c: any) => c.category_id === categoryId) || [];
+  };
 
   const handleCreate = async () => {
     if (!newCategory.name.trim()) return;
@@ -85,6 +117,22 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
   const confirmDelete = (category: ContestCategory) => {
     setCategoryToDelete(category);
     setIsDeleteOpen(true);
+  };
+
+  const handleAddContestant = async () => {
+    if (!addContestantCategoryId || !newContestant.name.trim()) return;
+    
+    await createContestant.mutateAsync({
+      contest_id: contestId,
+      name: newContestant.name.trim(),
+      bio: newContestant.bio.trim() || undefined,
+      photo_url: newContestant.photo_url || undefined,
+      performance: newContestant.performance.trim() || undefined,
+      category_id: addContestantCategoryId,
+    });
+    
+    setAddContestantCategoryId(null);
+    setNewContestant({ name: '', bio: '', photo_url: '', performance: '' });
   };
 
   if (isLoading) {
@@ -161,30 +209,91 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
           </div>
         ) : (
           <div className="space-y-2">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                  <div>
-                    <p className="font-medium">{category.name}</p>
-                    {category.description && (
-                      <p className="text-sm text-muted-foreground">{category.description}</p>
-                    )}
+            {categories.map((category) => {
+              const categoryContestants = getContestantsForCategory(category.id);
+              const isExpanded = expandedCategories.has(category.id);
+              
+              return (
+                <Collapsible key={category.id} open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
+                  <div className="border rounded-lg">
+                    <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
+                      <CollapsibleTrigger asChild>
+                        <button className="flex items-center gap-3 flex-1 text-left">
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <div>
+                            <p className="font-medium">{category.name}</p>
+                            {category.description && (
+                              <p className="text-sm text-muted-foreground">{category.description}</p>
+                            )}
+                          </div>
+                        </button>
+                      </CollapsibleTrigger>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {categoryContestants.length}
+                        </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddContestantCategoryId(category.id);
+                          }}
+                        >
+                          <UserPlus className="mr-1 h-3 w-3" />
+                          Add Contestant
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CollapsibleContent>
+                      <div className="border-t px-3 py-2 bg-muted/30">
+                        {categoryContestants.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No contestants in this category yet
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 py-2">
+                            {categoryContestants.map((contestant: any) => (
+                              <div 
+                                key={contestant.id} 
+                                className="flex items-center gap-2 p-2 bg-background rounded border"
+                              >
+                                {contestant.photo_url ? (
+                                  <img 
+                                    src={contestant.photo_url} 
+                                    alt={contestant.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{contestant.name}</p>
+                                  <p className="text-xs text-muted-foreground">{contestant.vote_count} votes</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+                </Collapsible>
+              );
+            })}
           </div>
         )}
       </CardContent>
@@ -217,6 +326,58 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={updateCategory.isPending}>
               {updateCategory.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Contestant to Category Dialog */}
+      <Dialog open={!!addContestantCategoryId} onOpenChange={(open) => !open && setAddContestantCategoryId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Contestant to Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Contestant Name *</Label>
+              <Input
+                placeholder="Enter contestant name"
+                value={newContestant.name}
+                onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Bio (optional)</Label>
+              <Textarea
+                placeholder="Brief bio or description..."
+                value={newContestant.bio}
+                onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Performance/Entry (optional)</Label>
+              <Input
+                placeholder="e.g., Song title, video link, etc."
+                value={newContestant.performance}
+                onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Photo</Label>
+              <ImageUpload
+                value={newContestant.photo_url}
+                onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
+                bucket="contestant-images"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddContestantCategoryId(null)}>Cancel</Button>
+            <Button 
+              onClick={handleAddContestant} 
+              disabled={createContestant.isPending || !newContestant.name.trim()}
+            >
+              {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
             </Button>
           </DialogFooter>
         </DialogContent>
