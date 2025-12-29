@@ -81,6 +81,7 @@ const CreateContest = () => {
         brand_primary_color: formData.brand_primary_color,
         brand_secondary_color: formData.brand_secondary_color,
         brand_logo_url: formData.brand_logo_url || undefined,
+        contest_type: contestType as 'single' | 'category',
       });
       
       // If category-based, navigate to contest management to add categories

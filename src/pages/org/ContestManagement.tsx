@@ -272,6 +272,13 @@ const ContestManagement = () => {
   const handleAddContestant = async () => {
     if (!id || !newContestant.name) return;
     
+    // For category-based contests, require a category
+    const isCategoryBased = (contest as any)?.contest_type === 'category';
+    if (isCategoryBased && !newContestant.category_id) {
+      toast.error('Please select a category for this contestant');
+      return;
+    }
+    
     try {
       await createContestant.mutateAsync({
         contest_id: id,
@@ -279,7 +286,7 @@ const ContestManagement = () => {
         bio: newContestant.bio,
         photo_url: newContestant.photo_url,
         performance: newContestant.performance,
-        category_id: newContestant.category_id || null,
+        category_id: isCategoryBased ? newContestant.category_id : null,
       });
       setIsAddContestantOpen(false);
       setNewContestant({ name: '', bio: '', photo_url: '', performance: '', category_id: '' });
@@ -302,6 +309,14 @@ const ContestManagement = () => {
 
   const handleSaveContestant = async () => {
     if (!editingContestant) return;
+    
+    // For category-based contests, require a category
+    const isCategoryBased = (contest as any)?.contest_type === 'category';
+    if (isCategoryBased && !editingContestant.category_id) {
+      toast.error('Please select a category for this contestant');
+      return;
+    }
+    
     try {
       await updateContestant.mutateAsync({
         id: editingContestant.id,
@@ -309,7 +324,7 @@ const ContestManagement = () => {
         bio: editingContestant.bio,
         photo_url: editingContestant.photo_url,
         performance: editingContestant.performance,
-        category_id: editingContestant.category_id || null,
+        category_id: isCategoryBased ? editingContestant.category_id : null,
       });
       setIsEditContestantOpen(false);
       setEditingContestant(null);
@@ -678,7 +693,9 @@ const ContestManagement = () => {
         <Tabs defaultValue="contestants" className="space-y-4">
           <TabsList>
             <TabsTrigger value="contestants">Contestants</TabsTrigger>
-            <TabsTrigger value="categories">Categories</TabsTrigger>
+            {(contest as any)?.contest_type === 'category' && (
+              <TabsTrigger value="categories">Categories</TabsTrigger>
+            )}
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -756,18 +773,18 @@ const ContestManagement = () => {
                             onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
                           />
                         </div>
-                        {contestCategories && contestCategories.length > 0 && (
+                        {(contest as any)?.contest_type === 'category' && contestCategories && contestCategories.length > 0 && (
                           <div className="space-y-2">
-                            <Label>Category</Label>
+                            <Label>Category *</Label>
                             <Select
                               value={newContestant.category_id}
                               onValueChange={(value) => setNewContestant(prev => ({ ...prev, category_id: value }))}
+                              required
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select category (optional)" />
+                                <SelectValue placeholder="Select category" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">No Category</SelectItem>
                                 {contestCategories.map((cat) => (
                                   <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                                 ))}
@@ -1073,9 +1090,11 @@ const ContestManagement = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="categories" className="space-y-4">
-            <CategoryManager contestId={id || ''} />
-          </TabsContent>
+          {(contest as any)?.contest_type === 'category' && (
+            <TabsContent value="categories" className="space-y-4">
+              <CategoryManager contestId={id || ''} />
+            </TabsContent>
+          )}
 
           <TabsContent value="leaderboard">
             <Card>
@@ -1353,18 +1372,18 @@ const ContestManagement = () => {
                     onChange={(e) => setEditingContestant((prev: any) => ({ ...prev, performance: e.target.value }))}
                   />
                 </div>
-                {contestCategories && contestCategories.length > 0 && (
+                {(contest as any)?.contest_type === 'category' && contestCategories && contestCategories.length > 0 && (
                   <div className="space-y-2">
-                    <Label>Category</Label>
+                    <Label>Category *</Label>
                     <Select
                       value={editingContestant.category_id || ''}
                       onValueChange={(value) => setEditingContestant((prev: any) => ({ ...prev, category_id: value }))}
+                      required
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select category (optional)" />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No Category</SelectItem>
                         {contestCategories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                         ))}
