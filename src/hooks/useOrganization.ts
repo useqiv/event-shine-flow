@@ -707,6 +707,7 @@ export const useCreateContestant = () => {
       bio?: string;
       photo_url?: string;
       performance?: string;
+      category_id?: string | null;
     }) => {
       const { error } = await supabase
         .from('contestants')
@@ -736,6 +737,7 @@ export const useUpdateContestant = () => {
       bio?: string;
       photo_url?: string;
       performance?: string;
+      category_id?: string | null;
     }) => {
       const { error } = await supabase
         .from('contestants')

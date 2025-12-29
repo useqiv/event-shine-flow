@@ -21,6 +21,8 @@ import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
+import { CategoryManager } from '@/components/org/CategoryManager';
+import { useContestCategories } from '@/hooks/useContestCategories';
 
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
@@ -63,6 +65,7 @@ const ContestManagement = () => {
   const { user } = useAuth();
   const { data: contest, isLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
+  const { data: contestCategories } = useContestCategories(id || '');
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
   const updateContestant = useUpdateContestant();
@@ -133,6 +136,7 @@ const ContestManagement = () => {
     bio: '',
     photo_url: '',
     performance: '',
+    category_id: '',
   });
 
   // Filter and sort contestants
@@ -271,10 +275,14 @@ const ContestManagement = () => {
     try {
       await createContestant.mutateAsync({
         contest_id: id,
-        ...newContestant,
+        name: newContestant.name,
+        bio: newContestant.bio,
+        photo_url: newContestant.photo_url,
+        performance: newContestant.performance,
+        category_id: newContestant.category_id || null,
       });
       setIsAddContestantOpen(false);
-      setNewContestant({ name: '', bio: '', photo_url: '', performance: '' });
+      setNewContestant({ name: '', bio: '', photo_url: '', performance: '', category_id: '' });
     } catch (error) {
       console.error('Failed to add contestant:', error);
     }
@@ -287,6 +295,7 @@ const ContestManagement = () => {
       bio: contestant.bio || '',
       photo_url: contestant.photo_url || '',
       performance: contestant.performance || '',
+      category_id: contestant.category_id || '',
     });
     setIsEditContestantOpen(true);
   };
@@ -300,6 +309,7 @@ const ContestManagement = () => {
         bio: editingContestant.bio,
         photo_url: editingContestant.photo_url,
         performance: editingContestant.performance,
+        category_id: editingContestant.category_id || null,
       });
       setIsEditContestantOpen(false);
       setEditingContestant(null);
@@ -668,6 +678,7 @@ const ContestManagement = () => {
         <Tabs defaultValue="contestants" className="space-y-4">
           <TabsList>
             <TabsTrigger value="contestants">Contestants</TabsTrigger>
+            <TabsTrigger value="categories">Categories</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             <TabsTrigger value="payout">Payout</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -745,6 +756,25 @@ const ContestManagement = () => {
                             onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
                           />
                         </div>
+                        {contestCategories && contestCategories.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select
+                              value={newContestant.category_id}
+                              onValueChange={(value) => setNewContestant(prev => ({ ...prev, category_id: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category (optional)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">No Category</SelectItem>
+                                {contestCategories.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                         <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
                           {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
                         </Button>
@@ -1043,6 +1073,10 @@ const ContestManagement = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="categories" className="space-y-4">
+            <CategoryManager contestId={id || ''} />
+          </TabsContent>
+
           <TabsContent value="leaderboard">
             <Card>
               <CardHeader>
@@ -1319,6 +1353,25 @@ const ContestManagement = () => {
                     onChange={(e) => setEditingContestant((prev: any) => ({ ...prev, performance: e.target.value }))}
                   />
                 </div>
+                {contestCategories && contestCategories.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select
+                      value={editingContestant.category_id || ''}
+                      onValueChange={(value) => setEditingContestant((prev: any) => ({ ...prev, category_id: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No Category</SelectItem>
+                        {contestCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button onClick={handleSaveContestant} className="w-full" disabled={updateContestant.isPending}>
                   {updateContestant.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
