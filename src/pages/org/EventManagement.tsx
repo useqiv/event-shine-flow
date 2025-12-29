@@ -264,10 +264,10 @@ const EventManagement = () => {
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Link to={`/org/events/${id}/social`}>
+            <Link to={`/org/events/${id}/marketing`}>
               <Button variant="outline">
                 <Megaphone className="mr-2 h-4 w-4" />
-                Social Media
+                Marketing
               </Button>
             </Link>
             <Link to={`/org/events/${id}/checkin`}>
