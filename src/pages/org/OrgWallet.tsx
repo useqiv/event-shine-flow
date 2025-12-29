@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents, useOrganizationSettings } from '@/hooks/useOrganization';
-import { formatCurrency, getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
+import { formatCurrency, getCurrencySymbol, currencies, useConversionDisplay } from '@/components/ui/currency-selector';
+import CurrencySelector from '@/components/ui/currency-selector';
 import { 
   Wallet, 
   ArrowRight, 
@@ -34,6 +35,23 @@ const OrgWallet = () => {
   const { user } = useAuth();
   
   const defaultCurrency = orgSettings?.default_currency || 'USD';
+  
+  // Display currency state with selector
+  const [displayCurrency, setDisplayCurrency] = useState<string>(defaultCurrency);
+  const { convert } = useConversionDisplay();
+  
+  // Update display currency when org settings load
+  useEffect(() => {
+    if (defaultCurrency) {
+      setDisplayCurrency(defaultCurrency);
+    }
+  }, [defaultCurrency]);
+  
+  // Helper to convert amounts to display currency
+  const convertAmount = (amount: number, fromCurrency: string = defaultCurrency) => {
+    if (fromCurrency === displayCurrency) return amount;
+    return convert(amount, fromCurrency, displayCurrency);
+  };
 
   // Get all currencies that have revenue
   const allCurrenciesWithRevenue = React.useMemo(() => {
@@ -141,7 +159,15 @@ const OrgWallet = () => {
             <h1 className="text-2xl font-bold text-foreground">Wallet & Finance</h1>
             <p className="text-muted-foreground">Track your revenue and manage finances.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">View in:</span>
+              <CurrencySelector 
+                value={displayCurrency} 
+                onValueChange={setDisplayCurrency}
+                className="w-[160px]"
+              />
+            </div>
             <Button variant="outline" onClick={handleExportReport}>
               <Download className="mr-2 h-4 w-4" />
               Export Report
@@ -166,7 +192,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(stats?.totalRevenue || 0, defaultCurrency)}
+                      {formatCurrency(convertAmount(stats?.totalRevenue || 0), displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -184,7 +210,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(stats?.availableBalance || 0, defaultCurrency)}
+                      {formatCurrency(convertAmount(stats?.availableBalance || 0), displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -202,7 +228,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(stats?.pendingPayouts || 0, defaultCurrency)}
+                      {formatCurrency(convertAmount(stats?.pendingPayouts || 0), displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -220,7 +246,7 @@ const OrgWallet = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(stats?.completedPayouts || 0, defaultCurrency)}
+                      {formatCurrency(convertAmount(stats?.completedPayouts || 0), displayCurrency)}
                     </p>
                   )}
                 </div>
@@ -288,7 +314,7 @@ const OrgWallet = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">{formatCurrency(stats?.ticketRevenue || 0, defaultCurrency)}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(convertAmount(stats?.ticketRevenue || 0), displayCurrency)}</p>
                   <p className="text-sm text-muted-foreground">{stats?.ticketsSold || 0} tickets sold</p>
                 </div>
                 <Link to="/org/events">
@@ -311,7 +337,7 @@ const OrgWallet = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">{formatCurrency(stats?.voteRevenue || 0, defaultCurrency)}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(convertAmount(stats?.voteRevenue || 0), displayCurrency)}</p>
                   <p className="text-sm text-muted-foreground">{stats?.totalVotes || 0} votes received</p>
                 </div>
                 <Link to="/org/contests">
@@ -349,7 +375,7 @@ const OrgWallet = () => {
                 {payouts.slice(0, 5).map((payout) => (
                   <div key={payout.id} className="flex items-center justify-between p-4 rounded-lg border border-border">
                     <div>
-                      <p className="font-semibold">{formatCurrency(payout.amount, defaultCurrency)}</p>
+                      <p className="font-semibold">{formatCurrency(convertAmount(payout.amount), displayCurrency)}</p>
                       <p className="text-sm text-muted-foreground">
                         {payout.payment_method === 'bank' ? 'Bank Transfer' : 'USDT'} • {format(new Date(payout.created_at), 'MMM d, yyyy')}
                       </p>
