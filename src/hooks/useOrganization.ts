@@ -199,7 +199,7 @@ export const useRequestPayout = () => {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (payoutData: { amount: number; payment_method: string }) => {
+    mutationFn: async (payoutData: { amount: number; payment_method: string; currency: string }) => {
       const { data: settings } = await supabase
         .from('organization_settings')
         .select('*')
@@ -212,6 +212,7 @@ export const useRequestPayout = () => {
           organization_id: user!.id,
           amount: payoutData.amount,
           payment_method: payoutData.payment_method,
+          currency: payoutData.currency,
           bank_name: settings?.bank_name,
           account_number: settings?.account_number,
           account_name: settings?.account_name,

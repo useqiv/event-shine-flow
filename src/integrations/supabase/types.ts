@@ -1297,6 +1297,7 @@ export type Database = {
           amount: number
           bank_name: string | null
           created_at: string
+          currency: string
           id: string
           organization_id: string
           payment_method: string
@@ -1312,6 +1313,7 @@ export type Database = {
           amount: number
           bank_name?: string | null
           created_at?: string
+          currency?: string
           id?: string
           organization_id: string
           payment_method?: string
@@ -1327,6 +1329,7 @@ export type Database = {
           amount?: number
           bank_name?: string | null
           created_at?: string
+          currency?: string
           id?: string
           organization_id?: string
           payment_method?: string

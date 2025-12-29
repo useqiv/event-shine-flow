@@ -32,6 +32,7 @@ const Payouts = () => {
   const [isUsdtSettingsOpen, setIsUsdtSettingsOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('bank');
+  const [payoutCurrency, setPayoutCurrency] = useState('');
 
   const [bankDetails, setBankDetails] = useState({
     bank_name: '',
@@ -62,16 +63,41 @@ const Payouts = () => {
     setIsUsdtSettingsOpen(false);
   };
 
+  // Get available currencies with net revenue
+  const availableCurrencies = React.useMemo(() => {
+    if (!stats?.netRevenueByCurrency) return [];
+    return Object.entries(stats.netRevenueByCurrency)
+      .filter(([_, amount]) => (amount as number) > 0)
+      .map(([currency, amount]) => ({ currency, netRevenue: amount as number }));
+  }, [stats?.netRevenueByCurrency]);
+
+  // Set default currency when available currencies load
+  React.useEffect(() => {
+    if (availableCurrencies.length > 0 && !payoutCurrency) {
+      setPayoutCurrency(availableCurrencies[0].currency);
+    }
+  }, [availableCurrencies, payoutCurrency]);
+
+  const selectedCurrencyNetRevenue = React.useMemo(() => {
+    if (!payoutCurrency || !stats?.netRevenueByCurrency) return 0;
+    return stats.netRevenueByCurrency[payoutCurrency] || 0;
+  }, [payoutCurrency, stats?.netRevenueByCurrency]);
+
   const handleRequestPayout = async () => {
     const amount = Number(payoutAmount);
     
+    if (!payoutCurrency) {
+      toast.error('Please select a currency');
+      return;
+    }
+
     if (!amount || amount <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
 
-    if (amount > (stats?.availableBalance || 0)) {
-      toast.error('Insufficient balance');
+    if (amount > selectedCurrencyNetRevenue) {
+      toast.error('Insufficient balance for this currency');
       return;
     }
 
@@ -89,6 +115,7 @@ const Payouts = () => {
       await requestPayout.mutateAsync({
         amount,
         payment_method: payoutMethod,
+        currency: payoutCurrency,
       });
       setIsRequestOpen(false);
       setPayoutAmount('');
@@ -101,7 +128,6 @@ const Payouts = () => {
   const hasUsdtSetup = settings?.usdt_address;
   
   const defaultCurrency = settings?.default_currency || 'USD';
-  const currencySymbol = getCurrencySymbol(defaultCurrency);
 
   return (
     <OrganizationLayout>
@@ -113,7 +139,7 @@ const Payouts = () => {
           </div>
           <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
             <DialogTrigger asChild>
-              <Button disabled={(stats?.availableBalance || 0) <= 0}>
+              <Button disabled={availableCurrencies.length === 0}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Request Payout
               </Button>
@@ -123,18 +149,48 @@ const Payouts = () => {
                 <DialogTitle>Request Payout</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-secondary">
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats?.availableBalance || 0, defaultCurrency)}</p>
+                <div className="space-y-2">
+                  <Label>Select Currency</Label>
+                  <Select value={payoutCurrency} onValueChange={setPayoutCurrency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      {availableCurrencies.map(({ currency, netRevenue }) => (
+                        <SelectItem key={currency} value={currency}>
+                          {currency} - Net: {formatCurrency(netRevenue, currency)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {payoutCurrency && (
+                  <div className="p-4 rounded-lg bg-secondary">
+                    <p className="text-sm text-muted-foreground">Available Net Revenue ({payoutCurrency})</p>
+                    <p className="text-2xl font-bold">{formatCurrency(selectedCurrencyNetRevenue, payoutCurrency)}</p>
+                  </div>
+                )}
                 
                 <div className="space-y-2">
-                  <Label>Amount ({currencySymbol})</Label>
+                  <div className="flex justify-between items-center">
+                    <Label>Amount ({payoutCurrency ? getCurrencySymbol(payoutCurrency) : ''})</Label>
+                    {payoutCurrency && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setPayoutAmount(selectedCurrencyNetRevenue.toString())}
+                      >
+                        Max
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     placeholder="Enter amount"
                     value={payoutAmount}
                     onChange={(e) => setPayoutAmount(e.target.value)}
+                    max={selectedCurrencyNetRevenue}
                   />
                 </div>
 
@@ -144,7 +200,7 @@ const Payouts = () => {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-popover">
                       <SelectItem value="bank">Bank Transfer</SelectItem>
                       <SelectItem value="usdt">USDT (Crypto)</SelectItem>
                     </SelectContent>
@@ -168,7 +224,12 @@ const Payouts = () => {
                 <Button 
                   onClick={handleRequestPayout} 
                   className="w-full" 
-                  disabled={requestPayout.isPending || (payoutMethod === 'bank' && !hasBankSetup) || (payoutMethod === 'usdt' && !hasUsdtSetup)}
+                  disabled={
+                    requestPayout.isPending || 
+                    !payoutCurrency ||
+                    (payoutMethod === 'bank' && !hasBankSetup) || 
+                    (payoutMethod === 'usdt' && !hasUsdtSetup)
+                  }
                 >
                   {requestPayout.isPending ? 'Processing...' : 'Submit Request'}
                 </Button>
