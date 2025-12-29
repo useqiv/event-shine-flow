@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Vote, Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle, Shield, Loader2 } from 'lucide-react';
+import { Vote, Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle, Shield, Loader2, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { PasswordStrength, isPasswordStrong } from '@/components/ui/password-strength';
 import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
@@ -204,12 +204,18 @@ const Auth = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-              <Vote className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-2xl text-foreground">VoteApp</span>
-          </Link>
+          <div className="mb-8">
+            <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Home</span>
+            </Link>
+            <Link to="/" className="flex items-center justify-center gap-2">
+              <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+                <Vote className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-2xl text-foreground">VoteApp</span>
+            </Link>
+          </div>
 
           <Card className="border-border/50">
             <CardHeader className="text-center">
@@ -256,12 +262,18 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-            <Vote className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-2xl text-foreground">VoteApp</span>
-        </Link>
+        <div className="mb-8">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Home</span>
+          </Link>
+          <Link to="/" className="flex items-center justify-center gap-2">
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+              <Vote className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-2xl text-foreground">VoteApp</span>
+          </Link>
+        </div>
 
         <Card className="border-border/50">
           <Tabs defaultValue="login">
