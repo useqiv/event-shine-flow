@@ -503,6 +503,7 @@ export const useCreateContest = () => {
       brand_primary_color?: string;
       brand_secondary_color?: string;
       brand_logo_url?: string;
+      contest_type?: 'single' | 'category';
     }) => {
       const { data, error } = await supabase
         .from('contests')

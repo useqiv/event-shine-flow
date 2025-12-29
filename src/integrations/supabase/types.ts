@@ -464,6 +464,7 @@ export type Database = {
           brand_primary_color: string | null
           brand_secondary_color: string | null
           category: string
+          contest_type: string
           created_at: string
           custom_slug: string | null
           description: string | null
@@ -485,6 +486,7 @@ export type Database = {
           brand_primary_color?: string | null
           brand_secondary_color?: string | null
           category: string
+          contest_type?: string
           created_at?: string
           custom_slug?: string | null
           description?: string | null
@@ -506,6 +508,7 @@ export type Database = {
           brand_primary_color?: string | null
           brand_secondary_color?: string | null
           category?: string
+          contest_type?: string
           created_at?: string
           custom_slug?: string | null
           description?: string | null
