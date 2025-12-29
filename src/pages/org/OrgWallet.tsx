@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganizationStats, usePayouts, useOrganizationContests, useOrganizationEvents, useOrganizationSettings } from '@/hooks/useOrganization';
-import { formatCurrency, getCurrencySymbol, currencies, useConversionDisplay } from '@/components/ui/currency-selector';
+import { formatCurrency, getCurrencySymbol, currencies } from '@/components/ui/currency-selector';
 import CurrencySelector from '@/components/ui/currency-selector';
 import { 
   Wallet, 
@@ -36,22 +36,15 @@ const OrgWallet = () => {
   
   const defaultCurrency = orgSettings?.default_currency || 'USD';
   
-  // Display currency state with selector
-  const [displayCurrency, setDisplayCurrency] = useState<string>(defaultCurrency);
-  const { convert } = useConversionDisplay();
+  // Selected currency filter - shows only transactions in this currency
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(defaultCurrency);
   
-  // Update display currency when org settings load
+  // Update selected currency when org settings load
   useEffect(() => {
     if (defaultCurrency) {
-      setDisplayCurrency(defaultCurrency);
+      setSelectedCurrency(defaultCurrency);
     }
   }, [defaultCurrency]);
-  
-  // Helper to convert amounts to display currency
-  const convertAmount = (amount: number, fromCurrency: string = defaultCurrency) => {
-    if (fromCurrency === displayCurrency) return amount;
-    return convert(amount, fromCurrency, displayCurrency);
-  };
 
   // Get all currencies that have revenue
   const allCurrenciesWithRevenue = React.useMemo(() => {
@@ -64,6 +57,23 @@ const OrgWallet = () => {
     }
     return Array.from(currencySet).sort();
   }, [stats]);
+  
+  // Get revenue for the selected currency only
+  const selectedCurrencyStats = React.useMemo(() => {
+    const ticketRevenue = stats?.ticketRevenueByCurrency?.[selectedCurrency] || 0;
+    const voteRevenue = stats?.voteRevenueByCurrency?.[selectedCurrency] || 0;
+    const totalRevenue = ticketRevenue + voteRevenue;
+    
+    return {
+      totalRevenue,
+      ticketRevenue,
+      voteRevenue,
+      // Available balance, pending, and completed payouts are in the selected currency
+      availableBalance: selectedCurrency === defaultCurrency ? (stats?.availableBalance || 0) : 0,
+      pendingPayouts: selectedCurrency === defaultCurrency ? (stats?.pendingPayouts || 0) : 0,
+      completedPayouts: selectedCurrency === defaultCurrency ? (stats?.completedPayouts || 0) : 0,
+    };
+  }, [stats, selectedCurrency, defaultCurrency]);
 
   const handleExportReport = async () => {
     if (!user) return;
@@ -161,10 +171,10 @@ const OrgWallet = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">View in:</span>
+              <span className="text-sm text-muted-foreground">Filter by currency:</span>
               <CurrencySelector 
-                value={displayCurrency} 
-                onValueChange={setDisplayCurrency}
+                value={selectedCurrency} 
+                onValueChange={setSelectedCurrency}
                 className="w-[160px]"
               />
             </div>
@@ -181,18 +191,18 @@ const OrgWallet = () => {
           </div>
         </div>
 
-        {/* Revenue Overview */}
+        {/* Revenue Overview - Shows only transactions in selected currency */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Total Revenue</p>
+                  <p className="text-sm opacity-90">Total Revenue ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(convertAmount(stats?.totalRevenue || 0), displayCurrency)}
+                      {formatCurrency(selectedCurrencyStats.totalRevenue, selectedCurrency)}
                     </p>
                   )}
                 </div>
@@ -205,12 +215,12 @@ const OrgWallet = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
+                  <p className="text-sm text-muted-foreground">Available Balance ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(convertAmount(stats?.availableBalance || 0), displayCurrency)}
+                      {formatCurrency(selectedCurrencyStats.availableBalance, selectedCurrency)}
                     </p>
                   )}
                 </div>
@@ -223,12 +233,12 @@ const OrgWallet = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending Payouts</p>
+                  <p className="text-sm text-muted-foreground">Pending Payouts ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(convertAmount(stats?.pendingPayouts || 0), displayCurrency)}
+                      {formatCurrency(selectedCurrencyStats.pendingPayouts, selectedCurrency)}
                     </p>
                   )}
                 </div>
@@ -241,12 +251,12 @@ const OrgWallet = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Paid Out</p>
+                  <p className="text-sm text-muted-foreground">Total Paid Out ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(convertAmount(stats?.completedPayouts || 0), displayCurrency)}
+                      {formatCurrency(selectedCurrencyStats.completedPayouts, selectedCurrency)}
                     </p>
                   )}
                 </div>
@@ -307,15 +317,15 @@ const OrgWallet = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ticket className="h-5 w-5" />
-                Ticket Revenue
+                Ticket Revenue ({selectedCurrency})
               </CardTitle>
-              <CardDescription>Revenue from event ticket sales</CardDescription>
+              <CardDescription>Revenue from event ticket sales in {selectedCurrency}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">{formatCurrency(convertAmount(stats?.ticketRevenue || 0), displayCurrency)}</p>
-                  <p className="text-sm text-muted-foreground">{stats?.ticketsSold || 0} tickets sold</p>
+                  <p className="text-3xl font-bold">{formatCurrency(selectedCurrencyStats.ticketRevenue, selectedCurrency)}</p>
+                  <p className="text-sm text-muted-foreground">In {selectedCurrency} only</p>
                 </div>
                 <Link to="/org/events">
                   <Button variant="outline" className="w-full">
@@ -330,15 +340,15 @@ const OrgWallet = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Vote className="h-5 w-5" />
-                Vote Revenue
+                Vote Revenue ({selectedCurrency})
               </CardTitle>
-              <CardDescription>Revenue from contest voting</CardDescription>
+              <CardDescription>Revenue from contest voting in {selectedCurrency}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold">{formatCurrency(convertAmount(stats?.voteRevenue || 0), displayCurrency)}</p>
-                  <p className="text-sm text-muted-foreground">{stats?.totalVotes || 0} votes received</p>
+                  <p className="text-3xl font-bold">{formatCurrency(selectedCurrencyStats.voteRevenue, selectedCurrency)}</p>
+                  <p className="text-sm text-muted-foreground">In {selectedCurrency} only</p>
                 </div>
                 <Link to="/org/contests">
                   <Button variant="outline" className="w-full">
@@ -375,7 +385,7 @@ const OrgWallet = () => {
                 {payouts.slice(0, 5).map((payout) => (
                   <div key={payout.id} className="flex items-center justify-between p-4 rounded-lg border border-border">
                     <div>
-                      <p className="font-semibold">{formatCurrency(convertAmount(payout.amount), displayCurrency)}</p>
+                      <p className="font-semibold">{formatCurrency(payout.amount, defaultCurrency)}</p>
                       <p className="text-sm text-muted-foreground">
                         {payout.payment_method === 'bank' ? 'Bank Transfer' : 'USDT'} • {format(new Date(payout.created_at), 'MMM d, yyyy')}
                       </p>
