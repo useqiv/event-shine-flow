@@ -11,7 +11,8 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
-import { Calendar, DollarSign, FileText } from 'lucide-react';
+import { Calendar, DollarSign, FileText, Users, Layers, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const categories = [
   'Music',
@@ -26,11 +27,14 @@ const categories = [
   'Other'
 ];
 
+type ContestType = 'single' | 'category' | null;
+
 const CreateContest = () => {
   const navigate = useNavigate();
   const createContest = useCreateContest();
   const { data: orgSettings } = useOrganizationSettings();
 
+  const [contestType, setContestType] = useState<ContestType>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -64,7 +68,7 @@ const CreateContest = () => {
     e.preventDefault();
     
     try {
-      await createContest.mutateAsync({
+      const result = await createContest.mutateAsync({
         title: formData.title,
         description: formData.description,
         category: formData.category,
@@ -78,7 +82,13 @@ const CreateContest = () => {
         brand_secondary_color: formData.brand_secondary_color,
         brand_logo_url: formData.brand_logo_url || undefined,
       });
-      navigate('/org/contests');
+      
+      // If category-based, navigate to contest management to add categories
+      if (contestType === 'category' && result?.id) {
+        navigate(`/org/contests/${result.id}?setup=categories`);
+      } else {
+        navigate('/org/contests');
+      }
     } catch (error) {
       console.error('Failed to create contest:', error);
     }
@@ -88,12 +98,103 @@ const CreateContest = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Contest Type Selection Step
+  if (contestType === null) {
+    return (
+      <OrganizationLayout>
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Create New Contest</h1>
+            <p className="text-muted-foreground">What type of contest do you want to create?</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Single Contest Option */}
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                "border-2"
+              )}
+              onClick={() => setContestType('single')}
+            >
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Single Contest</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    All contestants compete in one pool. Best for simple voting like "Best Dressed" or "Most Popular".
+                  </p>
+                </div>
+                <div className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
+                  <strong>Example:</strong> Best Dressed 2024 with contestants Ada, Sam, John competing together.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Category-based Contest Option */}
+            <Card 
+              className={cn(
+                "cursor-pointer transition-all hover:border-primary/50 hover:shadow-md",
+                "border-2"
+              )}
+              onClick={() => setContestType('category')}
+            >
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Layers className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Category-based Contest</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Multiple award categories with contestants in each. Best for award shows or multi-category events.
+                  </p>
+                </div>
+                <div className="text-xs text-muted-foreground bg-muted rounded-lg p-3">
+                  <strong>Example:</strong> Music Awards with categories like "Best Artiste", "Best Song", "Best Album".
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-start">
+            <Button variant="outline" onClick={() => navigate('/org/contests')}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </OrganizationLayout>
+    );
+  }
+
   return (
     <OrganizationLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Create New Contest</h1>
-          <p className="text-muted-foreground">Set up a voting contest for your audience.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Create New Contest</h1>
+            <p className="text-muted-foreground">
+              {contestType === 'category' ? 'Category-based contest' : 'Single contest'} • 
+              <button 
+                type="button"
+                className="text-primary hover:underline ml-1"
+                onClick={() => setContestType(null)}
+              >
+                Change type
+              </button>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              {contestType === 'single' ? (
+                <Users className="h-4 w-4" />
+              ) : (
+                <Layers className="h-4 w-4" />
+              )}
+              <span>{contestType === 'single' ? 'Single' : 'Category-based'}</span>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
