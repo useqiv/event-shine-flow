@@ -25,6 +25,7 @@ export interface Payout {
   id: string;
   organization_id: string;
   amount: number;
+  currency: string;
   status: string;
   payment_method: string;
   bank_name: string | null;
