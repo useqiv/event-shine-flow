@@ -18,7 +18,8 @@ import {
   CreditCard,
   Download,
   DollarSign,
-  Coins
+  Coins,
+  Heart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
@@ -55,6 +56,9 @@ const OrgWallet = () => {
     if (stats?.voteRevenueByCurrency) {
       Object.keys(stats.voteRevenueByCurrency).forEach(c => currencySet.add(c));
     }
+    if (stats?.campaignRevenueByCurrency) {
+      Object.keys(stats.campaignRevenueByCurrency).forEach(c => currencySet.add(c));
+    }
     return Array.from(currencySet).sort();
   }, [stats]);
   
@@ -62,12 +66,14 @@ const OrgWallet = () => {
   const selectedCurrencyStats = React.useMemo(() => {
     const ticketRevenue = stats?.ticketRevenueByCurrency?.[selectedCurrency] || 0;
     const voteRevenue = stats?.voteRevenueByCurrency?.[selectedCurrency] || 0;
-    const totalRevenue = ticketRevenue + voteRevenue;
+    const campaignRevenue = stats?.campaignRevenueByCurrency?.[selectedCurrency] || 0;
+    const totalRevenue = ticketRevenue + voteRevenue + campaignRevenue;
     
     return {
       totalRevenue,
       ticketRevenue,
       voteRevenue,
+      campaignRevenue,
       // Available balance, pending, and completed payouts are in the selected currency
       availableBalance: selectedCurrency === defaultCurrency ? (stats?.availableBalance || 0) : 0,
       pendingPayouts: selectedCurrency === defaultCurrency ? (stats?.pendingPayouts || 0) : 0,
@@ -192,7 +198,7 @@ const OrgWallet = () => {
         </div>
 
         {/* Revenue Overview - Shows only transactions in selected currency */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -207,6 +213,24 @@ const OrgWallet = () => {
                   )}
                 </div>
                 <DollarSign className="h-8 w-8 opacity-80" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Campaign Revenue ({selectedCurrency})</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(selectedCurrencyStats.campaignRevenue, selectedCurrency)}
+                    </p>
+                  )}
+                </div>
+                <Heart className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -288,7 +312,8 @@ const OrgWallet = () => {
                   {allCurrenciesWithRevenue.map((currency) => {
                     const ticketRev = stats?.ticketRevenueByCurrency?.[currency] || 0;
                     const voteRev = stats?.voteRevenueByCurrency?.[currency] || 0;
-                    const total = ticketRev + voteRev;
+                    const campaignRev = stats?.campaignRevenueByCurrency?.[currency] || 0;
+                    const total = ticketRev + voteRev + campaignRev;
                     const currencyInfo = currencies.find(c => c.code === currency);
                     
                     return (
@@ -298,9 +323,10 @@ const OrgWallet = () => {
                           <span className="text-sm text-muted-foreground">{currency}</span>
                         </div>
                         <p className="text-2xl font-bold">{formatCurrency(total, currency)}</p>
-                        <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                           <span>Tickets: {formatCurrency(ticketRev, currency)}</span>
                           <span>Votes: {formatCurrency(voteRev, currency)}</span>
+                          <span>Campaigns: {formatCurrency(campaignRev, currency)}</span>
                         </div>
                       </div>
                     );
