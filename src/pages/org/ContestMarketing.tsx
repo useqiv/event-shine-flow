@@ -7,11 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialPostingCard } from '@/components/org/SocialPostingCard';
 import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
+import { ContestShareCards } from '@/components/org/ContestShareCards';
+import { EntityInfluencerLinks } from '@/components/org/EntityInfluencerLinks';
+import { EntityPromoCodes } from '@/components/org/EntityPromoCodes';
 import { useContest, useContestants } from '@/hooks/useContests';
-import { ArrowLeft, Send, Calendar, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Send, Calendar, BarChart3, Image, Link2, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
-const ContestSocialMedia = () => {
+const ContestMarketing = () => {
   const { id } = useParams<{ id: string }>();
   const { data: contest, isLoading: contestLoading } = useContest(id || '');
   const { data: contestants } = useContestants(id || '');
@@ -42,6 +45,21 @@ const ContestSocialMedia = () => {
     );
   }
 
+  const contestWithBranding = {
+    id: contest.id,
+    title: contest.title,
+    custom_slug: (contest as any).custom_slug || null,
+    brand_primary_color: (contest as any).brand_primary_color || '#6366f1',
+    brand_logo_url: (contest as any).brand_logo_url || null,
+  };
+
+  const contestantsList = contestants?.map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    vote_count: c.vote_count,
+    photo_url: c.photo_url,
+  })) || [];
+
   return (
     <OrganizationLayout>
       <div className="space-y-6">
@@ -54,7 +72,7 @@ const ContestSocialMedia = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Social Media</h1>
+              <h1 className="text-2xl font-bold text-foreground">Marketing Hub</h1>
               <p className="text-muted-foreground">
                 {contest.title} • {format(new Date(contest.start_date), 'MMM d')} - {format(new Date(contest.end_date), 'MMM d, yyyy')}
               </p>
@@ -64,7 +82,7 @@ const ContestSocialMedia = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="posting" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="flex flex-wrap h-auto gap-1 w-full lg:w-auto">
             <TabsTrigger value="posting" className="gap-2">
               <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Quick Post</span>
@@ -75,6 +93,21 @@ const ContestSocialMedia = () => {
               <span className="hidden sm:inline">Auto-Posting</span>
               <span className="sm:hidden">Auto</span>
             </TabsTrigger>
+            <TabsTrigger value="cards" className="gap-2">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">Share Cards</span>
+              <span className="sm:hidden">Cards</span>
+            </TabsTrigger>
+            <TabsTrigger value="influencers" className="gap-2">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Influencers</span>
+              <span className="sm:hidden">Links</span>
+            </TabsTrigger>
+            <TabsTrigger value="promos" className="gap-2">
+              <Tag className="h-4 w-4" />
+              <span className="hidden sm:inline">Promo Codes</span>
+              <span className="sm:hidden">Promos</span>
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
@@ -84,20 +117,10 @@ const ContestSocialMedia = () => {
 
           {/* Quick Post Tab */}
           <TabsContent value="posting" className="space-y-6">
-            {contestants && contestants.length > 0 ? (
+            {contestantsList.length > 0 ? (
               <SocialPostingCard
-                contest={{
-                  id: contest.id,
-                  title: contest.title,
-                  custom_slug: (contest as any).custom_slug || null,
-                  brand_primary_color: (contest as any).brand_primary_color || '#6366f1',
-                }}
-                contestants={contestants.map((c: any) => ({
-                  id: c.id,
-                  name: c.name,
-                  vote_count: c.vote_count,
-                  photo_url: c.photo_url,
-                }))}
+                contest={contestWithBranding}
+                contestants={contestantsList}
               />
             ) : (
               <div className="text-center py-12 text-muted-foreground">
@@ -109,6 +132,33 @@ const ContestSocialMedia = () => {
           {/* Auto-Posting Tab */}
           <TabsContent value="auto-posting" className="space-y-6">
             <SocialAutoPostManager
+              entityId={contest.id}
+              entityType="contest"
+              entityTitle={contest.title}
+            />
+          </TabsContent>
+
+          {/* Share Cards Tab */}
+          <TabsContent value="cards" className="space-y-6">
+            <ContestShareCards
+              contest={contestWithBranding}
+              contestants={contestantsList}
+            />
+          </TabsContent>
+
+          {/* Influencer Links Tab */}
+          <TabsContent value="influencers" className="space-y-6">
+            <EntityInfluencerLinks
+              entityId={contest.id}
+              entityType="contest"
+              entityTitle={contest.title}
+              customSlug={(contest as any).custom_slug}
+            />
+          </TabsContent>
+
+          {/* Promo Codes Tab */}
+          <TabsContent value="promos" className="space-y-6">
+            <EntityPromoCodes
               entityId={contest.id}
               entityType="contest"
               entityTitle={contest.title}
@@ -128,4 +178,4 @@ const ContestSocialMedia = () => {
   );
 };
 
-export default ContestSocialMedia;
+export default ContestMarketing;

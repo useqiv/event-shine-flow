@@ -55,15 +55,14 @@ import EventScanner from "./pages/org/EventScanner";
 import EventScannerList from "./pages/org/EventScannerList";
 import OrgWallet from "./pages/org/OrgWallet";
 import Payouts from "./pages/org/Payouts";
-import Marketing from "./pages/org/Marketing";
 import Support from "./pages/org/Support";
 import OrgSettings from "./pages/org/OrgSettings";
 import OrgNotifications from "./pages/org/OrgNotifications";
 import TeamMembers from "./pages/org/TeamMembers";
 import EventCheckinDashboard from "./pages/org/EventCheckinDashboard";
 import ContestAnalytics from "./pages/org/ContestAnalytics";
-import ContestSocialMedia from "./pages/org/ContestSocialMedia";
-import EventSocialMedia from "./pages/org/EventSocialMedia";
+import ContestMarketing from "./pages/org/ContestMarketing";
+import EventMarketing from "./pages/org/EventMarketing";
 import ManageCampaigns from "./pages/org/ManageCampaigns";
 import CampaignAnalytics from "./pages/org/CampaignAnalytics";
 
@@ -192,15 +191,14 @@ const AppRoutes = () => (
     <Route path="/org/event-scanner" element={<ProtectedRoute><EventScannerList /></ProtectedRoute>} />
     <Route path="/org/wallet" element={<ProtectedRoute><OrgWallet /></ProtectedRoute>} />
     <Route path="/org/payouts" element={<ProtectedRoute><Payouts /></ProtectedRoute>} />
-    <Route path="/org/marketing" element={<ProtectedRoute><Marketing /></ProtectedRoute>} />
     <Route path="/org/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
     <Route path="/org/settings" element={<ProtectedRoute><OrgSettings /></ProtectedRoute>} />
     <Route path="/org/notifications" element={<ProtectedRoute><OrgNotifications /></ProtectedRoute>} />
     <Route path="/org/team" element={<ProtectedRoute><TeamMembers /></ProtectedRoute>} />
     <Route path="/org/events/:id/checkin" element={<ProtectedRoute><EventCheckinDashboard /></ProtectedRoute>} />
-    <Route path="/org/events/:id/social" element={<ProtectedRoute><EventSocialMedia /></ProtectedRoute>} />
+    <Route path="/org/events/:id/marketing" element={<ProtectedRoute><EventMarketing /></ProtectedRoute>} />
     <Route path="/org/contests/:id/analytics" element={<ProtectedRoute><ContestAnalytics /></ProtectedRoute>} />
-    <Route path="/org/contests/:id/social" element={<ProtectedRoute><ContestSocialMedia /></ProtectedRoute>} />
+    <Route path="/org/contests/:id/marketing" element={<ProtectedRoute><ContestMarketing /></ProtectedRoute>} />
     <Route path="/org/campaigns" element={<ProtectedRoute><ManageCampaigns /></ProtectedRoute>} />
     <Route path="/org/campaigns/:id/analytics" element={<ProtectedRoute><CampaignAnalytics /></ProtectedRoute>} />
     

@@ -578,10 +578,10 @@ const ContestManagement = () => {
                 Analytics
               </Button>
             </Link>
-            <Link to={`/org/contests/${id}/social`}>
+            <Link to={`/org/contests/${id}/marketing`}>
               <Button variant="outline">
                 <Megaphone className="mr-2 h-4 w-4" />
-                Social Media
+                Marketing
               </Button>
             </Link>
             <ShareButtons

@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
-import { EventAutoPostingCard } from '@/components/org/EventAutoPostingCard';
+import { EntityInfluencerLinks } from '@/components/org/EntityInfluencerLinks';
+import { EntityPromoCodes } from '@/components/org/EntityPromoCodes';
 import { useEvent } from '@/hooks/useEvents';
-import { ArrowLeft, Calendar, Settings } from 'lucide-react';
+import { ArrowLeft, Calendar, Link2, Tag, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 
-const EventSocialMedia = () => {
+const EventMarketing = () => {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: eventLoading } = useEvent(id || '');
 
@@ -52,7 +53,7 @@ const EventSocialMedia = () => {
               </Button>
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Social Media</h1>
+              <h1 className="text-2xl font-bold text-foreground">Marketing Hub</h1>
               <p className="text-muted-foreground">
                 {event.title} • {format(new Date(event.event_date), 'MMM d, yyyy • h:mm a')}
               </p>
@@ -62,16 +63,21 @@ const EventSocialMedia = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="auto-posting" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="flex flex-wrap h-auto gap-1 w-full lg:w-auto">
             <TabsTrigger value="auto-posting" className="gap-2">
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Auto-Posting</span>
               <span className="sm:hidden">Auto</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Legacy Settings</span>
-              <span className="sm:hidden">Settings</span>
+            <TabsTrigger value="influencers" className="gap-2">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Influencers</span>
+              <span className="sm:hidden">Links</span>
+            </TabsTrigger>
+            <TabsTrigger value="promos" className="gap-2">
+              <Tag className="h-4 w-4" />
+              <span className="hidden sm:inline">Promo Codes</span>
+              <span className="sm:hidden">Promos</span>
             </TabsTrigger>
           </TabsList>
 
@@ -84,11 +90,21 @@ const EventSocialMedia = () => {
             />
           </TabsContent>
 
-          {/* Legacy Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <EventAutoPostingCard
-              eventId={event.id}
-              eventTitle={event.title}
+          {/* Influencer Links Tab */}
+          <TabsContent value="influencers" className="space-y-6">
+            <EntityInfluencerLinks
+              entityId={event.id}
+              entityType="event"
+              entityTitle={event.title}
+            />
+          </TabsContent>
+
+          {/* Promo Codes Tab */}
+          <TabsContent value="promos" className="space-y-6">
+            <EntityPromoCodes
+              entityId={event.id}
+              entityType="event"
+              entityTitle={event.title}
             />
           </TabsContent>
         </Tabs>
@@ -97,4 +113,4 @@ const EventSocialMedia = () => {
   );
 };
 
-export default EventSocialMedia;
+export default EventMarketing;
