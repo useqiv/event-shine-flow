@@ -140,7 +140,7 @@ export const useMyVotes = () => {
         .from('votes')
         .select(`
           *,
-          contestant:contestants(*),
+          contestant:contestants(*, category:contest_categories(*)),
           contest:contests(*)
         `)
         .eq('user_id', user.id)
