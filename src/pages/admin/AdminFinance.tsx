@@ -3,12 +3,11 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
-import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
+import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencySelector from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
   DollarSign, 
-  TrendingUp, 
   Wallet, 
   CreditCard,
   BarChart3,
@@ -38,26 +37,19 @@ const AdminFinance: React.FC = () => {
   // Default currency for admin pages (from platform settings)
   const platformCurrency = usePlatformCurrency();
   
-  // Display currency state with selector
-  const [displayCurrency, setDisplayCurrency] = useState<string>(platformCurrency);
-  const { convert } = useConversionDisplay();
+  // Selected currency filter - shows only transactions in this currency
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(platformCurrency);
   
-  // Update display currency when platform currency loads
+  // Update selected currency when platform currency loads
   useEffect(() => {
     if (platformCurrency) {
-      setDisplayCurrency(platformCurrency);
+      setSelectedCurrency(platformCurrency);
     }
   }, [platformCurrency]);
-  
-  // Helper to convert amounts to display currency
-  const convertAmount = (amount: number, fromCurrency: string = platformCurrency) => {
-    if (fromCurrency === displayCurrency) return amount;
-    return convert(amount, fromCurrency, displayCurrency);
-  };
 
-  // Fetch real monthly revenue data from votes and tickets
+  // Fetch real monthly revenue data from votes and tickets - filtered by selected currency
   const { data: revenueData = [], isLoading: revenueLoading } = useQuery({
-    queryKey: ['admin-monthly-revenue'],
+    queryKey: ['admin-monthly-revenue', selectedCurrency],
     queryFn: async () => {
       const months = [];
       for (let i = 5; i >= 0; i--) {
@@ -65,17 +57,19 @@ const AdminFinance: React.FC = () => {
         const start = startOfMonth(date);
         const end = endOfMonth(date);
         
-        // Get votes revenue for this month
+        // Get votes revenue for this month - filter by vote currency
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid')
+          .select('amount_paid, contests!inner(vote_currency)')
+          .eq('contests.vote_currency', selectedCurrency)
           .gte('created_at', start.toISOString())
           .lte('created_at', end.toISOString());
         
-        // Get tickets revenue for this month
+        // Get tickets revenue for this month - filter by ticket type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid')
+          .select('amount_paid, ticket_types!inner(currency)')
+          .eq('ticket_types.currency', selectedCurrency)
           .gte('created_at', start.toISOString())
           .lte('created_at', end.toISOString());
         
@@ -92,44 +86,59 @@ const AdminFinance: React.FC = () => {
     },
   });
 
-  // Fetch actual revenue breakdown from database
-  const { data: actualBreakdown } = useQuery({
-    queryKey: ['admin-revenue-breakdown'],
+  // Fetch actual revenue breakdown from database - filtered by selected currency
+  const { data: currencyStats } = useQuery({
+    queryKey: ['admin-revenue-by-currency', selectedCurrency],
     queryFn: async () => {
+      // Get votes revenue in selected currency
       const { data: votes } = await supabase
         .from('votes')
-        .select('amount_paid');
+        .select('amount_paid, contests!inner(vote_currency)')
+        .eq('contests.vote_currency', selectedCurrency);
       
+      // Get tickets revenue in selected currency
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('amount_paid');
+        .select('amount_paid, ticket_types!inner(currency)')
+        .eq('ticket_types.currency', selectedCurrency);
       
       const votesTotal = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
       const ticketsTotal = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
       const total = votesTotal + ticketsTotal;
       
-      if (total === 0) {
-        return [
+      // Get pending payouts (these are typically in a single currency)
+      const { data: pendingPayouts } = await supabase
+        .from('payouts')
+        .select('amount')
+        .eq('status', 'pending');
+      
+      const pendingTotal = pendingPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      
+      return {
+        votesTotal,
+        ticketsTotal,
+        total,
+        pendingPayouts: selectedCurrency === platformCurrency ? pendingTotal : 0,
+        breakdown: total === 0 ? [
           { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
           { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
-        ];
-      }
-      
-      return [
-        { name: 'Votes', value: Math.round((votesTotal / total) * 100), color: 'hsl(var(--chart-1))' },
-        { name: 'Tickets', value: Math.round((ticketsTotal / total) * 100), color: 'hsl(var(--chart-2))' },
-      ];
+        ] : [
+          { name: 'Votes', value: Math.round((votesTotal / total) * 100), color: 'hsl(var(--chart-1))' },
+          { name: 'Tickets', value: Math.round((ticketsTotal / total) * 100), color: 'hsl(var(--chart-2))' },
+        ]
+      };
     },
   });
 
-  const revenueBreakdown = actualBreakdown || [
+  const revenueBreakdown = currencyStats?.breakdown || [
     { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
     { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
   ];
 
   const commissionRate = 10; // Default commission rate
-  const totalRevenue = stats?.total_revenue || 0;
+  const totalRevenue = currencyStats?.total || 0;
   const platformEarnings = totalRevenue * (commissionRate / 100);
+  const pendingPayouts = currencyStats?.pendingPayouts || 0;
   const isLoading = statsLoading || revenueLoading;
 
   if (isLoading) {
@@ -165,31 +174,30 @@ const AdminFinance: React.FC = () => {
             <p className="text-muted-foreground">Platform financial overview</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">View in:</span>
+            <span className="text-sm text-muted-foreground">Filter by currency:</span>
             <CurrencySelector 
-              value={displayCurrency} 
-              onValueChange={setDisplayCurrency}
+              value={selectedCurrency} 
+              onValueChange={setSelectedCurrency}
               className="w-[180px]"
             />
           </div>
         </div>
 
-        {/* Key Financial Stats */}
+        {/* Key Financial Stats - Shows only transactions in selected currency */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Revenue
+                Total Revenue ({selectedCurrency})
               </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <CurrencyDisplay amount={convertAmount(totalRevenue)} currency={displayCurrency} size="lg" />
+                <CurrencyDisplay amount={totalRevenue} currency={selectedCurrency} size="lg" />
               </div>
-              <div className="flex items-center text-xs text-green-500 mt-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +12.5% from last month
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                Transactions in {selectedCurrency} only
               </div>
             </CardContent>
           </Card>
@@ -197,13 +205,13 @@ const AdminFinance: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Platform Earnings
+                Platform Earnings ({selectedCurrency})
               </CardTitle>
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <CurrencyDisplay amount={convertAmount(platformEarnings)} currency={displayCurrency} size="lg" />
+                <CurrencyDisplay amount={platformEarnings} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {commissionRate}% commission
@@ -214,13 +222,13 @@ const AdminFinance: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending Payouts
+                Pending Payouts ({selectedCurrency})
               </CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-500">
-                <CurrencyDisplay amount={convertAmount(stats?.pending_payouts || 0)} currency={displayCurrency} size="lg" />
+                <CurrencyDisplay amount={pendingPayouts} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Awaiting processing
@@ -231,13 +239,13 @@ const AdminFinance: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Net Profit
+                Net Profit ({selectedCurrency})
               </CardTitle>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                <CurrencyDisplay amount={convertAmount(platformEarnings - (stats?.pending_payouts || 0))} currency={displayCurrency} size="lg" />
+                <CurrencyDisplay amount={platformEarnings - pendingPayouts} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 After pending payouts
@@ -269,9 +277,9 @@ const AdminFinance: React.FC = () => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(convertAmount(value) / 1000, displayCurrency).replace(/,/g, '') + 'k'} />
+                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(value / 1000, selectedCurrency).replace(/,/g, '') + 'k'} />
                     <Tooltip 
-                      formatter={(value: number) => formatCurrency(convertAmount(value), displayCurrency)}
+                      formatter={(value: number) => formatCurrency(value, selectedCurrency)}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
@@ -344,7 +352,7 @@ const AdminFinance: React.FC = () => {
                     <span>{item.name} Revenue</span>
                   </div>
                   <span className="font-medium">
-                    <CurrencyDisplay amount={convertAmount(totalRevenue * (item.value / 100))} currency={displayCurrency} />
+                    <CurrencyDisplay amount={totalRevenue * (item.value / 100)} currency={selectedCurrency} />
                     <span className="text-muted-foreground text-sm ml-1">({item.value}%)</span>
                   </span>
                 </div>
