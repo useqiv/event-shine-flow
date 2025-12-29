@@ -27,26 +27,33 @@ const PaymentStatsWidget: React.FC = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get Flutterwave transactions (only completed)
-      const { data: flutterwaveData } = await supabase
-        .from('wallet_transactions')
-        .select('amount, status')
-        .ilike('description', '%flutterwave%')
-        .eq('status', 'completed');
+      // Get today's votes
+      const { data: todayVotes } = await supabase
+        .from('votes')
+        .select('amount_paid, payment_method')
+        .gte('created_at', today.toISOString());
 
-      // Get Crypto transactions (only completed)
-      const { data: cryptoData } = await supabase
-        .from('wallet_transactions')
-        .select('amount, status')
-        .or('description.ilike.%USDT%,description.ilike.%USDC%,description.ilike.%crypto%')
-        .eq('status', 'completed');
+      // Get today's tickets  
+      const { data: todayTickets } = await supabase
+        .from('tickets')
+        .select('amount_paid, payment_method')
+        .gte('created_at', today.toISOString());
 
-      // Get today's transactions
-      const { data: todayData } = await supabase
-        .from('wallet_transactions')
-        .select('amount, status')
-        .gte('created_at', today.toISOString())
-        .eq('status', 'completed');
+      // Calculate Flutterwave stats from votes and tickets
+      const flutterwaveVotes = todayVotes?.filter(v => v.payment_method === 'flutterwave') || [];
+      const flutterwaveTickets = todayTickets?.filter(t => t.payment_method === 'flutterwave') || [];
+      const flutterwaveCount = flutterwaveVotes.length + flutterwaveTickets.length;
+      const flutterwaveAmount = 
+        flutterwaveVotes.reduce((sum, v) => sum + v.amount_paid, 0) +
+        flutterwaveTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+
+      // Calculate Crypto stats from votes and tickets
+      const cryptoVotes = todayVotes?.filter(v => v.payment_method === 'crypto') || [];
+      const cryptoTickets = todayTickets?.filter(t => t.payment_method === 'crypto') || [];
+      const cryptoCount = cryptoVotes.length + cryptoTickets.length;
+      const cryptoAmount = 
+        cryptoVotes.reduce((sum, v) => sum + v.amount_paid, 0) +
+        cryptoTickets.reduce((sum, t) => sum + t.amount_paid, 0);
 
       // Get pending crypto verifications from fraud_alerts
       const { data: pendingVerifications } = await supabase
@@ -55,50 +62,22 @@ const PaymentStatsWidget: React.FC = () => {
         .eq('alert_type', 'crypto_payment_verification')
         .eq('status', 'pending');
 
-      const flutterwaveStats = flutterwaveData?.reduce(
-        (acc, tx) => {
-          if (tx.status === 'pending') acc.pending++;
-          if (tx.status === 'completed') {
-            acc.completed++;
-            acc.totalAmount += Number(tx.amount) || 0;
-          }
-          return acc;
-        },
-        { pending: 0, completed: 0, totalAmount: 0 }
-      ) || { pending: 0, completed: 0, totalAmount: 0 };
-
-      const cryptoStats = cryptoData?.reduce(
-        (acc, tx) => {
-          if (tx.status === 'pending') acc.pending++;
-          if (tx.status === 'pending_verification') acc.pendingVerification++;
-          if (tx.status === 'completed') {
-            acc.completed++;
-            acc.totalAmount += Number(tx.amount) || 0;
-          }
-          return acc;
-        },
-        { pending: 0, pendingVerification: 0, completed: 0, totalAmount: 0 }
-      ) || { pending: 0, pendingVerification: 0, completed: 0, totalAmount: 0 };
-
-      const todayStats = todayData?.reduce(
-        (acc, tx) => {
-          acc.count++;
-          acc.revenue += Number(tx.amount) || 0;
-          return acc;
-        },
-        { count: 0, revenue: 0 }
-      ) || { count: 0, revenue: 0 };
+      // Calculate today's totals
+      const todayVoteCount = todayVotes?.length || 0;
+      const todayTicketCount = todayTickets?.length || 0;
+      const todayVoteRevenue = todayVotes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
+      const todayTicketRevenue = todayTickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
 
       return {
-        flutterwave_pending: flutterwaveStats.pending,
-        flutterwave_completed: flutterwaveStats.completed,
-        flutterwave_total_amount: flutterwaveStats.totalAmount,
-        crypto_pending: cryptoStats.pending,
+        flutterwave_pending: 0, // We don't track pending at vote/ticket level
+        flutterwave_completed: flutterwaveCount,
+        flutterwave_total_amount: flutterwaveAmount,
+        crypto_pending: 0,
         crypto_pending_verification: pendingVerifications?.length || 0,
-        crypto_completed: cryptoStats.completed,
-        crypto_total_amount: cryptoStats.totalAmount,
-        today_transactions: todayStats.count,
-        today_revenue: todayStats.revenue,
+        crypto_completed: cryptoCount,
+        crypto_total_amount: cryptoAmount,
+        today_transactions: todayVoteCount + todayTicketCount,
+        today_revenue: todayVoteRevenue + todayTicketRevenue,
       };
     },
     refetchInterval: 30000, // Refresh every 30 seconds
