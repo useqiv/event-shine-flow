@@ -360,9 +360,48 @@ export type Database = {
           },
         ]
       }
+      contest_categories: {
+        Row: {
+          contest_id: string
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          contest_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          contest_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_categories_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contestants: {
         Row: {
           bio: string | null
+          category_id: string | null
           contest_id: string
           created_at: string
           display_order: number | null
@@ -376,6 +415,7 @@ export type Database = {
         }
         Insert: {
           bio?: string | null
+          category_id?: string | null
           contest_id: string
           created_at?: string
           display_order?: number | null
@@ -389,6 +429,7 @@ export type Database = {
         }
         Update: {
           bio?: string | null
+          category_id?: string | null
           contest_id?: string
           created_at?: string
           display_order?: number | null
@@ -401,6 +442,13 @@ export type Database = {
           vote_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "contestants_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "contest_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contestants_contest_id_fkey"
             columns: ["contest_id"]
