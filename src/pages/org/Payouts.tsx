@@ -33,6 +33,7 @@ const Payouts = () => {
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('bank');
   const [payoutCurrency, setPayoutCurrency] = useState('');
+  const [viewCurrency, setViewCurrency] = useState('');
 
   const [bankDetails, setBankDetails] = useState({
     bank_name: '',
@@ -63,7 +64,15 @@ const Payouts = () => {
     setIsUsdtSettingsOpen(false);
   };
 
-  // Get available currencies with net revenue
+  // Get all currencies that have revenue (for view selector)
+  const allCurrenciesWithRevenue = React.useMemo(() => {
+    if (!stats?.netRevenueByCurrency) return [];
+    return Object.keys(stats.netRevenueByCurrency).filter(
+      currency => (stats.netRevenueByCurrency?.[currency] || 0) > 0
+    );
+  }, [stats?.netRevenueByCurrency]);
+
+  // Get available currencies with net revenue (for payout request)
   const availableCurrencies = React.useMemo(() => {
     if (!stats?.netRevenueByCurrency) return [];
     return Object.entries(stats.netRevenueByCurrency)
@@ -71,12 +80,46 @@ const Payouts = () => {
       .map(([currency, amount]) => ({ currency, netRevenue: amount as number }));
   }, [stats?.netRevenueByCurrency]);
 
-  // Set default currency when available currencies load
+  // Set default view currency when available currencies load
+  React.useEffect(() => {
+    if (allCurrenciesWithRevenue.length > 0 && !viewCurrency) {
+      setViewCurrency(allCurrenciesWithRevenue[0]);
+    }
+  }, [allCurrenciesWithRevenue, viewCurrency]);
+
+  // Set default payout currency when available currencies load
   React.useEffect(() => {
     if (availableCurrencies.length > 0 && !payoutCurrency) {
       setPayoutCurrency(availableCurrencies[0].currency);
     }
   }, [availableCurrencies, payoutCurrency]);
+
+  // View currency stats
+  const viewCurrencyNetRevenue = React.useMemo(() => {
+    if (!viewCurrency || !stats?.netRevenueByCurrency) return 0;
+    return stats.netRevenueByCurrency[viewCurrency] || 0;
+  }, [viewCurrency, stats?.netRevenueByCurrency]);
+
+  // Get payouts per currency
+  const payoutsByCurrency = React.useMemo(() => {
+    if (!payouts) return {};
+    const result: Record<string, { pending: number; completed: number }> = {};
+    payouts.forEach((p: any) => {
+      const currency = p.currency || 'USD';
+      if (!result[currency]) {
+        result[currency] = { pending: 0, completed: 0 };
+      }
+      if (p.status === 'pending') {
+        result[currency].pending += p.amount;
+      } else if (p.status === 'completed') {
+        result[currency].completed += p.amount;
+      }
+    });
+    return result;
+  }, [payouts]);
+
+  const viewCurrencyPending = payoutsByCurrency[viewCurrency]?.pending || 0;
+  const viewCurrencyPaid = payoutsByCurrency[viewCurrency]?.completed || 0;
 
   const selectedCurrencyNetRevenue = React.useMemo(() => {
     if (!payoutCurrency || !stats?.netRevenueByCurrency) return 0;
@@ -238,20 +281,37 @@ const Payouts = () => {
           </Dialog>
         </div>
 
-        {/* Balance Card */}
+        {/* Currency Selector and Balance Cards */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-muted-foreground">View currency:</span>
+          <Select value={viewCurrency} onValueChange={setViewCurrency}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              {allCurrenciesWithRevenue.map((currency) => (
+                <SelectItem key={currency} value={currency}>
+                  {getCurrencySymbol(currency)} {currency}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Available Balance</p>
+                  <p className="text-sm opacity-90">Net Revenue ({viewCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(stats?.availableBalance || 0, defaultCurrency)}
+                      {formatCurrency(viewCurrencyNetRevenue, viewCurrency)}
                     </p>
                   )}
+                  <p className="text-xs opacity-75 mt-1">After platform commission</p>
                 </div>
                 <Wallet className="h-8 w-8 opacity-80" />
               </div>
@@ -262,12 +322,12 @@ const Payouts = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-sm text-muted-foreground">Pending Payouts ({viewCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(stats?.pendingPayouts || 0, defaultCurrency)}
+                      {formatCurrency(viewCurrencyPending, viewCurrency)}
                     </p>
                   )}
                 </div>
@@ -280,12 +340,12 @@ const Payouts = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Paid</p>
+                  <p className="text-sm text-muted-foreground">Total Paid ({viewCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(stats?.completedPayouts || 0, defaultCurrency)}
+                      {formatCurrency(viewCurrencyPaid, viewCurrency)}
                     </p>
                   )}
                 </div>
