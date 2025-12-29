@@ -72,13 +72,13 @@ const Payouts = () => {
     );
   }, [stats?.netRevenueByCurrency]);
 
-  // Get available currencies with net revenue (for payout request)
+  // Get available currencies with positive available balance (for payout request)
   const availableCurrencies = React.useMemo(() => {
-    if (!stats?.netRevenueByCurrency) return [];
-    return Object.entries(stats.netRevenueByCurrency)
+    if (!stats?.availableBalanceByCurrency) return [];
+    return Object.entries(stats.availableBalanceByCurrency)
       .filter(([_, amount]) => (amount as number) > 0)
-      .map(([currency, amount]) => ({ currency, netRevenue: amount as number }));
-  }, [stats?.netRevenueByCurrency]);
+      .map(([currency, amount]) => ({ currency, availableBalance: amount as number }));
+  }, [stats?.availableBalanceByCurrency]);
 
   // Set default view currency when available currencies load
   React.useEffect(() => {
@@ -94,37 +94,14 @@ const Payouts = () => {
     }
   }, [availableCurrencies, payoutCurrency]);
 
-  // View currency stats
-  const viewCurrencyNetRevenue = React.useMemo(() => {
-    if (!viewCurrency || !stats?.netRevenueByCurrency) return 0;
-    return stats.netRevenueByCurrency[viewCurrency] || 0;
-  }, [viewCurrency, stats?.netRevenueByCurrency]);
+  // View currency stats - use centralized stats from hook
+  const viewCurrencyNetRevenue = stats?.netRevenueByCurrency?.[viewCurrency] || 0;
+  const viewCurrencyPending = stats?.pendingPayoutsByCurrency?.[viewCurrency] || 0;
+  const viewCurrencyPaid = stats?.completedPayoutsByCurrency?.[viewCurrency] || 0;
+  const viewCurrencyAvailable = stats?.availableBalanceByCurrency?.[viewCurrency] || 0;
 
-  // Get payouts per currency
-  const payoutsByCurrency = React.useMemo(() => {
-    if (!payouts) return {};
-    const result: Record<string, { pending: number; completed: number }> = {};
-    payouts.forEach((p: any) => {
-      const currency = p.currency || 'USD';
-      if (!result[currency]) {
-        result[currency] = { pending: 0, completed: 0 };
-      }
-      if (p.status === 'pending') {
-        result[currency].pending += p.amount;
-      } else if (p.status === 'completed') {
-        result[currency].completed += p.amount;
-      }
-    });
-    return result;
-  }, [payouts]);
-
-  const viewCurrencyPending = payoutsByCurrency[viewCurrency]?.pending || 0;
-  const viewCurrencyPaid = payoutsByCurrency[viewCurrency]?.completed || 0;
-
-  const selectedCurrencyNetRevenue = React.useMemo(() => {
-    if (!payoutCurrency || !stats?.netRevenueByCurrency) return 0;
-    return stats.netRevenueByCurrency[payoutCurrency] || 0;
-  }, [payoutCurrency, stats?.netRevenueByCurrency]);
+  // Get available balance for selected payout currency
+  const selectedCurrencyAvailable = stats?.availableBalanceByCurrency?.[payoutCurrency] || 0;
 
   const handleRequestPayout = async () => {
     const amount = Number(payoutAmount);
@@ -139,8 +116,8 @@ const Payouts = () => {
       return;
     }
 
-    if (amount > selectedCurrencyNetRevenue) {
-      toast.error('Insufficient balance for this currency');
+    if (amount > selectedCurrencyAvailable) {
+      toast.error('Insufficient available balance for this currency');
       return;
     }
 
@@ -199,9 +176,9 @@ const Payouts = () => {
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover">
-                      {availableCurrencies.map(({ currency, netRevenue }) => (
+                      {availableCurrencies.map(({ currency, availableBalance }) => (
                         <SelectItem key={currency} value={currency}>
-                          {currency} - Net: {formatCurrency(netRevenue, currency)}
+                          {currency} - Available: {formatCurrency(availableBalance, currency)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -210,8 +187,9 @@ const Payouts = () => {
 
                 {payoutCurrency && (
                   <div className="p-4 rounded-lg bg-secondary">
-                    <p className="text-sm text-muted-foreground">Available Net Revenue ({payoutCurrency})</p>
-                    <p className="text-2xl font-bold">{formatCurrency(selectedCurrencyNetRevenue, payoutCurrency)}</p>
+                    <p className="text-sm text-muted-foreground">Available Balance ({payoutCurrency})</p>
+                    <p className="text-2xl font-bold">{formatCurrency(selectedCurrencyAvailable, payoutCurrency)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">After commission and existing payouts</p>
                   </div>
                 )}
                 
@@ -222,7 +200,7 @@ const Payouts = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => setPayoutAmount(selectedCurrencyNetRevenue.toString())}
+                        onClick={() => setPayoutAmount(Math.max(0, selectedCurrencyAvailable).toString())}
                       >
                         Max
                       </Button>
@@ -233,7 +211,7 @@ const Payouts = () => {
                     placeholder="Enter amount"
                     value={payoutAmount}
                     onChange={(e) => setPayoutAmount(e.target.value)}
-                    max={selectedCurrencyNetRevenue}
+                    max={selectedCurrencyAvailable}
                   />
                 </div>
 

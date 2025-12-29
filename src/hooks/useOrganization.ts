@@ -459,12 +459,26 @@ export const useOrganizationStats = () => {
         });
       }
       
-      // Get pending payouts (these are stored in the org's default currency typically)
+      // Get payouts grouped by currency
       const { data: payouts } = await supabase
         .from('payouts')
-        .select('amount, status')
+        .select('amount, status, currency')
         .eq('organization_id', user!.id);
       
+      // Calculate payouts by currency
+      const pendingPayoutsByCurrency: Record<string, number> = {};
+      const completedPayoutsByCurrency: Record<string, number> = {};
+      
+      payouts?.forEach((p: any) => {
+        const currency = p.currency || 'USD';
+        if (p.status === 'pending') {
+          pendingPayoutsByCurrency[currency] = (pendingPayoutsByCurrency[currency] || 0) + Number(p.amount);
+        } else if (p.status === 'completed') {
+          completedPayoutsByCurrency[currency] = (completedPayoutsByCurrency[currency] || 0) + Number(p.amount);
+        }
+      });
+      
+      // Also keep totals for backwards compatibility
       const pendingPayouts = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       const completedPayouts = payouts?.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       
@@ -487,12 +501,15 @@ export const useOrganizationStats = () => {
       
       // Calculate net revenue after platform commission PER CURRENCY
       const netRevenueByCurrency: Record<string, number> = {};
+      const availableBalanceByCurrency: Record<string, number> = {};
       
-      // Get all unique currencies
+      // Get all unique currencies (including those with payouts)
       const allCurrencies = new Set([
         ...Object.keys(ticketRevenueByCurrency),
         ...Object.keys(voteRevenueByCurrency),
         ...Object.keys(campaignRevenueByCurrency),
+        ...Object.keys(pendingPayoutsByCurrency),
+        ...Object.keys(completedPayoutsByCurrency),
       ]);
       
       allCurrencies.forEach(currency => {
@@ -504,7 +521,13 @@ export const useOrganizationStats = () => {
         const netVote = voteRev * (1 - voteCommissionRate / 100);
         const netCampaign = campaignRev * (1 - ticketCommissionRate / 100);
         
-        netRevenueByCurrency[currency] = netTicket + netVote + netCampaign;
+        const netRev = netTicket + netVote + netCampaign;
+        netRevenueByCurrency[currency] = netRev;
+        
+        // Available balance = net revenue - pending payouts - completed payouts
+        const pending = pendingPayoutsByCurrency[currency] || 0;
+        const completed = completedPayoutsByCurrency[currency] || 0;
+        availableBalanceByCurrency[currency] = netRev - pending - completed;
       });
       
       // Calculate total net revenue (mixed currencies - for backwards compatibility)
@@ -527,11 +550,14 @@ export const useOrganizationStats = () => {
         availableBalance,
         activeContests,
         activeEvents,
-        // New: revenue breakdown by currency for proper conversion
+        // Revenue breakdown by currency
         ticketRevenueByCurrency,
         voteRevenueByCurrency,
         campaignRevenueByCurrency,
         netRevenueByCurrency,
+        availableBalanceByCurrency,
+        pendingPayoutsByCurrency,
+        completedPayoutsByCurrency,
         ticketCommissionRate,
         voteCommissionRate,
       };

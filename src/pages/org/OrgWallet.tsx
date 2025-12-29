@@ -69,6 +69,9 @@ const OrgWallet = () => {
     const campaignRevenue = stats?.campaignRevenueByCurrency?.[selectedCurrency] || 0;
     const totalRevenue = ticketRevenue + voteRevenue + campaignRevenue;
     const netRevenue = stats?.netRevenueByCurrency?.[selectedCurrency] || 0;
+    const availableBalance = stats?.availableBalanceByCurrency?.[selectedCurrency] || 0;
+    const pendingPayouts = stats?.pendingPayoutsByCurrency?.[selectedCurrency] || 0;
+    const completedPayouts = stats?.completedPayoutsByCurrency?.[selectedCurrency] || 0;
     
     return {
       totalRevenue,
@@ -76,11 +79,11 @@ const OrgWallet = () => {
       voteRevenue,
       campaignRevenue,
       netRevenue,
-      // Pending and completed payouts are in the org's default currency
-      pendingPayouts: selectedCurrency === defaultCurrency ? (stats?.pendingPayouts || 0) : 0,
-      completedPayouts: selectedCurrency === defaultCurrency ? (stats?.completedPayouts || 0) : 0,
+      availableBalance,
+      pendingPayouts,
+      completedPayouts,
     };
-  }, [stats, selectedCurrency, defaultCurrency]);
+  }, [stats, selectedCurrency]);
 
   const handleExportReport = async () => {
     if (!user) return;
@@ -199,39 +202,22 @@ const OrgWallet = () => {
         </div>
 
         {/* Revenue Overview - Shows only transactions in selected currency */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm opacity-90">Total Revenue ({selectedCurrency})</p>
+                  <p className="text-sm opacity-90">Available Balance ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
                   ) : (
                     <p className="text-2xl font-bold">
-                      {formatCurrency(selectedCurrencyStats.totalRevenue, selectedCurrency)}
+                      {formatCurrency(selectedCurrencyStats.availableBalance, selectedCurrency)}
                     </p>
                   )}
+                  <p className="text-xs opacity-75 mt-1">Ready for payout</p>
                 </div>
-                <DollarSign className="h-8 w-8 opacity-80" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Campaign Revenue ({selectedCurrency})</p>
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(selectedCurrencyStats.campaignRevenue, selectedCurrency)}
-                    </p>
-                  )}
-                </div>
-                <Heart className="h-8 w-8 text-muted-foreground" />
+                <Wallet className="h-8 w-8 opacity-80" />
               </div>
             </CardContent>
           </Card>
@@ -250,25 +236,7 @@ const OrgWallet = () => {
                   )}
                   <p className="text-xs text-muted-foreground mt-1">After platform commission</p>
                 </div>
-                <Wallet className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending Payouts ({selectedCurrency})</p>
-                  {statsLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
-                  ) : (
-                    <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(selectedCurrencyStats.pendingPayouts, selectedCurrency)}
-                    </p>
-                  )}
-                </div>
-                <CreditCard className="h-8 w-8 text-muted-foreground" />
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -292,6 +260,98 @@ const OrgWallet = () => {
           </Card>
         </div>
 
+        {/* Revenue Breakdown */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue ({selectedCurrency})</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(selectedCurrencyStats.totalRevenue, selectedCurrency)}
+                    </p>
+                  )}
+                </div>
+                <DollarSign className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Ticket Revenue ({selectedCurrency})</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(selectedCurrencyStats.ticketRevenue, selectedCurrency)}
+                    </p>
+                  )}
+                </div>
+                <Ticket className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Vote Revenue ({selectedCurrency})</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(selectedCurrencyStats.voteRevenue, selectedCurrency)}
+                    </p>
+                  )}
+                </div>
+                <Vote className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Campaign Revenue ({selectedCurrency})</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-8 w-24 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(selectedCurrencyStats.campaignRevenue, selectedCurrency)}
+                    </p>
+                  )}
+                </div>
+                <Heart className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pending Payouts if any */}
+        {selectedCurrencyStats.pendingPayouts > 0 && (
+          <Card className="border-yellow-500/50 bg-yellow-500/10">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending Payouts ({selectedCurrency})</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {formatCurrency(selectedCurrencyStats.pendingPayouts, selectedCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Awaiting processing</p>
+                </div>
+                <CreditCard className="h-8 w-8 text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* Multi-Currency Balance Breakdown */}
         {allCurrenciesWithRevenue.length > 0 && (
           <Card>
