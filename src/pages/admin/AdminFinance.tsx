@@ -106,19 +106,30 @@ const AdminFinance: React.FC = () => {
       const ticketsTotal = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
       const total = votesTotal + ticketsTotal;
       
-      // Get pending payouts (these are typically in a single currency)
+      // Get pending payouts filtered by currency
       const { data: pendingPayouts } = await supabase
         .from('payouts')
-        .select('amount')
-        .eq('status', 'pending');
+        .select('amount, currency')
+        .eq('status', 'pending')
+        .eq('currency', selectedCurrency);
       
       const pendingTotal = pendingPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      
+      // Get completed payouts filtered by currency
+      const { data: completedPayouts } = await supabase
+        .from('payouts')
+        .select('amount, currency')
+        .eq('status', 'completed')
+        .eq('currency', selectedCurrency);
+      
+      const completedTotal = completedPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
       
       return {
         votesTotal,
         ticketsTotal,
         total,
-        pendingPayouts: selectedCurrency === platformCurrency ? pendingTotal : 0,
+        pendingPayouts: pendingTotal,
+        completedPayouts: completedTotal,
         breakdown: total === 0 ? [
           { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
           { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
@@ -139,6 +150,11 @@ const AdminFinance: React.FC = () => {
   const totalRevenue = currencyStats?.total || 0;
   const platformEarnings = totalRevenue * (commissionRate / 100);
   const pendingPayouts = currencyStats?.pendingPayouts || 0;
+  const completedPayouts = currencyStats?.completedPayouts || 0;
+  // Net profit = Platform earnings (commission) - nothing (platform keeps all commission)
+  // Available = Net revenue (org share) - pending - completed payouts
+  const netRevenue = totalRevenue - platformEarnings; // Org's share before payouts
+  const availableForPayout = netRevenue - pendingPayouts - completedPayouts;
   const isLoading = statsLoading || revenueLoading;
 
   if (isLoading) {
@@ -239,16 +255,16 @@ const AdminFinance: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Net Profit ({selectedCurrency})
+                Org Available ({selectedCurrency})
               </CardTitle>
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-500">
-                <CurrencyDisplay amount={platformEarnings - pendingPayouts} currency={selectedCurrency} size="lg" />
+              <div className={`text-2xl font-bold ${availableForPayout >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                <CurrencyDisplay amount={availableForPayout} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                After pending payouts
+                Net revenue - payouts
               </p>
             </CardContent>
           </Card>

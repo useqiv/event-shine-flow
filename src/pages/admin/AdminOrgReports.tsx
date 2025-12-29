@@ -100,15 +100,21 @@ const AdminOrgReports: React.FC = () => {
         .select('organization_id, amount, status, created_at')
         .in('organization_id', orgIds);
 
-      // Get commission settings
+      // Get commission settings (platform default)
       const { data: commissionSettings } = await supabase
         .from('platform_settings')
         .select('setting_key, setting_value')
         .eq('category', 'commission');
 
-      const commissionRate = Number(
+      const defaultCommissionRate = Number(
         commissionSettings?.find(s => s.setting_key === 'platform_commission_percentage')?.setting_value
       ) || 10;
+
+      // Get org-specific commission rates
+      const { data: orgApprovals } = await supabase
+        .from('organization_approvals')
+        .select('organization_id, vote_commission_rate, ticket_commission_rate, special_commission_rate')
+        .in('organization_id', orgIds);
 
       // Calculate revenue for each org
       const orgData: OrgRevenueData[] = profiles?.map(profile => {
@@ -123,7 +129,15 @@ const AdminOrgReports: React.FC = () => {
         const voteRevenue = orgVotes.reduce((sum, v) => sum + v.amount_paid, 0);
         const ticketRevenue = orgTickets.reduce((sum, t) => sum + t.amount_paid, 0);
         const totalRevenue = voteRevenue + ticketRevenue;
-        const commission = totalRevenue * (commissionRate / 100);
+        
+        // Get org-specific commission rate or use platform default
+        const orgApproval = orgApprovals?.find(a => a.organization_id === profile.id);
+        const voteCommissionRate = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? defaultCommissionRate;
+        const ticketCommissionRate = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? defaultCommissionRate;
+        
+        const voteCommission = voteRevenue * (voteCommissionRate / 100);
+        const ticketCommission = ticketRevenue * (ticketCommissionRate / 100);
+        const commission = voteCommission + ticketCommission;
         const netRevenue = totalRevenue - commission;
 
         const orgPayouts = payouts?.filter(p => p.organization_id === profile.id) || [];

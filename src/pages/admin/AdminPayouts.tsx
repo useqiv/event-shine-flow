@@ -54,6 +54,19 @@ const AdminPayouts: React.FC = () => {
   const completedPayouts = payouts?.filter(p => p.status === 'completed') || [];
   const rejectedPayouts = payouts?.filter(p => p.status === 'rejected') || [];
 
+  // Group payouts by currency for stats
+  const pendingByCurrency = pendingPayouts.reduce((acc, p) => {
+    const currency = p.currency || 'USD';
+    acc[currency] = (acc[currency] || 0) + p.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const completedByCurrency = completedPayouts.reduce((acc, p) => {
+    const currency = p.currency || 'USD';
+    acc[currency] = (acc[currency] || 0) + p.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
   const filteredPayouts = (list: any[]) => list.filter(payout => 
     payout.organization?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     payout.organization?.email?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -168,7 +181,7 @@ const AdminPayouts: React.FC = () => {
                 </div>
               </TableCell>
               <TableCell className="font-medium">
-                <CurrencyDisplay amount={payout.amount} currency={platformCurrency} />
+                <CurrencyDisplay amount={payout.amount} currency={payout.currency || 'USD'} />
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="capitalize">{payout.payment_method}</Badge>
@@ -277,8 +290,16 @@ const AdminPayouts: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-yellow-500" />
                 <div>
-                  <div className="text-2xl font-bold">
-                    <CurrencyDisplay amount={pendingPayouts.reduce((sum, p) => sum + p.amount, 0)} currency={platformCurrency} size="lg" />
+                  <div className="text-sm font-bold space-y-1">
+                    {Object.keys(pendingByCurrency).length === 0 ? (
+                      <span className="text-2xl">0</span>
+                    ) : (
+                      Object.entries(pendingByCurrency).map(([currency, amount]) => (
+                        <div key={currency}>
+                          <CurrencyDisplay amount={amount} currency={currency} />
+                        </div>
+                      ))
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">Pending Amount</p>
                 </div>
@@ -301,8 +322,16 @@ const AdminPayouts: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Wallet className="h-5 w-5 text-green-500" />
                 <div>
-                  <div className="text-2xl font-bold">
-                    <CurrencyDisplay amount={completedPayouts.reduce((sum, p) => sum + p.amount, 0)} currency={platformCurrency} size="lg" />
+                  <div className="text-sm font-bold space-y-1">
+                    {Object.keys(completedByCurrency).length === 0 ? (
+                      <span className="text-2xl">0</span>
+                    ) : (
+                      Object.entries(completedByCurrency).map(([currency, amount]) => (
+                        <div key={currency}>
+                          <CurrencyDisplay amount={amount} currency={currency} />
+                        </div>
+                      ))
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">Total Paid</p>
                 </div>
@@ -409,7 +438,7 @@ const AdminPayouts: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Amount</p>
-                      <p className="font-medium text-lg"><CurrencyDisplay amount={selectedPayout.amount} currency={platformCurrency} /></p>
+                      <p className="font-medium text-lg"><CurrencyDisplay amount={selectedPayout.amount} currency={selectedPayout.currency || 'USD'} /></p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Payment Method</p>
