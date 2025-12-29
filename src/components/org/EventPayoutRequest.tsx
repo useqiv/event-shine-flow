@@ -80,6 +80,7 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
       await requestPayout.mutateAsync({
         amount,
         payment_method: payoutMethod,
+        currency,
       });
       setIsRequestOpen(false);
       setPayoutAmount('');
