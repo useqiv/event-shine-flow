@@ -41,7 +41,11 @@ const MyVotes = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold">Voted for {vote.contestant?.name}</p>
-                      <p className="text-sm text-muted-foreground">{vote.contest?.title} • {vote.quantity} vote(s)</p>
+                      <p className="text-sm text-muted-foreground">
+                        {vote.contest?.title}
+                        {vote.contestant?.category?.name && ` • ${vote.contestant.category.name}`}
+                        {' • '}{vote.quantity} vote(s)
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">₦{vote.amount_paid.toLocaleString()}</p>
