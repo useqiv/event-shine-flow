@@ -83,26 +83,7 @@ const EventScanner = () => {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Event Check-in</h1>
-            <p className="text-sm text-muted-foreground">{event.title}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to={`/org/events/${id}/checkin`}>
-              <Button variant="outline" size="sm">
-                <LayoutDashboard className="h-4 w-4 mr-1" />
-                Dashboard
-              </Button>
-            </Link>
-            <Badge variant={event.is_active ? "default" : "secondary"}>
-              {event.is_active ? 'Active' : 'Inactive'}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Scanner/Lookup Tabs - Moved up for quick access */}
+        {/* Scanner/Lookup Tabs - Primary action at top */}
         <Tabs defaultValue="scanner" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="scanner" className="flex items-center gap-2">
@@ -136,6 +117,25 @@ const EventScanner = () => {
             <ManualTicketLookup eventId={id || ''} onCheckIn={handleScanComplete} />
           </TabsContent>
         </Tabs>
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Event Check-in</h1>
+            <p className="text-sm text-muted-foreground">{event.title}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link to={`/org/events/${id}/checkin`}>
+              <Button variant="outline" size="sm">
+                <LayoutDashboard className="h-4 w-4 mr-1" />
+                Dashboard
+              </Button>
+            </Link>
+            <Badge variant={event.is_active ? "default" : "secondary"}>
+              {event.is_active ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
+        </div>
 
         {/* Event Info Card */}
         <Card>
