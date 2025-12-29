@@ -14,11 +14,156 @@ import {
   useCreateCategory, 
   useUpdateCategory, 
   useDeleteCategory,
+  useReorderCategories,
   ContestCategory 
 } from '@/hooks/useContestCategories';
 import { useCreateContestant } from '@/hooks/useOrganization';
 import { useContestants } from '@/hooks/useContests';
 import { FolderPlus, Pencil, Trash2, GripVertical, Layers, ChevronDown, ChevronRight, UserPlus, Users } from 'lucide-react';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent 
+} from '@dnd-kit/core';
+import { 
+  arrayMove, 
+  SortableContext, 
+  sortableKeyboardCoordinates, 
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+// Sortable category item component
+interface SortableCategoryItemProps {
+  category: ContestCategory;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
+  categoryContestants: any[];
+  onEdit: (category: ContestCategory) => void;
+  onDelete: (category: ContestCategory) => void;
+  onAddContestant: (categoryId: string) => void;
+}
+
+const SortableCategoryItem: React.FC<SortableCategoryItemProps> = ({
+  category,
+  isExpanded,
+  onToggleExpanded,
+  categoryContestants,
+  onEdit,
+  onDelete,
+  onAddContestant,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Collapsible open={isExpanded} onOpenChange={onToggleExpanded}>
+        <div className="border rounded-lg">
+          <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-2">
+              <button
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-muted rounded"
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-3 flex-1 text-left" onClick={onToggleExpanded}>
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="font-medium">{category.name}</p>
+                    {category.description && (
+                      <p className="text-sm text-muted-foreground">{category.description}</p>
+                    )}
+                  </div>
+                </button>
+              </CollapsibleTrigger>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {categoryContestants.length}
+              </Badge>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddContestant(category.id);
+                }}
+              >
+                <UserPlus className="mr-1 h-3 w-3" />
+                Add Contestant
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(category)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(category)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          </div>
+          <CollapsibleContent>
+            <div className="border-t px-3 py-2 bg-muted/30">
+              {categoryContestants.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No contestants in this category yet
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 py-2">
+                  {categoryContestants.map((contestant: any) => (
+                    <div 
+                      key={contestant.id} 
+                      className="flex items-center gap-2 p-2 bg-background rounded border"
+                    >
+                      {contestant.photo_url ? (
+                        <img 
+                          src={contestant.photo_url} 
+                          alt={contestant.name}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{contestant.name}</p>
+                        <p className="text-xs text-muted-foreground">{contestant.vote_count} votes</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    </div>
+  );
+};
 
 interface CategoryManagerProps {
   contestId: string;
@@ -30,7 +175,20 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const reorderCategories = useReorderCategories();
   const createContestant = useCreateContestant();
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -135,6 +293,23 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
     setNewContestant({ name: '', bio: '', photo_url: '', performance: '' });
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id && categories) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+      const newIndex = categories.findIndex((cat) => cat.id === over.id);
+      
+      const reordered = arrayMove(categories, oldIndex, newIndex);
+      const updates = reordered.map((cat, index) => ({
+        id: cat.id,
+        display_order: index + 1,
+      }));
+      
+      reorderCategories.mutate({ contest_id: contestId, updates });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -208,93 +383,31 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ contestId }) =
             <p className="text-sm">Categories are optional. Add them to organize contestants into award groups.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {categories.map((category) => {
-              const categoryContestants = getContestantsForCategory(category.id);
-              const isExpanded = expandedCategories.has(category.id);
-              
-              return (
-                <Collapsible key={category.id} open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
-                  <div className="border rounded-lg">
-                    <div className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
-                      <CollapsibleTrigger asChild>
-                        <button className="flex items-center gap-3 flex-1 text-left">
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                          <div>
-                            <p className="font-medium">{category.name}</p>
-                            {category.description && (
-                              <p className="text-sm text-muted-foreground">{category.description}</p>
-                            )}
-                          </div>
-                        </button>
-                      </CollapsibleTrigger>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {categoryContestants.length}
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAddContestantCategoryId(category.id);
-                          }}
-                        >
-                          <UserPlus className="mr-1 h-3 w-3" />
-                          Add Contestant
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CollapsibleContent>
-                      <div className="border-t px-3 py-2 bg-muted/30">
-                        {categoryContestants.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            No contestants in this category yet
-                          </p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 py-2">
-                            {categoryContestants.map((contestant: any) => (
-                              <div 
-                                key={contestant.id} 
-                                className="flex items-center gap-2 p-2 bg-background rounded border"
-                              >
-                                {contestant.photo_url ? (
-                                  <img 
-                                    src={contestant.photo_url} 
-                                    alt={contestant.name}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{contestant.name}</p>
-                                  <p className="text-xs text-muted-foreground">{contestant.vote_count} votes</p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={categories.map(c => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <SortableCategoryItem
+                    key={category.id}
+                    category={category}
+                    isExpanded={expandedCategories.has(category.id)}
+                    onToggleExpanded={() => toggleExpanded(category.id)}
+                    categoryContestants={getContestantsForCategory(category.id)}
+                    onEdit={handleEdit}
+                    onDelete={confirmDelete}
+                    onAddContestant={setAddContestantCategoryId}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </CardContent>
 
