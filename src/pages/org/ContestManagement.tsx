@@ -727,77 +727,66 @@ const ContestManagement = () => {
                       Delete ({selectedContestants.size})
                     </Button>
                   )}
-                  <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
-                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    Import CSV
-                  </Button>
-                  <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Contestant
+                  {(contest as any)?.contest_type !== 'category' ? (
+                    <>
+                      <Button variant="outline" onClick={() => setIsCSVImportOpen(true)}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Import CSV
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Contestant</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Name *</Label>
-                          <Input
-                            placeholder="Contestant name"
-                            value={newContestant.name}
-                            onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Bio</Label>
-                          <Textarea
-                            placeholder="Short bio..."
-                            value={newContestant.bio}
-                            onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
-                          />
-                        </div>
-                        <ImageUpload
-                          bucket="contestant-images"
-                          value={newContestant.photo_url}
-                          onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
-                          label="Photo"
-                        />
-                        <div className="space-y-2">
-                          <Label>Performance/Entry</Label>
-                          <Input
-                            placeholder="e.g., Song title, routine name"
-                            value={newContestant.performance}
-                            onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
-                          />
-                        </div>
-                        {(contest as any)?.contest_type === 'category' && contestCategories && contestCategories.length > 0 && (
-                          <div className="space-y-2">
-                            <Label>Category *</Label>
-                            <Select
-                              value={newContestant.category_id}
-                              onValueChange={(value) => setNewContestant(prev => ({ ...prev, category_id: value }))}
-                              required
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {contestCategories.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                      <Dialog open={isAddContestantOpen} onOpenChange={setIsAddContestantOpen}>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Contestant
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add New Contestant</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Name *</Label>
+                              <Input
+                                placeholder="Contestant name"
+                                value={newContestant.name}
+                                onChange={(e) => setNewContestant(prev => ({ ...prev, name: e.target.value }))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Bio</Label>
+                              <Textarea
+                                placeholder="Short bio..."
+                                value={newContestant.bio}
+                                onChange={(e) => setNewContestant(prev => ({ ...prev, bio: e.target.value }))}
+                              />
+                            </div>
+                            <ImageUpload
+                              bucket="contestant-images"
+                              value={newContestant.photo_url}
+                              onChange={(url) => setNewContestant(prev => ({ ...prev, photo_url: url }))}
+                              label="Photo"
+                            />
+                            <div className="space-y-2">
+                              <Label>Performance/Entry</Label>
+                              <Input
+                                placeholder="e.g., Song title, routine name"
+                                value={newContestant.performance}
+                                onChange={(e) => setNewContestant(prev => ({ ...prev, performance: e.target.value }))}
+                              />
+                            </div>
+                            <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
+                              {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
+                            </Button>
                           </div>
-                        )}
-                        <Button onClick={handleAddContestant} className="w-full" disabled={createContestant.isPending}>
-                          {createContestant.isPending ? 'Adding...' : 'Add Contestant'}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground flex items-center">
+                      Add contestants from the Categories tab
+                    </p>
+                  )}
                 </div>
               </div>
 
