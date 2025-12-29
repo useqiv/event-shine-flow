@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
-import { formatCurrency } from '@/components/ui/currency-selector';
+import { formatCurrency, useConversionDisplay } from '@/components/ui/currency-selector';
+import CurrencySelector from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { 
   DollarSign, 
@@ -36,6 +37,23 @@ const AdminFinance: React.FC = () => {
 
   // Default currency for admin pages (from platform settings)
   const platformCurrency = usePlatformCurrency();
+  
+  // Display currency state with selector
+  const [displayCurrency, setDisplayCurrency] = useState<string>(platformCurrency);
+  const { convert } = useConversionDisplay();
+  
+  // Update display currency when platform currency loads
+  useEffect(() => {
+    if (platformCurrency) {
+      setDisplayCurrency(platformCurrency);
+    }
+  }, [platformCurrency]);
+  
+  // Helper to convert amounts to display currency
+  const convertAmount = (amount: number, fromCurrency: string = platformCurrency) => {
+    if (fromCurrency === displayCurrency) return amount;
+    return convert(amount, fromCurrency, displayCurrency);
+  };
 
   // Fetch real monthly revenue data from votes and tickets
   const { data: revenueData = [], isLoading: revenueLoading } = useQuery({
@@ -140,10 +158,20 @@ const AdminFinance: React.FC = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">Finance & Revenue</h1>
-          <p className="text-muted-foreground">Platform financial overview</p>
+        {/* Header with Currency Selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Finance & Revenue</h1>
+            <p className="text-muted-foreground">Platform financial overview</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">View in:</span>
+            <CurrencySelector 
+              value={displayCurrency} 
+              onValueChange={setDisplayCurrency}
+              className="w-[180px]"
+            />
+          </div>
         </div>
 
         {/* Key Financial Stats */}
@@ -157,7 +185,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <CurrencyDisplay amount={totalRevenue} currency={platformCurrency} size="lg" />
+                <CurrencyDisplay amount={convertAmount(totalRevenue)} currency={displayCurrency} size="lg" />
               </div>
               <div className="flex items-center text-xs text-green-500 mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
@@ -175,7 +203,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <CurrencyDisplay amount={platformEarnings} currency={platformCurrency} size="lg" />
+                <CurrencyDisplay amount={convertAmount(platformEarnings)} currency={displayCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {commissionRate}% commission
@@ -192,7 +220,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-yellow-500">
-                <CurrencyDisplay amount={stats?.pending_payouts || 0} currency={platformCurrency} size="lg" />
+                <CurrencyDisplay amount={convertAmount(stats?.pending_payouts || 0)} currency={displayCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Awaiting processing
@@ -209,7 +237,7 @@ const AdminFinance: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-500">
-                <CurrencyDisplay amount={platformEarnings - (stats?.pending_payouts || 0)} currency={platformCurrency} size="lg" />
+                <CurrencyDisplay amount={convertAmount(platformEarnings - (stats?.pending_payouts || 0))} currency={displayCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 After pending payouts
@@ -241,10 +269,10 @@ const AdminFinance: React.FC = () => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(value / 1000, platformCurrency).replace(/,/g, '') + 'k'} />
+                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(convertAmount(value) / 1000, displayCurrency).replace(/,/g, '') + 'k'} />
                     <Tooltip 
-                      formatter={(value: number) => formatCurrency(value, platformCurrency)}
-                      contentStyle={{ 
+                      formatter={(value: number) => formatCurrency(convertAmount(value), displayCurrency)}
+                      contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
@@ -316,7 +344,7 @@ const AdminFinance: React.FC = () => {
                     <span>{item.name} Revenue</span>
                   </div>
                   <span className="font-medium">
-                    <CurrencyDisplay amount={totalRevenue * (item.value / 100)} currency={platformCurrency} />
+                    <CurrencyDisplay amount={convertAmount(totalRevenue * (item.value / 100))} currency={displayCurrency} />
                     <span className="text-muted-foreground text-sm ml-1">({item.value}%)</span>
                   </span>
                 </div>
