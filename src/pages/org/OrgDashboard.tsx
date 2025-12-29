@@ -116,16 +116,18 @@ const OrgDashboard = () => {
   // Get revenue only for the selected currency (no conversion, pure filtering)
   const displayVoteRevenue = getRevenueForCurrency(stats?.voteRevenueByCurrency);
   const displayTicketRevenue = getRevenueForCurrency(stats?.ticketRevenueByCurrency);
-  const displayTotalRevenue = displayVoteRevenue + displayTicketRevenue;
+  const displayCampaignRevenue = getRevenueForCurrency(stats?.campaignRevenueByCurrency);
+  const displayTotalRevenue = displayVoteRevenue + displayTicketRevenue + displayCampaignRevenue;
   
-  // Calculate net revenue with proper commission rates
-  const displayNetVoteRevenue = displayVoteRevenue * (1 - voteCommission / 100);
-  const displayNetTicketRevenue = displayTicketRevenue * (1 - ticketCommission / 100);
-  const displayNetRevenue = displayNetVoteRevenue + displayNetTicketRevenue;
+  // Use centralized net revenue calculation from hook
+  const displayNetRevenue = stats?.netRevenueByCurrency?.[displayCurrency] || 0;
   const displayTotalCommission = displayTotalRevenue - displayNetRevenue;
   
-  // Pending payouts - show only if in selected currency
-  const displayPendingPayouts = displayCurrency === (orgSettings?.default_currency || 'USD') ? (stats?.pendingPayouts || 0) : 0;
+  // Use centralized available balance calculation from hook
+  const displayAvailableBalance = stats?.availableBalanceByCurrency?.[displayCurrency] || 0;
+  
+  // Pending payouts for selected currency
+  const displayPendingPayouts = stats?.pendingPayoutsByCurrency?.[displayCurrency] || 0;
   // Show full page skeleton during initial load
   const isInitialLoading = statsLoading && contestsLoading && eventsLoading;
 
