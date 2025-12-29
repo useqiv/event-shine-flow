@@ -68,14 +68,15 @@ const OrgWallet = () => {
     const voteRevenue = stats?.voteRevenueByCurrency?.[selectedCurrency] || 0;
     const campaignRevenue = stats?.campaignRevenueByCurrency?.[selectedCurrency] || 0;
     const totalRevenue = ticketRevenue + voteRevenue + campaignRevenue;
+    const netRevenue = stats?.netRevenueByCurrency?.[selectedCurrency] || 0;
     
     return {
       totalRevenue,
       ticketRevenue,
       voteRevenue,
       campaignRevenue,
-      // Available balance, pending, and completed payouts are in the selected currency
-      availableBalance: selectedCurrency === defaultCurrency ? (stats?.availableBalance || 0) : 0,
+      netRevenue,
+      // Pending and completed payouts are in the org's default currency
       pendingPayouts: selectedCurrency === defaultCurrency ? (stats?.pendingPayouts || 0) : 0,
       completedPayouts: selectedCurrency === defaultCurrency ? (stats?.completedPayouts || 0) : 0,
     };
@@ -239,14 +240,15 @@ const OrgWallet = () => {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Available Balance ({selectedCurrency})</p>
+                  <p className="text-sm text-muted-foreground">Net Revenue ({selectedCurrency})</p>
                   {statsLoading ? (
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {formatCurrency(selectedCurrencyStats.availableBalance, selectedCurrency)}
+                      {formatCurrency(selectedCurrencyStats.netRevenue, selectedCurrency)}
                     </p>
                   )}
+                  <p className="text-xs text-muted-foreground mt-1">After platform commission</p>
                 </div>
                 <Wallet className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -314,6 +316,7 @@ const OrgWallet = () => {
                     const voteRev = stats?.voteRevenueByCurrency?.[currency] || 0;
                     const campaignRev = stats?.campaignRevenueByCurrency?.[currency] || 0;
                     const total = ticketRev + voteRev + campaignRev;
+                    const netRev = stats?.netRevenueByCurrency?.[currency] || 0;
                     const currencyInfo = currencies.find(c => c.code === currency);
                     
                     return (
@@ -323,6 +326,7 @@ const OrgWallet = () => {
                           <span className="text-sm text-muted-foreground">{currency}</span>
                         </div>
                         <p className="text-2xl font-bold">{formatCurrency(total, currency)}</p>
+                        <p className="text-sm text-primary font-medium">Net: {formatCurrency(netRev, currency)}</p>
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                           <span>Tickets: {formatCurrency(ticketRev, currency)}</span>
                           <span>Votes: {formatCurrency(voteRev, currency)}</span>

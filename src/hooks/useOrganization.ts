@@ -483,10 +483,32 @@ export const useOrganizationStats = () => {
       const campaignRevenue = Object.values(campaignRevenueByCurrency).reduce((a, b) => a + b, 0);
       const totalRevenue = ticketRevenue + voteRevenue + campaignRevenue;
       
-      // Calculate net revenue after platform commission
+      // Calculate net revenue after platform commission PER CURRENCY
+      const netRevenueByCurrency: Record<string, number> = {};
+      
+      // Get all unique currencies
+      const allCurrencies = new Set([
+        ...Object.keys(ticketRevenueByCurrency),
+        ...Object.keys(voteRevenueByCurrency),
+        ...Object.keys(campaignRevenueByCurrency),
+      ]);
+      
+      allCurrencies.forEach(currency => {
+        const ticketRev = ticketRevenueByCurrency[currency] || 0;
+        const voteRev = voteRevenueByCurrency[currency] || 0;
+        const campaignRev = campaignRevenueByCurrency[currency] || 0;
+        
+        const netTicket = ticketRev * (1 - ticketCommissionRate / 100);
+        const netVote = voteRev * (1 - voteCommissionRate / 100);
+        const netCampaign = campaignRev * (1 - ticketCommissionRate / 100);
+        
+        netRevenueByCurrency[currency] = netTicket + netVote + netCampaign;
+      });
+      
+      // Calculate total net revenue (mixed currencies - for backwards compatibility)
       const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
       const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
-      const netCampaignRevenue = campaignRevenue * (1 - ticketCommissionRate / 100); // Use ticket commission rate for campaigns
+      const netCampaignRevenue = campaignRevenue * (1 - ticketCommissionRate / 100);
       const netRevenue = netTicketRevenue + netVoteRevenue + netCampaignRevenue;
       const availableBalance = netRevenue - completedPayouts - pendingPayouts;
       
@@ -507,6 +529,7 @@ export const useOrganizationStats = () => {
         ticketRevenueByCurrency,
         voteRevenueByCurrency,
         campaignRevenueByCurrency,
+        netRevenueByCurrency,
         ticketCommissionRate,
         voteCommissionRate,
       };
