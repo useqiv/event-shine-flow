@@ -431,6 +431,32 @@ export const useOrganizationStats = () => {
         });
       }
       
+      // Revenue by currency for campaigns (donations)
+      const campaignRevenueByCurrency: Record<string, number> = {};
+      let totalDonations = 0;
+      
+      // Get campaigns created by this organization
+      const { data: campaigns } = await supabase
+        .from('campaigns')
+        .select('id')
+        .eq('creator_id', user!.id);
+      
+      const campaignIds = campaigns?.map(c => c.id) || [];
+      
+      if (campaignIds.length > 0) {
+        const { data: donations } = await supabase
+          .from('donations')
+          .select('amount, currency')
+          .in('campaign_id', campaignIds)
+          .eq('status', 'completed');
+        
+        donations?.forEach((d: any) => {
+          const currency = d.currency || 'USD';
+          campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(d.amount);
+          totalDonations += 1;
+        });
+      }
+      
       // Get pending payouts (these are stored in the org's default currency typically)
       const { data: payouts } = await supabase
         .from('payouts')
@@ -454,20 +480,24 @@ export const useOrganizationStats = () => {
       // Sum up raw totals (for backwards compatibility - these are mixed currencies)
       const ticketRevenue = Object.values(ticketRevenueByCurrency).reduce((a, b) => a + b, 0);
       const voteRevenue = Object.values(voteRevenueByCurrency).reduce((a, b) => a + b, 0);
-      const totalRevenue = ticketRevenue + voteRevenue;
+      const campaignRevenue = Object.values(campaignRevenueByCurrency).reduce((a, b) => a + b, 0);
+      const totalRevenue = ticketRevenue + voteRevenue + campaignRevenue;
       
       // Calculate net revenue after platform commission
       const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
       const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
-      const netRevenue = netTicketRevenue + netVoteRevenue;
+      const netCampaignRevenue = campaignRevenue * (1 - ticketCommissionRate / 100); // Use ticket commission rate for campaigns
+      const netRevenue = netTicketRevenue + netVoteRevenue + netCampaignRevenue;
       const availableBalance = netRevenue - completedPayouts - pendingPayouts;
       
       return {
         totalRevenue,
         ticketRevenue,
         voteRevenue,
+        campaignRevenue,
         ticketsSold,
         totalVotes,
+        totalDonations,
         pendingPayouts,
         completedPayouts,
         availableBalance,
@@ -476,6 +506,7 @@ export const useOrganizationStats = () => {
         // New: revenue breakdown by currency for proper conversion
         ticketRevenueByCurrency,
         voteRevenueByCurrency,
+        campaignRevenueByCurrency,
         ticketCommissionRate,
         voteCommissionRate,
       };
