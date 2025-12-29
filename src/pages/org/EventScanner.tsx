@@ -102,6 +102,41 @@ const EventScanner = () => {
           </div>
         </div>
 
+        {/* Scanner/Lookup Tabs - Moved up for quick access */}
+        <Tabs defaultValue="scanner" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="scanner" className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              QR Scanner
+            </TabsTrigger>
+            <TabsTrigger value="lookup" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Manual Lookup
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="scanner" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  Scan Tickets
+                </CardTitle>
+                <CardDescription>
+                  Point the camera at a ticket QR code to check in attendees
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <QRCodeScanner eventId={id || ''} onScanComplete={handleScanComplete} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="lookup" className="mt-4">
+            <ManualTicketLookup eventId={id || ''} onCheckIn={handleScanComplete} />
+          </TabsContent>
+        </Tabs>
+
         {/* Event Info Card */}
         <Card>
           <CardContent className="p-4">
@@ -189,41 +224,6 @@ const EventScanner = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Scanner/Lookup Tabs */}
-        <Tabs defaultValue="scanner" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="scanner" className="flex items-center gap-2">
-              <QrCode className="h-4 w-4" />
-              QR Scanner
-            </TabsTrigger>
-            <TabsTrigger value="lookup" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Manual Lookup
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="scanner" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <QrCode className="h-5 w-5" />
-                  Scan Tickets
-                </CardTitle>
-                <CardDescription>
-                  Point the camera at a ticket QR code to check in attendees
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <QRCodeScanner eventId={id || ''} onScanComplete={handleScanComplete} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="lookup" className="mt-4">
-            <ManualTicketLookup eventId={id || ''} onCheckIn={handleScanComplete} />
-          </TabsContent>
-        </Tabs>
       </div>
     </OrganizationLayout>
   );
