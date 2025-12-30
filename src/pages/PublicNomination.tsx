@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, CheckCircle2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Search } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +33,17 @@ export default function PublicNomination() {
   const [submitterName, setSubmitterName] = useState('');
   const [submitterEmail, setSubmitterEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
+
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    if (!categories) return [];
+    if (!categorySearch.trim()) return categories;
+    return categories.filter((cat) =>
+      cat.name.toLowerCase().includes(categorySearch.toLowerCase()) ||
+      (cat.description && cat.description.toLowerCase().includes(categorySearch.toLowerCase()))
+    );
+  }, [categories, categorySearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +64,7 @@ export default function PublicNomination() {
     setSubmitterName('');
     setSubmitterEmail('');
     setSelectedCategory('');
+    setCategorySearch('');
   };
 
   const handleSubmitAnother = () => {
@@ -161,18 +173,45 @@ export default function PublicNomination() {
                   {categoriesLoading ? (
                     <Skeleton className="h-10 w-full mt-1" />
                   ) : categories && categories.length > 0 ? (
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2 mt-1">
+                      {/* Category Search */}
+                      {categories.length > 5 && (
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Search categories..."
+                            value={categorySearch}
+                            onChange={(e) => setCategorySearch(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
+                      )}
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredCategories.length > 0 ? (
+                            filteredCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                <div className="flex flex-col items-start">
+                                  <span>{category.name}</span>
+                                  {category.description && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {category.description}
+                                    </span>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <div className="py-2 px-3 text-sm text-muted-foreground">
+                              No categories found matching "{categorySearch}"
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground mt-1">
                       No categories available

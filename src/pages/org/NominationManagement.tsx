@@ -60,6 +60,7 @@ import { toast } from 'sonner';
 function CategorySubmissions({ categoryId }: { categoryId: string }) {
   const { data: submissions, isLoading } = useNominationSubmissions(categoryId);
   const deleteSubmission = useDeleteNominationSubmission();
+  const [viewMode, setViewMode] = useState<'ranked' | 'all'>('ranked');
 
   if (isLoading) {
     return <Skeleton className="h-20 w-full" />;
@@ -73,37 +74,101 @@ function CategorySubmissions({ categoryId }: { categoryId: string }) {
     );
   }
 
+  // Aggregate nominees by name and count
+  const nomineeRankings = submissions.reduce((acc, submission) => {
+    const name = submission.nominee_name.trim().toLowerCase();
+    const displayName = submission.nominee_name.trim();
+    if (!acc[name]) {
+      acc[name] = { displayName, count: 0, submissions: [] };
+    }
+    acc[name].count += 1;
+    acc[name].submissions.push(submission);
+    return acc;
+  }, {} as Record<string, { displayName: string; count: number; submissions: typeof submissions }>);
+
+  // Sort by count descending
+  const rankedNominees = Object.values(nomineeRankings).sort((a, b) => b.count - a.count);
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nominee</TableHead>
-          <TableHead>Submitted By</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead className="w-[50px]"></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {submissions.map((submission) => (
-          <TableRow key={submission.id}>
-            <TableCell className="font-medium">{submission.nominee_name}</TableCell>
-            <TableCell>
-              {submission.submitter_name || submission.submitter_email || 'Anonymous'}
-            </TableCell>
-            <TableCell>{format(new Date(submission.created_at), 'MMM d, yyyy')}</TableCell>
-            <TableCell>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteSubmission.mutate({ id: submission.id, categoryId })}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {submissions.length} nomination{submissions.length !== 1 ? 's' : ''} • {rankedNominees.length} unique nominee{rankedNominees.length !== 1 ? 's' : ''}
+        </p>
+        <div className="flex gap-1">
+          <Button
+            variant={viewMode === 'ranked' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('ranked')}
+          >
+            Ranked
+          </Button>
+          <Button
+            variant={viewMode === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('all')}
+          >
+            All
+          </Button>
+        </div>
+      </div>
+
+      {viewMode === 'ranked' ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">Rank</TableHead>
+              <TableHead>Nominee</TableHead>
+              <TableHead className="text-right">Nominations</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rankedNominees.map((nominee, index) => (
+              <TableRow key={nominee.displayName}>
+                <TableCell>
+                  <Badge variant={index < 3 ? 'default' : 'secondary'}>
+                    #{index + 1}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-medium">{nominee.displayName}</TableCell>
+                <TableCell className="text-right font-bold">{nominee.count}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nominee</TableHead>
+              <TableHead>Submitted By</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {submissions.map((submission) => (
+              <TableRow key={submission.id}>
+                <TableCell className="font-medium">{submission.nominee_name}</TableCell>
+                <TableCell>
+                  {submission.submitter_name || submission.submitter_email || 'Anonymous'}
+                </TableCell>
+                <TableCell>{format(new Date(submission.created_at), 'MMM d, yyyy')}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteSubmission.mutate({ id: submission.id, categoryId })}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }
 
