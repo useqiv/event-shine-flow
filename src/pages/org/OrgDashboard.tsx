@@ -284,6 +284,18 @@ const OrgDashboard = () => {
                 <span className="hidden sm:inline">New Event</span>
               </Button>
             </Link>
+            <Link to="/campaigns/create">
+              <Button variant="outline" size="sm" className="sm:size-default">
+                <PlusCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Campaign</span>
+              </Button>
+            </Link>
+            <Link to="/org/nominations/create">
+              <Button variant="outline" size="sm" className="sm:size-default">
+                <PlusCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Nomination</span>
+              </Button>
+            </Link>
           </div>
         </div>
 
