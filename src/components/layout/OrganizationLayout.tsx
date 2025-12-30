@@ -55,6 +55,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/org/contests/create', label: 'Create Contest', icon: PlusCircle },
     { path: '/org/events/create', label: 'Create Event', icon: PlusCircle },
     { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
+    { path: '/org/nominations/create', label: 'Create Nomination', icon: ClipboardList },
     { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
     { path: '/org/events', label: 'Manage Events', icon: Calendar },
     { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
