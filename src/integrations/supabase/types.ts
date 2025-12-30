@@ -996,6 +996,118 @@ export type Database = {
           },
         ]
       }
+      nomination_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          name: string
+          nomination_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          nomination_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          nomination_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nomination_categories_nomination_id_fkey"
+            columns: ["nomination_id"]
+            isOneToOne: false
+            referencedRelation: "nominations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nomination_submissions: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          nominee_name: string
+          submitter_email: string | null
+          submitter_name: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          nominee_name: string
+          submitter_email?: string | null
+          submitter_name?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          nominee_name?: string
+          submitter_email?: string | null
+          submitter_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nomination_submissions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "nomination_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nominations: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          organization_id: string
+          start_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          organization_id: string
+          start_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          organization_id?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
