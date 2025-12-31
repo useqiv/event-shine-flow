@@ -165,7 +165,9 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
         ? `${baseUrl}/c/${customSlug}?ref=${code}`
         : `${baseUrl}/contests/${entityId}?ref=${code}`;
     } else {
-      url = `${baseUrl}/events/${entityId}?ref=${code}`;
+      url = customSlug
+        ? `${baseUrl}/e/${customSlug}?ref=${code}`
+        : `${baseUrl}/events/${entityId}?ref=${code}`;
     }
     
     navigator.clipboard.writeText(url);
