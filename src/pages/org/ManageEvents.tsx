@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,10 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useOrganizationEvents, useDuplicateEvent } from '@/hooks/useOrganization';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useOrganizationEvents, useDuplicateEvent, useDeleteEvent } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info, Copy } from 'lucide-react';
+import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
@@ -18,7 +28,10 @@ import CurrencyDisplay from '@/components/ui/currency-display';
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
   const duplicateEvent = useDuplicateEvent();
+  const deleteEvent = useDeleteEvent();
   const { user } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<any>(null);
 
   // Fetch ticket revenue per event with currency info
   const { data: eventRevenues } = useQuery({
@@ -231,6 +244,26 @@ const ManageEvents = () => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setEventToDelete(event);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete event</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Link to={`/events/${event.id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
@@ -260,6 +293,33 @@ const ManageEvents = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{eventToDelete?.title}"? This will permanently delete
+              the event and all its ticket types. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (eventToDelete) {
+                  deleteEvent.mutate(eventToDelete.id);
+                  setDeleteDialogOpen(false);
+                  setEventToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </OrganizationLayout>
   );
 };

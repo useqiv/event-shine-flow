@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,19 +6,32 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useOrganizationContests, useDuplicateContest } from '@/hooks/useOrganization';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useOrganizationContests, useDuplicateContest, useDeleteContest } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
-import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info, Copy } from 'lucide-react';
+import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
 const ManageContests = () => {
   const { data: contests, isLoading } = useOrganizationContests();
   const duplicateContest = useDuplicateContest();
+  const deleteContest = useDeleteContest();
   const { user } = useAuth();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contestToDelete, setContestToDelete] = useState<any>(null);
 
   // Fetch vote revenue per contest
   const { data: contestRevenues } = useQuery({
@@ -214,6 +227,26 @@ const ManageContests = () => {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setContestToDelete(contest);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete contest</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       <Link to={`/contests/${contest.id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
@@ -243,6 +276,33 @@ const ManageContests = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contest</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{contestToDelete?.title}"? This will permanently delete
+              the contest and all its contestants. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (contestToDelete) {
+                  deleteContest.mutate(contestToDelete.id);
+                  setDeleteDialogOpen(false);
+                  setContestToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </OrganizationLayout>
   );
 };
