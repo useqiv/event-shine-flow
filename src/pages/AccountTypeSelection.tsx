@@ -32,15 +32,15 @@ const AccountTypeSelection = () => {
 
     setIsLoading(true);
     try {
-      // Update user role based on selection
-      if (selectedType === "organization" || selectedType === "influencer") {
-        const { error } = await supabase
-          .from("user_roles")
-          .update({ role: selectedType })
-          .eq("user_id", user.id);
+      // Upsert user role based on selection (insert if not exists, update if exists)
+      const { error } = await supabase
+        .from("user_roles")
+        .upsert(
+          { user_id: user.id, role: selectedType },
+          { onConflict: 'user_id' }
+        );
 
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       // Mark that user has completed account setup
       const { error: profileError } = await supabase
