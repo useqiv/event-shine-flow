@@ -14,8 +14,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import { useCreateNomination } from '@/hooks/useNominations';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
@@ -23,9 +25,18 @@ const formSchema = z.object({
   logo_url: z.string().optional(),
   start_date: z.date({ required_error: 'Start date is required' }),
   end_date: z.date({ required_error: 'End date is required' }),
+  custom_slug: z.string().optional(),
 }).refine((data) => data.end_date > data.start_date, {
   message: 'End date must be after start date',
   path: ['end_date'],
+}).refine((data) => {
+  if (data.custom_slug && data.custom_slug.length === 5) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Custom URL cannot be exactly 5 characters',
+  path: ['custom_slug'],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -34,6 +45,7 @@ export default function CreateNomination() {
   const navigate = useNavigate();
   const createNomination = useCreateNomination();
   const [logoUrl, setLogoUrl] = useState('');
+  const [customSlug, setCustomSlug] = useState('');
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -41,16 +53,25 @@ export default function CreateNomination() {
       title: '',
       description: '',
       logo_url: '',
+      custom_slug: '',
     },
   });
 
   const onSubmit = async (data: FormData) => {
+    // Validate custom slug
+    const slugError = validateCustomSlug(customSlug);
+    if (slugError) {
+      toast.error(slugError);
+      return;
+    }
+
     const result = await createNomination.mutateAsync({
       title: data.title,
       description: data.description,
       logo_url: logoUrl || undefined,
       start_date: data.start_date.toISOString(),
       end_date: data.end_date.toISOString(),
+      custom_slug: customSlug || undefined,
     });
 
     navigate(`/org/nominations/${result.id}`);
@@ -120,6 +141,14 @@ export default function CreateNomination() {
                       onChange={setLogoUrl}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <CustomSlugInput
+                    value={customSlug}
+                    onChange={setCustomSlug}
+                    entityType="nomination"
+                  />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">

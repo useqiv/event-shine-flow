@@ -12,6 +12,7 @@ export interface Nomination {
   start_date: string;
   end_date: string;
   is_active: boolean;
+  custom_slug: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -144,6 +145,7 @@ export function useCreateNomination() {
       logo_url?: string;
       start_date: string;
       end_date: string;
+      custom_slug?: string;
     }) => {
       const { data: result, error } = await supabase
         .from('nominations')
@@ -352,22 +354,36 @@ export function useDeleteNominationSubmission() {
   });
 }
 
-// Fetch public nomination by ID (for public form page)
-export function usePublicNomination(nominationId: string) {
+// Fetch public nomination by ID or slug (for public form page)
+export function usePublicNomination(idOrSlug: string) {
   return useQuery({
-    queryKey: ['public-nomination', nominationId],
+    queryKey: ['public-nomination', idOrSlug],
     queryFn: async () => {
+      // First try by ID (UUID format)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      if (isUUID) {
+        const { data, error } = await supabase
+          .from('nominations')
+          .select('*')
+          .eq('id', idOrSlug)
+          .single();
+
+        if (error) throw error;
+        return data as Nomination;
+      }
+      
+      // Otherwise try by custom_slug
       const { data, error } = await supabase
         .from('nominations')
         .select('*')
-        .eq('id', nominationId)
-        .eq('is_active', true)
+        .eq('custom_slug', idOrSlug)
         .single();
 
       if (error) throw error;
       return data as Nomination;
     },
-    enabled: !!nominationId,
+    enabled: !!idOrSlug,
   });
 }
 

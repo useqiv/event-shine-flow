@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ImageUpload } from '@/components/ui/image-upload';
-import { Palette, Link as LinkIcon, Image } from 'lucide-react';
+import { CustomSlugInput } from '@/components/ui/custom-slug-input';
+import { Palette, Image } from 'lucide-react';
 
 interface ContestBrandingFormProps {
   values: {
@@ -21,10 +22,6 @@ export const ContestBrandingForm: React.FC<ContestBrandingFormProps> = ({
   onChange,
   contestId,
 }) => {
-  const previewUrl = values.custom_slug 
-    ? `${window.location.origin}/c/${values.custom_slug}`
-    : null;
-
   return (
     <Card>
       <CardHeader>
@@ -36,33 +33,12 @@ export const ContestBrandingForm: React.FC<ContestBrandingFormProps> = ({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Custom URL Slug */}
-        <div className="space-y-2">
-          <Label htmlFor="custom_slug" className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4" />
-            Custom URL Slug
-          </Label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <div className="flex">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                  {window.location.origin}/c/
-                </span>
-                <Input
-                  id="custom_slug"
-                  placeholder="my-contest"
-                  value={values.custom_slug}
-                  onChange={(e) => onChange('custom_slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  className="rounded-l-none"
-                />
-              </div>
-            </div>
-          </div>
-          {previewUrl && (
-            <p className="text-xs text-muted-foreground">
-              Your contest will be available at: <span className="font-mono text-primary">{previewUrl}</span>
-            </p>
-          )}
-        </div>
+        <CustomSlugInput
+          value={values.custom_slug}
+          onChange={(value) => onChange('custom_slug', value)}
+          entityType="contest"
+          label="Custom URL Slug"
+        />
 
         {/* Brand Colors */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

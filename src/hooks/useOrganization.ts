@@ -691,6 +691,7 @@ export const useCreateEvent = () => {
       event_date: string;
       venue: string;
       address?: string;
+      custom_slug?: string;
     }) => {
       const { data, error } = await supabase
         .from('events')
