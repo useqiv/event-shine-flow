@@ -135,26 +135,35 @@ const InfluencerLinks = () => {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-background border rounded-lg">
-                        <p className="text-2xl font-bold">{link.total_clicks}</p>
-                        <p className="text-xs text-muted-foreground">Clicks</p>
-                      </div>
-                      <div className="text-center p-3 bg-background border rounded-lg">
-                        <p className="text-2xl font-bold">{link.total_conversions}</p>
-                        <p className="text-xs text-muted-foreground">Conversions</p>
-                      </div>
-                      <div className="text-center p-3 bg-background border rounded-lg">
-                        <p className="text-2xl font-bold">{formatCurrency(link.total_revenue || 0, 'USD')}</p>
-                        <p className="text-xs text-muted-foreground">Revenue</p>
-                      </div>
-                      <div className="text-center p-3 bg-background border rounded-lg">
-                        <p className="text-2xl font-bold text-primary">
-                          {formatCurrency(link.total_commission || 0, 'USD')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Earned</p>
-                      </div>
-                    </div>
+                    {(() => {
+                      // Determine currency: use commission_currency, or event/contest currency, fallback to NGN
+                      const linkCurrency = link.commission_currency 
+                        || link.events?.currency 
+                        || link.contests?.vote_currency 
+                        || 'NGN';
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="text-center p-3 bg-background border rounded-lg">
+                            <p className="text-2xl font-bold">{link.total_clicks}</p>
+                            <p className="text-xs text-muted-foreground">Clicks</p>
+                          </div>
+                          <div className="text-center p-3 bg-background border rounded-lg">
+                            <p className="text-2xl font-bold">{link.total_conversions}</p>
+                            <p className="text-xs text-muted-foreground">Conversions</p>
+                          </div>
+                          <div className="text-center p-3 bg-background border rounded-lg">
+                            <p className="text-2xl font-bold">{formatCurrency(link.total_revenue || 0, linkCurrency)}</p>
+                            <p className="text-xs text-muted-foreground">Revenue</p>
+                          </div>
+                          <div className="text-center p-3 bg-background border rounded-lg">
+                            <p className="text-2xl font-bold text-primary">
+                              {formatCurrency(link.total_commission || 0, linkCurrency)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Earned</p>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Commission Info */}
                     <p className="text-sm text-muted-foreground">
