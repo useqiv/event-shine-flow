@@ -72,11 +72,27 @@ export const InfluencerLinksManager: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
+      
+      const code = newLink.code.toUpperCase().trim();
+      if (!code) throw new Error('Tracking code is required');
+      if (!newLink.name.trim()) throw new Error('Influencer name is required');
+      if (!newLink.target_id) throw new Error('Please select a contest or event');
+      
+      // Check if code already exists
+      const { data: existingLink } = await supabase
+        .from('influencer_links')
+        .select('id')
+        .eq('code', code)
+        .maybeSingle();
+      
+      if (existingLink) {
+        throw new Error('This tracking code is already in use. Please choose a different code.');
+      }
 
       const { error } = await supabase.from('influencer_links').insert({
         organization_id: user.id,
-        name: newLink.name,
-        code: newLink.code.toUpperCase(),
+        name: newLink.name.trim(),
+        code: code,
         contest_id: newLink.link_type === 'contest' ? newLink.target_id : null,
         event_id: newLink.link_type === 'event' ? newLink.target_id : null,
         commission_type: newLink.commission_type,
