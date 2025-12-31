@@ -19,7 +19,7 @@ import {
 import { useOrganizationEvents, useDuplicateEvent, useDeleteEvent } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, PlusCircle, MapPin, Eye, Settings, DollarSign, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
+import { Calendar, PlusCircle, MapPin, Eye, Settings, Banknote, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
@@ -142,11 +142,11 @@ const ManageEvents = () => {
         ) : events && events.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map((event: any) => {
-              const eventData = eventRevenues?.[event.id] || { revenue: 0, ticketsSold: 0, currency: 'USD' };
+              const eventData = eventRevenues?.[event.id] || { revenue: 0, ticketsSold: 0, currency: 'NGN' };
               const totalRevenue = eventData.revenue;
               const netRevenue = totalRevenue * (1 - ticketCommission / 100);
               const commissionDeducted = totalRevenue - netRevenue;
-              const eventCurrency = eventData.currency || 'USD';
+              const eventCurrency = (event as any)?.currency || eventData.currency || 'NGN';
 
               return (
                 <Card key={event.id} className="overflow-hidden">
@@ -186,7 +186,7 @@ const ManageEvents = () => {
                     <div className="bg-secondary/50 rounded-lg p-3 mb-3 space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-1 text-muted-foreground">
-                          <DollarSign className="h-3 w-3" />
+                          <Banknote className="h-3 w-3" />
                           <span>Total Revenue</span>
                         </div>
                         <span className="font-medium">
