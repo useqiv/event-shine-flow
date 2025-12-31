@@ -678,6 +678,44 @@ export const useDuplicateContest = () => {
     },
   });
 };
+
+// Delete Contest
+export const useDeleteContest = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (contestId: string) => {
+      // Delete contestants first (they reference the contest)
+      await supabase
+        .from('contestants')
+        .delete()
+        .eq('contest_id', contestId);
+      
+      // Delete contest categories
+      await supabase
+        .from('contest_categories')
+        .delete()
+        .eq('contest_id', contestId);
+      
+      // Delete the contest
+      const { error } = await supabase
+        .from('contests')
+        .delete()
+        .eq('id', contestId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contests'] });
+      toast.success('Contest deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete contest');
+      console.error(error);
+    },
+  });
+};
 export const useCreateEvent = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -709,6 +747,38 @@ export const useCreateEvent = () => {
     },
     onError: (error) => {
       toast.error('Failed to create event');
+      console.error(error);
+    },
+  });
+};
+
+// Delete Event
+export const useDeleteEvent = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      // Delete ticket types first (they reference the event)
+      await supabase
+        .from('ticket_types')
+        .delete()
+        .eq('event_id', eventId);
+      
+      // Delete the event
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      toast.success('Event deleted successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete event');
       console.error(error);
     },
   });
