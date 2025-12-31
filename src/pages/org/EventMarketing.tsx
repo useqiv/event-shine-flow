@@ -96,6 +96,7 @@ const EventMarketing = () => {
               entityId={event.id}
               entityType="event"
               entityTitle={event.title}
+              customSlug={event.custom_slug}
             />
           </TabsContent>
 
