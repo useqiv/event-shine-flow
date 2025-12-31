@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Plus, Calendar, Eye, Trash2, MoreHorizontal, Copy } from 'lucide-react';
+import { Plus, Calendar, Eye, Trash2, MoreHorizontal, Copy, ExternalLink } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -109,6 +109,10 @@ export default function ManageNominations() {
                             <Eye className="mr-2 h-4 w-4" />
                             View & Manage
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => window.open(`/nominations/${nomination.id}`, '_blank')}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            View Public Page
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => copyPublicLink(nomination.id)}>
                             <Copy className="mr-2 h-4 w-4" />
                             Copy Public Link
@@ -134,13 +138,23 @@ export default function ManageNominations() {
                         {format(new Date(nomination.start_date), 'MMM d, yyyy')} - {format(new Date(nomination.end_date), 'MMM d, yyyy')}
                       </span>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => navigate(`/org/nominations/${nomination.id}`)}
-                    >
-                      Manage Categories
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => navigate(`/org/nominations/${nomination.id}`)}
+                      >
+                        Manage
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        className="flex-1"
+                        onClick={() => window.open(`/nominations/${nomination.id}`, '_blank')}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Public Page
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
