@@ -82,7 +82,7 @@ export const useInfluencerStats = () => {
       // Get all links for this influencer with currency
       const { data: links, error: linksError } = await supabase
         .from('influencer_links')
-        .select('total_clicks, total_conversions, total_revenue, total_commission, commission_currency')
+        .select('total_clicks, total_conversions, total_revenue, total_commission, commission_currency, event_id, contest_id, events:event_id(currency), contests:contest_id(vote_currency)')
         .eq('influencer_user_id', user.id);
 
       if (linksError) throw linksError;
@@ -92,8 +92,8 @@ export const useInfluencerStats = () => {
       let total_clicks = 0;
       let total_conversions = 0;
 
-      (links || []).forEach((link) => {
-        const currency = link.commission_currency || 'NGN';
+      (links || []).forEach((link: any) => {
+        const currency = link?.events?.currency || link?.contests?.vote_currency || link?.commission_currency || 'NGN';
         if (!byCurrency[currency]) {
           byCurrency[currency] = { total_commission: 0, total_revenue: 0 };
         }
