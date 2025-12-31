@@ -107,20 +107,16 @@ const PaymentCallback = () => {
 
           <div className="flex flex-col gap-2">
             {status === 'success' && isVote && (
-              <Button asChild className="w-full">
-                <Link to="/my-votes">
-                  <Vote className="mr-2 h-4 w-4" />
-                  View My Votes
-                </Link>
+              <Button onClick={() => navigate('/my-votes')} className="w-full">
+                <Vote className="mr-2 h-4 w-4" />
+                View My Votes
               </Button>
             )}
 
             {status === 'success' && isTicket && (
-              <Button asChild className="w-full">
-                <Link to="/my-tickets">
-                  <TicketIcon className="mr-2 h-4 w-4" />
-                  View My Tickets
-                </Link>
+              <Button onClick={() => navigate('/my-tickets')} className="w-full">
+                <TicketIcon className="mr-2 h-4 w-4" />
+                View My Tickets
               </Button>
             )}
 
@@ -130,11 +126,9 @@ const PaymentCallback = () => {
               </Button>
             )}
 
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/dashboard">
-                <Home className="mr-2 h-4 w-4" />
-                Go to Dashboard
-              </Link>
+            <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
+              <Home className="mr-2 h-4 w-4" />
+              Go to Dashboard
             </Button>
           </div>
         </CardContent>
