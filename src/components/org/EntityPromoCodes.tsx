@@ -14,6 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Tag, PlusCircle, Trash2, Copy, Percent, Ticket } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 
 interface TicketType {
   id: string;
@@ -38,12 +39,14 @@ interface EntityPromoCodesProps {
   entityId: string;
   entityType: 'contest' | 'event';
   entityTitle: string;
+  currency?: string;
 }
 
 export const EntityPromoCodes: React.FC<EntityPromoCodesProps> = ({
   entityId,
   entityType,
   entityTitle,
+  currency = 'NGN',
 }) => {
   const { user } = useAuth();
   const { confirm } = useConfirmDialog();
@@ -357,7 +360,7 @@ export const EntityPromoCodes: React.FC<EntityPromoCodesProps> = ({
                     <p className="text-sm text-muted-foreground">
                       {promo.discount_type === 'percentage' 
                         ? `${promo.discount_value}% off` 
-                        : `₦${Number(promo.discount_value).toLocaleString()} off`}
+                        : `${formatCurrency(Number(promo.discount_value), currency)} off`}
                       {promo.max_uses && ` • ${promo.current_uses}/${promo.max_uses} uses`}
                       {promo.valid_until && ` • Expires ${format(new Date(promo.valid_until), 'MMM d, yyyy')}`}
                     </p>
