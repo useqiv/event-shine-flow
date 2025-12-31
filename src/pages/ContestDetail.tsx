@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/useContests';
 import { useContestCategories, ContestCategory } from '@/hooks/useContestCategories';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
+import { LiveVotingWidget, VoteSurgeOverlay, PowerVotingMoment } from '@/components/live';
 import { useWallet } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ const ContestDetail = () => {
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
   const previousLeaderRef = useRef<string | null>(null);
+  const [voteSurges, setVoteSurges] = useState<Array<{ id: string; contestantName: string; votes: number; timestamp: number }>>([]);
 
   // Category navigation state (for drill-down UX)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -75,7 +77,19 @@ const ContestDetail = () => {
         return next;
       });
     }, 1000);
-  }, []);
+
+    // Add to vote surges for overlay
+    const contestant = contestants?.find((c: any) => c.id === contestantId);
+    if (contestant) {
+      const voteDiff = newVoteCount - previousVoteCount;
+      setVoteSurges(prev => [{
+        id: `${contestantId}-${Date.now()}`,
+        contestantName: contestant.name,
+        votes: voteDiff,
+        timestamp: Date.now(),
+      }, ...prev].slice(0, 5));
+    }
+  }, [contestants]);
 
   // Enable real-time updates for live leaderboard
   const { initializeVoteCounts } = useRealtimeContestants(id || '', handleVoteUpdate);
@@ -256,6 +270,7 @@ const ContestDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col" style={brandStyles}>
+      <VoteSurgeOverlay surges={voteSurges} />
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="space-y-6">
@@ -339,11 +354,37 @@ const ContestDetail = () => {
                 url={`${window.location.origin}/contests/${id}`}
               />
             </div>
-            {contest.description && (
+          {contest.description && (
               <p className="mt-4 text-muted-foreground">{contest.description}</p>
             )}
           </CardContent>
         </Card>
+
+        {/* Live Voting Section */}
+        {!isEnded && contestants && contestants.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <PowerVotingMoment
+                isActive={false}
+                multiplier={2}
+                className="mb-4"
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <LiveVotingWidget
+                contestId={id || ''}
+                totalVotes={contest.total_votes}
+                contestants={contestants.slice(0, 10).map((c: any) => ({
+                  id: c.id,
+                  name: c.name,
+                  vote_count: c.vote_count,
+                  photo_url: c.photo_url,
+                }))}
+                isLive={!isEnded}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Contestants / Categories */}
         <div>
