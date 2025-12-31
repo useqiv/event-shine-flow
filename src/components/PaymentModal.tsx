@@ -128,6 +128,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       name,
       user_id: userId,
       influencer_link_id: influencerLinkId,
+      redirect_url: `${window.location.origin}/payment-callback?type=${type}${itemDetails.event_id ? `&event_id=${itemDetails.event_id}` : ''}${itemDetails.contest_id ? `&contest_id=${itemDetails.contest_id}` : ''}`,
       ...itemDetails,
     });
   };
