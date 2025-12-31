@@ -55,6 +55,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
   const [newLink, setNewLink] = useState({
     name: '',
     code: '',
+    email: '',
     commission_type: 'percentage',
     commission_value: '',
   });
@@ -100,6 +101,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
         organization_id: user.id,
         name: newLink.name.trim(),
         code: code,
+        influencer_email: newLink.email.trim().toLowerCase() || null,
         contest_id: entityType === 'contest' ? entityId : null,
         event_id: entityType === 'event' ? entityId : null,
         commission_type: newLink.commission_type,
@@ -115,6 +117,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
       setNewLink({
         name: '',
         code: '',
+        email: '',
         commission_type: 'percentage',
         commission_value: '',
       });
@@ -267,6 +270,19 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                   </div>
 
                   <div className="space-y-2">
+                    <Label>Influencer Email *</Label>
+                    <Input
+                      type="email"
+                      placeholder="e.g., john@example.com"
+                      value={newLink.email}
+                      onChange={(e) => setNewLink(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Only users with this email can claim this code
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label>Tracking Code *</Label>
                     <div className="flex gap-2">
                       <Input
@@ -311,7 +327,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                   <Button 
                     onClick={() => createMutation.mutate()} 
                     className="w-full" 
-                    disabled={!newLink.name || !newLink.code || createMutation.isPending}
+                    disabled={!newLink.name || !newLink.code || !newLink.email || createMutation.isPending}
                   >
                     {createMutation.isPending ? 'Creating...' : 'Create Link'}
                   </Button>

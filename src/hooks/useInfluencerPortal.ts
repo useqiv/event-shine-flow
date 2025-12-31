@@ -291,13 +291,15 @@ export const useClaimInfluencerCode = () => {
   return useMutation({
     mutationFn: async (code: string) => {
       if (!user?.id) throw new Error('Not authenticated');
+      if (!user?.email) throw new Error('Your account does not have an email address');
 
       const normalizedCode = code.trim().toUpperCase();
+      const userEmail = user.email.toLowerCase();
 
       // Find the link by code
       const { data: link, error: findError } = await supabase
         .from('influencer_links')
-        .select('id, influencer_user_id')
+        .select('id, influencer_user_id, influencer_email')
         .eq('code', normalizedCode)
         .maybeSingle();
 
@@ -316,6 +318,11 @@ export const useClaimInfluencerCode = () => {
 
       if (link.influencer_user_id) {
         throw new Error('This code is already claimed by another influencer');
+      }
+
+      // Verify email matches (if email is set on the link)
+      if (link.influencer_email && link.influencer_email.toLowerCase() !== userEmail) {
+        throw new Error('This code is assigned to a different email address. Please use the account associated with the email the organization provided.');
       }
 
       // Claim the link (only if still unclaimed). IMPORTANT: a successful request can still affect 0 rows.

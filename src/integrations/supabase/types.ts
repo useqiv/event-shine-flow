@@ -939,6 +939,7 @@ export type Database = {
           created_at: string
           event_id: string | null
           id: string
+          influencer_email: string | null
           influencer_user_id: string | null
           is_active: boolean
           name: string
@@ -958,6 +959,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          influencer_email?: string | null
           influencer_user_id?: string | null
           is_active?: boolean
           name: string
@@ -977,6 +979,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          influencer_email?: string | null
           influencer_user_id?: string | null
           is_active?: boolean
           name?: string
