@@ -9,10 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { ShareButtons } from '@/components/ui/share-buttons';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import PaymentModal from '@/components/PaymentModal';
+import CurrencyDisplay from '@/components/ui/currency-display';
+import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink } from 'lucide-react';
+
+const voteOptions = [1, 5, 10, 25, 50, 100];
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
+  
+  // Voting state
+  const [selectedContestant, setSelectedContestant] = useState<any>(null);
+  const [voteQuantity, setVoteQuantity] = useState(1);
+  const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -59,6 +72,18 @@ const PublicContest = () => {
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const contestUrl = `${window.location.origin}/c/${slug}`;
+  const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+
+  const handleVoteClick = (contestant: any) => {
+    setSelectedContestant(contestant);
+    setVoteQuantity(1);
+    setIsVoteSelectionOpen(true);
+  };
+
+  const handleProceedToPayment = () => {
+    setIsVoteSelectionOpen(false);
+    setIsPaymentModalOpen(true);
+  };
 
   if (contestLoading) {
     return (
@@ -121,15 +146,27 @@ const PublicContest = () => {
                 <span className="font-bold text-lg">VotePass</span>
               </div>
             )}
-            <Link to="/auth">
-              <Button 
-                variant="secondary" 
-                size="sm"
-                className="text-foreground"
-              >
-                Login to Vote
-              </Button>
-            </Link>
+            {user ? (
+              <Link to="/dashboard">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  className="text-foreground"
+                >
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  className="text-foreground"
+                >
+                  Login / Sign Up
+                </Button>
+              </Link>
+            )}
           </div>
         </header>
 
@@ -250,15 +287,14 @@ const PublicContest = () => {
                             : 'Votes hidden'}
                         </span>
                       </div>
-                      <Link to={`/auth?redirect=/contests/${contest.id}?vote=${contestant.id}`}>
-                        <Button 
+                      <Button 
                           className="w-full mt-4"
                           style={{ backgroundColor: primaryColor }}
                           disabled={isEnded}
+                          onClick={() => handleVoteClick(contestant)}
                         >
                           {isEnded ? 'Voting Ended' : 'Vote Now'}
                         </Button>
-                      </Link>
                     </CardContent>
                   </Card>
                 ))}
@@ -271,21 +307,23 @@ const PublicContest = () => {
             )}
           </div>
 
-          {/* Call to Action */}
-          <Card className="mt-8 p-6 text-center" style={{ borderColor: primaryColor }}>
-            <h3 className="text-xl font-bold mb-2">Want to vote?</h3>
-            <p className="text-muted-foreground mb-4">
-              Create an account or login to cast your votes for your favorite contestant.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Link to="/auth">
-                <Button style={{ backgroundColor: primaryColor }}>
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Login / Sign Up
-                </Button>
-              </Link>
-            </div>
-          </Card>
+          {/* Call to Action - only show for non-authenticated users */}
+          {!user && (
+            <Card className="mt-8 p-6 text-center" style={{ borderColor: primaryColor }}>
+              <h3 className="text-xl font-bold mb-2">Create an account for easier voting!</h3>
+              <p className="text-muted-foreground mb-4">
+                Sign up to track your votes and get notified about contest updates.
+              </p>
+              <div className="flex gap-4 justify-center">
+                <Link to="/auth">
+                  <Button style={{ backgroundColor: primaryColor }}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Login / Sign Up
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
         </main>
 
         {/* Footer */}
@@ -295,6 +333,76 @@ const PublicContest = () => {
           </div>
         </footer>
       </div>
+
+      {/* Vote Selection Dialog */}
+      <Dialog open={isVoteSelectionOpen} onOpenChange={setIsVoteSelectionOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vote for {selectedContestant?.name}</DialogTitle>
+            <DialogDescription>
+              Select the number of votes you want to cast
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-3 gap-2">
+              {voteOptions.map((option) => (
+                <Button
+                  key={option}
+                  variant={voteQuantity === option ? 'default' : 'outline'}
+                  onClick={() => setVoteQuantity(option)}
+                  style={voteQuantity === option ? { backgroundColor: primaryColor } : undefined}
+                >
+                  {option} {option === 1 ? 'Vote' : 'Votes'}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="p-4 bg-muted rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Total Amount</span>
+                <span className="text-xl font-bold">
+                  <CurrencyDisplay 
+                    amount={totalAmount} 
+                    currency={contest?.vote_currency || 'NGN'} 
+                  />
+                </span>
+              </div>
+            </div>
+
+            {!user && (
+              <p className="text-sm text-muted-foreground text-center">
+                You'll need to provide your email address on the next step
+              </p>
+            )}
+            
+            <Button 
+              className="w-full" 
+              onClick={handleProceedToPayment}
+              style={{ backgroundColor: primaryColor }}
+            >
+              Proceed to Payment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Modal */}
+      {selectedContestant && contest && (
+        <PaymentModal
+          open={isPaymentModalOpen}
+          onOpenChange={setIsPaymentModalOpen}
+          type="vote"
+          amount={totalAmount}
+          currency={contest.vote_currency || 'NGN'}
+          itemDetails={{
+            contest_id: contest.id,
+            contestant_id: selectedContestant.id,
+            vote_quantity: voteQuantity,
+            name: selectedContestant.name,
+          }}
+        />
+      )}
     </>
   );
 };
