@@ -773,18 +773,6 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
                         </div>
                       </DialogContent>
                     </Dialog>
-
-                    <RefundRequestDialog
-                      transactionType="ticket"
-                      transactionId={ticket.id}
-                      amount={Number(ticket.amount_paid)}
-                      itemName={`${ticket.event?.title} - ${ticket.ticket_type?.name}`}
-                    >
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Refund
-                      </Button>
-                    </RefundRequestDialog>
                   </>
                 )}
 
