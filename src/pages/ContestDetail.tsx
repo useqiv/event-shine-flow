@@ -91,9 +91,11 @@ const ContestDetail = () => {
     }
   }, [contestants]);
 
-  // Enable real-time updates for live leaderboard
-  const { initializeVoteCounts } = useRealtimeContestants(id || '', handleVoteUpdate);
-  useRealtimeContest(id || '');
+  const isLiveVotingEnabled = (contest as any)?.is_live_voting === true;
+
+  // Enable real-time updates for live leaderboard (only if live voting is enabled)
+  const { initializeVoteCounts } = useRealtimeContestants(isLiveVotingEnabled ? (id || '') : '', handleVoteUpdate);
+  useRealtimeContest(isLiveVotingEnabled ? (id || '') : '');
 
   // Initialize vote counts and check for leader changes
   useEffect(() => {
@@ -270,7 +272,7 @@ const ContestDetail = () => {
 
   return (
     <div className="min-h-screen flex flex-col" style={brandStyles}>
-      <VoteSurgeOverlay surges={voteSurges} />
+      {isLiveVotingEnabled && <VoteSurgeOverlay surges={voteSurges} />}
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="space-y-6">
@@ -360,8 +362,8 @@ const ContestDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Live Voting Section */}
-        {!isEnded && contestants && contestants.length > 0 && (
+        {/* Live Voting Section - Only show if is_live_voting is enabled */}
+        {!isEnded && contestants && contestants.length > 0 && isLiveVotingEnabled && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <PowerVotingMoment

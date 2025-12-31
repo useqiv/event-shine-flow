@@ -12,7 +12,8 @@ import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
 import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
-import { Calendar, DollarSign, FileText, Users, Layers, Check } from 'lucide-react';
+import { Calendar, DollarSign, FileText, Users, Layers, Check, Radio } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 const categories = [
@@ -49,6 +50,7 @@ const CreateContest = () => {
     brand_primary_color: '#7c3aed',
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
+    is_live_voting: false,
   });
 
   // Set default currency from org settings when loaded
@@ -83,6 +85,7 @@ const CreateContest = () => {
         brand_secondary_color: formData.brand_secondary_color,
         brand_logo_url: formData.brand_logo_url || undefined,
         contest_type: contestType as 'single' | 'category',
+        is_live_voting: formData.is_live_voting,
       });
       
       // If category-based, navigate to contest management to add categories
@@ -96,7 +99,7 @@ const CreateContest = () => {
     }
   };
 
-  const handleChange = (field: string, value: string | number) => {
+  const handleChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -339,6 +342,32 @@ const CreateContest = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Users will pay this amount for each vote they cast.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Live Voting Toggle */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Radio className="h-5 w-5" />
+                Live Voting
+              </CardTitle>
+              <CardDescription>Enable real-time vote updates for viewers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="is_live_voting">Enable Live Voting</Label>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, voters will see vote counts update in real-time with animations and live leaderboards.
+                  </p>
+                </div>
+                <Switch
+                  id="is_live_voting"
+                  checked={formData.is_live_voting}
+                  onCheckedChange={(checked) => handleChange('is_live_voting', checked)}
+                />
+              </div>
             </CardContent>
           </Card>
 
