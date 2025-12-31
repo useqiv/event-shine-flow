@@ -84,17 +84,9 @@ const EventManagement = () => {
   const [newTicketType, setNewTicketType] = useState({
     name: '',
     price: '',
-    currency: orgSettings?.default_currency || 'USD',
     quantity_available: '',
     description: '',
   });
-
-  // Update currency when org settings load
-  useEffect(() => {
-    if (orgSettings?.default_currency) {
-      setNewTicketType(prev => ({ ...prev, currency: orgSettings.default_currency }));
-    }
-  }, [orgSettings?.default_currency]);
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -154,12 +146,12 @@ const EventManagement = () => {
         event_id: id,
         name: newTicketType.name,
         price: Number(newTicketType.price),
-        currency: newTicketType.currency,
+        currency: (event as any)?.currency || 'NGN',
         quantity_available: Number(newTicketType.quantity_available),
         description: newTicketType.description,
       });
       setIsAddTicketTypeOpen(false);
-      setNewTicketType({ name: '', price: '', currency: 'USD', quantity_available: '', description: '' });
+      setNewTicketType({ name: '', price: '', quantity_available: '', description: '' });
     } catch (error) {
       console.error('Failed to add ticket type:', error);
     }
@@ -421,16 +413,9 @@ const EventManagement = () => {
                         onChange={(e) => setNewTicketType(prev => ({ ...prev, name: e.target.value }))}
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Currency *</Label>
-                        <CurrencySelector
-                          value={newTicketType.currency}
-                          onValueChange={(value) => setNewTicketType(prev => ({ ...prev, currency: value }))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Price ({getCurrencySymbol(newTicketType.currency)}) *</Label>
+                        <Label>Price ({getCurrencySymbol((event as any)?.currency || 'NGN')}) *</Label>
                         <Input
                           type="number"
                           placeholder="0"
