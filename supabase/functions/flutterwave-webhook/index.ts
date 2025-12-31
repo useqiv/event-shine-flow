@@ -496,8 +496,14 @@ async function processSuccessfulPayment(paymentData: any) {
         contestant_name: contestant?.name || "Contestant",
       });
     }
-  } else if (type === "ticket" && event_id && ticket_type_id && user_id) {
+  } else if (type === "ticket" && event_id && ticket_type_id) {
     console.log("Recording ticket purchase...");
+
+    // Check if this is a guest purchase (user_id starts with "guest_" or is not a valid UUID)
+    const isGuestPurchase = !user_id || String(user_id).startsWith("guest_");
+    const actualUserId = isGuestPurchase ? null : user_id;
+
+    console.log("Is guest purchase:", isGuestPurchase, "User ID:", actualUserId);
 
     // Get event and ticket type details
     const { data: event } = await supabase
@@ -534,8 +540,9 @@ async function processSuccessfulPayment(paymentData: any) {
     }
 
     // Record ticket purchase – use wallet_transactions.id for idempotency/FK
+    // For guest purchases, store their email and name instead of user_id
     const { error: ticketError } = await supabase.from("tickets").insert({
-      user_id,
+      user_id: actualUserId,
       event_id,
       ticket_type_id,
       quantity: toPositiveInt(ticket_quantity, 1),
@@ -544,6 +551,8 @@ async function processSuccessfulPayment(paymentData: any) {
       qr_code,
       status: "active",
       transaction_id: db_transaction_id,
+      guest_email: isGuestPurchase ? (customer.email || null) : null,
+      guest_name: isGuestPurchase ? (customer.name || null) : null,
     });
 
     if (ticketError) {
@@ -564,14 +573,16 @@ async function processSuccessfulPayment(paymentData: any) {
         await recordInfluencerConversion(supabase, influencer_link_id, paymentData.amount);
       }
 
-      // Create notification
-      await supabase.from("notifications").insert({
-        user_id,
-        title: "Ticket Purchase Successful",
-        message: `Your ${ticket_quantity || 1} ticket(s) have been purchased successfully.`,
-        type: "ticket",
-        reference_id: event_id,
-      });
+      // Create notification only for logged-in users (not guests)
+      if (actualUserId) {
+        await supabase.from("notifications").insert({
+          user_id: actualUserId,
+          title: "Ticket Purchase Successful",
+          message: `Your ${ticket_quantity || 1} ticket(s) have been purchased successfully.`,
+          type: "ticket",
+          reference_id: event_id,
+        });
+      }
 
       // Send email receipt with QR code
       await sendReceipt({

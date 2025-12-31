@@ -2134,6 +2134,8 @@ export type Database = {
           amount_paid: number
           created_at: string
           event_id: string
+          guest_email: string | null
+          guest_name: string | null
           id: string
           payment_method: string
           qr_code: string
@@ -2141,12 +2143,14 @@ export type Database = {
           status: string
           ticket_type_id: string
           transaction_id: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount_paid: number
           created_at?: string
           event_id: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           payment_method: string
           qr_code: string
@@ -2154,12 +2158,14 @@ export type Database = {
           status?: string
           ticket_type_id: string
           transaction_id?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           amount_paid?: number
           created_at?: string
           event_id?: string
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           payment_method?: string
           qr_code?: string
@@ -2167,7 +2173,7 @@ export type Database = {
           status?: string
           ticket_type_id?: string
           transaction_id?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
