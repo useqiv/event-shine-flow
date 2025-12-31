@@ -77,11 +77,26 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
+      
+      const code = newLink.code.toUpperCase().trim();
+      if (!code) throw new Error('Tracking code is required');
+      if (!newLink.name.trim()) throw new Error('Influencer name is required');
+      
+      // Check if code already exists
+      const { data: existingLink } = await supabase
+        .from('influencer_links')
+        .select('id')
+        .eq('code', code)
+        .maybeSingle();
+      
+      if (existingLink) {
+        throw new Error('This tracking code is already in use. Please choose a different code.');
+      }
 
       const { error } = await supabase.from('influencer_links').insert({
         organization_id: user.id,
-        name: newLink.name,
-        code: newLink.code.toUpperCase(),
+        name: newLink.name.trim(),
+        code: code,
         contest_id: entityType === 'contest' ? entityId : null,
         event_id: entityType === 'event' ? entityId : null,
         commission_type: newLink.commission_type,
