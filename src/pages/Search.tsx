@@ -5,7 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Vote, Heart, Search as SearchIcon } from "lucide-react";
+import { Calendar, MapPin, Vote, Heart, Search as SearchIcon, Award } from "lucide-react";
 import { format } from "date-fns";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
@@ -62,8 +62,27 @@ const Search = () => {
     enabled: !!query,
   });
 
-  const isLoading = eventsLoading || contestsLoading || campaignsLoading;
-  const hasResults = (events?.length || 0) + (contests?.length || 0) + (campaigns?.length || 0) > 0;
+  const { data: nominations, isLoading: nominationsLoading } = useQuery({
+    queryKey: ["search-nominations", query],
+    queryFn: async () => {
+      if (!query) return [];
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("nominations")
+        .select("*")
+        .eq("is_active", true)
+        .lte("start_date", now)
+        .gte("end_date", now)
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!query,
+  });
+
+  const isLoading = eventsLoading || contestsLoading || campaignsLoading || nominationsLoading;
+  const hasResults = (events?.length || 0) + (contests?.length || 0) + (campaigns?.length || 0) + (nominations?.length || 0) > 0;
 
   return (
     <>
@@ -82,7 +101,7 @@ const Search = () => {
             </h1>
             {!isLoading && query && (
               <p className="text-muted-foreground">
-                Found {(events?.length || 0) + (contests?.length || 0) + (campaigns?.length || 0)} results
+                Found {(events?.length || 0) + (contests?.length || 0) + (campaigns?.length || 0) + (nominations?.length || 0)} results
               </p>
             )}
           </div>
@@ -90,7 +109,7 @@ const Search = () => {
           {!query && (
             <div className="text-center py-16">
               <SearchIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">Enter a search term to find events, contests, and campaigns</p>
+              <p className="text-muted-foreground text-lg">Enter a search term to find events, contests, campaigns, and nominations</p>
             </div>
           )}
 
@@ -222,6 +241,41 @@ const Search = () => {
                         <div className="flex justify-between text-sm text-muted-foreground">
                           <span>{campaign.currency} {campaign.current_amount.toLocaleString()}</span>
                           <span>of {campaign.currency} {campaign.goal_amount.toLocaleString()}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Nominations Section */}
+          {nominations && nominations.length > 0 && (
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Award className="h-6 w-6 text-primary" />
+                Nominations ({nominations.length})
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {nominations.map((nomination) => (
+                  <Link key={nomination.id} to={`/nominations/${nomination.id}`}>
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full">
+                      <div className="aspect-video bg-muted relative">
+                        {nomination.logo_url ? (
+                          <img src={nomination.logo_url} alt={nomination.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                            <Award className="h-12 w-12 text-muted-foreground" />
+                          </div>
+                        )}
+                        <Badge className="absolute top-2 right-2">Open for Nominations</Badge>
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{nomination.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          Ends {format(new Date(nomination.end_date), "PPP")}
                         </div>
                       </CardContent>
                     </Card>
