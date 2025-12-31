@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Plus, Calendar, Eye, Trash2, MoreHorizontal, Copy, ExternalLink } from 'lucide-react';
+import { Plus, Calendar, Eye, Trash2, MoreHorizontal, Copy, ExternalLink, Search } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,18 @@ export default function ManageNominations() {
   const { data: nominations, isLoading } = useOrganizationNominations();
   const deleteNomination = useDeleteNomination();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter nominations based on search
+  const filteredNominations = useMemo(() => {
+    if (!nominations) return [];
+    if (!searchQuery.trim()) return nominations;
+    const query = searchQuery.toLowerCase();
+    return nominations.filter((nom) =>
+      nom.title.toLowerCase().includes(query) ||
+      (nom.description && nom.description.toLowerCase().includes(query))
+    );
+  }, [nominations, searchQuery]);
 
   const getStatus = (startDate: string, endDate: string, isActive: boolean) => {
     if (!isActive) return { label: 'Inactive', variant: 'secondary' as const };
@@ -64,10 +77,21 @@ export default function ManageNominations() {
             <h1 className="text-3xl font-bold">Nominations</h1>
             <p className="text-muted-foreground">Create and manage nomination forms</p>
           </div>
-          <Button onClick={() => navigate('/org/nominations/create')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Nomination
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search nominations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Button onClick={() => navigate('/org/nominations/create')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Nomination
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -84,9 +108,9 @@ export default function ManageNominations() {
               </Card>
             ))}
           </div>
-        ) : nominations && nominations.length > 0 ? (
+        ) : filteredNominations && filteredNominations.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {nominations.map((nomination) => {
+            {filteredNominations.map((nomination) => {
               const status = getStatus(nomination.start_date, nomination.end_date, nomination.is_active);
               return (
                 <Card key={nomination.id} className="relative">
@@ -160,6 +184,21 @@ export default function ManageNominations() {
               );
             })}
           </div>
+        ) : nominations && nominations.length > 0 && searchQuery ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="rounded-full bg-muted p-4 mb-4">
+                <Search className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No Results Found</h3>
+              <p className="text-muted-foreground text-center mb-4">
+                No nominations match "{searchQuery}"
+              </p>
+              <Button variant="outline" onClick={() => setSearchQuery('')}>
+                Clear Search
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
