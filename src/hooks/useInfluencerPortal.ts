@@ -226,12 +226,22 @@ export const useClaimInfluencerCode = () => {
         .from('influencer_links')
         .select('id, influencer_user_id')
         .eq('code', code.toUpperCase())
-        .single();
+        .maybeSingle();
 
-      if (findError || !link) {
+      if (findError) {
+        throw new Error('Error finding influencer code');
+      }
+
+      if (!link) {
         throw new Error('Influencer code not found');
       }
 
+      // Check if already claimed by this user
+      if (link.influencer_user_id === user.id) {
+        throw new Error('You have already claimed this code');
+      }
+
+      // Check if already claimed by another user
       if (link.influencer_user_id) {
         throw new Error('This code is already claimed by another influencer');
       }
@@ -240,12 +250,15 @@ export const useClaimInfluencerCode = () => {
       const { error: updateError } = await supabase
         .from('influencer_links')
         .update({ influencer_user_id: user.id })
-        .eq('id', link.id);
+        .eq('id', link.id)
+        .is('influencer_user_id', null); // Extra safety: only update if still unclaimed
 
       if (updateError) throw updateError;
     },
     onSuccess: () => {
+      // Force refetch the links immediately
       queryClient.invalidateQueries({ queryKey: ['influencer-links'] });
+      queryClient.invalidateQueries({ queryKey: ['influencer-stats'] });
       toast.success('Influencer code claimed successfully!');
     },
     onError: (error: Error) => {
