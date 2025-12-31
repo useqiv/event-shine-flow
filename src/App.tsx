@@ -90,6 +90,14 @@ import AdminVoteReconciliation from "./pages/admin/AdminVoteReconciliation";
 import AdminActivityLog from "./pages/admin/AdminActivityLog";
 import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AdminOrgReports from "./pages/admin/AdminOrgReports";
+
+// Influencer Dashboard Pages
+import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
+import InfluencerLinks from "./pages/influencer/InfluencerLinks";
+import InfluencerEarnings from "./pages/influencer/InfluencerEarnings";
+import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
+import InfluencerSettings from "./pages/influencer/InfluencerSettings";
+
 import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -112,6 +120,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   const isOrganization = role === 'organization';
   const isAdmin = role === 'admin';
+  const isInfluencer = (role as string) === 'influencer';
   
   if (isOrganization && location.pathname === '/dashboard') {
     return <Navigate to="/org/dashboard" replace />;
@@ -121,11 +130,19 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
+  if (isInfluencer && location.pathname === '/dashboard') {
+    return <Navigate to="/influencer" replace />;
+  }
+
   if (!isOrganization && !isAdmin && location.pathname.startsWith('/org/')) {
     return <Navigate to="/dashboard" replace />;
   }
   
   if (!isAdmin && location.pathname.startsWith('/admin/')) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (!isInfluencer && location.pathname.startsWith('/influencer')) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -143,7 +160,9 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   if (user) {
     const isOrganization = role === 'organization';
     const isAdmin = role === 'admin';
+    const isInfluencer = (role as string) === 'influencer';
     if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+    if (isInfluencer) return <Navigate to="/influencer" replace />;
     return <Navigate to={isOrganization ? "/org/dashboard" : "/dashboard"} replace />;
   }
   
@@ -232,6 +251,13 @@ const AppRoutes = () => (
         <Route path="/admin/system-health" element={<ProtectedRoute><AdminSystemHealth /></ProtectedRoute>} />
         <Route path="/admin/org-reports" element={<ProtectedRoute><AdminOrgReports /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
+        
+        {/* Influencer Dashboard Routes */}
+        <Route path="/influencer" element={<ProtectedRoute><InfluencerDashboard /></ProtectedRoute>} />
+        <Route path="/influencer/links" element={<ProtectedRoute><InfluencerLinks /></ProtectedRoute>} />
+        <Route path="/influencer/earnings" element={<ProtectedRoute><InfluencerEarnings /></ProtectedRoute>} />
+        <Route path="/influencer/payouts" element={<ProtectedRoute><InfluencerPayouts /></ProtectedRoute>} />
+        <Route path="/influencer/settings" element={<ProtectedRoute><InfluencerSettings /></ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
   </Routes>

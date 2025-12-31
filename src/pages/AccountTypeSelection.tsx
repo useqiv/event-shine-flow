@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, User, ArrowRight, Gift } from "lucide-react";
+import { Building2, User, ArrowRight, Gift, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApplyReferral } from "@/hooks/useReferral";
 
 const AccountTypeSelection = () => {
-  const [selectedType, setSelectedType] = useState<"user" | "organization" | null>(null);
+  const [selectedType, setSelectedType] = useState<"user" | "organization" | "influencer" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [pendingReferral, setPendingReferral] = useState<string | null>(null);
   const { user } = useAuth();
@@ -32,11 +32,11 @@ const AccountTypeSelection = () => {
 
     setIsLoading(true);
     try {
-      // Update user role from default 'user' to 'organization' if selected
-      if (selectedType === "organization") {
+      // Update user role based on selection
+      if (selectedType === "organization" || selectedType === "influencer") {
         const { error } = await supabase
           .from("user_roles")
-          .update({ role: "organization" })
+          .update({ role: selectedType })
           .eq("user_id", user.id);
 
         if (error) throw error;
@@ -74,10 +74,13 @@ const AccountTypeSelection = () => {
         title: "Account setup complete!",
         description: selectedType === "organization" 
           ? "You can now create events and contests." 
+          : selectedType === "influencer"
+          ? "Claim your influencer codes to start earning!"
           : "Start exploring events and contests!",
       });
 
-      navigate(selectedType === "organization" ? "/org/dashboard" : "/dashboard", { replace: true });
+      const redirectPath = selectedType === "organization" ? "/org/dashboard" : selectedType === "influencer" ? "/influencer" : "/dashboard";
+      navigate(redirectPath, { replace: true });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -103,6 +106,13 @@ const AccountTypeSelection = () => {
       description: "Host events, create contests, and manage your audience",
       icon: Building2,
       features: ["Create & manage events", "Host voting contests", "Sell tickets & track sales"],
+    },
+    {
+      id: "influencer" as const,
+      title: "Influencer / Promoter",
+      description: "Promote events and contests, earn commissions on sales",
+      icon: Users,
+      features: ["Claim influencer codes", "Track clicks & conversions", "Earn commission on sales"],
     },
   ];
 
