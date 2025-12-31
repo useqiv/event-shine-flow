@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calendar, CheckCircle2, Search, ArrowLeft, Award, Send, Users } from 'lucide-react';
@@ -24,9 +24,11 @@ import {
   usePublicNominationCategories,
   useSubmitNomination,
 } from '@/hooks/useNominations';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PublicNomination() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const { data: nomination, isLoading: nominationLoading } = usePublicNomination(id!);
   const { data: categories, isLoading: categoriesLoading } = usePublicNominationCategories(id!);
   const submitNomination = useSubmitNomination();
@@ -38,6 +40,13 @@ export default function PublicNomination() {
   const [submitted, setSubmitted] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
+
+  // Auto-fill email for authenticated users
+  useEffect(() => {
+    if (user?.email) {
+      setSubmitterEmail(user.email);
+    }
+  }, [user]);
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
