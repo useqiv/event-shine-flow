@@ -17,12 +17,13 @@ export const useUserRole = () => {
       
       if (error) throw error;
       
-      // Prioritize roles: admin > organization > user
+      // Prioritize roles: admin > organization > influencer > user
       if (!data || data.length === 0) return 'user';
       
       const roles = data.map(r => r.role);
       if (roles.includes('admin')) return 'admin';
       if (roles.includes('organization')) return 'organization';
+      if (roles.includes('influencer')) return 'influencer';
       return 'user';
     },
     enabled: !!user?.id,
