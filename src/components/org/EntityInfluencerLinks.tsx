@@ -104,6 +104,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
         event_id: entityType === 'event' ? entityId : null,
         commission_type: newLink.commission_type,
         commission_value: Number(newLink.commission_value) || 0,
+        commission_currency: currency,
       });
 
       if (error) throw error;
