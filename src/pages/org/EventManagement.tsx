@@ -317,7 +317,7 @@ const EventManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue, ticketTypes?.[0]?.currency || 'NGN')}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue, (event as any)?.currency || 'NGN')}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -337,13 +337,13 @@ const EventManagement = () => {
                         <TooltipContent>
                           <p className="text-xs">
                             {ticketCommission}% commission<br/>
-                            Deducted: {formatCurrency(commissionDeducted, ticketTypes?.[0]?.currency || 'NGN')}
+                            Deducted: {formatCurrency(commissionDeducted, (event as any)?.currency || 'NGN')}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, ticketTypes?.[0]?.currency || 'NGN')}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, (event as any)?.currency || 'NGN')}</p>
                   {netRevenue > 0 && (
                     <Dialog>
                       <DialogTrigger asChild>
@@ -355,7 +355,7 @@ const EventManagement = () => {
                       <DialogContent>
                         <EventPayoutRequest
                           netRevenue={netRevenue}
-                          currency={ticketTypes?.[0]?.currency || 'NGN'}
+                          currency={(event as any)?.currency || 'NGN'}
                           itemType="event"
                           itemTitle={event.title}
                         />
@@ -599,7 +599,7 @@ const EventManagement = () => {
           <TabsContent value="payout" className="space-y-6">
             <EventPayoutRequest
               netRevenue={netRevenue}
-              currency={ticketTypes?.[0]?.currency || 'NGN'}
+              currency={(event as any)?.currency || 'NGN'}
               itemType="event"
               itemTitle={event.title}
             />
