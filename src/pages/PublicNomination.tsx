@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, CheckCircle2, Search, ArrowLeft, Award, Send, Users } from 'lucide-react';
+import { Calendar, CheckCircle2, Search, ArrowLeft, Award, Send, Users, Info } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
@@ -23,6 +23,7 @@ import {
   usePublicNomination,
   usePublicNominationCategories,
   useSubmitNomination,
+  useCheckPreviousNomination,
 } from '@/hooks/useNominations';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -40,6 +41,12 @@ export default function PublicNomination() {
   const [submitted, setSubmitted] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
+
+  // Check if this email has already submitted to this category
+  const { data: previousNomination, isLoading: checkingPrevious } = useCheckPreviousNomination(
+    selectedCategory?.id || '',
+    submitterEmail
+  );
 
   // Auto-fill email for authenticated users
   useEffect(() => {
@@ -372,6 +379,17 @@ export default function PublicNomination() {
                       className="mt-1"
                       required
                     />
+                    {/* Show info if email has previously nominated in this category */}
+                    {previousNomination && previousNomination.length > 0 && (
+                      <div className="flex items-start gap-2 mt-2 p-2 rounded-md bg-muted text-sm">
+                        <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">
+                          You've previously nominated {previousNomination.length === 1 
+                            ? `"${previousNomination[0].nominee_name}"` 
+                            : `${previousNomination.length} people`} in this category. You can still submit another nomination.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3 pt-2">
