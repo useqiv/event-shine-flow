@@ -18,7 +18,7 @@ export const AIChatWidget = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm VoteBot 🤖 I can help you discover contests, find events, and answer questions about voting. What would you like to know?",
+      content: "Hi! I'm VoteBot 🤖 I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
     },
   ]);
   const [input, setInput] = useState("");

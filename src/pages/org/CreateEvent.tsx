@@ -11,6 +11,7 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import { useCreateEvent } from '@/hooks/useOrganization';
 import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
+import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
 import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -115,7 +116,17 @@ const CreateEvent = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description">Description</Label>
+                  <AIDescriptionGenerator
+                    type="event"
+                    title={formData.title}
+                    category={formData.category}
+                    venue={formData.venue}
+                    eventDate={formData.event_date}
+                    onGenerated={(desc) => handleChange('description', desc)}
+                  />
+                </div>
                 <Textarea
                   id="description"
                   placeholder="Describe your event..."

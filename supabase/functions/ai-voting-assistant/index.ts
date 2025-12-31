@@ -24,8 +24,8 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch active contests and upcoming events for context
-    const [contestsResult, eventsResult] = await Promise.all([
+    // Fetch active contests, events, and contestants for context
+    const [contestsResult, eventsResult, contestantsResult, campaignsResult] = await Promise.all([
       supabase
         .from("contests")
         .select("id, title, category, vote_price, vote_currency, end_date, description")
@@ -38,10 +38,22 @@ serve(async (req) => {
         .eq("is_active", true)
         .gte("event_date", new Date().toISOString())
         .limit(10),
+      supabase
+        .from("contestants")
+        .select("id, name, bio, vote_count, contest_id, contests(title, category)")
+        .order("vote_count", { ascending: false })
+        .limit(20),
+      supabase
+        .from("campaigns")
+        .select("id, title, category, current_amount, goal_amount, donor_count, short_description")
+        .eq("status", "active")
+        .limit(10),
     ]);
 
     const activeContests = contestsResult.data || [];
     const upcomingEvents = eventsResult.data || [];
+    const topContestants = contestantsResult.data || [];
+    const activeCampaigns = campaignsResult.data || [];
 
     // Build context for the AI
     const contestContext = activeContests.length > 0
@@ -56,9 +68,25 @@ serve(async (req) => {
         ).join("\n")}`
       : "No upcoming events at the moment.";
 
-    const systemPrompt = `You are VoteBot, a friendly AI assistant for a voting and events platform. You help users:
-- Discover active contests and vote for their favorite contestants
+    const contestantContext = topContestants.length > 0
+      ? `Top Contestants by Votes:\n${topContestants.map(c => {
+          const contestInfo = c.contests as any;
+          return `- "${c.name}" in "${contestInfo?.title || 'Unknown Contest'}" (${contestInfo?.category || 'General'}) - ${c.vote_count} votes${c.bio ? `. Bio: ${c.bio.substring(0, 100)}` : ''}`;
+        }).join("\n")}`
+      : "No contestants available.";
+
+    const campaignContext = activeCampaigns.length > 0
+      ? `Active Campaigns:\n${activeCampaigns.map(c => {
+          const progress = c.goal_amount > 0 ? Math.round((c.current_amount / c.goal_amount) * 100) : 0;
+          return `- "${c.title}" (${c.category}) - ${progress}% funded, ${c.donor_count} donors. ${c.short_description || ''}`;
+        }).join("\n")}`
+      : "No active campaigns at the moment.";
+
+    const systemPrompt = `You are VoteBot, a friendly AI assistant for a voting, events, and crowdfunding platform. You help users:
+- Discover contestants based on their preferences (category, style, personality)
+- Find active contests and vote for their favorite contestants
 - Find upcoming events and buy tickets
+- Discover campaigns they might want to support
 - Understand how voting works (paid voting system with wallet balance)
 - Learn about features like referral bonuses and promo codes
 
@@ -67,13 +95,26 @@ ${contestContext}
 
 ${eventContext}
 
+${contestantContext}
+
+${campaignContext}
+
+CONTESTANT DISCOVERY CAPABILITIES:
+When users ask for help choosing who to vote for or want recommendations, you can:
+- Suggest contestants based on their stated preferences (e.g., "I like music" → suggest music contest contestants)
+- Recommend trending contestants with high vote counts
+- Match user interests to specific categories
+- Provide info about contestant bios when available
+
 Guidelines:
 - Be enthusiastic and helpful
-- When recommending contests or events, mention specific ones from the data above
+- When recommending contests, events, or contestants, mention specific ones from the data above
+- If a user says they like a category (e.g., "music", "fashion"), recommend contestants in that category
 - Explain that voting requires wallet balance and each vote costs the specified amount
 - Encourage users to check out the dashboard for more details
-- Keep responses concise but informative
-- If users want to vote or buy tickets, guide them to the specific contest/event pages`;
+- Keep responses concise but informative (max 200 words)
+- If users want to vote or buy tickets, guide them to the specific contest/event pages
+- When suggesting contestants, briefly explain why they might like them based on the bio or category`;
 
     console.log("Calling Lovable AI with messages:", messages.length);
 
