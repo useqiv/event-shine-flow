@@ -68,7 +68,7 @@ export function CustomSlugInput({
       {hasError && (
         <p className="text-xs text-destructive flex items-center gap-1">
           <AlertCircle className="h-3 w-3" />
-          Custom URL cannot be exactly 5 characters
+          URL slug cannot be exactly 5 characters long
         </p>
       )}
       
@@ -80,7 +80,7 @@ export function CustomSlugInput({
       )}
       
       <p className="text-xs text-muted-foreground">
-        Use lowercase letters, numbers, and hyphens only. Cannot be exactly 5 characters.
+        Use lowercase letters, numbers, and hyphens only. <span className="text-destructive font-medium">Note: URLs cannot be exactly 5 characters.</span>
       </p>
     </div>
   );
