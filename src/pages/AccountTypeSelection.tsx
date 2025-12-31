@@ -33,16 +33,18 @@ const AccountTypeSelection = () => {
     setIsLoading(true);
     try {
       // Delete any existing roles first, then insert the new one
-      await supabase
+      const { error: deleteRoleError } = await supabase
         .from("user_roles")
         .delete()
         .eq("user_id", user.id);
-      
-      const { error } = await supabase
+
+      if (deleteRoleError) throw deleteRoleError;
+
+      const { error: insertRoleError } = await supabase
         .from("user_roles")
         .insert({ user_id: user.id, role: selectedType });
 
-      if (error) throw error;
+      if (insertRoleError) throw insertRoleError;
 
       // Mark that user has completed account setup
       const { error: profileError } = await supabase
@@ -68,9 +70,15 @@ const AccountTypeSelection = () => {
         localStorage.removeItem('pendingReferral');
       }
 
-      // Invalidate profile cache to ensure fresh data
-      await queryClient.invalidateQueries({ queryKey: ['profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-role'] });
+      // Update caches immediately to avoid redirect races
+      queryClient.setQueryData(['profile', user.id], (prev: any) =>
+        prev ? { ...prev, account_type_selected: true } : prev
+      );
+      queryClient.setQueryData(['user-role', user.id], selectedType);
+
+      // Invalidate caches to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user-role'] });
 
       toast({
         title: "Account setup complete!",
