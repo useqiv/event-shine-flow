@@ -388,3 +388,23 @@ export function usePublicNominationCategories(nominationId: string) {
     enabled: !!nominationId,
   });
 }
+
+// Check if an email has already submitted a nomination for a given category
+export function useCheckPreviousNomination(categoryId: string, email: string) {
+  return useQuery({
+    queryKey: ['check-previous-nomination', categoryId, email],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('nomination_submissions')
+        .select('id, nominee_name, created_at')
+        .eq('category_id', categoryId)
+        .eq('submitter_email', email)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data as { id: string; nominee_name: string; created_at: string }[];
+    },
+    enabled: !!categoryId && !!email && email.includes('@'),
+  });
+}
