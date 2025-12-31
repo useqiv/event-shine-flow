@@ -137,7 +137,7 @@ const InfluencerDashboard = () => {
                       <p className="font-medium">{link.name}</p>
                       <p className="text-sm text-muted-foreground">
                         Code: <span className="font-mono bg-muted px-2 py-0.5 rounded">{link.code}</span>
-                        <span className="ml-2 text-xs">({link.commission_currency || 'NGN'})</span>
+                        <span className="ml-2 text-xs">({link.commission_currency || link.events?.currency || link.contests?.vote_currency || 'NGN'})</span>
                       </p>
                       {link.contests?.title && (
                         <p className="text-xs text-muted-foreground">Contest: {link.contests.title}</p>
@@ -154,7 +154,7 @@ const InfluencerDashboard = () => {
                         <span className="font-medium">{link.total_conversions}</span> conversions
                       </p>
                       <p className="text-sm text-primary font-medium">
-                        {formatCurrency(link.total_commission || 0, link.commission_currency || 'NGN')} earned
+                        {formatCurrency(link.total_commission || 0, link.commission_currency || link.events?.currency || link.contests?.vote_currency || 'NGN')} earned
                       </p>
                     </div>
                   </div>
