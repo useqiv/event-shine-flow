@@ -758,9 +758,27 @@ export const useDeleteEvent = () => {
   
   return useMutation({
     mutationFn: async (eventId: string) => {
-      // Delete ticket types first (they reference the event)
+      // Delete promo codes first (they reference the event)
+      await supabase
+        .from('promo_codes')
+        .delete()
+        .eq('event_id', eventId);
+      
+      // Delete ticket types (they reference the event)
       await supabase
         .from('ticket_types')
+        .delete()
+        .eq('event_id', eventId);
+      
+      // Delete event auto posts
+      await supabase
+        .from('event_auto_posts')
+        .delete()
+        .eq('event_id', eventId);
+      
+      // Delete influencer links
+      await supabase
+        .from('influencer_links')
         .delete()
         .eq('event_id', eventId);
       
