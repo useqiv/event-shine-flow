@@ -11,8 +11,18 @@ import { ImageUpload } from '@/components/ui/image-upload';
 import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import { useCreateEvent } from '@/hooks/useOrganization';
 import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
-import { Calendar, MapPin, FileText, Link as LinkIcon } from 'lucide-react';
+import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
+
+const currencies = [
+  { code: 'NGN', label: 'Nigerian Naira (₦)' },
+  { code: 'USD', label: 'US Dollar ($)' },
+  { code: 'GBP', label: 'British Pound (£)' },
+  { code: 'EUR', label: 'Euro (€)' },
+  { code: 'GHS', label: 'Ghanaian Cedi (₵)' },
+  { code: 'KES', label: 'Kenyan Shilling (KSh)' },
+  { code: 'ZAR', label: 'South African Rand (R)' },
+];
 
 const categories = [
   'Music',
@@ -35,6 +45,7 @@ const CreateEvent = () => {
     title: '',
     description: '',
     category: '',
+    currency: 'NGN',
     image_url: '',
     event_date: '',
     venue: '',
@@ -128,6 +139,24 @@ const CreateEvent = () => {
                     <SelectContent>
                       {categories.map((cat) => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency *</Label>
+                  <Select
+                    value={formData.currency}
+                    onValueChange={(value) => handleChange('currency', value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>{curr.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

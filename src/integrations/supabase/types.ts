@@ -695,6 +695,7 @@ export type Database = {
           address: string | null
           category: string
           created_at: string
+          currency: string
           custom_slug: string | null
           description: string | null
           event_date: string
@@ -712,6 +713,7 @@ export type Database = {
           address?: string | null
           category: string
           created_at?: string
+          currency?: string
           custom_slug?: string | null
           description?: string | null
           event_date: string
@@ -729,6 +731,7 @@ export type Database = {
           address?: string | null
           category?: string
           created_at?: string
+          currency?: string
           custom_slug?: string | null
           description?: string | null
           event_date?: string
