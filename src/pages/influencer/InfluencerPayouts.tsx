@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InfluencerLayout from '@/components/layout/InfluencerLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useInfluencerStats, useInfluencerPayouts, useRequestPayout, useInfluencerProfile } from '@/hooks/useInfluencerPortal';
+import { useInfluencerStats, useInfluencerPayouts, useRequestPayout, useInfluencerProfile, CurrencyBalance } from '@/hooks/useInfluencerPortal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Wallet, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { formatCurrency } from '@/components/ui/currency-selector';
@@ -20,6 +20,7 @@ const InfluencerPayouts = () => {
   const requestPayout = useRequestPayout();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>(profile?.payment_method || 'bank_transfer');
   const [bankName, setBankName] = useState(profile?.bank_name || '');
@@ -27,14 +28,26 @@ const InfluencerPayouts = () => {
   const [accountName, setAccountName] = useState(profile?.account_name || '');
   const [usdtAddress, setUsdtAddress] = useState(profile?.usdt_address || '');
 
+  // Get balances with available funds
+  const availableBalances = stats?.balances_by_currency?.filter(b => b.available_balance > 0) || [];
+
+  // Set default selected currency when data loads
+  useEffect(() => {
+    if (!selectedCurrency && availableBalances.length > 0) {
+      setSelectedCurrency(availableBalances[0].currency);
+    }
+  }, [availableBalances, selectedCurrency]);
+
+  const selectedBalance = availableBalances.find(b => b.currency === selectedCurrency);
+
   const handleRequestPayout = async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount <= 0) return;
-    if (numAmount > (stats?.available_balance || 0)) return;
+    if (!selectedBalance || numAmount > selectedBalance.available_balance) return;
 
     await requestPayout.mutateAsync({
       amount: numAmount,
-      currency: 'USD',
+      currency: selectedCurrency,
       payment_method: paymentMethod,
       bank_name: paymentMethod === 'bank_transfer' ? bankName : undefined,
       account_number: paymentMethod === 'bank_transfer' ? accountNumber : undefined,
@@ -61,6 +74,8 @@ const InfluencerPayouts = () => {
     }
   };
 
+  const hasAnyBalance = availableBalances.length > 0;
+
   return (
     <InfluencerLayout>
       <div className="space-y-6">
@@ -72,7 +87,7 @@ const InfluencerPayouts = () => {
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button disabled={!stats?.available_balance || stats.available_balance <= 0}>
+              <Button disabled={!hasAnyBalance}>
                 <Wallet className="h-4 w-4 mr-2" />
                 Request Payout
               </Button>
@@ -82,12 +97,31 @@ const InfluencerPayouts = () => {
                 <DialogTitle>Request Payout</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(stats?.available_balance || 0, 'USD')}
-                  </p>
+                {/* Currency Selection */}
+                <div className="space-y-2">
+                  <Label>Select Currency</Label>
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBalances.map((balance) => (
+                        <SelectItem key={balance.currency} value={balance.currency}>
+                          {balance.currency} - Available: {formatCurrency(balance.available_balance, balance.currency)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {selectedBalance && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Available Balance ({selectedCurrency})</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {formatCurrency(selectedBalance.available_balance, selectedCurrency)}
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="amount">Amount</Label>
@@ -97,7 +131,7 @@ const InfluencerPayouts = () => {
                     placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    max={stats?.available_balance}
+                    max={selectedBalance?.available_balance}
                   />
                 </div>
 
@@ -140,7 +174,13 @@ const InfluencerPayouts = () => {
 
                 <Button
                   onClick={handleRequestPayout}
-                  disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > (stats?.available_balance || 0) || requestPayout.isPending}
+                  disabled={
+                    !amount || 
+                    parseFloat(amount) <= 0 || 
+                    !selectedBalance ||
+                    parseFloat(amount) > selectedBalance.available_balance || 
+                    requestPayout.isPending
+                  }
                   className="w-full"
                 >
                   {requestPayout.isPending ? 'Submitting...' : 'Submit Request'}
@@ -150,52 +190,42 @@ const InfluencerPayouts = () => {
           </Dialog>
         </div>
 
-        {/* Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Available Balance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(stats?.available_balance || 0, 'USD')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payouts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <p className="text-2xl font-bold text-yellow-600">
-                  {formatCurrency(stats?.pending_payout || 0, 'USD')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Paid</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <p className="text-2xl font-bold">
-                  {formatCurrency(stats?.paid_earnings || 0, 'USD')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+        {/* Balance Cards by Currency */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {statsLoading ? (
+            <>
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </>
+          ) : stats?.balances_by_currency && stats.balances_by_currency.length > 0 ? (
+            stats.balances_by_currency.map((balance) => (
+              <Card key={balance.currency}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">{balance.currency}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Available</span>
+                    <span className="font-bold text-green-600">{formatCurrency(balance.available_balance, balance.currency)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Pending</span>
+                    <span className="text-yellow-600">{formatCurrency(balance.pending_payout, balance.currency)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Paid</span>
+                    <span>{formatCurrency(balance.paid_earnings, balance.currency)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card className="col-span-full">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No earnings yet
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Payout History */}
@@ -215,7 +245,7 @@ const InfluencerPayouts = () => {
                 {payouts.map((payout: any) => (
                   <div key={payout.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
-                      <p className="font-medium">{formatCurrency(payout.amount, payout.currency)}</p>
+                      <p className="font-medium">{formatCurrency(payout.amount, payout.currency || 'NGN')}</p>
                       <p className="text-sm text-muted-foreground">
                         {payout.payment_method === 'bank_transfer' ? 'Bank Transfer' : 'Crypto (USDT)'}
                       </p>

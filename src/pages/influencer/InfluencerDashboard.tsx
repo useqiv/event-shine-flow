@@ -57,54 +57,6 @@ const InfluencerDashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {formatCurrency(stats?.total_revenue || 0, 'USD')}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <div className="text-2xl font-bold text-primary">
-                  {formatCurrency(stats?.total_commission || 0, 'USD')}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(stats?.available_balance || 0, 'USD')}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Links</CardTitle>
               <Link2 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -112,11 +64,59 @@ const InfluencerDashboard = () => {
               {linksLoading ? (
                 <Skeleton className="h-8 w-24" />
               ) : (
-                <div className="text-2xl font-bold">{links?.filter(l => l.is_active).length || 0}</div>
+                <div className="text-2xl font-bold">{links?.filter((l: any) => l.is_active).length || 0}</div>
               )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Multi-Currency Balances */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5" />
+              Earnings by Currency
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : stats?.balances_by_currency && stats.balances_by_currency.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {stats.balances_by_currency.map((balance) => (
+                  <div key={balance.currency} className="p-4 border rounded-lg bg-muted/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-lg">{balance.currency}</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Earned</span>
+                        <span className="font-medium">{formatCurrency(balance.total_commission, balance.currency)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Pending</span>
+                        <span className="text-yellow-600">{formatCurrency(balance.pending_payout, balance.currency)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Paid</span>
+                        <span>{formatCurrency(balance.paid_earnings, balance.currency)}</span>
+                      </div>
+                      <div className="flex justify-between pt-2 border-t">
+                        <span className="font-medium">Available</span>
+                        <span className="font-bold text-green-600">{formatCurrency(balance.available_balance, balance.currency)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No earnings yet</p>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Links */}
         <Card>
@@ -137,6 +137,7 @@ const InfluencerDashboard = () => {
                       <p className="font-medium">{link.name}</p>
                       <p className="text-sm text-muted-foreground">
                         Code: <span className="font-mono bg-muted px-2 py-0.5 rounded">{link.code}</span>
+                        <span className="ml-2 text-xs">({link.commission_currency || 'NGN'})</span>
                       </p>
                       {link.contests?.title && (
                         <p className="text-xs text-muted-foreground">Contest: {link.contests.title}</p>
@@ -153,7 +154,7 @@ const InfluencerDashboard = () => {
                         <span className="font-medium">{link.total_conversions}</span> conversions
                       </p>
                       <p className="text-sm text-primary font-medium">
-                        {formatCurrency(link.total_commission || 0, 'USD')} earned
+                        {formatCurrency(link.total_commission || 0, link.commission_currency || 'NGN')} earned
                       </p>
                     </div>
                   </div>

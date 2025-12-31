@@ -49,60 +49,131 @@ export const useInfluencerLinks = () => {
   });
 };
 
+export interface CurrencyBalance {
+  currency: string;
+  total_commission: number;
+  total_revenue: number;
+  pending_payout: number;
+  paid_earnings: number;
+  available_balance: number;
+}
+
+export interface InfluencerStatsData {
+  total_clicks: number;
+  total_conversions: number;
+  // Legacy single-currency fields (sum of all currencies - for backwards compat)
+  total_revenue: number;
+  total_commission: number;
+  pending_payout: number;
+  paid_earnings: number;
+  available_balance: number;
+  // Multi-currency breakdown
+  balances_by_currency: CurrencyBalance[];
+}
+
 export const useInfluencerStats = () => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['influencer-stats', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<InfluencerStatsData | null> => {
       if (!user?.id) return null;
 
-      // Get all links for this influencer
+      // Get all links for this influencer with currency
       const { data: links, error: linksError } = await supabase
         .from('influencer_links')
-        .select('total_clicks, total_conversions, total_revenue, total_commission')
+        .select('total_clicks, total_conversions, total_revenue, total_commission, commission_currency')
         .eq('influencer_user_id', user.id);
 
       if (linksError) throw linksError;
 
-      // Calculate totals
-      const totals = (links || []).reduce(
-        (acc, link) => ({
-          total_clicks: acc.total_clicks + (link.total_clicks || 0),
-          total_conversions: acc.total_conversions + (link.total_conversions || 0),
-          total_revenue: acc.total_revenue + Number(link.total_revenue || 0),
-          total_commission: acc.total_commission + Number(link.total_commission || 0),
-        }),
-        { total_clicks: 0, total_conversions: 0, total_revenue: 0, total_commission: 0 }
-      );
+      // Group by currency
+      const byCurrency: Record<string, { total_commission: number; total_revenue: number }> = {};
+      let total_clicks = 0;
+      let total_conversions = 0;
 
-      // Get pending payouts
+      (links || []).forEach((link) => {
+        const currency = link.commission_currency || 'NGN';
+        if (!byCurrency[currency]) {
+          byCurrency[currency] = { total_commission: 0, total_revenue: 0 };
+        }
+        byCurrency[currency].total_commission += Number(link.total_commission || 0);
+        byCurrency[currency].total_revenue += Number(link.total_revenue || 0);
+        total_clicks += link.total_clicks || 0;
+        total_conversions += link.total_conversions || 0;
+      });
+
+      // Get pending payouts grouped by currency
       const { data: pendingPayouts, error: payoutsError } = await supabase
         .from('influencer_payouts')
-        .select('amount')
+        .select('amount, currency')
         .eq('influencer_user_id', user.id)
         .in('status', ['pending', 'processing']);
 
       if (payoutsError) throw payoutsError;
 
-      const pending_payout = (pendingPayouts || []).reduce((acc, p) => acc + Number(p.amount), 0);
+      const pendingByCurrency: Record<string, number> = {};
+      (pendingPayouts || []).forEach((p) => {
+        const cur = p.currency || 'NGN';
+        pendingByCurrency[cur] = (pendingByCurrency[cur] || 0) + Number(p.amount);
+      });
 
-      // Get paid payouts
+      // Get paid payouts grouped by currency
       const { data: paidPayouts, error: paidError } = await supabase
         .from('influencer_payouts')
-        .select('amount')
+        .select('amount, currency')
         .eq('influencer_user_id', user.id)
         .eq('status', 'completed');
 
       if (paidError) throw paidError;
 
-      const paid_earnings = (paidPayouts || []).reduce((acc, p) => acc + Number(p.amount), 0);
+      const paidByCurrency: Record<string, number> = {};
+      (paidPayouts || []).forEach((p) => {
+        const cur = p.currency || 'NGN';
+        paidByCurrency[cur] = (paidByCurrency[cur] || 0) + Number(p.amount);
+      });
+
+      // Build balances by currency
+      const allCurrencies = new Set([
+        ...Object.keys(byCurrency),
+        ...Object.keys(pendingByCurrency),
+        ...Object.keys(paidByCurrency),
+      ]);
+
+      const balances_by_currency: CurrencyBalance[] = Array.from(allCurrencies).map((currency) => {
+        const earned = byCurrency[currency]?.total_commission || 0;
+        const revenue = byCurrency[currency]?.total_revenue || 0;
+        const pending = pendingByCurrency[currency] || 0;
+        const paid = paidByCurrency[currency] || 0;
+        return {
+          currency,
+          total_commission: earned,
+          total_revenue: revenue,
+          pending_payout: pending,
+          paid_earnings: paid,
+          available_balance: earned - pending - paid,
+        };
+      });
+
+      // Sort by available balance descending
+      balances_by_currency.sort((a, b) => b.available_balance - a.available_balance);
+
+      // Legacy totals (summed across all currencies - numbers only, no currency context)
+      const total_revenue = balances_by_currency.reduce((s, b) => s + b.total_revenue, 0);
+      const total_commission = balances_by_currency.reduce((s, b) => s + b.total_commission, 0);
+      const pending_payout = balances_by_currency.reduce((s, b) => s + b.pending_payout, 0);
+      const paid_earnings = balances_by_currency.reduce((s, b) => s + b.paid_earnings, 0);
+      const available_balance = balances_by_currency.reduce((s, b) => s + b.available_balance, 0);
 
       return {
-        ...totals,
+        total_clicks,
+        total_conversions,
+        total_revenue,
+        total_commission,
         pending_payout,
         paid_earnings,
-        available_balance: totals.total_commission - pending_payout - paid_earnings,
+        available_balance,
+        balances_by_currency,
       };
     },
     enabled: !!user?.id,

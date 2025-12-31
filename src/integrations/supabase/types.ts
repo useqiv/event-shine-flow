@@ -929,6 +929,7 @@ export type Database = {
       influencer_links: {
         Row: {
           code: string
+          commission_currency: string | null
           commission_type: string
           commission_value: number
           contest_id: string | null
@@ -947,6 +948,7 @@ export type Database = {
         }
         Insert: {
           code: string
+          commission_currency?: string | null
           commission_type?: string
           commission_value?: number
           contest_id?: string | null
@@ -965,6 +967,7 @@ export type Database = {
         }
         Update: {
           code?: string
+          commission_currency?: string | null
           commission_type?: string
           commission_value?: number
           contest_id?: string | null
