@@ -136,10 +136,12 @@ const AdminEventDetail: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
+  const formatCurrency = (amount: number, currencyCode?: string) => {
+    const currency = currencyCode || event?.currency || 'NGN';
+    const locale = currency === 'NGN' ? 'en-NG' : currency === 'USD' ? 'en-US' : currency === 'GBP' ? 'en-GB' : currency === 'EUR' ? 'de-DE' : 'en-US';
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: 'NGN',
+      currency: currency,
       minimumFractionDigits: 0
     }).format(amount);
   };
@@ -273,7 +275,7 @@ const AdminEventDetail: React.FC = () => {
                 <span className="text-sm text-muted-foreground">Revenue</span>
               </div>
               <div className="text-2xl font-bold mt-1">
-                {formatCurrency(totalRevenue)}
+                {formatCurrency(totalRevenue, event?.currency)}
               </div>
             </CardContent>
           </Card>
@@ -409,10 +411,10 @@ const AdminEventDetail: React.FC = () => {
                     {ticketTypes.map((type) => (
                       <TableRow key={type.id}>
                         <TableCell className="font-medium">{type.name}</TableCell>
-                        <TableCell>{formatCurrency(type.price)}</TableCell>
+                        <TableCell>{formatCurrency(type.price, type.currency || event?.currency)}</TableCell>
                         <TableCell>{type.quantity_sold}</TableCell>
                         <TableCell>{type.quantity_available}</TableCell>
-                        <TableCell>{formatCurrency(type.quantity_sold * type.price)}</TableCell>
+                        <TableCell>{formatCurrency(type.quantity_sold * type.price, type.currency || event?.currency)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -452,7 +454,7 @@ const AdminEventDetail: React.FC = () => {
                         </TableCell>
                         <TableCell>{ticket.ticket_types?.name || 'Unknown'}</TableCell>
                         <TableCell>{ticket.quantity}</TableCell>
-                        <TableCell>{formatCurrency(ticket.amount_paid)}</TableCell>
+                        <TableCell>{formatCurrency(ticket.amount_paid, event?.currency)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{ticket.payment_method}</Badge>
                         </TableCell>
