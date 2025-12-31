@@ -28,9 +28,10 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function PublicNomination() {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; slug?: string }>();
+  const idOrSlug = slug || id || '';
   const { user } = useAuth();
-  const { data: nomination, isLoading: nominationLoading } = usePublicNomination(id!);
+  const { data: nomination, isLoading: nominationLoading } = usePublicNomination(idOrSlug);
   // Use actual nomination ID for categories (not the slug from URL)
   const { data: categories, isLoading: categoriesLoading } = usePublicNominationCategories(nomination?.id || '');
   const submitNomination = useSubmitNomination();
