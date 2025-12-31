@@ -27,6 +27,8 @@ interface PaymentRequest {
   is_anonymous?: boolean;
   donor_message?: string;
   redirect_url?: string;
+  // Influencer tracking
+  influencer_link_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -128,6 +130,11 @@ const handler = async (req: Request): Promise<Response> => {
       user_id: payload.user_id,
       type: payload.type,
     };
+
+    // Add influencer tracking if present
+    if (payload.influencer_link_id) {
+      meta.influencer_link_id = payload.influencer_link_id;
+    }
 
     if (payload.type === "vote") {
       meta.contest_id = payload.contest_id;

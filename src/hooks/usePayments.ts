@@ -21,6 +21,8 @@ interface FlutterwavePaymentParams {
   is_anonymous?: boolean;
   donor_message?: string;
   redirect_url?: string;
+  // Influencer tracking
+  influencer_link_id?: string;
 }
 
 interface CryptoPaymentParams {
