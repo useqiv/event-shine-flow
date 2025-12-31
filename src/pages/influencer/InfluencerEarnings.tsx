@@ -40,7 +40,7 @@ const InfluencerEarnings = () => {
                     {formatCurrency(balance.total_commission, balance.currency)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Revenue: {formatCurrency(balance.total_revenue, balance.currency)}
+                    Available: {formatCurrency(balance.available_balance, balance.currency)}
                   </p>
                 </CardContent>
               </Card>
@@ -88,14 +88,13 @@ const InfluencerEarnings = () => {
                     <TableHead>Currency</TableHead>
                     <TableHead className="text-right">Clicks</TableHead>
                     <TableHead className="text-right">Conversions</TableHead>
-                    <TableHead className="text-right">Revenue</TableHead>
                     <TableHead className="text-right">Commission</TableHead>
                     <TableHead className="text-right">Earnings</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {links.map((link: any) => {
-                    const currency = link.commission_currency || 'NGN';
+                    const currency = link.commission_currency || link.events?.currency || link.contests?.vote_currency || 'NGN';
                     return (
                       <TableRow key={link.id}>
                         <TableCell className="font-medium">{link.name}</TableCell>
@@ -107,7 +106,6 @@ const InfluencerEarnings = () => {
                         </TableCell>
                         <TableCell className="text-right">{link.total_clicks}</TableCell>
                         <TableCell className="text-right">{link.total_conversions}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(link.total_revenue || 0, currency)}</TableCell>
                         <TableCell className="text-right">
                           {link.commission_value}{link.commission_type === 'percentage' ? '%' : ` ${currency}`}
                         </TableCell>
