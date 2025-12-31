@@ -36,8 +36,8 @@ export const useInfluencerLinks = () => {
         .from('influencer_links')
         .select(`
           *,
-          contests:contest_id(title),
-          events:event_id(title)
+          contests:contest_id(title, vote_currency),
+          events:event_id(title, currency)
         `)
         .eq('influencer_user_id', user.id)
         .order('created_at', { ascending: false });
