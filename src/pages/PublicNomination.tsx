@@ -31,7 +31,8 @@ export default function PublicNomination() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { data: nomination, isLoading: nominationLoading } = usePublicNomination(id!);
-  const { data: categories, isLoading: categoriesLoading } = usePublicNominationCategories(id!);
+  // Use actual nomination ID for categories (not the slug from URL)
+  const { data: categories, isLoading: categoriesLoading } = usePublicNominationCategories(nomination?.id || '');
   const submitNomination = useSubmitNomination();
 
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
