@@ -27,11 +27,12 @@ import {
 import { format } from 'date-fns';
 
 const EventDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; slug?: string }>();
+  const idOrSlug = id || slug || '';
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data: event, isLoading: eventLoading } = useEvent(id || '');
-  const { data: ticketTypes, isLoading: ticketsLoading } = useTicketTypes(id || '');
+  const { data: event, isLoading: eventLoading } = useEvent(idOrSlug);
+  const { data: ticketTypes, isLoading: ticketsLoading } = useTicketTypes(event?.id || '');
   const { data: wallet } = useWallet();
   const purchaseTicket = usePurchaseTicket();
 
