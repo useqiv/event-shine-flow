@@ -50,7 +50,7 @@ export const useInfluencerTracking = () => {
       localStorage.setItem(REFERRAL_TIMESTAMP_KEY, Date.now().toString());
       localStorage.setItem(`ref_clicked_${code}`, Date.now().toString());
 
-      // Record the click
+      // Record the click - trigger will automatically update total_clicks
       const { error: clickError } = await supabase
         .from('influencer_clicks')
         .insert({
@@ -63,20 +63,6 @@ export const useInfluencerTracking = () => {
       if (clickError) {
         console.error('Error recording click:', clickError);
         return;
-      }
-
-      // Update the total clicks on the link
-      const { data: currentLink } = await supabase
-        .from('influencer_links')
-        .select('total_clicks')
-        .eq('id', link.id)
-        .single();
-
-      if (currentLink) {
-        await supabase
-          .from('influencer_links')
-          .update({ total_clicks: currentLink.total_clicks + 1 })
-          .eq('id', link.id);
       }
 
       console.log('Tracked influencer click for code:', code);
