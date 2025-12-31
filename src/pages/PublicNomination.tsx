@@ -57,7 +57,7 @@ export default function PublicNomination() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedCategory || !nomineeName.trim()) {
+    if (!selectedCategory || !nomineeName.trim() || !submitterEmail.trim()) {
       return;
     }
 
@@ -65,7 +65,7 @@ export default function PublicNomination() {
       category_id: selectedCategory.id,
       nominee_name: nomineeName.trim(),
       submitter_name: submitterName.trim() || undefined,
-      submitter_email: submitterEmail.trim() || undefined,
+      submitter_email: submitterEmail.trim(),
     });
 
     setSubmitted(true);
@@ -353,7 +353,7 @@ export default function PublicNomination() {
                   </div>
 
                   <div>
-                    <Label htmlFor="submitter-email">Your Email (Optional)</Label>
+                    <Label htmlFor="submitter-email">Your Email *</Label>
                     <Input
                       id="submitter-email"
                       type="email"
@@ -361,6 +361,7 @@ export default function PublicNomination() {
                       value={submitterEmail}
                       onChange={(e) => setSubmitterEmail(e.target.value)}
                       className="mt-1"
+                      required
                     />
                   </div>
 
@@ -376,7 +377,7 @@ export default function PublicNomination() {
                     <Button 
                       type="submit" 
                       className="flex-1" 
-                      disabled={!nomineeName.trim() || submitNomination.isPending}
+                      disabled={!nomineeName.trim() || !submitterEmail.trim() || submitNomination.isPending}
                     >
                       {submitNomination.isPending ? 'Submitting...' : 'Submit'}
                     </Button>
