@@ -408,3 +408,29 @@ export function useCheckPreviousNomination(categoryId: string, email: string) {
     enabled: !!categoryId && !!email && email.includes('@'),
   });
 }
+
+// Fetch all unique emails that submitted nominations for a given nomination
+export function useNominationEmails(nominationId: string) {
+  const { data: categories } = useNominationCategories(nominationId);
+
+  return useQuery({
+    queryKey: ['nomination-emails', nominationId],
+    queryFn: async () => {
+      if (!categories || categories.length === 0) return [];
+      
+      const categoryIds = categories.map(c => c.id);
+      const { data, error } = await supabase
+        .from('nomination_submissions')
+        .select('submitter_email')
+        .in('category_id', categoryIds)
+        .not('submitter_email', 'is', null);
+
+      if (error) throw error;
+      
+      // Get unique emails
+      const emails = [...new Set(data.map(d => d.submitter_email).filter(Boolean))] as string[];
+      return emails;
+    },
+    enabled: !!categories && categories.length > 0,
+  });
+}

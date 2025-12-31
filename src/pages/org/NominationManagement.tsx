@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, Plus, Trash2, Edit2, Copy, ExternalLink, 
-  Calendar, Users, ChevronDown, ChevronRight 
+  Calendar, Users, ChevronDown, ChevronRight, Download
 } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,7 @@ import {
   useDeleteNominationCategory,
   useNominationSubmissions,
   useDeleteNominationSubmission,
+  useNominationEmails,
 } from '@/hooks/useNominations';
 import { toast } from 'sonner';
 
@@ -177,6 +178,7 @@ export default function NominationManagement() {
   const navigate = useNavigate();
   const { data: nomination, isLoading: nominationLoading } = useNomination(id!);
   const { data: categories, isLoading: categoriesLoading } = useNominationCategories(id!);
+  const { data: nominatorEmails } = useNominationEmails(id!);
   const updateNomination = useUpdateNomination();
   const createCategory = useCreateNominationCategory();
   const updateCategory = useUpdateNominationCategory();
@@ -238,6 +240,25 @@ export default function NominationManagement() {
     const url = `${window.location.origin}/nominations/${id}`;
     navigator.clipboard.writeText(url);
     toast.success('Public link copied to clipboard!');
+  };
+
+  const downloadNominatorEmails = () => {
+    if (!nominatorEmails || nominatorEmails.length === 0) {
+      toast.error('No nominator emails to download');
+      return;
+    }
+    
+    const content = nominatorEmails.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nominator-emails-${nomination?.title?.replace(/\s+/g, '-').toLowerCase() || id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(`Downloaded ${nominatorEmails.length} email(s)`);
   };
 
   if (nominationLoading) {
@@ -345,7 +366,7 @@ export default function NominationManagement() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={copyPublicLink}>
             <Copy className="mr-2 h-4 w-4" />
             Copy Public Link
@@ -353,6 +374,14 @@ export default function NominationManagement() {
           <Button variant="outline" onClick={() => window.open(`/nominations/${id}`, '_blank')}>
             <ExternalLink className="mr-2 h-4 w-4" />
             View Public Form
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={downloadNominatorEmails}
+            disabled={!nominatorEmails || nominatorEmails.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download Emails ({nominatorEmails?.length || 0})
           </Button>
         </div>
 
