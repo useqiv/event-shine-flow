@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CurrencySelector, { getCurrencySymbol, formatCurrency } from '@/components/ui/currency-selector';
@@ -103,6 +104,7 @@ const EventManagement = () => {
     event_date: '',
     venue: '',
     address: '',
+    custom_slug: '',
   });
 
   // Initialize edit form when event data loads
@@ -117,16 +119,26 @@ const EventManagement = () => {
         event_date: event.event_date ? new Date(event.event_date).toISOString().slice(0, 16) : '',
         venue: event.venue || '',
         address: event.address || '',
+        custom_slug: (event as any).custom_slug || '',
       });
     }
   }, [event]);
 
   const handleSaveEventDetails = async () => {
     if (!event) return;
+    
+    // Validate custom slug if provided
+    const slugError = validateCustomSlug(editForm.custom_slug);
+    if (slugError) {
+      toast.error(slugError);
+      return;
+    }
+    
     try {
       await updateEvent.mutateAsync({
         id: event.id,
         ...editForm,
+        custom_slug: editForm.custom_slug || null,
       });
       toast.success('Event details updated successfully');
     } catch (error) {
@@ -705,6 +717,20 @@ const EventManagement = () => {
                     onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom URL</CardTitle>
+                <CardDescription>Set a custom URL for your event</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CustomSlugInput
+                  value={editForm.custom_slug}
+                  onChange={(value) => setEditForm(prev => ({ ...prev, custom_slug: value }))}
+                  entityType="event"
+                />
               </CardContent>
             </Card>
 
