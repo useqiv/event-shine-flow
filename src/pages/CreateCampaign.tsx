@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Heart, CalendarIcon, ArrowLeft, Loader2, Target, FileText, Image, Eye, Edit, Link as LinkIcon } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Navbar from '@/components/landing/Navbar';
@@ -190,7 +191,15 @@ const CreateCampaign: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Full Description</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="description">Full Description</Label>
+                      <AIDescriptionGenerator
+                        type="campaign"
+                        title={formData.title}
+                        category={formData.category}
+                        onGenerated={(desc) => updateField('description', desc)}
+                      />
+                    </div>
                     <Textarea
                       id="description"
                       placeholder="Tell your story. Why are you fundraising? How will the funds be used?"
