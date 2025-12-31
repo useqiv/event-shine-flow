@@ -7,13 +7,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import { EntityInfluencerLinks } from '@/components/org/EntityInfluencerLinks';
 import { EntityPromoCodes } from '@/components/org/EntityPromoCodes';
-import { useEvent } from '@/hooks/useEvents';
+import { useEvent, useTicketTypes } from '@/hooks/useEvents';
 import { ArrowLeft, Calendar, Link2, Tag, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventMarketing = () => {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: eventLoading } = useEvent(id || '');
+  const { data: ticketTypes } = useTicketTypes(event?.id || '');
+  
+  // Get currency from first ticket type, default to NGN
+  const eventCurrency = ticketTypes?.[0]?.currency || 'NGN';
 
   if (eventLoading) {
     return (
@@ -97,6 +101,7 @@ const EventMarketing = () => {
               entityType="event"
               entityTitle={event.title}
               customSlug={event.custom_slug}
+              currency={eventCurrency}
             />
           </TabsContent>
 
@@ -106,6 +111,7 @@ const EventMarketing = () => {
               entityId={event.id}
               entityType="event"
               entityTitle={event.title}
+              currency={eventCurrency}
             />
           </TabsContent>
         </Tabs>

@@ -153,6 +153,7 @@ const ContestMarketing = () => {
               entityType="contest"
               entityTitle={contest.title}
               customSlug={(contest as any).custom_slug}
+              currency={(contest as any).vote_currency || 'NGN'}
             />
           </TabsContent>
 
@@ -162,6 +163,7 @@ const ContestMarketing = () => {
               entityId={contest.id}
               entityType="contest"
               entityTitle={contest.title}
+              currency={(contest as any).vote_currency || 'NGN'}
             />
           </TabsContent>
 

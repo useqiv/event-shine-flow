@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link2, PlusCircle, Trash2, Copy, TrendingUp, MousePointerClick, DollarSign, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 
 interface InfluencerLink {
   id: string;
@@ -36,6 +37,7 @@ interface EntityInfluencerLinksProps {
   entityType: 'contest' | 'event';
   entityTitle: string;
   customSlug?: string | null;
+  currency?: string;
 }
 
 export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
@@ -43,6 +45,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
   entityType,
   entityTitle,
   customSlug,
+  currency = 'NGN',
 }) => {
   const { user } = useAuth();
   const { confirm } = useConfirmDialog();
@@ -211,7 +214,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
             <div className="flex items-center gap-3">
               <DollarSign className="h-8 w-8 text-chart-2" />
               <div>
-                <p className="text-2xl font-bold">₦{totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalRevenue, currency)}</p>
                 <p className="text-xs text-muted-foreground">Revenue</p>
               </div>
             </div>
@@ -222,7 +225,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
             <div className="flex items-center gap-3">
               <Users className="h-8 w-8 text-chart-3" />
               <div>
-                <p className="text-2xl font-bold">₦{totalCommission.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalCommission, currency)}</p>
                 <p className="text-xs text-muted-foreground">Commission Owed</p>
               </div>
             </div>
@@ -289,7 +292,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="percentage">Percentage (%)</SelectItem>
-                          <SelectItem value="fixed">Fixed Amount (₦)</SelectItem>
+                          <SelectItem value="fixed">Fixed Amount ({getCurrencySymbol(currency)})</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -342,7 +345,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                       <p className="text-sm text-muted-foreground">
                         {link.commission_type === 'percentage' 
                           ? `${link.commission_value}% commission`
-                          : `₦${link.commission_value} per conversion`}
+                          : `${formatCurrency(link.commission_value, currency)} per conversion`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -387,11 +390,11 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                       <p className="text-xs text-muted-foreground">Conversions</p>
                     </div>
                     <div>
-                      <p className="text-lg font-bold">₦{link.total_revenue.toLocaleString()}</p>
+                      <p className="text-lg font-bold">{formatCurrency(link.total_revenue, currency)}</p>
                       <p className="text-xs text-muted-foreground">Revenue</p>
                     </div>
                     <div>
-                      <p className="text-lg font-bold">₦{link.total_commission.toLocaleString()}</p>
+                      <p className="text-lg font-bold">{formatCurrency(link.total_commission, currency)}</p>
                       <p className="text-xs text-muted-foreground">Commission</p>
                     </div>
                   </div>
