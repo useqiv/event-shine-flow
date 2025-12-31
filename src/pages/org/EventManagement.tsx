@@ -22,7 +22,7 @@ import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, DollarSign, Save, Megaphone, Pencil, TrendingUp, Info } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -319,7 +319,7 @@ const EventManagement = () => {
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
                   <p className="text-2xl font-bold">{formatCurrency(totalRevenue, (event as any)?.currency || 'NGN')}</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-muted-foreground" />
+                <Banknote className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -348,7 +348,7 @@ const EventManagement = () => {
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="mt-2">
-                          <DollarSign className="mr-1 h-3 w-3" />
+                          <Banknote className="mr-1 h-3 w-3" />
                           Request Payout
                         </Button>
                       </DialogTrigger>
