@@ -89,6 +89,16 @@ export const InfluencerLinksManager: React.FC = () => {
         throw new Error('This tracking code is already in use. Please choose a different code.');
       }
 
+      // Get currency from selected contest or event
+      let commission_currency = 'NGN';
+      if (newLink.link_type === 'contest' && contests) {
+        const selectedContest = contests.find((c: any) => c.id === newLink.target_id);
+        commission_currency = selectedContest?.vote_currency || 'NGN';
+      } else if (newLink.link_type === 'event' && events) {
+        const selectedEvent = events.find((e: any) => e.id === newLink.target_id);
+        commission_currency = selectedEvent?.currency || 'NGN';
+      }
+
       const { error } = await supabase.from('influencer_links').insert({
         organization_id: user.id,
         name: newLink.name.trim(),
@@ -97,6 +107,7 @@ export const InfluencerLinksManager: React.FC = () => {
         event_id: newLink.link_type === 'event' ? newLink.target_id : null,
         commission_type: newLink.commission_type,
         commission_value: Number(newLink.commission_value) || 0,
+        commission_currency: commission_currency,
       });
 
       if (error) throw error;
