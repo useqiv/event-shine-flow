@@ -13,6 +13,7 @@ import { usePromoCodeValidation } from '@/hooks/usePromoCode';
 import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+const REFERRAL_LINK_ID_KEY = 'influencer_link_id';
 interface PaymentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -116,6 +117,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       });
     }
 
+    // Get influencer link ID from localStorage for conversion tracking
+    const influencerLinkId = localStorage.getItem(REFERRAL_LINK_ID_KEY) || undefined;
+
     flutterwavePayment.mutate({
       type,
       amount: finalAmount,
@@ -123,6 +127,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       email,
       name,
       user_id: userId,
+      influencer_link_id: influencerLinkId,
       ...itemDetails,
     });
   };

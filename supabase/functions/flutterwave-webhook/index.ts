@@ -38,6 +38,8 @@ interface FlutterwaveWebhookData {
       campaign_id?: string;
       is_anonymous?: boolean;
       donor_message?: string;
+      // Influencer tracking
+      influencer_link_id?: string;
     };
   };
 }
@@ -190,6 +192,82 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+async function recordInfluencerConversion(supabase: any, influencerLinkId: string, amount: number) {
+  try {
+    console.log("Recording influencer conversion for link:", influencerLinkId, "amount:", amount);
+
+    // Get the influencer link to calculate commission
+    const { data: link, error: linkError } = await supabase
+      .from("influencer_links")
+      .select("*")
+      .eq("id", influencerLinkId)
+      .single();
+
+    if (linkError || !link) {
+      console.error("Could not find influencer link:", linkError?.message);
+      return;
+    }
+
+    // Calculate commission
+    let commission = 0;
+    if (link.commission_type === "percentage") {
+      commission = (amount * link.commission_value) / 100;
+    } else {
+      commission = link.commission_value;
+    }
+
+    // Find the most recent untracked click for this link
+    const { data: clicks, error: clickError } = await supabase
+      .from("influencer_clicks")
+      .select("id")
+      .eq("link_id", influencerLinkId)
+      .eq("converted", false)
+      .order("clicked_at", { ascending: false })
+      .limit(1);
+
+    if (clickError) {
+      console.error("Error finding influencer click:", clickError.message);
+    }
+
+    if (clicks && clicks.length > 0) {
+      // Update the click as converted
+      const { error: updateClickError } = await supabase
+        .from("influencer_clicks")
+        .update({
+          converted: true,
+          conversion_amount: amount,
+          converted_at: new Date().toISOString(),
+        })
+        .eq("id", clicks[0].id);
+
+      if (updateClickError) {
+        console.error("Error updating click conversion:", updateClickError.message);
+      } else {
+        console.log("Marked click as converted:", clicks[0].id);
+      }
+    }
+
+    // Update link totals
+    const { error: updateLinkError } = await supabase
+      .from("influencer_links")
+      .update({
+        total_conversions: link.total_conversions + 1,
+        total_revenue: link.total_revenue + amount,
+        total_commission: link.total_commission + commission,
+      })
+      .eq("id", influencerLinkId);
+
+    if (updateLinkError) {
+      console.error("Error updating influencer link stats:", updateLinkError.message);
+    } else {
+      console.log("Updated influencer link stats - conversions:", link.total_conversions + 1, "revenue:", link.total_revenue + amount, "commission:", link.total_commission + commission);
+    }
+
+  } catch (error: any) {
+    console.error("Error recording influencer conversion:", error.message);
+  }
+}
+
 async function sendReceipt(receiptData: any) {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -271,6 +349,7 @@ async function processSuccessfulPayment(paymentData: any) {
     campaign_id,
     is_anonymous,
     donor_message,
+    influencer_link_id,
   } = meta;
   const customer = paymentData.customer || {};
 
@@ -389,6 +468,11 @@ async function processSuccessfulPayment(paymentData: any) {
     } else {
       console.log("Vote recorded successfully");
 
+      // Record influencer conversion if applicable
+      if (influencer_link_id) {
+        await recordInfluencerConversion(supabase, influencer_link_id, paymentData.amount);
+      }
+
       // Create notification
       await supabase.from("notifications").insert({
         user_id,
@@ -474,6 +558,11 @@ async function processSuccessfulPayment(paymentData: any) {
       }
     } else {
       console.log("Ticket recorded successfully");
+
+      // Record influencer conversion if applicable
+      if (influencer_link_id) {
+        await recordInfluencerConversion(supabase, influencer_link_id, paymentData.amount);
+      }
 
       // Create notification
       await supabase.from("notifications").insert({
