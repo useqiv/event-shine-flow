@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2, Home, TicketIcon, Vote } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Home, TicketIcon, Vote, Mail } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import confetti from 'canvas-confetti';
 
 const PaymentCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'cancelled'>('loading');
   
   const paymentStatus = searchParams.get('payment_status') || searchParams.get('status');
@@ -40,6 +42,7 @@ const PaymentCallback = () => {
 
   const isVote = txRef?.startsWith('vote_');
   const isTicket = txRef?.startsWith('ticket_');
+  const isGuest = !user;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -105,18 +108,38 @@ const PaymentCallback = () => {
             </div>
           )}
 
+          {/* Guest user ticket success message */}
+          {status === 'success' && isTicket && isGuest && (
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg text-center">
+              <Mail className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="text-sm font-medium">Check your email!</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Your ticket details and QR code have been sent to your email address.
+              </p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
-            {status === 'success' && isVote && (
+            {/* Authenticated user - show View My Votes */}
+            {status === 'success' && isVote && !isGuest && (
               <Button onClick={() => navigate('/my-votes')} className="w-full">
                 <Vote className="mr-2 h-4 w-4" />
                 View My Votes
               </Button>
             )}
 
-            {status === 'success' && isTicket && (
+            {/* Authenticated user - show View My Tickets */}
+            {status === 'success' && isTicket && !isGuest && (
               <Button onClick={() => navigate('/my-tickets')} className="w-full">
                 <TicketIcon className="mr-2 h-4 w-4" />
                 View My Tickets
+              </Button>
+            )}
+
+            {/* Guest user - prompt to sign up to manage tickets */}
+            {status === 'success' && isTicket && isGuest && (
+              <Button onClick={() => navigate('/auth')} variant="outline" className="w-full">
+                Sign Up to Manage Tickets
               </Button>
             )}
 
@@ -126,9 +149,9 @@ const PaymentCallback = () => {
               </Button>
             )}
 
-            <Button variant="outline" onClick={() => navigate('/dashboard')} className="w-full">
+            <Button variant="outline" onClick={() => navigate('/')} className="w-full">
               <Home className="mr-2 h-4 w-4" />
-              Go to Dashboard
+              Go to Homepage
             </Button>
           </div>
         </CardContent>
