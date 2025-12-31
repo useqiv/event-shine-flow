@@ -142,7 +142,7 @@ const InfluencerLinks = () => {
                         || link.contests?.vote_currency 
                         || 'NGN';
                       return (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                           <div className="text-center p-3 bg-background border rounded-lg">
                             <p className="text-2xl font-bold">{link.total_clicks}</p>
                             <p className="text-xs text-muted-foreground">Clicks</p>
@@ -150,10 +150,6 @@ const InfluencerLinks = () => {
                           <div className="text-center p-3 bg-background border rounded-lg">
                             <p className="text-2xl font-bold">{link.total_conversions}</p>
                             <p className="text-xs text-muted-foreground">Conversions</p>
-                          </div>
-                          <div className="text-center p-3 bg-background border rounded-lg">
-                            <p className="text-2xl font-bold">{formatCurrency(link.total_revenue || 0, linkCurrency)}</p>
-                            <p className="text-xs text-muted-foreground">Revenue</p>
                           </div>
                           <div className="text-center p-3 bg-background border rounded-lg">
                             <p className="text-2xl font-bold text-primary">
