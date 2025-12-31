@@ -586,6 +586,7 @@ export const useCreateContest = () => {
       brand_secondary_color?: string;
       brand_logo_url?: string;
       contest_type?: 'single' | 'category';
+      is_live_voting?: boolean;
     }) => {
       const { data, error } = await supabase
         .from('contests')

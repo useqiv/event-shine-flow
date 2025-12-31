@@ -33,6 +33,7 @@ const contestSchema = z.object({
   vote_currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
   is_active: z.boolean(),
+  is_live_voting: z.boolean(),
   custom_slug: z.string().max(50).optional(),
 });
 
@@ -50,6 +51,7 @@ interface EditContestDialogProps {
     vote_currency: string;
     is_featured: boolean;
     is_active: boolean;
+    is_live_voting: boolean;
     custom_slug: string | null;
   };
 }
@@ -72,6 +74,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
       vote_currency: contest.vote_currency,
       is_featured: contest.is_featured,
       is_active: contest.is_active,
+      is_live_voting: contest.is_live_voting,
       custom_slug: contest.custom_slug || '',
     },
   });
@@ -86,6 +89,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
         vote_currency: contest.vote_currency,
         is_featured: contest.is_featured,
         is_active: contest.is_active,
+        is_live_voting: contest.is_live_voting,
         custom_slug: contest.custom_slug || '',
       });
     }
@@ -104,6 +108,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
           vote_currency: data.vote_currency,
           is_featured: data.is_featured,
           is_active: data.is_active,
+          is_live_voting: data.is_live_voting,
           custom_slug: data.custom_slug || null,
         })
         .eq('id', contest.id);
@@ -213,7 +218,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
                 </FormItem>
               )}
             />
-            <div className="flex gap-6">
+            <div className="flex flex-wrap gap-6">
               <FormField
                 control={form.control}
                 name="is_featured"
@@ -241,6 +246,21 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
                       />
                     </FormControl>
                     <FormLabel className="!mt-0">Active</FormLabel>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_live_voting"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Live Voting</FormLabel>
                   </FormItem>
                 )}
               />
