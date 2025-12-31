@@ -8,9 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
+import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import { useCreateEvent } from '@/hooks/useOrganization';
 import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
-import { Calendar, MapPin, FileText } from 'lucide-react';
+import { Calendar, MapPin, FileText, Link as LinkIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 const categories = [
   'Music',
@@ -37,13 +39,24 @@ const CreateEvent = () => {
     event_date: '',
     venue: '',
     address: '',
+    custom_slug: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate custom slug
+    const slugError = validateCustomSlug(formData.custom_slug);
+    if (slugError) {
+      toast.error(slugError);
+      return;
+    }
+    
     try {
-      await createEvent.mutateAsync(formData);
+      await createEvent.mutateAsync({
+        ...formData,
+        custom_slug: formData.custom_slug || undefined,
+      });
       navigate('/org/events');
     } catch (error) {
       console.error('Failed to create event:', error);
@@ -184,6 +197,24 @@ const CreateEvent = () => {
                   onChange={(e) => handleChange('address', e.target.value)}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Custom URL */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <LinkIcon className="h-5 w-5" />
+                Custom URL
+              </CardTitle>
+              <CardDescription>Set a custom URL for your event (optional)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CustomSlugInput
+                value={formData.custom_slug}
+                onChange={(value) => handleChange('custom_slug', value)}
+                entityType="event"
+              />
             </CardContent>
           </Card>
 

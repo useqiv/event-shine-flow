@@ -153,6 +153,7 @@ export type Database = {
           creator_id: string
           currency: string
           current_amount: number
+          custom_slug: string | null
           description: string | null
           donor_count: number
           end_date: string | null
@@ -172,6 +173,7 @@ export type Database = {
           creator_id: string
           currency?: string
           current_amount?: number
+          custom_slug?: string | null
           description?: string | null
           donor_count?: number
           end_date?: string | null
@@ -191,6 +193,7 @@ export type Database = {
           creator_id?: string
           currency?: string
           current_amount?: number
+          custom_slug?: string | null
           description?: string | null
           donor_count?: number
           end_date?: string | null
@@ -692,6 +695,7 @@ export type Database = {
           address: string | null
           category: string
           created_at: string
+          custom_slug: string | null
           description: string | null
           event_date: string
           id: string
@@ -708,6 +712,7 @@ export type Database = {
           address?: string | null
           category: string
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           event_date: string
           id?: string
@@ -724,6 +729,7 @@ export type Database = {
           address?: string | null
           category?: string
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           event_date?: string
           id?: string
@@ -1072,6 +1078,7 @@ export type Database = {
       nominations: {
         Row: {
           created_at: string
+          custom_slug: string | null
           description: string | null
           end_date: string
           id: string
@@ -1084,6 +1091,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           end_date: string
           id?: string
@@ -1096,6 +1104,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_slug?: string | null
           description?: string | null
           end_date?: string
           id?: string

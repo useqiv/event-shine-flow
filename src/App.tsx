@@ -154,6 +154,8 @@ const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
     <Route path="/c/:slug" element={<PublicContest />} />
+    <Route path="/e/:slug" element={<EventDetail />} />
+    <Route path="/n/:slug" element={<PublicNomination />} />
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
     <Route path="/embed/campaign/:campaignId" element={<EmbedCampaign />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />

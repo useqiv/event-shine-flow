@@ -13,6 +13,7 @@ export interface Event {
   event_date: string;
   is_active: boolean;
   is_featured: boolean;
+  custom_slug: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -76,20 +77,35 @@ export const useFeaturedEvents = () => {
   });
 };
 
-export const useEvent = (eventId: string) => {
+export const useEvent = (idOrSlug: string) => {
   return useQuery({
-    queryKey: ['event', eventId],
+    queryKey: ['event', idOrSlug],
     queryFn: async () => {
+      // First try by ID (UUID format)
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      if (isUUID) {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', idOrSlug)
+          .single();
+        
+        if (error) throw error;
+        return data as Event;
+      }
+      
+      // Otherwise try by custom_slug
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .eq('id', eventId)
+        .eq('custom_slug', idOrSlug)
         .single();
       
       if (error) throw error;
       return data as Event;
     },
-    enabled: !!eventId,
+    enabled: !!idOrSlug,
   });
 };
 

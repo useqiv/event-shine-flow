@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, Plus, Trash2, Edit2, Copy, ExternalLink, 
-  Calendar, Users, ChevronDown, ChevronRight, Download
+  Calendar, Users, ChevronDown, ChevronRight, Download, Link as LinkIcon
 } from 'lucide-react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
 import {
   Dialog,
   DialogContent,
@@ -237,9 +238,21 @@ export default function NominationManagement() {
   };
 
   const copyPublicLink = () => {
-    const url = `${window.location.origin}/nominations/${id}`;
+    const slug = nomination?.custom_slug;
+    const url = slug 
+      ? `${window.location.origin}/n/${slug}`
+      : `${window.location.origin}/nominations/${id}`;
     navigator.clipboard.writeText(url);
     toast.success('Public link copied to clipboard!');
+  };
+
+  const handleUpdateSlug = async (newSlug: string) => {
+    const slugError = validateCustomSlug(newSlug);
+    if (slugError) {
+      toast.error(slugError);
+      return;
+    }
+    await updateNomination.mutateAsync({ id: id!, custom_slug: newSlug || null });
   };
 
   const downloadNominatorEmails = () => {
@@ -365,13 +378,35 @@ export default function NominationManagement() {
           </Card>
         </div>
 
+        {/* Custom URL */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              Custom URL
+            </CardTitle>
+            <CardDescription>Set a custom URL for this nomination</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomSlugInput
+              value={nomination.custom_slug || ''}
+              onChange={handleUpdateSlug}
+              entityType="nomination"
+            />
+          </CardContent>
+        </Card>
+
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={copyPublicLink}>
             <Copy className="mr-2 h-4 w-4" />
             Copy Public Link
           </Button>
-          <Button variant="outline" onClick={() => window.open(`/nominations/${id}`, '_blank')}>
+          <Button variant="outline" onClick={() => {
+            const slug = nomination?.custom_slug;
+            const url = slug ? `/n/${slug}` : `/nominations/${id}`;
+            window.open(url, '_blank');
+          }}>
             <ExternalLink className="mr-2 h-4 w-4" />
             View Public Form
           </Button>
