@@ -935,6 +935,7 @@ export type Database = {
           created_at: string
           event_id: string | null
           id: string
+          influencer_user_id: string | null
           is_active: boolean
           name: string
           organization_id: string
@@ -952,6 +953,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          influencer_user_id?: string | null
           is_active?: boolean
           name: string
           organization_id: string
@@ -969,6 +971,7 @@ export type Database = {
           created_at?: string
           event_id?: string | null
           id?: string
+          influencer_user_id?: string | null
           is_active?: boolean
           name?: string
           organization_id?: string
@@ -1001,6 +1004,111 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      influencer_payouts: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          influencer_user_id: string
+          payment_method: string
+          processed_at: string | null
+          processed_by: string | null
+          rejection_reason: string | null
+          status: string | null
+          updated_at: string
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          influencer_user_id: string
+          payment_method: string
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          influencer_user_id?: string
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string
+          usdt_address?: string | null
+        }
+        Relationships: []
+      }
+      influencer_profiles: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          paid_earnings: number | null
+          payment_method: string | null
+          pending_earnings: number | null
+          total_earnings: number | null
+          updated_at: string
+          usdt_address: string | null
+          user_id: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          paid_earnings?: number | null
+          payment_method?: string | null
+          pending_earnings?: number | null
+          total_earnings?: number | null
+          updated_at?: string
+          usdt_address?: string | null
+          user_id: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          paid_earnings?: number | null
+          payment_method?: string | null
+          pending_earnings?: number | null
+          total_earnings?: number | null
+          updated_at?: string
+          usdt_address?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       nomination_categories: {
         Row: {
@@ -2507,7 +2615,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "organization"
+      app_role: "admin" | "moderator" | "user" | "organization" | "influencer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2635,7 +2743,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "organization"],
+      app_role: ["admin", "moderator", "user", "organization", "influencer"],
     },
   },
 } as const
