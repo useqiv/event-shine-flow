@@ -308,17 +308,17 @@ export function useSubmitNomination() {
       submitter_email?: string;
       submitter_name?: string;
     }) => {
-      const { data: result, error } = await supabase
+      // Important: do NOT call `.select()` here.
+      // For public submissions we typically don't allow SELECT on nomination_submissions via RLS,
+      // and PostgREST will try to read the inserted row when `returning=representation`.
+      const { error } = await supabase
         .from('nomination_submissions')
-        .insert(data)
-        .select()
-        .single();
+        .insert(data);
 
       if (error) throw error;
-      return result as NominationSubmission;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['nomination-submissions', data.category_id] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['nomination-submissions', variables.category_id] });
       toast.success('Nomination submitted successfully!');
     },
     onError: (error: Error) => {
