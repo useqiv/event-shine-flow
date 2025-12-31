@@ -221,11 +221,13 @@ export const useClaimInfluencerCode = () => {
     mutationFn: async (code: string) => {
       if (!user?.id) throw new Error('Not authenticated');
 
+      const normalizedCode = code.trim().toUpperCase();
+
       // Find the link by code
       const { data: link, error: findError } = await supabase
         .from('influencer_links')
         .select('id, influencer_user_id')
-        .eq('code', code.toUpperCase())
+        .eq('code', normalizedCode)
         .maybeSingle();
 
       if (findError) {
@@ -236,29 +238,51 @@ export const useClaimInfluencerCode = () => {
         throw new Error('Influencer code not found');
       }
 
-      // Check if already claimed by this user
+      // Check if already claimed
       if (link.influencer_user_id === user.id) {
         throw new Error('You have already claimed this code');
       }
 
-      // Check if already claimed by another user
       if (link.influencer_user_id) {
         throw new Error('This code is already claimed by another influencer');
       }
 
-      // Claim the link
-      const { error: updateError } = await supabase
+      // Claim the link (only if still unclaimed). IMPORTANT: a successful request can still affect 0 rows.
+      const { data: updatedLink, error: updateError } = await supabase
         .from('influencer_links')
         .update({ influencer_user_id: user.id })
         .eq('id', link.id)
-        .is('influencer_user_id', null); // Extra safety: only update if still unclaimed
+        .is('influencer_user_id', null)
+        .select(
+          `
+            *,
+            contests:contest_id(title),
+            events:event_id(title)
+          `
+        )
+        .maybeSingle();
 
       if (updateError) throw updateError;
+
+      // If 0 rows were updated, Supabase returns null data with no error.
+      if (!updatedLink) {
+        throw new Error('This code was already claimed. Please refresh and try another code.');
+      }
+
+      return updatedLink;
     },
-    onSuccess: () => {
-      // Force refetch the links immediately
-      queryClient.invalidateQueries({ queryKey: ['influencer-links'] });
-      queryClient.invalidateQueries({ queryKey: ['influencer-stats'] });
+    onSuccess: (updatedLink) => {
+      if (!user?.id) return;
+
+      // Update cached links immediately so the UI reflects the claim without waiting.
+      queryClient.setQueryData(['influencer-links', user.id], (prev: any) => {
+        const current = Array.isArray(prev) ? prev : [];
+        if (current.some((l: any) => l.id === updatedLink.id)) return current;
+        return [updatedLink, ...current];
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['influencer-links', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['influencer-stats', user.id] });
       toast.success('Influencer code claimed successfully!');
     },
     onError: (error: Error) => {
