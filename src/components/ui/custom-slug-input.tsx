@@ -80,7 +80,7 @@ export function CustomSlugInput({
       )}
       
       <p className="text-xs text-muted-foreground">
-        Use lowercase letters, numbers, and hyphens only. <span className="text-destructive font-medium">Note: URLs cannot be exactly 5 characters.</span>
+        Use lowercase letters, numbers, and hyphens only. <span className="text-destructive font-medium">Note: URLs cannot be more than 5 characters.</span>
       </p>
     </div>
   );
