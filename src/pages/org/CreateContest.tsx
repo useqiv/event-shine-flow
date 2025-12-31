@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
+import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
 import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
 import { Calendar, DollarSign, FileText, Users, Layers, Check } from 'lucide-react';
@@ -221,7 +222,15 @@ const CreateContest = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description">Description</Label>
+                  <AIDescriptionGenerator
+                    type="contest"
+                    title={formData.title}
+                    category={formData.category}
+                    onGenerated={(desc) => handleChange('description', desc)}
+                  />
+                </div>
                 <Textarea
                   id="description"
                   placeholder="Describe your contest..."
