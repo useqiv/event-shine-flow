@@ -32,13 +32,15 @@ const AccountTypeSelection = () => {
 
     setIsLoading(true);
     try {
-      // Upsert user role based on selection (insert if not exists, update if exists)
+      // Delete any existing roles first, then insert the new one
+      await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", user.id);
+      
       const { error } = await supabase
         .from("user_roles")
-        .upsert(
-          { user_id: user.id, role: selectedType },
-          { onConflict: 'user_id' }
-        );
+        .insert({ user_id: user.id, role: selectedType });
 
       if (error) throw error;
 
