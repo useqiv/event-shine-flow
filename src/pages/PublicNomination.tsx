@@ -1,21 +1,24 @@
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calendar, CheckCircle2, Search } from 'lucide-react';
+import { Calendar, CheckCircle2, Search, ArrowLeft, Award, Send, Users } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import SocialShareButtons from '@/components/SocialShareButtons';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   usePublicNomination,
   usePublicNominationCategories,
@@ -28,12 +31,13 @@ export default function PublicNomination() {
   const { data: categories, isLoading: categoriesLoading } = usePublicNominationCategories(id!);
   const submitNomination = useSubmitNomination();
 
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
   const [nomineeName, setNomineeName] = useState('');
   const [submitterName, setSubmitterName] = useState('');
   const [submitterEmail, setSubmitterEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
+  const [isNominateModalOpen, setIsNominateModalOpen] = useState(false);
 
   // Filter categories based on search
   const filteredCategories = useMemo(() => {
@@ -45,6 +49,11 @@ export default function PublicNomination() {
     );
   }, [categories, categorySearch]);
 
+  const handleNominateClick = (category: { id: string; name: string }) => {
+    setSelectedCategory(category);
+    setIsNominateModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -53,7 +62,7 @@ export default function PublicNomination() {
     }
 
     await submitNomination.mutateAsync({
-      category_id: selectedCategory,
+      category_id: selectedCategory.id,
       nominee_name: nomineeName.trim(),
       submitter_name: submitterName.trim() || undefined,
       submitter_email: submitterEmail.trim() || undefined,
@@ -63,41 +72,55 @@ export default function PublicNomination() {
     setNomineeName('');
     setSubmitterName('');
     setSubmitterEmail('');
-    setSelectedCategory('');
-    setCategorySearch('');
   };
 
   const handleSubmitAnother = () => {
     setSubmitted(false);
+    setSelectedCategory(null);
+  };
+
+  const handleCloseModal = () => {
+    setIsNominateModalOpen(false);
+    setSubmitted(false);
+    setNomineeName('');
+    setSubmitterName('');
+    setSubmitterEmail('');
+    setSelectedCategory(null);
   };
 
   if (nominationLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-40 w-full" />
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
   if (!nomination) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
-          <CardContent className="pt-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Nomination Not Found</h2>
-            <p className="text-muted-foreground">
-              This nomination doesn't exist or is no longer active.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 py-16 text-center">
+          <Award className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold">Nomination not found</h2>
+          <p className="text-muted-foreground mt-2">
+            This nomination doesn't exist or is no longer active.
+          </p>
+          <Link to="/">
+            <Button variant="outline" className="mt-4">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Home
+            </Button>
+          </Link>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -106,6 +129,8 @@ export default function PublicNomination() {
   const start = new Date(nomination.start_date);
   const end = new Date(nomination.end_date);
   const isOpen = now >= start && now <= end && nomination.is_active;
+  const isPending = now < start;
+  const isClosed = now > end;
 
   return (
     <>
@@ -114,157 +139,258 @@ export default function PublicNomination() {
         <meta name="description" content={nomination.description || `Submit your nomination for ${nomination.title}`} />
       </Helmet>
 
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
-          <CardHeader className="text-center">
-            {nomination.logo_url && (
-              <div className="flex justify-center mb-4">
-                <img 
-                  src={nomination.logo_url} 
-                  alt="Logo" 
-                  className="h-20 w-20 rounded-lg object-cover"
-                />
-              </div>
-            )}
-            <CardTitle className="text-2xl">{nomination.title}</CardTitle>
-            {nomination.description && (
-              <CardDescription className="text-base">
-                {nomination.description}
-              </CardDescription>
-            )}
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-2">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {format(start, 'MMM d, yyyy')} - {format(end, 'MMM d, yyyy')}
-              </span>
-            </div>
-          </CardHeader>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 pt-24 pb-8">
+          <div className="space-y-6">
+            {/* Back Button */}
+            <Link to="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
+            </Link>
 
-          <CardContent>
-            {!isOpen ? (
-              <div className="text-center py-8">
-                <Badge variant="secondary" className="mb-4">
-                  {now < start ? 'Not Yet Open' : 'Closed'}
-                </Badge>
-                <p className="text-muted-foreground">
-                  {now < start 
-                    ? `Nominations open on ${format(start, 'MMMM d, yyyy')}`
-                    : 'This nomination period has ended.'
-                  }
-                </p>
-              </div>
-            ) : submitted ? (
-              <div className="text-center py-8">
-                <div className="rounded-full bg-primary/10 p-4 inline-flex mb-4">
-                  <CheckCircle2 className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Thank You!</h3>
-                <p className="text-muted-foreground mb-4">
-                  Your nomination has been submitted successfully.
-                </p>
-                <Button onClick={handleSubmitAnother}>
-                  Submit Another Nomination
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="category">Category *</Label>
-                  {categoriesLoading ? (
-                    <Skeleton className="h-10 w-full mt-1" />
-                  ) : categories && categories.length > 0 ? (
-                    <div className="space-y-2 mt-1">
-                      {/* Category Search */}
-                      {categories.length > 5 && (
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder="Search categories..."
-                            value={categorySearch}
-                            onChange={(e) => setCategorySearch(e.target.value)}
-                            className="pl-9"
-                          />
-                        </div>
-                      )}
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredCategories.length > 0 ? (
-                            filteredCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex flex-col items-start">
-                                  <span>{category.name}</span>
-                                  {category.description && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {category.description}
-                                    </span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="py-2 px-3 text-sm text-muted-foreground">
-                              No categories found matching "{categorySearch}"
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Nomination Details */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="overflow-hidden">
+                  <div className="relative h-64 md:h-96 bg-secondary">
+                    {nomination.logo_url ? (
+                      <img 
+                        src={nomination.logo_url} 
+                        alt={nomination.title} 
+                        className="h-full w-full object-cover" 
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                        <Award className="h-24 w-24 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="absolute top-4 left-4">
+                      <Badge variant={isOpen ? 'default' : 'secondary'}>
+                        {isOpen ? 'Open for Nominations' : isPending ? 'Coming Soon' : 'Closed'}
+                      </Badge>
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      No categories available
-                    </p>
+                  </div>
+                  <CardContent className="p-6">
+                    <h1 className="text-2xl md:text-3xl font-bold">{nomination.title}</h1>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Calendar className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Nomination Period</p>
+                          <p className="font-medium">
+                            {format(start, 'MMM d, yyyy')} - {format(end, 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Users className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Categories</p>
+                          <p className="font-medium">{categories?.length || 0} Categories Available</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {nomination.description && (
+                      <div className="mt-6">
+                        <h3 className="font-semibold mb-2">About this Nomination</h3>
+                        <p className="text-muted-foreground">{nomination.description}</p>
+                      </div>
+                    )}
+
+                    {/* Status Message */}
+                    {!isOpen && (
+                      <div className="mt-6 p-4 rounded-lg bg-muted">
+                        <p className="text-center text-muted-foreground">
+                          {isPending 
+                            ? `Nominations open on ${format(start, 'MMMM d, yyyy')}`
+                            : 'This nomination period has ended.'
+                          }
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Social Share */}
+                    <div className="mt-6 pt-6 border-t">
+                      <h3 className="font-semibold mb-3">Share this nomination</h3>
+                      <SocialShareButtons
+                        url={`${window.location.origin}/nominations/${id}`}
+                        title={nomination.title}
+                        description={nomination.description || `Submit your nomination for ${nomination.title}`}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Categories Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold">Categories</h2>
+                  {categories && categories.length > 0 && (
+                    <Badge variant="outline">{categories.length} Total</Badge>
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="nominee">Nominee Name *</Label>
-                  <Input
-                    id="nominee"
-                    placeholder="Enter the name of your nominee"
-                    value={nomineeName}
-                    onChange={(e) => setNomineeName(e.target.value)}
-                    className="mt-1"
-                    required
-                  />
-                </div>
+                {/* Category Search */}
+                {categories && categories.length > 3 && (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                )}
 
-                <div>
-                  <Label htmlFor="submitter-name">Your Name (Optional)</Label>
-                  <Input
-                    id="submitter-name"
-                    placeholder="Enter your name"
-                    value={submitterName}
-                    onChange={(e) => setSubmitterName(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+                {categoriesLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-32 w-full" />
+                    ))}
+                  </div>
+                ) : filteredCategories && filteredCategories.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredCategories.map((category) => (
+                      <Card key={category.id}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <h3 className="font-semibold">{category.name}</h3>
+                              {category.description && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {category.description}
+                                </p>
+                              )}
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleNominateClick({ id: category.id, name: category.name })}
+                              disabled={!isOpen}
+                              className="w-full"
+                            >
+                              <Send className="mr-2 h-4 w-4" />
+                              {isOpen ? 'Nominate' : isPending ? 'Coming Soon' : 'Closed'}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : categories && categories.length > 0 && categorySearch ? (
+                  <Card className="p-6 text-center">
+                    <p className="text-muted-foreground">
+                      No categories found matching "{categorySearch}"
+                    </p>
+                  </Card>
+                ) : (
+                  <Card className="p-6 text-center">
+                    <Award className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No categories available yet</p>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
 
-                <div>
-                  <Label htmlFor="submitter-email">Your Email (Optional)</Label>
-                  <Input
-                    id="submitter-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={submitterEmail}
-                    onChange={(e) => setSubmitterEmail(e.target.value)}
-                    className="mt-1"
-                  />
+          {/* Nomination Modal */}
+          <Dialog open={isNominateModalOpen} onOpenChange={handleCloseModal}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Submit Nomination</DialogTitle>
+                <DialogDescription>
+                  Nominate someone for: <strong>{selectedCategory?.name}</strong>
+                </DialogDescription>
+              </DialogHeader>
+              
+              {submitted ? (
+                <div className="text-center py-6">
+                  <div className="rounded-full bg-primary/10 p-4 inline-flex mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Thank You!</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Your nomination has been submitted successfully.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={handleCloseModal} className="flex-1">
+                      Close
+                    </Button>
+                    <Button onClick={handleSubmitAnother} className="flex-1">
+                      Nominate Another
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="nominee">Nominee Name *</Label>
+                    <Input
+                      id="nominee"
+                      placeholder="Enter the name of your nominee"
+                      value={nomineeName}
+                      onChange={(e) => setNomineeName(e.target.value)}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={!selectedCategory || !nomineeName.trim() || submitNomination.isPending}
-                >
-                  {submitNomination.isPending ? 'Submitting...' : 'Submit Nomination'}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+                  <div>
+                    <Label htmlFor="submitter-name">Your Name (Optional)</Label>
+                    <Input
+                      id="submitter-name"
+                      placeholder="Enter your name"
+                      value={submitterName}
+                      onChange={(e) => setSubmitterName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="submitter-email">Your Email (Optional)</Label>
+                    <Input
+                      id="submitter-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={submitterEmail}
+                      onChange={(e) => setSubmitterEmail(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleCloseModal}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="flex-1" 
+                      disabled={!nomineeName.trim() || submitNomination.isPending}
+                    >
+                      {submitNomination.isPending ? 'Submitting...' : 'Submit'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+        </main>
+        <Footer />
       </div>
     </>
   );
