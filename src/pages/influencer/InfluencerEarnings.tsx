@@ -94,7 +94,7 @@ const InfluencerEarnings = () => {
                 </TableHeader>
                 <TableBody>
                   {links.map((link: any) => {
-                    const currency = link.commission_currency || link.events?.currency || link.contests?.vote_currency || 'NGN';
+                    const currency = link.events?.currency || link.contests?.vote_currency || link.commission_currency || 'NGN';
                     return (
                       <TableRow key={link.id}>
                         <TableCell className="font-medium">{link.name}</TableCell>

@@ -136,10 +136,10 @@ const InfluencerLinks = () => {
 
                     {/* Stats */}
                     {(() => {
-                      // Determine currency: use commission_currency, or event/contest currency, fallback to NGN
-                      const linkCurrency = link.commission_currency 
-                        || link.events?.currency 
-                        || link.contests?.vote_currency 
+                      // Determine currency: use event/contest currency (as set by the org), then fallback
+                      const linkCurrency = link.events?.currency
+                        || link.contests?.vote_currency
+                        || link.commission_currency
                         || 'NGN';
                       return (
                         <div className="grid grid-cols-3 gap-4">
