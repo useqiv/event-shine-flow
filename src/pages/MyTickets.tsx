@@ -291,28 +291,20 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             background: #fff;
           }
           .ticket {
-            max-width: 600px;
+            width: 100%;
+            max-width: 800px;
             margin: 0 auto;
             border: 3px solid #7c3aed;
             border-radius: 16px;
             overflow: hidden;
-          }
-          .header {
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            color: white;
-            padding: 24px;
-            text-align: center;
-          }
-          .header h1 { font-size: 24px; margin-bottom: 4px; }
-          .header p { opacity: 0.9; font-size: 14px; }
-          .content {
             display: flex;
-            padding: 24px;
+            flex-direction: row;
           }
           .qr-section {
             flex-shrink: 0;
-            padding-right: 24px;
-            border-right: 2px dashed #e5e7eb;
+            width: 200px;
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            padding: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -321,41 +313,84 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           .qr-code {
             width: 150px;
             height: 150px;
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
           }
           .qr-code svg { width: 100%; height: 100%; }
-          .qr-label { font-size: 10px; color: #6b7280; margin-top: 8px; text-align: center; }
+          .qr-label { 
+            font-size: 11px; 
+            color: white; 
+            margin-top: 12px; 
+            text-align: center;
+            opacity: 0.9;
+          }
+          .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+          }
+          .header {
+            background: #f9fafb;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .header h1 { 
+            font-size: 20px; 
+            color: #111827;
+            margin-bottom: 4px; 
+          }
+          .header p { 
+            font-size: 14px; 
+            color: #7c3aed;
+            font-weight: 600;
+          }
           .details {
             flex: 1;
-            padding-left: 24px;
+            padding: 20px 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
           }
           .detail-row {
-            margin-bottom: 16px;
           }
           .detail-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #6b7280;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .detail-value {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: #111827;
             margin-top: 2px;
           }
+          .owner-name {
+            grid-column: 1 / -1;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #e5e7eb;
+            margin-bottom: 4px;
+          }
+          .owner-name .detail-value {
+            font-size: 18px;
+            color: #7c3aed;
+          }
           .footer {
             background: #f9fafb;
-            padding: 16px 24px;
+            padding: 12px 24px;
             border-top: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 12px;
             color: #6b7280;
           }
           .ticket-id { font-family: monospace; }
+          .amount { font-weight: 600; color: #111827; }
           @media print {
             body { padding: 20px; }
             .ticket { border-width: 2px; }
@@ -364,16 +399,20 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
       </head>
       <body>
         <div class="ticket">
-          <div class="header">
-            <h1>${ticket.event?.title}</h1>
-            <p>${ticket.ticket_type?.name} × ${ticket.quantity}</p>
+          <div class="qr-section">
+            <div class="qr-code">${svgData}</div>
+            <p class="qr-label">Scan for entry</p>
           </div>
-          <div class="content">
-            <div class="qr-section">
-              <div class="qr-code">${svgData}</div>
-              <p class="qr-label">Scan for entry</p>
+          <div class="main-content">
+            <div class="header">
+              <h1>${ticket.event?.title}</h1>
+              <p>${ticket.ticket_type?.name} × ${ticket.quantity}</p>
             </div>
             <div class="details">
+              <div class="detail-row owner-name">
+                <div class="detail-label">Ticket Holder</div>
+                <div class="detail-value">${ticket.guest_name || 'Guest'}</div>
+              </div>
               <div class="detail-row">
                 <div class="detail-label">Date</div>
                 <div class="detail-value">${eventDate}</div>
@@ -391,10 +430,10 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
                 <div class="detail-value" style="font-family: monospace; font-size: 12px;">${ticket.qr_code}</div>
               </div>
             </div>
-          </div>
-          <div class="footer">
-            <span class="ticket-id">ID: ${ticket.id.slice(0, 8).toUpperCase()}</span>
-            <span>Amount Paid: ₦${Number(ticket.amount_paid).toLocaleString()}</span>
+            <div class="footer">
+              <span class="ticket-id">ID: ${ticket.id.slice(0, 8).toUpperCase()}</span>
+              <span class="amount">Amount Paid: ₦${Number(ticket.amount_paid).toLocaleString()}</span>
+            </div>
           </div>
         </div>
         <script>
