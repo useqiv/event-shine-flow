@@ -69,10 +69,6 @@ import ContestMarketing from "./pages/org/ContestMarketing";
 import EventMarketing from "./pages/org/EventMarketing";
 import ManageCampaigns from "./pages/org/ManageCampaigns";
 import CampaignAnalytics from "./pages/org/CampaignAnalytics";
-import ManageNominations from "./pages/org/ManageNominations";
-import CreateNomination from "./pages/org/CreateNomination";
-import NominationManagement from "./pages/org/NominationManagement";
-import PublicNomination from "./pages/PublicNomination";
 
 // Admin Dashboard Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -178,7 +174,7 @@ const AppRoutes = () => (
     <Route path="/" element={<Index />} />
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/e/:slug" element={<EventDetail />} />
-    <Route path="/n/:slug" element={<PublicNomination />} />
+    
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
     <Route path="/embed/campaign/:campaignId" element={<EmbedCampaign />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
@@ -234,10 +230,6 @@ const AppRoutes = () => (
     <Route path="/org/contests/:id/marketing" element={<ProtectedRoute><ContestMarketing /></ProtectedRoute>} />
     <Route path="/org/campaigns" element={<ProtectedRoute><ManageCampaigns /></ProtectedRoute>} />
     <Route path="/org/campaigns/:id/analytics" element={<ProtectedRoute><CampaignAnalytics /></ProtectedRoute>} />
-    <Route path="/org/nominations" element={<ProtectedRoute><ManageNominations /></ProtectedRoute>} />
-    <Route path="/org/nominations/create" element={<ProtectedRoute><CreateNomination /></ProtectedRoute>} />
-    <Route path="/org/nominations/:id" element={<ProtectedRoute><NominationManagement /></ProtectedRoute>} />
-    <Route path="/nominations/:id" element={<PublicNomination />} />
     
     {/* Admin Dashboard Routes */}
     <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
