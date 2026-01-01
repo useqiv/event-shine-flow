@@ -381,13 +381,21 @@ const PublicForm = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-muted/30">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
+        <main className="flex-1 container mx-auto px-4 py-12 pt-28">
           <div className="max-w-2xl mx-auto space-y-6">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-64 w-full" />
+            <Card className="shadow-lg border-0">
+              <CardHeader className="space-y-3 pb-6 border-b">
+                <Skeleton className="h-8 w-3/4" />
+                <Skeleton className="h-5 w-1/2" />
+              </CardHeader>
+              <CardContent className="pt-8 space-y-6">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </CardContent>
+            </Card>
           </div>
         </main>
         <Footer />
@@ -397,15 +405,21 @@ const PublicForm = () => {
 
   if (!form) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-muted/30">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
-          <div className="max-w-2xl mx-auto text-center">
-            <AlertCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Form Not Found</h1>
-            <p className="text-muted-foreground">
-              This form doesn't exist or is no longer available.
-            </p>
+        <main className="flex-1 container mx-auto px-4 py-12 pt-28">
+          <div className="max-w-md mx-auto">
+            <Card className="shadow-lg border-0">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h1 className="text-2xl font-bold mb-2">Form Not Found</h1>
+                <p className="text-muted-foreground">
+                  This form doesn't exist or is no longer available.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </main>
         <Footer />
@@ -415,15 +429,21 @@ const PublicForm = () => {
 
   if (!form.is_accepting_responses && !isSubmitted) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-muted/30">
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
-          <div className="max-w-2xl mx-auto text-center">
-            <AlertCircle className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">{form.title}</h1>
-            <p className="text-muted-foreground">
-              This form is no longer accepting responses.
-            </p>
+        <main className="flex-1 container mx-auto px-4 py-12 pt-28">
+          <div className="max-w-md mx-auto">
+            <Card className="shadow-lg border-0">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h1 className="text-2xl font-bold mb-2">{form.title}</h1>
+                <p className="text-muted-foreground">
+                  This form is no longer accepting responses.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </main>
         <Footer />
@@ -433,23 +453,26 @@ const PublicForm = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-muted/30">
         <Helmet>
           <title>{form.title} | VoteApp</title>
         </Helmet>
         <Navbar />
-        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
+        <main className="flex-1 container mx-auto px-4 py-12 pt-28">
           <div className="max-w-2xl mx-auto">
-            <Card>
-              <CardContent className="py-16 text-center">
-                <CheckCircle className="h-16 w-16 mx-auto text-green-500 mb-4" />
-                <h1 className="text-2xl font-bold mb-2">Response Submitted!</h1>
-                <p className="text-muted-foreground">
+            <Card className="shadow-lg border-0">
+              <CardContent className="py-20 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircle className="h-12 w-12 text-green-500" />
+                </div>
+                <h1 className="text-3xl font-bold mb-3">Response Submitted!</h1>
+                <p className="text-muted-foreground text-lg max-w-md mx-auto">
                   {form.confirmation_message || 'Thank you for your response!'}
                 </p>
                 <Button
-                  className="mt-6"
+                  className="mt-8"
                   variant="outline"
+                  size="lg"
                   onClick={() => {
                     setIsSubmitted(false);
                     setFormData({});
@@ -469,23 +492,23 @@ const PublicForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <Helmet>
         <title>{form.title} | VoteApp</title>
         <meta name="description" content={form.description || `Fill out ${form.title}`} />
       </Helmet>
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
+      <main className="flex-1 container mx-auto px-4 py-12 pt-28">
         <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">{form.title}</CardTitle>
+          <Card className="shadow-lg border-0">
+            <CardHeader className="space-y-3 pb-6 border-b">
+              <CardTitle className="text-2xl md:text-3xl font-bold">{form.title}</CardTitle>
               {form.description && (
-                <CardDescription>{form.description}</CardDescription>
+                <CardDescription className="text-base">{form.description}</CardDescription>
               )}
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent className="pt-8">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 {(() => {
                   const renderedFields: React.ReactNode[] = [];
                   let i = 0;
@@ -501,31 +524,31 @@ const PublicForm = () => {
                     if (isNamePair) {
                       // Render both fields on the same line
                       renderedFields.push(
-                        <div key={`${field.id}-${nextField.id}`} className="grid grid-cols-2 gap-4">
+                        <div key={`${field.id}-${nextField.id}`} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                           <div className="space-y-2">
-                            <Label className="flex items-center gap-1">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
                               {field.label}
                               {field.is_required && <span className="text-destructive">*</span>}
                             </Label>
                             {field.description && (
-                              <p className="text-sm text-muted-foreground">{field.description}</p>
+                              <p className="text-xs text-muted-foreground">{field.description}</p>
                             )}
                             {renderField(field)}
                             {errors[field.id] && (
-                              <p className="text-sm text-destructive">{errors[field.id]}</p>
+                              <p className="text-xs text-destructive mt-1">{errors[field.id]}</p>
                             )}
                           </div>
                           <div className="space-y-2">
-                            <Label className="flex items-center gap-1">
+                            <Label className="flex items-center gap-1 text-sm font-medium">
                               {nextField.label}
                               {nextField.is_required && <span className="text-destructive">*</span>}
                             </Label>
                             {nextField.description && (
-                              <p className="text-sm text-muted-foreground">{nextField.description}</p>
+                              <p className="text-xs text-muted-foreground">{nextField.description}</p>
                             )}
                             {renderField(nextField)}
                             {errors[nextField.id] && (
-                              <p className="text-sm text-destructive">{errors[nextField.id]}</p>
+                              <p className="text-xs text-destructive mt-1">{errors[nextField.id]}</p>
                             )}
                           </div>
                         </div>
@@ -535,16 +558,16 @@ const PublicForm = () => {
                       // Render single field normally
                       renderedFields.push(
                         <div key={field.id} className="space-y-2">
-                          <Label className="flex items-center gap-1">
+                          <Label className="flex items-center gap-1 text-sm font-medium">
                             {field.label}
                             {field.is_required && <span className="text-destructive">*</span>}
                           </Label>
                           {field.description && (
-                            <p className="text-sm text-muted-foreground">{field.description}</p>
+                            <p className="text-xs text-muted-foreground">{field.description}</p>
                           )}
                           {renderField(field)}
                           {errors[field.id] && (
-                            <p className="text-sm text-destructive">{errors[field.id]}</p>
+                            <p className="text-xs text-destructive mt-1">{errors[field.id]}</p>
                           )}
                         </div>
                       );
@@ -554,19 +577,24 @@ const PublicForm = () => {
                   return renderedFields;
                 })()}
 
-                <Button type="submit" className="w-full" disabled={submitResponse.isPending}>
-                  {submitResponse.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    'Submit'
-                  )}
-                </Button>
+                <div className="pt-4">
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitResponse.isPending}>
+                    {submitResponse.isPending ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit'
+                    )}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Powered by VoteApp Forms
+          </p>
         </div>
       </main>
       <Footer />
