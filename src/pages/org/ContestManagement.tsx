@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
@@ -244,6 +245,7 @@ const ContestManagement = () => {
     brand_primary_color: '#7c3aed',
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
+    is_live_voting: false,
   });
 
   // Share card state
@@ -265,6 +267,7 @@ const ContestManagement = () => {
         brand_primary_color: (contest as any).brand_primary_color || '#7c3aed',
         brand_secondary_color: (contest as any).brand_secondary_color || '#f97316',
         brand_logo_url: (contest as any).brand_logo_url || '',
+        is_live_voting: (contest as any).is_live_voting || false,
       });
     }
   }, [contest]);
@@ -467,6 +470,7 @@ const ContestManagement = () => {
         brand_primary_color: editForm.brand_primary_color || '#7c3aed',
         brand_secondary_color: editForm.brand_secondary_color || '#f97316',
         brand_logo_url: editForm.brand_logo_url || null,
+        is_live_voting: editForm.is_live_voting,
       });
     } catch (error: any) {
       console.error('Failed to update contest:', error);
@@ -1268,6 +1272,28 @@ const ContestManagement = () => {
                       onChange={(e) => setEditForm(prev => ({ ...prev, end_date: e.target.value }))}
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Voting Display</CardTitle>
+                <CardDescription>Control how votes are displayed to the public</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="live-voting">Live Voting (Real-time)</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When enabled, vote counts update in real-time for all viewers. Disable to keep votes hidden until you choose to reveal them.
+                    </p>
+                  </div>
+                  <Switch
+                    id="live-voting"
+                    checked={editForm.is_live_voting}
+                    onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_live_voting: checked }))}
+                  />
                 </div>
               </CardContent>
             </Card>
