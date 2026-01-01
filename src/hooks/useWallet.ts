@@ -6,6 +6,7 @@ export interface Wallet {
   id: string;
   user_id: string;
   balance: number;
+  balance_currency: string;
   referral_earnings: number;
   referral_code: string;
   referred_by: string | null;
