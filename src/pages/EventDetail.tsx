@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEvent, useTicketTypes, usePurchaseTicket } from '@/hooks/useEvents';
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SocialShareButtons from '@/components/SocialShareButtons';
@@ -34,6 +34,7 @@ const EventDetail = () => {
   const { data: event, isLoading: eventLoading } = useEvent(idOrSlug);
   const { data: ticketTypes, isLoading: ticketsLoading } = useTicketTypes(event?.id || '');
   const { data: wallet } = useWallet();
+  const { data: currencyBalances } = useWalletCurrencyBalances();
   const purchaseTicket = usePurchaseTicket();
 
   const [selectedTicketType, setSelectedTicketType] = useState<any>(null);
@@ -316,15 +317,19 @@ const EventDetail = () => {
                 </div>
 
                 {/* Wallet Balance - Only show for logged in users */}
-                {user && (
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4" />
-                      <span className="text-sm">Wallet Balance</span>
+                {user && (() => {
+                  const ticketCurrency = selectedTicketType?.currency || 'NGN';
+                  const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
+                  return (
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-4 w-4" />
+                        <span className="text-sm">Wallet Balance ({ticketCurrency})</span>
+                      </div>
+                      <span className="font-medium">{formatCurrency(currencyBalance, ticketCurrency)}</span>
                     </div>
-                    <span className="font-medium">{formatCurrency(wallet?.balance || 0, selectedTicketType?.currency || 'NGN')}</span>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Actions */}
                 <div className="space-y-3">
@@ -332,15 +337,23 @@ const EventDetail = () => {
                     <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
                       Cancel
                     </Button>
-                    {user && wallet && wallet.balance >= totalAmount && (
+                    {user && wallet && (() => {
+                      const ticketCurrency = selectedTicketType?.currency || 'NGN';
+                      const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
+                      return currencyBalance >= totalAmount;
+                    })() && (
                       <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
                         {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
                       </Button>
                     )}
                   </div>
                   <Button 
-                    variant={user && wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
-                    onClick={handleProceedToPayment} 
+                    variant={user && wallet && (() => {
+                      const ticketCurrency = selectedTicketType?.currency || 'NGN';
+                      const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
+                      return currencyBalance >= totalAmount;
+                    })() ? 'outline' : 'default'} 
+                    onClick={handleProceedToPayment}
                     className="w-full"
                   >
                     Pay with Card/Bank/Crypto

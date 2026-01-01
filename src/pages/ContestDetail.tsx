@@ -10,7 +10,7 @@ import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/
 import { useContestCategories, ContestCategory } from '@/hooks/useContestCategories';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 
-import { useWallet } from '@/hooks/useWallet';
+import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useRecordConversion } from '@/hooks/useInfluencerTracking';
@@ -50,6 +50,7 @@ const ContestDetail = () => {
   const { data: contestCategories } = useContestCategories(id || '');
   const { data: myVotes, isLoading: myVotesLoading } = useMyContestVotes(id || '');
   const { data: wallet } = useWallet();
+  const { data: currencyBalances } = useWalletCurrencyBalances();
   const vote = useVote();
   const { recordConversion } = useRecordConversion();
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -747,15 +748,19 @@ const ContestDetail = () => {
               </div>
 
               {/* Wallet Balance - Only show for logged in users */}
-              {user && (
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    <span className="text-sm">Wallet Balance</span>
+              {user && (() => {
+                const voteCurrency = contest.vote_currency || 'NGN';
+                const currencyBalance = currencyBalances?.find(b => b.currency === voteCurrency)?.balance || 0;
+                return (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4" />
+                      <span className="text-sm">Wallet Balance ({voteCurrency})</span>
+                    </div>
+                    <span className="font-medium">{formatCurrency(currencyBalance, voteCurrency)}</span>
                   </div>
-                  <span className="font-medium">{formatCurrency(wallet?.balance || 0, contest.vote_currency || 'NGN')}</span>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Actions */}
               <div className="space-y-3">
@@ -763,15 +768,23 @@ const ContestDetail = () => {
                   <Button variant="outline" onClick={() => setIsVoteSelectionOpen(false)} className="flex-1">
                     Cancel
                   </Button>
-                  {user && wallet && wallet.balance >= totalAmount && (
-                    <Button onClick={handleWalletPayment} disabled={vote.isPending} className="flex-1">
-                      {vote.isPending ? 'Processing...' : 'Pay with Wallet'}
-                    </Button>
-                  )}
-                </div>
-                <Button 
-                  variant={user && wallet && wallet.balance >= totalAmount ? 'outline' : 'default'} 
-                  onClick={handleProceedToPayment} 
+                    {user && wallet && (() => {
+                      const voteCurrency = contest.vote_currency || 'NGN';
+                      const currencyBalance = currencyBalances?.find(b => b.currency === voteCurrency)?.balance || 0;
+                      return currencyBalance >= totalAmount;
+                    })() && (
+                      <Button onClick={handleWalletPayment} disabled={vote.isPending} className="flex-1">
+                        {vote.isPending ? 'Processing...' : 'Pay with Wallet'}
+                      </Button>
+                    )}
+                  </div>
+                  <Button 
+                    variant={user && wallet && (() => {
+                      const voteCurrency = contest.vote_currency || 'NGN';
+                      const currencyBalance = currencyBalances?.find(b => b.currency === voteCurrency)?.balance || 0;
+                      return currencyBalance >= totalAmount;
+                    })() ? 'outline' : 'default'} 
+                    onClick={handleProceedToPayment}
                   className="w-full"
                 >
                   Pay with Card/Bank/Crypto
