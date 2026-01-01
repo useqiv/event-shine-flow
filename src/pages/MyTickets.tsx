@@ -292,74 +292,66 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           }
           .ticket {
             width: 100%;
-            max-width: 900px;
+            max-width: 400px;
             margin: 0 auto;
             border: 2px solid #7c3aed;
             border-radius: 12px;
             overflow: hidden;
             display: flex;
-            flex-direction: row;
-            align-items: stretch;
+            flex-direction: column;
             background: #fff;
           }
           .qr-section {
-            flex-shrink: 0;
-            width: 160px;
             background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            padding: 20px;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
           }
           .qr-code {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             background: white;
             border-radius: 8px;
-            padding: 6px;
+            padding: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
           }
           .qr-code svg { width: 100%; height: 100%; }
           .qr-label { 
-            font-size: 10px; 
+            font-size: 11px; 
             color: white; 
-            margin-top: 8px; 
+            margin-top: 10px; 
             text-align: center;
             opacity: 0.9;
           }
           .info-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-          }
-          .event-header {
-            background: #f8f7ff;
-            padding: 12px 20px;
-            border-bottom: 1px solid #e9e5ff;
+            padding: 20px;
           }
           .event-title { 
             font-size: 18px; 
             font-weight: 700;
             color: #1f1f1f;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            text-align: center;
           }
           .ticket-type { 
             font-size: 13px; 
             color: #7c3aed;
             font-weight: 600;
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #e5e7eb;
           }
-          .details-row {
-            display: flex;
-            flex-wrap: wrap;
-            padding: 12px 20px;
-            gap: 24px;
+          .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
           }
           .detail-item {
-            min-width: 100px;
           }
           .detail-label {
             font-size: 10px;
@@ -376,11 +368,14 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           .holder-name {
             color: #7c3aed;
           }
+          .full-width {
+            grid-column: 1 / -1;
+          }
           .footer-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px;
-            background: #fafafa;
+            margin-top: 16px;
+            padding-top: 12px;
             border-top: 1px solid #eee;
             font-size: 11px;
             color: #666;
@@ -399,12 +394,10 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             <p class="qr-label">Scan for entry</p>
           </div>
           <div class="info-section">
-            <div class="event-header">
-              <div class="event-title">${ticket.event?.title}</div>
-              <div class="ticket-type">${ticket.ticket_type?.name} × ${ticket.quantity}</div>
-            </div>
-            <div class="details-row">
-              <div class="detail-item">
+            <div class="event-title">${ticket.event?.title}</div>
+            <div class="ticket-type">${ticket.ticket_type?.name} × ${ticket.quantity}</div>
+            <div class="details-grid">
+              <div class="detail-item full-width">
                 <div class="detail-label">Ticket Holder</div>
                 <div class="detail-value holder-name">${ticket.guest_name || 'Guest'}</div>
               </div>
@@ -416,7 +409,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
                 <div class="detail-label">Time</div>
                 <div class="detail-value">${eventTime}</div>
               </div>
-              <div class="detail-item">
+              <div class="detail-item full-width">
                 <div class="detail-label">Venue</div>
                 <div class="detail-value">${ticket.event?.venue}</div>
               </div>
