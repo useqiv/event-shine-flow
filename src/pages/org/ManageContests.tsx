@@ -107,15 +107,16 @@ const ManageContests = () => {
   return (
     <OrganizationLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Manage Contests</h1>
-            <p className="text-muted-foreground">View and manage all your voting contests.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Manage Contests</h1>
+            <p className="text-sm text-muted-foreground">View and manage all your voting contests.</p>
           </div>
           <Link to="/org/contests/create">
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Contest
+            <Button size="sm" className="sm:size-default">
+              <PlusCircle className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Create Contest</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </Link>
         </div>

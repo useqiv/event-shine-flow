@@ -82,10 +82,10 @@ const CreateEvent = () => {
   return (
     <OrganizationLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Create New Event</h1>
-            <p className="text-muted-foreground">Set up an event and sell tickets.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Create New Event</h1>
+            <p className="text-sm text-muted-foreground">Set up an event and sell tickets.</p>
           </div>
           <EventTemplateSelector
             currentData={{ title: formData.title, description: formData.description, category: formData.category, image_url: formData.image_url, venue: formData.venue, address: formData.address }}

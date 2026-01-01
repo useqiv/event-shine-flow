@@ -110,8 +110,8 @@ const OrgSettings = () => {
     <OrganizationLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground">Manage your organization settings and preferences.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your organization settings and preferences.</p>
         </div>
 
         {/* Personal Info */}

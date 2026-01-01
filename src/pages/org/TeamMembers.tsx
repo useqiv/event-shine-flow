@@ -85,16 +85,17 @@ const TeamMembers = () => {
   return (
     <OrganizationLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Team Members</h1>
-            <p className="text-muted-foreground">Invite staff and manage their permissions.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Team Members</h1>
+            <p className="text-sm text-muted-foreground">Invite staff and manage their permissions.</p>
           </div>
           <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Member
+              <Button size="sm" className="sm:size-default">
+                <UserPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Invite Member</span>
+                <span className="sm:hidden">Invite</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
