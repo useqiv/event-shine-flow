@@ -5,7 +5,7 @@ import {
   ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, 
   Type, AlignLeft, Hash, Mail, Calendar, ListFilter, CheckSquare, 
   CircleDot, Star, Upload, Phone, Link2, Clock, MapPin, ToggleLeft,
-  Heading, SeparatorHorizontal, Image
+  Heading, SeparatorHorizontal, Image, User
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const FIELD_TYPES = [
   // Text inputs
+  { value: 'first_name', label: 'First Name', icon: User, category: 'text' },
+  { value: 'last_name', label: 'Last Name', icon: User, category: 'text' },
   { value: 'text', label: 'Short Text', icon: Type, category: 'text' },
   { value: 'textarea', label: 'Long Text', icon: AlignLeft, category: 'text' },
   { value: 'number', label: 'Number', icon: Hash, category: 'text' },

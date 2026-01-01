@@ -95,12 +95,14 @@ const PublicForm = () => {
     const hasError = !!errors[field.id];
 
     switch (field.field_type) {
+      case 'first_name':
+      case 'last_name':
       case 'text':
       case 'email':
       case 'number':
         return (
           <Input
-            type={field.field_type}
+            type={field.field_type === 'email' ? 'email' : field.field_type === 'number' ? 'number' : 'text'}
             placeholder={field.placeholder || ''}
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
