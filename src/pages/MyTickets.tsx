@@ -303,18 +303,18 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
           }
           .qr-section {
             background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            padding: 24px;
+            padding: 32px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
           }
           .qr-code {
-            width: 140px;
-            height: 140px;
+            width: 200px;
+            height: 200px;
             background: white;
-            border-radius: 8px;
-            padding: 8px;
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
