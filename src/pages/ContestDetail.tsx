@@ -274,7 +274,7 @@ const ContestDetail = () => {
     <div className="min-h-screen flex flex-col" style={brandStyles}>
       {isLiveVotingEnabled && <VoteSurgeOverlay surges={voteSurges} />}
       <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         <div className="space-y-6">
           {/* Back Button */}
           <Link to="/contests">
