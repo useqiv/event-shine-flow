@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+const ZEPTOMAIL_API_KEY = Deno.env.get("ZEPTOMAIL_API_KEY");
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,6 +13,36 @@ interface AdminNotificationRequest {
   data: Record<string, any>;
   adminEmails?: string[];
 }
+
+const sendZeptoEmail = async (recipients: string[], subject: string, html: string) => {
+  const toList = recipients.map(email => ({
+    email_address: { address: email, name: "Admin" }
+  }));
+
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: { address: "noreply@votepass.com", name: "VotePass Admin" },
+      to: toList,
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
+  }
+  
+  return data;
+};
 
 const getEmailTemplate = (type: string, data: Record<string, any>) => {
   const templates: Record<string, { subject: string; html: string }> = {
@@ -128,13 +160,12 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    if (!ZEPTOMAIL_API_KEY) {
+      throw new Error("ZEPTOMAIL_API_KEY is not configured");
+    }
+
     const { type, data, adminEmails }: AdminNotificationRequest = await req.json();
     console.log("Notification type:", type, "Data:", data);
-
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY not configured");
-    }
 
     // Get admin emails from database if not provided
     let recipients = adminEmails;
@@ -174,26 +205,12 @@ const handler = async (req: Request): Promise<Response> => {
     const template = getEmailTemplate(type, data);
     console.log("Sending email to:", recipients);
 
-    // Use Resend API directly with fetch
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "VoteApp Admin <onboarding@resend.dev>",
-        to: recipients,
-        subject: template.subject,
-        html: template.html,
-      }),
-    });
+    const emailResponse = await sendZeptoEmail(recipients, template.subject, template.html);
 
-    const emailResult = await emailResponse.json();
-    console.log("Email sent successfully:", emailResult);
+    console.log("Email sent successfully:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, emailResponse: emailResult }),
+      JSON.stringify({ success: true, emailResponse }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {

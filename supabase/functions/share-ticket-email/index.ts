@@ -1,11 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const ZEPTOMAIL_API_KEY = Deno.env.get("ZEPTOMAIL_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ShareTicketRequest {
@@ -22,13 +21,42 @@ interface ShareTicketRequest {
   ticketUrl: string;
 }
 
+const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: { address: "noreply@votepass.com", name: "VotePass" },
+      to: [{ email_address: { address: to, name: toName || "User" } }],
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
+  }
+  
+  return data;
+};
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!ZEPTOMAIL_API_KEY) {
+      throw new Error("ZEPTOMAIL_API_KEY is not configured");
+    }
+
     const {
       recipientEmail,
       recipientName,
@@ -110,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Footer -->
           <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              Powered by VoteWaves • Your voting and events platform
+              Powered by VotePass • Your voting and events platform
             </p>
           </div>
         </div>
@@ -118,34 +146,18 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "VoteWaves <onboarding@resend.dev>",
-        to: [recipientEmail],
-        subject: `${senderName} shared a ticket with you: ${eventTitle}`,
-        html: emailHtml,
-      }),
-    });
-
-    const emailResponse = await res.json();
-
-    if (!res.ok) {
-      throw new Error(emailResponse.message || "Failed to send email");
-    }
+    const emailResponse = await sendZeptoEmail(
+      recipientEmail,
+      recipientName || "User",
+      `${senderName} shared a ticket with you: ${eventTitle}`,
+      emailHtml
+    );
 
     console.log("Ticket shared via email successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in share-ticket-email function:", error);
