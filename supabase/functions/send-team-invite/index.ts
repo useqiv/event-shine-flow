@@ -16,6 +16,8 @@ interface TeamInviteRequest {
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  console.log("Sending email via ZeptoMail to:", to);
+  
   const response = await fetch("https://api.zeptomail.com/v1.1/email", {
     method: "POST",
     headers: {
@@ -31,11 +33,21 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
     }),
   });
 
-  const data = await response.json();
+  const responseText = await response.text();
+  console.log("ZeptoMail response status:", response.status);
+  console.log("ZeptoMail response:", responseText);
+  
+  let data;
+  try {
+    data = responseText ? JSON.parse(responseText) : {};
+  } catch (e) {
+    console.error("Failed to parse ZeptoMail response:", responseText);
+    data = { raw: responseText };
+  }
   
   if (!response.ok) {
     console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
+    throw new Error(data.message || data.error?.details?.[0]?.message || "Failed to send email");
   }
   
   return data;
