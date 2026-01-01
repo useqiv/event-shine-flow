@@ -73,11 +73,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
               {contest.description}
             </p>
           )}
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Vote className="h-4 w-4" />
-              <span>{contest.total_votes.toLocaleString()} votes</span>
-            </div>
+          <div className="flex items-center justify-end mt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>

@@ -76,11 +76,7 @@ const SavedItems = () => {
                         <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                           {contest.description}
                         </p>
-                        <div className="flex items-center justify-between mt-4">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Vote className="h-4 w-4" />
-                            {contest.total_votes?.toLocaleString() || 0} votes
-                          </div>
+                        <div className="flex items-center justify-end mt-4">
                           <Button asChild size="sm">
                             <Link to={`/contests/${contest.id}`}>
                               {isEnded ? 'View Results' : 'Vote Now'}

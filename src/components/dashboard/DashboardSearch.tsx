@@ -82,7 +82,6 @@ export const DashboardSearch = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{contest.title}</p>
-                            <p className="text-xs text-muted-foreground">{contest.total_votes.toLocaleString()} votes</p>
                           </div>
                           <Badge variant="secondary" className="text-xs">{contest.category}</Badge>
                         </Link>

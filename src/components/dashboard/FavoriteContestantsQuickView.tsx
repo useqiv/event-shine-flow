@@ -122,18 +122,12 @@ export const FavoriteContestantsQuickView = () => {
                 <p className="text-xs text-muted-foreground truncate">
                   {fav.contestant.contest.title}
                 </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3" />
-                    {fav.contestant.vote_count.toLocaleString()} votes
-                  </span>
-                  {!isActive && (
-                    <Badge variant="outline" className="text-xs py-0 px-1">
-                      <Clock className="h-2.5 w-2.5 mr-0.5" />
-                      Ended
-                    </Badge>
-                  )}
-                </div>
+                {!isActive && (
+                  <Badge variant="outline" className="text-xs py-0 px-1 mt-0.5">
+                    <Clock className="h-2.5 w-2.5 mr-0.5" />
+                    Ended
+                  </Badge>
+                )}
               </div>
               
               <div className="flex flex-col items-end gap-1">
