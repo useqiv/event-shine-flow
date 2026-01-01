@@ -541,16 +541,50 @@ const PublicForm = () => {
                 {(() => {
                   const renderedFields: React.ReactNode[] = [];
                   let i = 0;
+                  
+                  // Field types that should be paired on the same line
+                  const pairableFields = ['first_name', 'last_name', 'text', 'email', 'phone', 'number', 'date', 'time', 'url'];
+                  
+                  // Check if two fields should be paired
+                  const shouldPairFields = (field1: FormField, field2: FormField | undefined): boolean => {
+                    if (!field2) return false;
+                    
+                    // Name pair (first_name + last_name)
+                    if ((field1.field_type === 'first_name' && field2.field_type === 'last_name') ||
+                        (field1.field_type === 'last_name' && field2.field_type === 'first_name')) {
+                      return true;
+                    }
+                    
+                    // Date + Time pair
+                    if ((field1.field_type === 'date' && field2.field_type === 'time') ||
+                        (field1.field_type === 'time' && field2.field_type === 'date')) {
+                      return true;
+                    }
+                    
+                    // Email + Phone pair
+                    if ((field1.field_type === 'email' && field2.field_type === 'phone') ||
+                        (field1.field_type === 'phone' && field2.field_type === 'email')) {
+                      return true;
+                    }
+                    
+                    // Two short text fields in a row (both must be simple input types)
+                    if (pairableFields.includes(field1.field_type) && 
+                        pairableFields.includes(field2.field_type) &&
+                        field1.field_type === field2.field_type &&
+                        field1.field_type === 'text') {
+                      return true;
+                    }
+                    
+                    return false;
+                  };
+                  
                   while (i < (fields?.length || 0)) {
                     const field = fields![i];
                     const nextField = fields![i + 1];
                     
-                    // Check if current and next fields are first_name and last_name (in either order)
-                    const isNamePair = 
-                      (field.field_type === 'first_name' && nextField?.field_type === 'last_name') ||
-                      (field.field_type === 'last_name' && nextField?.field_type === 'first_name');
+                    const shouldPair = shouldPairFields(field, nextField);
                     
-                    if (isNamePair) {
+                    if (shouldPair && nextField) {
                       // Render both fields on the same line
                       renderedFields.push(
                         <div key={`${field.id}-${nextField.id}`} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
