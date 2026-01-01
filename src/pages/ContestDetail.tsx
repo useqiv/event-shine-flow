@@ -361,13 +361,6 @@ const ContestDetail = () => {
         {/* Live Voting Section - Only show if is_live_voting is enabled */}
         {!isEnded && contestants && contestants.length > 0 && isLiveVotingEnabled && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <PowerVotingMoment
-                isActive={false}
-                multiplier={2}
-                className="mb-4"
-              />
-            </div>
             <div className="lg:col-span-1">
               <LiveVotingWidget
                 contestId={id || ''}
@@ -379,6 +372,13 @@ const ContestDetail = () => {
                   photo_url: c.photo_url,
                 }))}
                 isLive={!isEnded}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <PowerVotingMoment
+                isActive={false}
+                multiplier={2}
+                className="mb-4"
               />
             </div>
           </div>
