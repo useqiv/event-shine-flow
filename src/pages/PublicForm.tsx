@@ -108,6 +108,28 @@ const PublicForm = () => {
           />
         );
 
+      case 'phone':
+        return (
+          <Input
+            type="tel"
+            placeholder={field.placeholder || 'Enter phone number'}
+            value={(formData[field.id] as string) || ''}
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            className={hasError ? 'border-destructive' : ''}
+          />
+        );
+
+      case 'url':
+        return (
+          <Input
+            type="url"
+            placeholder={field.placeholder || 'https://example.com'}
+            value={(formData[field.id] as string) || ''}
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            className={hasError ? 'border-destructive' : ''}
+          />
+        );
+
       case 'textarea':
         return (
           <Textarea
@@ -123,6 +145,26 @@ const PublicForm = () => {
         return (
           <Input
             type="date"
+            value={(formData[field.id] as string) || ''}
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            className={hasError ? 'border-destructive' : ''}
+          />
+        );
+
+      case 'time':
+        return (
+          <Input
+            type="time"
+            value={(formData[field.id] as string) || ''}
+            onChange={(e) => handleFieldChange(field.id, e.target.value)}
+            className={hasError ? 'border-destructive' : ''}
+          />
+        );
+
+      case 'datetime':
+        return (
+          <Input
+            type="datetime-local"
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
             className={hasError ? 'border-destructive' : ''}
@@ -183,6 +225,24 @@ const PublicForm = () => {
           </div>
         );
 
+      case 'yes_no':
+        return (
+          <RadioGroup
+            value={(formData[field.id] as string) || ''}
+            onValueChange={(value) => handleFieldChange(field.id, value)}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="yes" id={`${field.id}-yes`} />
+              <Label htmlFor={`${field.id}-yes`} className="font-normal">Yes</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="no" id={`${field.id}-no`} />
+              <Label htmlFor={`${field.id}-no`} className="font-normal">No</Label>
+            </div>
+          </RadioGroup>
+        );
+
       case 'rating':
         return (
           <div className="flex gap-2">
@@ -200,6 +260,24 @@ const PublicForm = () => {
           </div>
         );
 
+      case 'scale':
+        return (
+          <div className="flex gap-1 flex-wrap">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+              <Button
+                key={value}
+                type="button"
+                variant={(formData[field.id] as number) === value ? 'default' : 'outline'}
+                size="sm"
+                className="w-9 h-9"
+                onClick={() => handleFieldChange(field.id, value)}
+              >
+                {value}
+              </Button>
+            ))}
+          </div>
+        );
+
       case 'file':
         return (
           <Input
@@ -212,6 +290,79 @@ const PublicForm = () => {
             }}
             className={hasError ? 'border-destructive' : ''}
           />
+        );
+
+      case 'address':
+        return (
+          <div className="space-y-3">
+            <Input
+              placeholder="Street Address"
+              value={((formData[field.id] as Record<string, string>) || {}).street || ''}
+              onChange={(e) => handleFieldChange(field.id, { 
+                ...((formData[field.id] as Record<string, string>) || {}), 
+                street: e.target.value 
+              })}
+              className={hasError ? 'border-destructive' : ''}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                placeholder="City"
+                value={((formData[field.id] as Record<string, string>) || {}).city || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  city: e.target.value 
+                })}
+              />
+              <Input
+                placeholder="State/Province"
+                value={((formData[field.id] as Record<string, string>) || {}).state || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  state: e.target.value 
+                })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                placeholder="ZIP/Postal Code"
+                value={((formData[field.id] as Record<string, string>) || {}).zip || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  zip: e.target.value 
+                })}
+              />
+              <Input
+                placeholder="Country"
+                value={((formData[field.id] as Record<string, string>) || {}).country || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  country: e.target.value 
+                })}
+              />
+            </div>
+          </div>
+        );
+
+      case 'heading':
+        return (
+          <h3 className="text-lg font-semibold border-b pb-2">{field.label}</h3>
+        );
+
+      case 'paragraph':
+        return (
+          <p className="text-muted-foreground">{field.description || field.label}</p>
+        );
+
+      case 'divider':
+        return <hr className="border-t" />;
+
+      case 'image':
+        return field.placeholder ? (
+          <img src={field.placeholder} alt={field.label} className="max-w-full rounded-lg" />
+        ) : (
+          <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
+            Image placeholder
+          </div>
         );
 
       default:
