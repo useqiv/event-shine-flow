@@ -61,14 +61,19 @@ const PublicForm = () => {
     
     if (!form || !validateForm()) return;
 
-    await submitResponse.mutateAsync({
-      form_id: form.id,
-      respondent_name: respondentName || undefined,
-      respondent_email: respondentEmail || undefined,
-      response_data: formData as Json,
-    });
+    try {
+      await submitResponse.mutateAsync({
+        form_id: form.id,
+        respondent_name: respondentName || null,
+        respondent_email: respondentEmail || null,
+        response_data: formData as Json,
+      });
 
-    setIsSubmitted(true);
+      setIsSubmitted(true);
+    } catch (error) {
+      // Error is already handled by the mutation's onError
+      console.error('Form submission error:', error);
+    }
   };
 
   const handleFieldChange = (fieldId: string, value: unknown) => {
