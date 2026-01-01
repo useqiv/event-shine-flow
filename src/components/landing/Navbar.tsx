@@ -1,14 +1,64 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Vote, Search, SlidersHorizontal } from "lucide-react";
+import { Menu, X, Vote, Search, User, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { supabase } from "@/integrations/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => fetchProfile(session.user.id), 0);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', userId)
+      .maybeSingle();
+    setProfile(data);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({ title: "Logged out successfully" });
+    navigate('/');
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +81,13 @@ const Navbar = () => {
     { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
   ];
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return user?.email?.charAt(0).toUpperCase() || 'U';
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -68,12 +125,54 @@ const Navbar = () => {
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
             <ThemeToggle />
-            <Link to="/auth">
-              <Button variant="ghost">Sign In</Button>
-            </Link>
-            <Link to="/auth">
-              <Button>Get Started</Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost">Dashboard</Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
+                        <AvatarFallback>{getInitials()}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        {profile?.full_name && (
+                          <p className="font-medium">{profile.full_name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="ghost">Sign In</Button>
+                </Link>
+                <Link to="/auth">
+                  <Button>Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -119,12 +218,48 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
-                <Link to="/auth" onClick={() => setIsOpen(false)}>
-                  <Button variant="ghost" className="w-full justify-center">Sign In</Button>
-                </Link>
-                <Link to="/auth" onClick={() => setIsOpen(false)}>
-                  <Button variant="default" className="w-full justify-center">Get Started Free</Button>
-                </Link>
+                {user ? (
+                  <>
+                    <div className="flex items-center gap-3 px-4 py-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
+                        <AvatarFallback>{getInitials()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        {profile?.full_name && (
+                          <p className="font-medium text-sm">{profile.full_name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                    </Link>
+                    <Link to="/profile" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-destructive" 
+                      onClick={() => { handleLogout(); setIsOpen(false); }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-center">Sign In</Button>
+                    </Link>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
