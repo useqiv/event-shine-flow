@@ -46,7 +46,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-team-invite]
-verify_jwt = true
+verify_jwt = false
 
 [functions.share-ticket-email]
 verify_jwt = true
