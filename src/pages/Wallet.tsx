@@ -17,12 +17,13 @@ import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket, CreditCard, Loader2, Filter, CalendarIcon, Bell, Settings, X } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, Gift, ArrowUpRight, ArrowDownLeft, Vote, Ticket, CreditCard, Loader2, Filter, CalendarIcon, Bell, Settings, X, ChevronDown } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import ReferralCard from '@/components/ReferralCard';
 import { cn } from '@/lib/utils';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import CurrencyCalculator from '@/components/ui/currency-calculator';
+import { useUserCurrency } from '@/hooks/useUserCurrency';
 
 type TransactionType = 'all' | 'deposit' | 'vote' | 'ticket' | 'referral' | 'voucher' | 'withdrawal';
 
@@ -35,7 +36,11 @@ const WalletPage = () => {
   const redeemVoucher = useRedeemVoucher();
   const updateThreshold = useUpdateLowBalanceThreshold();
   const { toast } = useToast();
-  const { getConversion, isLive, lastUpdated } = useConversionDisplay();
+  const { convert, getConversion, isLive, lastUpdated } = useConversionDisplay();
+  const { preferredCurrency, updatePreferredCurrency } = useUserCurrency();
+
+  // Display currency for wallet balance
+  const [displayCurrency, setDisplayCurrency] = useState(preferredCurrency);
 
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
@@ -64,6 +69,18 @@ const WalletPage = () => {
   // Check for low balance and show alert
   const isLowBalance = wallet && wallet.low_balance_threshold !== null && wallet.balance < wallet.low_balance_threshold;
 
+  // Calculate converted balance for display
+  const walletCurrency = wallet?.balance_currency || 'NGN';
+  const displayBalance = useMemo(() => {
+    if (!wallet) return 0;
+    if (displayCurrency === walletCurrency) return wallet.balance;
+    return convert(wallet.balance, walletCurrency, displayCurrency);
+  }, [wallet, displayCurrency, walletCurrency, convert]);
+
+  const handleDisplayCurrencyChange = (currency: string) => {
+    setDisplayCurrency(currency);
+    updatePreferredCurrency(currency);
+  };
   // Filtered transactions - exclude pending/failed transactions from display
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
@@ -224,9 +241,33 @@ const WalletPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
             <CardContent className="pt-6">
-              <p className="text-sm opacity-80">Balance</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm opacity-80">Balance</p>
+                <Select value={displayCurrency} onValueChange={handleDisplayCurrencyChange}>
+                  <SelectTrigger className="w-auto h-7 gap-1 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground text-xs px-2">
+                    <SelectValue />
+                    <ChevronDown className="h-3 w-3 opacity-70" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {currencies.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               {walletLoading ? <Skeleton className="h-10 w-32 bg-primary-foreground/20" /> : (
-                <p className="text-3xl font-bold">₦{wallet?.balance?.toLocaleString() || '0.00'}</p>
+                <div>
+                  <p className="text-3xl font-bold">
+                    {getCurrencySymbol(displayCurrency)}{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  {displayCurrency !== walletCurrency && wallet && (
+                    <p className="text-xs opacity-70 mt-1">
+                      ≈ {getCurrencySymbol(walletCurrency)}{wallet.balance.toLocaleString()} {walletCurrency}
+                    </p>
+                  )}
+                </div>
               )}
               <div className="flex gap-2 mt-4">
                 <Button variant="secondary" size="sm" onClick={() => setIsFundModalOpen(true)}>
