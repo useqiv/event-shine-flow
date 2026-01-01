@@ -13,6 +13,7 @@ export interface Form {
   is_active: boolean;
   is_accepting_responses: boolean;
   confirmation_message: string | null;
+  allow_multiple_submissions: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,7 @@ export interface FormResponse {
   respondent_email: string | null;
   respondent_name: string | null;
   response_data: Json;
+  status: string;
   submitted_at: string;
 }
 
@@ -352,5 +354,154 @@ export const useDeleteFormResponse = () => {
     onError: (error) => {
       toast({ title: 'Failed to delete response', description: error.message, variant: 'destructive' });
     },
+  });
+};
+
+export const useUpdateFormResponse = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, form_id, status }: { id: string; form_id: string; status: string }) => {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .update({ status })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { ...data, form_id } as FormResponse;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['form-responses', data.form_id] });
+      toast({ title: 'Response status updated' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to update response', description: error.message, variant: 'destructive' });
+    },
+  });
+};
+
+export const useDuplicateForm = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (formId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get the original form
+      const { data: originalForm, error: formError } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('id', formId)
+        .single();
+
+      if (formError) throw formError;
+
+      // Create new form
+      const { data: newForm, error: newFormError } = await supabase
+        .from('forms')
+        .insert({
+          user_id: user.id,
+          title: `${originalForm.title} (Copy)`,
+          description: originalForm.description,
+          confirmation_message: originalForm.confirmation_message,
+          allow_multiple_submissions: originalForm.allow_multiple_submissions,
+        })
+        .select()
+        .single();
+
+      if (newFormError) throw newFormError;
+
+      // Get original fields
+      const { data: originalFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', formId)
+        .order('display_order', { ascending: true });
+
+      if (fieldsError) throw fieldsError;
+
+      // Duplicate fields
+      if (originalFields && originalFields.length > 0) {
+        const newFields = originalFields.map(field => ({
+          form_id: newForm.id,
+          field_type: field.field_type,
+          label: field.label,
+          description: field.description,
+          placeholder: field.placeholder,
+          is_required: field.is_required,
+          options: field.options,
+          validation_rules: field.validation_rules,
+          display_order: field.display_order,
+        }));
+
+        const { error: insertFieldsError } = await supabase
+          .from('form_fields')
+          .insert(newFields);
+
+        if (insertFieldsError) throw insertFieldsError;
+      }
+
+      return newForm as Form;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-forms'] });
+      toast({ title: 'Form duplicated successfully' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to duplicate form', description: error.message, variant: 'destructive' });
+    },
+  });
+};
+
+export const useCheckEmailSubmission = () => {
+  return useMutation({
+    mutationFn: async ({ form_id, email }: { form_id: string; email: string }) => {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select('id')
+        .eq('form_id', form_id)
+        .eq('respondent_email', email)
+        .limit(1);
+
+      if (error) throw error;
+      return data && data.length > 0;
+    },
+  });
+};
+
+export const useFormAnalytics = (formId: string) => {
+  return useQuery({
+    queryKey: ['form-analytics', formId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select('submitted_at, status')
+        .eq('form_id', formId)
+        .order('submitted_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Group by date
+      const dailyStats: Record<string, number> = {};
+      const statusCounts: Record<string, number> = { pending: 0, reviewed: 0, archived: 0 };
+
+      data?.forEach(response => {
+        const date = new Date(response.submitted_at).toISOString().split('T')[0];
+        dailyStats[date] = (dailyStats[date] || 0) + 1;
+        statusCounts[response.status] = (statusCounts[response.status] || 0) + 1;
+      });
+
+      return {
+        totalResponses: data?.length || 0,
+        dailyStats: Object.entries(dailyStats).map(([date, count]) => ({ date, count })),
+        statusCounts,
+      };
+    },
+    enabled: !!formId,
   });
 };

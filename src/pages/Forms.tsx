@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUserForms, useCreateForm, useDeleteForm } from '@/hooks/useForms';
+import { useUserForms, useCreateForm, useDeleteForm, useDuplicateForm } from '@/hooks/useForms';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,7 @@ const Forms = () => {
   const { data: forms, isLoading } = useUserForms();
   const createForm = useCreateForm();
   const deleteForm = useDeleteForm();
+  const duplicateForm = useDuplicateForm();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newFormTitle, setNewFormTitle] = useState('');
@@ -51,6 +52,11 @@ const Forms = () => {
     if (confirm('Are you sure you want to delete this form? This action cannot be undone.')) {
       await deleteForm.mutateAsync(formId);
     }
+  };
+
+  const handleDuplicateForm = async (formId: string) => {
+    const newForm = await duplicateForm.mutateAsync(formId);
+    navigate(`/forms/${newForm.id}/edit`);
   };
 
   return (
@@ -158,6 +164,10 @@ const Forms = () => {
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Preview
                           </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicateForm(form.id)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteForm(form.id)}

@@ -11,10 +11,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { usePublicForm, useFormFields, useSubmitFormResponse, FormField } from '@/hooks/useForms';
+import { usePublicForm, useFormFields, useSubmitFormResponse, useCheckEmailSubmission, FormField } from '@/hooks/useForms';
 import { Json } from '@/integrations/supabase/types';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
+import { FileUploadField } from '@/components/forms/FileUploadField';
 
 const PublicForm = () => {
   const { formIdOrSlug } = useParams<{ formIdOrSlug: string }>();
@@ -28,7 +29,8 @@ const PublicForm = () => {
   const [respondentEmail, setRespondentEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  const [duplicateError, setDuplicateError] = useState(false);
+  const checkEmail = useCheckEmailSubmission();
   const isLoading = formLoading || fieldsLoading;
 
   const validateForm = (): boolean => {
@@ -58,8 +60,22 @@ const PublicForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setDuplicateError(false);
     
     if (!form || !validateForm()) return;
+
+    // Check for duplicate submission if not allowing multiple
+    if (!form.allow_multiple_submissions && respondentEmail) {
+      const hasPreviousSubmission = await checkEmail.mutateAsync({
+        form_id: form.id,
+        email: respondentEmail,
+      });
+
+      if (hasPreviousSubmission) {
+        setDuplicateError(true);
+        return;
+      }
+    }
 
     try {
       await submitResponse.mutateAsync({
@@ -296,28 +312,13 @@ const PublicForm = () => {
 
       case 'file':
         return (
-          <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all hover:border-primary/50 hover:bg-primary/5 ${hasError ? 'border-destructive' : 'border-border/50'}`}>
-            <Input
-              type="file"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFieldChange(field.id, file.name);
-                }
-              }}
-              className="hidden"
-              id={`file-${field.id}`}
-            />
-            <label htmlFor={`file-${field.id}`} className="cursor-pointer">
-              <div className="text-muted-foreground">
-                <p className="font-medium">Click to upload a file</p>
-                <p className="text-sm">or drag and drop</p>
-              </div>
-              {formData[field.id] && (
-                <p className="mt-2 text-sm text-primary font-medium">{formData[field.id] as string}</p>
-              )}
-            </label>
-          </div>
+          <FileUploadField
+            fieldId={field.id}
+            value={(formData[field.id] as string) || null}
+            onChange={(url) => handleFieldChange(field.id, url)}
+            placeholder={field.placeholder || undefined}
+            hasError={hasError}
+          />
         );
 
       case 'address':
