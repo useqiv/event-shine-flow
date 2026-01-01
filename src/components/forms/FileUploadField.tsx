@@ -39,20 +39,25 @@ export const FileUploadField = ({
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${fieldId}-${Date.now()}.${fileExt}`;
-      const filePath = `responses/${fileName}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { data, error: uploadError } = await supabase.storage
         .from('form-uploads')
-        .upload(filePath, file, { upsert: true });
+        .upload(fileName, file, { 
+          cacheControl: '3600',
+          upsert: true 
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('form-uploads')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      onChange(publicUrl);
+      onChange(urlData.publicUrl);
     } catch (error) {
       console.error('Upload error:', error);
       toast({ 
