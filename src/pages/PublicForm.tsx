@@ -93,6 +93,7 @@ const PublicForm = () => {
 
   const renderField = (field: FormField) => {
     const hasError = !!errors[field.id];
+    const baseInputClass = `h-11 bg-background transition-all focus-visible:ring-2 focus-visible:ring-primary/20 ${hasError ? 'border-destructive focus-visible:ring-destructive/20' : 'hover:border-primary/50'}`;
 
     switch (field.field_type) {
       case 'first_name':
@@ -106,7 +107,7 @@ const PublicForm = () => {
             placeholder={field.placeholder || ''}
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -117,7 +118,7 @@ const PublicForm = () => {
             placeholder={field.placeholder || 'Enter phone number'}
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -128,7 +129,7 @@ const PublicForm = () => {
             placeholder={field.placeholder || 'https://example.com'}
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -139,7 +140,7 @@ const PublicForm = () => {
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
             rows={4}
-            className={hasError ? 'border-destructive' : ''}
+            className={`resize-none transition-all focus-visible:ring-2 focus-visible:ring-primary/20 ${hasError ? 'border-destructive focus-visible:ring-destructive/20' : 'hover:border-primary/50'}`}
           />
         );
 
@@ -149,7 +150,7 @@ const PublicForm = () => {
             type="date"
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -159,7 +160,7 @@ const PublicForm = () => {
             type="time"
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -169,7 +170,7 @@ const PublicForm = () => {
             type="datetime-local"
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
 
@@ -179,12 +180,12 @@ const PublicForm = () => {
             value={(formData[field.id] as string) || ''}
             onValueChange={(value) => handleFieldChange(field.id, value)}
           >
-            <SelectTrigger className={hasError ? 'border-destructive' : ''}>
+            <SelectTrigger className={`h-11 transition-all hover:border-primary/50 ${hasError ? 'border-destructive' : ''}`}>
               <SelectValue placeholder={field.placeholder || 'Select an option'} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg">
               {(field.options as string[] || []).map((option) => (
-                <SelectItem key={option} value={option}>
+                <SelectItem key={option} value={option} className="cursor-pointer">
                   {option}
                 </SelectItem>
               ))}
@@ -197,11 +198,12 @@ const PublicForm = () => {
           <RadioGroup
             value={(formData[field.id] as string) || ''}
             onValueChange={(value) => handleFieldChange(field.id, value)}
+            className="space-y-3"
           >
             {(field.options as string[] || []).map((option) => (
-              <div key={option} className="flex items-center space-x-2">
+              <div key={option} className="flex items-center space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
                 <RadioGroupItem value={option} id={`${field.id}-${option}`} />
-                <Label htmlFor={`${field.id}-${option}`} className="font-normal">
+                <Label htmlFor={`${field.id}-${option}`} className="font-normal cursor-pointer flex-1">
                   {option}
                 </Label>
               </div>
@@ -211,15 +213,15 @@ const PublicForm = () => {
 
       case 'checkbox':
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(field.options as string[] || []).map((option) => (
-              <div key={option} className="flex items-center space-x-2">
+              <div key={option} className="flex items-center space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
                 <Checkbox
                   id={`${field.id}-${option}`}
                   checked={((formData[field.id] as string[]) || []).includes(option)}
                   onCheckedChange={(checked) => handleCheckboxChange(field.id, option, !!checked)}
                 />
-                <Label htmlFor={`${field.id}-${option}`} className="font-normal">
+                <Label htmlFor={`${field.id}-${option}`} className="font-normal cursor-pointer flex-1">
                   {option}
                 </Label>
               </div>
@@ -234,13 +236,13 @@ const PublicForm = () => {
             onValueChange={(value) => handleFieldChange(field.id, value)}
             className="flex gap-4"
           >
-            <div className="flex items-center space-x-2">
+            <div className={`flex-1 flex items-center justify-center space-x-2 p-4 rounded-lg border-2 cursor-pointer transition-all ${(formData[field.id] as string) === 'yes' ? 'border-primary bg-primary/10' : 'border-border/50 hover:border-primary/50'}`}>
               <RadioGroupItem value="yes" id={`${field.id}-yes`} />
-              <Label htmlFor={`${field.id}-yes`} className="font-normal">Yes</Label>
+              <Label htmlFor={`${field.id}-yes`} className="font-medium cursor-pointer">Yes</Label>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className={`flex-1 flex items-center justify-center space-x-2 p-4 rounded-lg border-2 cursor-pointer transition-all ${(formData[field.id] as string) === 'no' ? 'border-primary bg-primary/10' : 'border-border/50 hover:border-primary/50'}`}>
               <RadioGroupItem value="no" id={`${field.id}-no`} />
-              <Label htmlFor={`${field.id}-no`} className="font-normal">No</Label>
+              <Label htmlFor={`${field.id}-no`} className="font-medium cursor-pointer">No</Label>
             </div>
           </RadioGroup>
         );
@@ -254,6 +256,7 @@ const PublicForm = () => {
                 type="button"
                 variant={(formData[field.id] as number) === rating ? 'default' : 'outline'}
                 size="icon"
+                className={`h-12 w-12 text-lg font-semibold transition-all ${(formData[field.id] as number) === rating ? '' : 'hover:border-primary/50 hover:bg-primary/5'}`}
                 onClick={() => handleFieldChange(field.id, rating)}
               >
                 {rating}
@@ -264,34 +267,52 @@ const PublicForm = () => {
 
       case 'scale':
         return (
-          <div className="flex gap-1 flex-wrap">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-              <Button
-                key={value}
-                type="button"
-                variant={(formData[field.id] as number) === value ? 'default' : 'outline'}
-                size="sm"
-                className="w-9 h-9"
-                onClick={() => handleFieldChange(field.id, value)}
-              >
-                {value}
-              </Button>
-            ))}
+          <div className="space-y-2">
+            <div className="flex gap-1 flex-wrap">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={(formData[field.id] as number) === value ? 'default' : 'outline'}
+                  size="sm"
+                  className={`w-10 h-10 font-medium transition-all ${(formData[field.id] as number) === value ? '' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+                  onClick={() => handleFieldChange(field.id, value)}
+                >
+                  {value}
+                </Button>
+              ))}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground px-1">
+              <span>Not likely</span>
+              <span>Very likely</span>
+            </div>
           </div>
         );
 
       case 'file':
         return (
-          <Input
-            type="file"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                handleFieldChange(field.id, file.name);
-              }
-            }}
-            className={hasError ? 'border-destructive' : ''}
-          />
+          <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all hover:border-primary/50 hover:bg-primary/5 ${hasError ? 'border-destructive' : 'border-border/50'}`}>
+            <Input
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleFieldChange(field.id, file.name);
+                }
+              }}
+              className="hidden"
+              id={`file-${field.id}`}
+            />
+            <label htmlFor={`file-${field.id}`} className="cursor-pointer">
+              <div className="text-muted-foreground">
+                <p className="font-medium">Click to upload a file</p>
+                <p className="text-sm">or drag and drop</p>
+              </div>
+              {formData[field.id] && (
+                <p className="mt-2 text-sm text-primary font-medium">{formData[field.id] as string}</p>
+              )}
+            </label>
+          </div>
         );
 
       case 'address':
@@ -304,7 +325,7 @@ const PublicForm = () => {
                 ...((formData[field.id] as Record<string, string>) || {}), 
                 street: e.target.value 
               })}
-              className={hasError ? 'border-destructive' : ''}
+              className={`h-11 transition-all hover:border-primary/50 ${hasError ? 'border-destructive' : ''}`}
             />
             <div className="grid grid-cols-2 gap-3">
               <Input
@@ -314,6 +335,7 @@ const PublicForm = () => {
                   ...((formData[field.id] as Record<string, string>) || {}), 
                   city: e.target.value 
                 })}
+                className="h-11 transition-all hover:border-primary/50"
               />
               <Input
                 placeholder="State/Province"
@@ -322,6 +344,7 @@ const PublicForm = () => {
                   ...((formData[field.id] as Record<string, string>) || {}), 
                   state: e.target.value 
                 })}
+                className="h-11 transition-all hover:border-primary/50"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -332,6 +355,7 @@ const PublicForm = () => {
                   ...((formData[field.id] as Record<string, string>) || {}), 
                   zip: e.target.value 
                 })}
+                className="h-11 transition-all hover:border-primary/50"
               />
               <Input
                 placeholder="Country"
@@ -340,6 +364,7 @@ const PublicForm = () => {
                   ...((formData[field.id] as Record<string, string>) || {}), 
                   country: e.target.value 
                 })}
+                className="h-11 transition-all hover:border-primary/50"
               />
             </div>
           </div>
@@ -347,22 +372,25 @@ const PublicForm = () => {
 
       case 'heading':
         return (
-          <h3 className="text-lg font-semibold border-b pb-2">{field.label}</h3>
+          <div className="pt-4">
+            <h3 className="text-xl font-semibold text-foreground">{field.label}</h3>
+            {field.description && <p className="text-muted-foreground mt-1">{field.description}</p>}
+          </div>
         );
 
       case 'paragraph':
         return (
-          <p className="text-muted-foreground">{field.description || field.label}</p>
+          <p className="text-muted-foreground leading-relaxed">{field.description || field.label}</p>
         );
 
       case 'divider':
-        return <hr className="border-t" />;
+        return <hr className="border-t border-border/50 my-2" />;
 
       case 'image':
         return field.placeholder ? (
-          <img src={field.placeholder} alt={field.label} className="max-w-full rounded-lg" />
+          <img src={field.placeholder} alt={field.label} className="max-w-full rounded-xl shadow-sm" />
         ) : (
-          <div className="bg-muted rounded-lg p-8 text-center text-muted-foreground">
+          <div className="bg-muted/50 rounded-xl p-12 text-center text-muted-foreground border border-dashed">
             Image placeholder
           </div>
         );
@@ -373,7 +401,7 @@ const PublicForm = () => {
             placeholder={field.placeholder || ''}
             value={(formData[field.id] as string) || ''}
             onChange={(e) => handleFieldChange(field.id, e.target.value)}
-            className={hasError ? 'border-destructive' : ''}
+            className={baseInputClass}
           />
         );
     }
@@ -492,7 +520,7 @@ const PublicForm = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/50 to-background">
       <Helmet>
         <title>{form.title} | VoteApp</title>
         <meta name="description" content={form.description || `Fill out ${form.title}`} />
@@ -500,15 +528,16 @@ const PublicForm = () => {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-12 pt-28">
         <div className="max-w-2xl mx-auto">
-          <Card className="shadow-lg border-0">
-            <CardHeader className="space-y-3 pb-6 border-b">
+          <Card className="shadow-xl border-0 overflow-hidden">
+            <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
+            <CardHeader className="space-y-3 pb-6">
               <CardTitle className="text-2xl md:text-3xl font-bold">{form.title}</CardTitle>
               {form.description && (
-                <CardDescription className="text-base">{form.description}</CardDescription>
+                <CardDescription className="text-base leading-relaxed">{form.description}</CardDescription>
               )}
             </CardHeader>
-            <CardContent className="pt-8">
-              <form onSubmit={handleSubmit} className="space-y-8">
+            <CardContent className="pt-2 pb-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {(() => {
                   const renderedFields: React.ReactNode[] = [];
                   let i = 0;
@@ -577,8 +606,8 @@ const PublicForm = () => {
                   return renderedFields;
                 })()}
 
-                <div className="pt-4">
-                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={submitResponse.isPending}>
+                <div className="pt-6 border-t border-border/30">
+                  <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" disabled={submitResponse.isPending}>
                     {submitResponse.isPending ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
@@ -592,8 +621,9 @@ const PublicForm = () => {
               </form>
             </CardContent>
           </Card>
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Powered by VoteApp Forms
+          <p className="text-center text-xs text-muted-foreground mt-8 flex items-center justify-center gap-1.5">
+            <span>Powered by</span>
+            <span className="font-medium text-foreground/70">VoteApp Forms</span>
           </p>
         </div>
       </main>
