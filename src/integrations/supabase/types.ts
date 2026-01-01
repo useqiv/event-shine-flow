@@ -787,6 +787,136 @@ export type Database = {
           },
         ]
       }
+      form_fields: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          field_type: string
+          form_id: string
+          id: string
+          is_required: boolean
+          label: string
+          options: Json | null
+          placeholder: string | null
+          updated_at: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          field_type: string
+          form_id: string
+          id?: string
+          is_required?: boolean
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          field_type?: string
+          form_id?: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          updated_at?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_responses: {
+        Row: {
+          form_id: string
+          id: string
+          respondent_email: string | null
+          respondent_name: string | null
+          response_data: Json
+          submitted_at: string
+        }
+        Insert: {
+          form_id: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name?: string | null
+          response_data: Json
+          submitted_at?: string
+        }
+        Update: {
+          form_id?: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name?: string | null
+          response_data?: Json
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          confirmation_message: string | null
+          created_at: string
+          custom_slug: string | null
+          description: string | null
+          id: string
+          is_accepting_responses: boolean
+          is_active: boolean
+          logo_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confirmation_message?: string | null
+          created_at?: string
+          custom_slug?: string | null
+          description?: string | null
+          id?: string
+          is_accepting_responses?: boolean
+          is_active?: boolean
+          logo_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confirmation_message?: string | null
+          created_at?: string
+          custom_slug?: string | null
+          description?: string | null
+          id?: string
+          is_accepting_responses?: boolean
+          is_active?: boolean
+          logo_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       fraud_alerts: {
         Row: {
           alert_type: string
