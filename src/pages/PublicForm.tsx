@@ -486,21 +486,73 @@ const PublicForm = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {fields?.map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <Label className="flex items-center gap-1">
-                      {field.label}
-                      {field.is_required && <span className="text-destructive">*</span>}
-                    </Label>
-                    {field.description && (
-                      <p className="text-sm text-muted-foreground">{field.description}</p>
-                    )}
-                    {renderField(field)}
-                    {errors[field.id] && (
-                      <p className="text-sm text-destructive">{errors[field.id]}</p>
-                    )}
-                  </div>
-                ))}
+                {(() => {
+                  const renderedFields: React.ReactNode[] = [];
+                  let i = 0;
+                  while (i < (fields?.length || 0)) {
+                    const field = fields![i];
+                    const nextField = fields![i + 1];
+                    
+                    // Check if current and next fields are first_name and last_name (in either order)
+                    const isNamePair = 
+                      (field.field_type === 'first_name' && nextField?.field_type === 'last_name') ||
+                      (field.field_type === 'last_name' && nextField?.field_type === 'first_name');
+                    
+                    if (isNamePair) {
+                      // Render both fields on the same line
+                      renderedFields.push(
+                        <div key={`${field.id}-${nextField.id}`} className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="flex items-center gap-1">
+                              {field.label}
+                              {field.is_required && <span className="text-destructive">*</span>}
+                            </Label>
+                            {field.description && (
+                              <p className="text-sm text-muted-foreground">{field.description}</p>
+                            )}
+                            {renderField(field)}
+                            {errors[field.id] && (
+                              <p className="text-sm text-destructive">{errors[field.id]}</p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="flex items-center gap-1">
+                              {nextField.label}
+                              {nextField.is_required && <span className="text-destructive">*</span>}
+                            </Label>
+                            {nextField.description && (
+                              <p className="text-sm text-muted-foreground">{nextField.description}</p>
+                            )}
+                            {renderField(nextField)}
+                            {errors[nextField.id] && (
+                              <p className="text-sm text-destructive">{errors[nextField.id]}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                      i += 2; // Skip both fields
+                    } else {
+                      // Render single field normally
+                      renderedFields.push(
+                        <div key={field.id} className="space-y-2">
+                          <Label className="flex items-center gap-1">
+                            {field.label}
+                            {field.is_required && <span className="text-destructive">*</span>}
+                          </Label>
+                          {field.description && (
+                            <p className="text-sm text-muted-foreground">{field.description}</p>
+                          )}
+                          {renderField(field)}
+                          {errors[field.id] && (
+                            <p className="text-sm text-destructive">{errors[field.id]}</p>
+                          )}
+                        </div>
+                      );
+                      i += 1;
+                    }
+                  }
+                  return renderedFields;
+                })()}
 
                 <Button type="submit" className="w-full" disabled={submitResponse.isPending}>
                   {submitResponse.isPending ? (
