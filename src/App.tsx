@@ -42,6 +42,10 @@ import DonationHistory from "./pages/DonationHistory";
 import CampaignDashboard from "./pages/CampaignDashboard";
 import Install from "./pages/Install";
 import Search from "./pages/Search";
+import Forms from "./pages/Forms";
+import FormBuilder from "./pages/FormBuilder";
+import FormResponses from "./pages/FormResponses";
+import PublicForm from "./pages/PublicForm";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -203,6 +207,10 @@ const AppRoutes = () => (
     <Route path="/donations/history" element={<ProtectedRoute><DonationHistory /></ProtectedRoute>} />
     <Route path="/install" element={<Install />} />
     <Route path="/search" element={<Search />} />
+    <Route path="/forms" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
+    <Route path="/forms/:formId/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
+    <Route path="/forms/:formId/responses" element={<ProtectedRoute><FormResponses /></ProtectedRoute>} />
+    <Route path="/f/:formIdOrSlug" element={<PublicForm />} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
