@@ -4,7 +4,8 @@ import { Helmet } from 'react-helmet-async';
 import { 
   ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, 
   Type, AlignLeft, Hash, Mail, Calendar, ListFilter, CheckSquare, 
-  CircleDot, Star, Upload
+  CircleDot, Star, Upload, Phone, Link2, Clock, MapPin, ToggleLeft,
+  Heading, SeparatorHorizontal, Image
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -18,20 +19,41 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useForm, useFormFields, useUpdateForm, useCreateFormField, useUpdateFormField, useDeleteFormField, FormField } from '@/hooks/useForms';
 import { useToast } from '@/hooks/use-toast';
 
 const FIELD_TYPES = [
-  { value: 'text', label: 'Short Text', icon: Type },
-  { value: 'textarea', label: 'Long Text', icon: AlignLeft },
-  { value: 'number', label: 'Number', icon: Hash },
-  { value: 'email', label: 'Email', icon: Mail },
-  { value: 'date', label: 'Date', icon: Calendar },
-  { value: 'dropdown', label: 'Dropdown', icon: ListFilter },
-  { value: 'checkbox', label: 'Checkboxes', icon: CheckSquare },
-  { value: 'radio', label: 'Multiple Choice', icon: CircleDot },
-  { value: 'rating', label: 'Rating', icon: Star },
-  { value: 'file', label: 'File Upload', icon: Upload },
+  // Text inputs
+  { value: 'text', label: 'Short Text', icon: Type, category: 'text' },
+  { value: 'textarea', label: 'Long Text', icon: AlignLeft, category: 'text' },
+  { value: 'number', label: 'Number', icon: Hash, category: 'text' },
+  { value: 'email', label: 'Email', icon: Mail, category: 'text' },
+  { value: 'phone', label: 'Phone Number', icon: Phone, category: 'text' },
+  { value: 'url', label: 'Website URL', icon: Link2, category: 'text' },
+  
+  // Date & Time
+  { value: 'date', label: 'Date', icon: Calendar, category: 'datetime' },
+  { value: 'time', label: 'Time', icon: Clock, category: 'datetime' },
+  { value: 'datetime', label: 'Date & Time', icon: Calendar, category: 'datetime' },
+  
+  // Choice fields
+  { value: 'dropdown', label: 'Dropdown', icon: ListFilter, category: 'choice' },
+  { value: 'checkbox', label: 'Checkboxes', icon: CheckSquare, category: 'choice' },
+  { value: 'radio', label: 'Multiple Choice', icon: CircleDot, category: 'choice' },
+  { value: 'yes_no', label: 'Yes/No', icon: ToggleLeft, category: 'choice' },
+  
+  // Advanced
+  { value: 'rating', label: 'Rating (1-5)', icon: Star, category: 'advanced' },
+  { value: 'scale', label: 'Linear Scale', icon: Hash, category: 'advanced' },
+  { value: 'file', label: 'File Upload', icon: Upload, category: 'advanced' },
+  { value: 'address', label: 'Address', icon: MapPin, category: 'advanced' },
+  
+  // Layout
+  { value: 'heading', label: 'Section Heading', icon: Heading, category: 'layout' },
+  { value: 'paragraph', label: 'Paragraph Text', icon: AlignLeft, category: 'layout' },
+  { value: 'divider', label: 'Divider', icon: SeparatorHorizontal, category: 'layout' },
+  { value: 'image', label: 'Image', icon: Image, category: 'layout' },
 ];
 
 const FormBuilder = () => {
@@ -404,28 +426,124 @@ const FormBuilder = () => {
 
       {/* Add Field Dialog */}
       <Dialog open={isAddFieldOpen} onOpenChange={setIsAddFieldOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Field</DialogTitle>
             <DialogDescription>Choose a field type to add to your form.</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            {FIELD_TYPES.map((type) => {
-              const Icon = type.icon;
-              return (
-                <Button
-                  key={type.value}
-                  variant="outline"
-                  className="h-auto py-4 flex flex-col items-center gap-2"
-                  onClick={() => handleAddField(type.value)}
-                  disabled={createField.isPending}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-sm">{type.label}</span>
-                </Button>
-              );
-            })}
-          </div>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-6 pr-4">
+              {/* Text Inputs */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Text Inputs</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {FIELD_TYPES.filter(t => t.category === 'text').map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        variant="outline"
+                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        onClick={() => handleAddField(type.value)}
+                        disabled={createField.isPending}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Date & Time */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Date & Time</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {FIELD_TYPES.filter(t => t.category === 'datetime').map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        variant="outline"
+                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        onClick={() => handleAddField(type.value)}
+                        disabled={createField.isPending}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Choice Fields */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Choice Fields</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {FIELD_TYPES.filter(t => t.category === 'choice').map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        variant="outline"
+                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        onClick={() => handleAddField(type.value)}
+                        disabled={createField.isPending}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Advanced */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Advanced</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {FIELD_TYPES.filter(t => t.category === 'advanced').map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        variant="outline"
+                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        onClick={() => handleAddField(type.value)}
+                        disabled={createField.isPending}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Layout */}
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Layout</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {FIELD_TYPES.filter(t => t.category === 'layout').map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        variant="outline"
+                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        onClick={() => handleAddField(type.value)}
+                        disabled={createField.isPending}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm">{type.label}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
