@@ -613,10 +613,10 @@ async function processSuccessfulPayment(paymentData: any) {
   } else if (type === "wallet" && user_id) {
     console.log("Processing wallet funding...");
 
-    // Get wallet
+    // Get wallet with balance_currency
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .select("id, balance")
+      .select("id, balance, balance_currency")
       .eq("user_id", user_id)
       .single();
 
@@ -625,8 +625,64 @@ async function processSuccessfulPayment(paymentData: any) {
       return;
     }
 
+    const paymentCurrency = paymentData.currency || "NGN";
+    const walletCurrency = wallet.balance_currency || "NGN";
+    let amountToAdd = paymentData.amount;
+    let convertedMessage = "";
+
+    // Convert the amount to wallet currency if different
+    if (paymentCurrency !== walletCurrency) {
+      console.log(`Converting ${paymentCurrency} ${amountToAdd} to ${walletCurrency}`);
+      
+      // Fallback exchange rates (USD base)
+      const fallbackRates: Record<string, number> = {
+        USD: 1,
+        NGN: 1550,
+        EUR: 0.92,
+        GBP: 0.79,
+        GHS: 15.5,
+        KES: 153,
+        ZAR: 18.5,
+        XAF: 605,
+        XOF: 605,
+        TZS: 2500,
+        UGX: 3700,
+        RWF: 1300,
+      };
+
+      // Try to get live exchange rates
+      let rates = fallbackRates;
+      try {
+        const ratesResponse = await fetch(`${supabaseUrl}/functions/v1/get-exchange-rates`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        });
+        
+        if (ratesResponse.ok) {
+          const ratesData = await ratesResponse.json();
+          if (ratesData.rates) {
+            rates = ratesData.rates;
+            console.log("Using live exchange rates");
+          }
+        }
+      } catch (rateError: any) {
+        console.log("Using fallback exchange rates:", rateError.message);
+      }
+
+      // Convert: first to USD, then to wallet currency
+      const fromRate = rates[paymentCurrency] || 1;
+      const toRate = rates[walletCurrency] || 1;
+      const amountInUSD = paymentData.amount / fromRate;
+      amountToAdd = Math.round(amountInUSD * toRate * 100) / 100;
+      
+      console.log(`Converted: ${paymentCurrency} ${paymentData.amount} = ${walletCurrency} ${amountToAdd}`);
+      convertedMessage = ` (converted from ${paymentCurrency} ${paymentData.amount.toLocaleString()})`;
+    }
+
     // Update wallet balance
-    const newBalance = Number(wallet.balance) + paymentData.amount;
+    const newBalance = Number(wallet.balance) + amountToAdd;
     const { error: updateError } = await supabase
       .from("wallets")
       .update({ balance: newBalance, updated_at: new Date().toISOString() })
@@ -635,13 +691,13 @@ async function processSuccessfulPayment(paymentData: any) {
     if (updateError) {
       console.error("Error updating wallet balance:", updateError.message);
     } else {
-      console.log("Wallet funded successfully, new balance:", newBalance);
+      console.log("Wallet funded successfully, new balance:", newBalance, walletCurrency);
 
-      // Create notification
+      // Create notification with conversion info
       await supabase.from("notifications").insert({
         user_id,
         title: "Wallet Funded Successfully",
-        message: `Your wallet has been credited with ${paymentData.currency || "NGN"} ${paymentData.amount.toLocaleString()}.`,
+        message: `Your wallet has been credited with ${walletCurrency} ${amountToAdd.toLocaleString()}${convertedMessage}.`,
         type: "system",
       });
 
@@ -651,10 +707,12 @@ async function processSuccessfulPayment(paymentData: any) {
         user_email: customer.email,
         user_name: customer.name || "Valued Customer",
         amount: paymentData.amount,
-        currency: paymentData.currency || "NGN",
+        currency: paymentCurrency,
         payment_method: `Flutterwave`,
         transaction_ref: paymentData.tx_ref,
         new_balance: newBalance,
+        wallet_currency: walletCurrency,
+        converted_amount: paymentCurrency !== walletCurrency ? amountToAdd : undefined,
       });
     }
   } else if (type === "donation" && campaign_id && user_id) {
