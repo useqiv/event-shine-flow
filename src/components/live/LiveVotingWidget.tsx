@@ -124,13 +124,6 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Total Votes Counter */}
-        <div className="text-center p-4 rounded-lg bg-primary/10">
-          <p className="text-sm text-muted-foreground mb-1">Total Votes</p>
-          <p className="text-4xl font-bold text-primary tabular-nums">
-            {displayedTotalVotes.toLocaleString()}
-          </p>
-        </div>
 
         {/* Top 5 Leaderboard */}
         <div className="space-y-2">

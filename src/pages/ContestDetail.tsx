@@ -326,11 +326,7 @@ const ContestDetail = () => {
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Votes</p>
-                  <p className="text-xl font-bold">{contest.total_votes.toLocaleString()}</p>
-                </div>
+              <div className="grid grid-cols-2 gap-4 flex-1">
                 <div>
                   <p className="text-sm text-muted-foreground">Vote Price</p>
                   <p className="text-xl font-bold">
@@ -343,7 +339,7 @@ const ContestDetail = () => {
                     />
                   </p>
                 </div>
-                <div className="col-span-2 md:col-span-1">
+                <div>
                   <CountdownTimer 
                     endDate={contest.end_date} 
                     startDate={contest.start_date}

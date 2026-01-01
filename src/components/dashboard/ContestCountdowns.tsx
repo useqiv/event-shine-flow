@@ -78,13 +78,7 @@ export const ContestCountdowns = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium truncate">{contest.title}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{contest.category}</Badge>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Vote className="h-3 w-3" />
-                          {contest.total_votes?.toLocaleString()} votes
-                        </span>
-                      </div>
+                      <Badge variant="secondary" className="text-xs">{contest.category}</Badge>
                     </div>
                   </div>
                 </div>

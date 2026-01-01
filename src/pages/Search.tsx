@@ -199,7 +199,7 @@ const Search = () => {
                         <h3 className="font-semibold text-foreground mb-2 line-clamp-1">{contest.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Vote className="h-4 w-4" />
-                          {contest.total_votes} votes • {contest.vote_currency} {contest.vote_price}/vote
+                          {contest.vote_currency} {contest.vote_price}/vote
                         </div>
                       </CardContent>
                     </Card>
