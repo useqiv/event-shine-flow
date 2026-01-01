@@ -204,38 +204,43 @@ const FormBuilder = () => {
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="fields" className="space-y-4">
+          <TabsContent value="fields" className="space-y-6 mt-6">
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Fields List */}
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Form Fields</h3>
-                  <Button onClick={() => setIsAddFieldOpen(true)} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
+                  <h3 className="font-semibold text-lg">Form Fields</h3>
+                  <Button onClick={() => setIsAddFieldOpen(true)} size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
                     Add Field
                   </Button>
                 </div>
 
                 {fields && fields.length > 0 ? (
                   <div className="space-y-3">
-                    {fields.map((field) => {
+                    {fields.map((field, index) => {
                       const fieldType = FIELD_TYPES.find(t => t.value === field.field_type);
                       const Icon = fieldType?.icon || Type;
                       
                       return (
                         <Card 
                           key={field.id}
-                          className={`cursor-pointer transition-all ${
+                          className={`cursor-pointer transition-all hover:shadow-md ${
                             selectedField?.id === field.id 
-                              ? 'ring-2 ring-primary' 
-                              : 'hover:shadow-md'
+                              ? 'ring-2 ring-primary shadow-md' 
+                              : ''
                           }`}
                           onClick={() => setSelectedField(field)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-center gap-4">
-                              <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                              <Icon className="h-5 w-5 text-muted-foreground" />
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <span className="text-xs font-medium w-5">{index + 1}</span>
+                                <GripVertical className="h-4 w-4 cursor-grab" />
+                              </div>
+                              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Icon className="h-4 w-4 text-primary" />
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{field.label}</p>
                                 <p className="text-sm text-muted-foreground capitalize">
@@ -243,17 +248,18 @@ const FormBuilder = () => {
                                 </p>
                               </div>
                               {field.is_required && (
-                                <Badge variant="secondary">Required</Badge>
+                                <Badge variant="secondary" className="text-xs">Required</Badge>
                               )}
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleDeleteField(field.id);
                                 }}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </CardContent>
@@ -262,11 +268,14 @@ const FormBuilder = () => {
                     })}
                   </div>
                 ) : (
-                  <Card className="border-dashed">
-                    <CardContent className="py-12 text-center">
+                  <Card className="border-dashed border-2">
+                    <CardContent className="py-16 text-center">
+                      <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                        <Plus className="h-6 w-6 text-muted-foreground" />
+                      </div>
                       <p className="text-muted-foreground mb-4">No fields yet. Add your first field to get started.</p>
-                      <Button onClick={() => setIsAddFieldOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
+                      <Button onClick={() => setIsAddFieldOpen(true)} className="gap-2">
+                        <Plus className="h-4 w-4" />
                         Add Field
                       </Button>
                     </CardContent>
@@ -277,13 +286,16 @@ const FormBuilder = () => {
               {/* Field Editor */}
               <div className="lg:col-span-1">
                 {selectedField ? (
-                  <Card className="sticky top-6">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Edit Field</CardTitle>
+                  <Card className="sticky top-6 shadow-sm">
+                    <CardHeader className="pb-4 border-b">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Edit Field
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-5 pt-5">
                       <div className="space-y-2">
-                        <Label>Label</Label>
+                        <Label className="text-sm">Label</Label>
                         <Input
                           value={selectedField.label}
                           onChange={(e) => handleUpdateField({ label: e.target.value })}
@@ -291,16 +303,18 @@ const FormBuilder = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Description (optional)</Label>
+                        <Label className="text-sm">Description (optional)</Label>
                         <Textarea
                           value={selectedField.description || ''}
                           onChange={(e) => handleUpdateField({ description: e.target.value || null })}
                           placeholder="Help text for this field"
+                          className="resize-none"
+                          rows={3}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Placeholder</Label>
+                        <Label className="text-sm">Placeholder</Label>
                         <Input
                           value={selectedField.placeholder || ''}
                           onChange={(e) => handleUpdateField({ placeholder: e.target.value || null })}
@@ -310,7 +324,7 @@ const FormBuilder = () => {
 
                       {['dropdown', 'checkbox', 'radio'].includes(selectedField.field_type) && (
                         <div className="space-y-2">
-                          <Label>Options (one per line)</Label>
+                          <Label className="text-sm">Options (one per line)</Label>
                           <Textarea
                             value={(selectedField.options as string[] || []).join('\n')}
                             onChange={(e) => {
@@ -319,12 +333,16 @@ const FormBuilder = () => {
                             }}
                             placeholder="Option 1&#10;Option 2&#10;Option 3"
                             rows={4}
+                            className="resize-none font-mono text-sm"
                           />
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="required">Required</Label>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div>
+                          <Label htmlFor="required" className="text-sm">Required</Label>
+                          <p className="text-xs text-muted-foreground">Make this field mandatory</p>
+                        </div>
                         <Switch
                           id="required"
                           checked={selectedField.is_required}
@@ -334,10 +352,12 @@ const FormBuilder = () => {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="border-dashed">
-                    <CardContent className="py-12 text-center">
-                      <Settings className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                      <p className="text-muted-foreground">
+                  <Card className="border-dashed border-2">
+                    <CardContent className="py-16 text-center">
+                      <div className="w-12 h-12 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                        <Settings className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground text-sm">
                         Select a field to edit its properties
                       </p>
                     </CardContent>
@@ -347,56 +367,63 @@ const FormBuilder = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" className="space-y-4">
-            <Card>
-              <CardHeader>
+          <TabsContent value="settings" className="space-y-6 mt-6">
+            <Card className="shadow-sm">
+              <CardHeader className="border-b">
                 <CardTitle>Form Settings</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={formSettings.title}
-                    onChange={(e) => setFormSettings({ ...formSettings, title: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea
-                    value={formSettings.description}
-                    onChange={(e) => setFormSettings({ ...formSettings, description: e.target.value })}
-                    placeholder="Describe your form..."
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Custom URL Slug (optional)</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground text-sm">{window.location.origin}/f/</span>
+              <CardContent className="space-y-6 pt-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm">Title</Label>
                     <Input
-                      value={formSettings.custom_slug}
-                      onChange={(e) => setFormSettings({ ...formSettings, custom_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                      placeholder="my-form"
-                      className="flex-1"
+                      value={formSettings.title}
+                      onChange={(e) => setFormSettings({ ...formSettings, title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm">Description</Label>
+                    <Textarea
+                      value={formSettings.description}
+                      onChange={(e) => setFormSettings({ ...formSettings, description: e.target.value })}
+                      placeholder="Describe your form..."
+                      className="resize-none"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm">Custom URL Slug (optional)</Label>
+                    <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                      <span className="text-muted-foreground text-sm whitespace-nowrap">{window.location.origin}/f/</span>
+                      <Input
+                        value={formSettings.custom_slug}
+                        onChange={(e) => setFormSettings({ ...formSettings, custom_slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                        placeholder="my-form"
+                        className="flex-1 bg-background"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-sm">Confirmation Message</Label>
+                    <Textarea
+                      value={formSettings.confirmation_message}
+                      onChange={(e) => setFormSettings({ ...formSettings, confirmation_message: e.target.value })}
+                      placeholder="Thank you for your response!"
+                      className="resize-none"
+                      rows={2}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Confirmation Message</Label>
-                  <Textarea
-                    value={formSettings.confirmation_message}
-                    onChange={(e) => setFormSettings({ ...formSettings, confirmation_message: e.target.value })}
-                    placeholder="Thank you for your response!"
-                  />
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-medium">Form Status</h4>
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                     <div>
-                      <Label>Form Active</Label>
-                      <p className="text-sm text-muted-foreground">Make this form publicly accessible</p>
+                      <Label className="text-sm">Form Active</Label>
+                      <p className="text-xs text-muted-foreground">Make this form publicly accessible</p>
                     </div>
                     <Switch
                       checked={formSettings.is_active}
@@ -404,10 +431,10 @@ const FormBuilder = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                     <div>
-                      <Label>Accepting Responses</Label>
-                      <p className="text-sm text-muted-foreground">Allow new responses to be submitted</p>
+                      <Label className="text-sm">Accepting Responses</Label>
+                      <p className="text-xs text-muted-foreground">Allow new responses to be submitted</p>
                     </div>
                     <Switch
                       checked={formSettings.is_accepting_responses}
@@ -416,8 +443,8 @@ const FormBuilder = () => {
                   </div>
                 </div>
 
-                <Button onClick={handleSaveSettings} disabled={updateForm.isPending} className="w-full">
-                  <Save className="h-4 w-4 mr-2" />
+                <Button onClick={handleSaveSettings} disabled={updateForm.isPending} className="w-full h-11 gap-2">
+                  <Save className="h-4 w-4" />
                   {updateForm.isPending ? 'Saving...' : 'Save Settings'}
                 </Button>
               </CardContent>
@@ -428,16 +455,16 @@ const FormBuilder = () => {
 
       {/* Add Field Dialog */}
       <Dialog open={isAddFieldOpen} onOpenChange={setIsAddFieldOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add Field</DialogTitle>
             <DialogDescription>Choose a field type to add to your form.</DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
+          <ScrollArea className="max-h-[65vh]">
             <div className="space-y-6 pr-4">
               {/* Text Inputs */}
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Text Inputs</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Text Inputs</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {FIELD_TYPES.filter(t => t.category === 'text').map((type) => {
                     const Icon = type.icon;
@@ -445,12 +472,14 @@ const FormBuilder = () => {
                       <Button
                         key={type.value}
                         variant="outline"
-                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        className="h-auto py-3 px-4 flex items-center gap-3 justify-start hover:bg-primary/5 hover:border-primary/50 transition-colors"
                         onClick={() => handleAddField(type.value)}
                         disabled={createField.isPending}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{type.label}</span>
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
                       </Button>
                     );
                   })}
@@ -459,7 +488,7 @@ const FormBuilder = () => {
 
               {/* Date & Time */}
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Date & Time</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Date & Time</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {FIELD_TYPES.filter(t => t.category === 'datetime').map((type) => {
                     const Icon = type.icon;
@@ -467,12 +496,14 @@ const FormBuilder = () => {
                       <Button
                         key={type.value}
                         variant="outline"
-                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        className="h-auto py-3 px-4 flex items-center gap-3 justify-start hover:bg-primary/5 hover:border-primary/50 transition-colors"
                         onClick={() => handleAddField(type.value)}
                         disabled={createField.isPending}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{type.label}</span>
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
                       </Button>
                     );
                   })}
@@ -481,7 +512,7 @@ const FormBuilder = () => {
 
               {/* Choice Fields */}
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Choice Fields</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Choice Fields</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {FIELD_TYPES.filter(t => t.category === 'choice').map((type) => {
                     const Icon = type.icon;
@@ -489,12 +520,14 @@ const FormBuilder = () => {
                       <Button
                         key={type.value}
                         variant="outline"
-                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        className="h-auto py-3 px-4 flex items-center gap-3 justify-start hover:bg-primary/5 hover:border-primary/50 transition-colors"
                         onClick={() => handleAddField(type.value)}
                         disabled={createField.isPending}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{type.label}</span>
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
                       </Button>
                     );
                   })}
@@ -503,7 +536,7 @@ const FormBuilder = () => {
 
               {/* Advanced */}
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Advanced</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Advanced</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {FIELD_TYPES.filter(t => t.category === 'advanced').map((type) => {
                     const Icon = type.icon;
@@ -511,12 +544,14 @@ const FormBuilder = () => {
                       <Button
                         key={type.value}
                         variant="outline"
-                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        className="h-auto py-3 px-4 flex items-center gap-3 justify-start hover:bg-primary/5 hover:border-primary/50 transition-colors"
                         onClick={() => handleAddField(type.value)}
                         disabled={createField.isPending}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{type.label}</span>
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
                       </Button>
                     );
                   })}
@@ -525,7 +560,7 @@ const FormBuilder = () => {
 
               {/* Layout */}
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-3">Layout</h4>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Layout</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {FIELD_TYPES.filter(t => t.category === 'layout').map((type) => {
                     const Icon = type.icon;
@@ -533,12 +568,14 @@ const FormBuilder = () => {
                       <Button
                         key={type.value}
                         variant="outline"
-                        className="h-auto py-3 flex items-center gap-2 justify-start"
+                        className="h-auto py-3 px-4 flex items-center gap-3 justify-start hover:bg-primary/5 hover:border-primary/50 transition-colors"
                         onClick={() => handleAddField(type.value)}
                         disabled={createField.isPending}
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{type.label}</span>
+                        <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium">{type.label}</span>
                       </Button>
                     );
                   })}
