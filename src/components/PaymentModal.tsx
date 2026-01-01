@@ -67,7 +67,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const isGuest = !user;
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail);
-  const canProceed = !isGuest || (guestEmail && isValidEmail);
+  const isNameRequiredForTicket = type === 'ticket' && isGuest;
+  const canProceed = !isGuest || (guestEmail && isValidEmail && (!isNameRequiredForTicket || guestName.trim()));
 
   const handleApplyPromoCode = async () => {
     const result = await validatePromoCode(
@@ -99,6 +100,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
     if (!email) {
       toast.error('Please enter your email address');
+      return;
+    }
+
+    if (type === 'ticket' && isGuest && !guestName.trim()) {
+      toast.error('Please enter your full name for the ticket');
       return;
     }
 
@@ -291,7 +297,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                           </p>
                         </div>
                         <div>
-                          <Label htmlFor="guest-name">Full Name (optional)</Label>
+                          <Label htmlFor="guest-name">
+                            Full Name {type === 'ticket' ? <span className="text-destructive">*</span> : '(optional)'}
+                          </Label>
                           <Input
                             id="guest-name"
                             type="text"
@@ -299,7 +307,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                             value={guestName}
                             onChange={(e) => setGuestName(e.target.value)}
                             className="mt-1"
+                            required={type === 'ticket'}
                           />
+                          {type === 'ticket' && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              This name will appear on your ticket
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
