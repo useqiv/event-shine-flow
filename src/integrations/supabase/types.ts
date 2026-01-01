@@ -847,6 +847,7 @@ export type Database = {
           respondent_email: string | null
           respondent_name: string | null
           response_data: Json
+          status: string
           submitted_at: string
         }
         Insert: {
@@ -855,6 +856,7 @@ export type Database = {
           respondent_email?: string | null
           respondent_name?: string | null
           response_data: Json
+          status?: string
           submitted_at?: string
         }
         Update: {
@@ -863,6 +865,7 @@ export type Database = {
           respondent_email?: string | null
           respondent_name?: string | null
           response_data?: Json
+          status?: string
           submitted_at?: string
         }
         Relationships: [
@@ -877,6 +880,7 @@ export type Database = {
       }
       forms: {
         Row: {
+          allow_multiple_submissions: boolean
           confirmation_message: string | null
           created_at: string
           custom_slug: string | null
@@ -890,6 +894,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          allow_multiple_submissions?: boolean
           confirmation_message?: string | null
           created_at?: string
           custom_slug?: string | null
@@ -903,6 +908,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          allow_multiple_submissions?: boolean
           confirmation_message?: string | null
           created_at?: string
           custom_slug?: string | null

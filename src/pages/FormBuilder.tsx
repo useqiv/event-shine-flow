@@ -80,6 +80,7 @@ const FormBuilder = () => {
     is_active: true,
     is_accepting_responses: true,
     confirmation_message: 'Thank you for your response!',
+    allow_multiple_submissions: true,
   });
 
   useEffect(() => {
@@ -91,6 +92,7 @@ const FormBuilder = () => {
         is_active: form.is_active,
         is_accepting_responses: form.is_accepting_responses,
         confirmation_message: form.confirmation_message || 'Thank you for your response!',
+        allow_multiple_submissions: form.allow_multiple_submissions,
       });
     }
   }, [form]);
@@ -101,6 +103,7 @@ const FormBuilder = () => {
       id: formId,
       ...formSettings,
       custom_slug: formSettings.custom_slug || null,
+      allow_multiple_submissions: formSettings.allow_multiple_submissions,
     });
   };
 
@@ -440,6 +443,41 @@ const FormBuilder = () => {
                       checked={formSettings.is_accepting_responses}
                       onCheckedChange={(checked) => setFormSettings({ ...formSettings, is_accepting_responses: checked })}
                     />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <Label className="text-sm">Allow Multiple Submissions</Label>
+                      <p className="text-xs text-muted-foreground">Let users submit multiple times with same email</p>
+                    </div>
+                    <Switch
+                      checked={formSettings.allow_multiple_submissions}
+                      onCheckedChange={(checked) => setFormSettings({ ...formSettings, allow_multiple_submissions: checked })}
+                    />
+                  </div>
+                </div>
+
+                {/* Embed Code */}
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-medium">Embed Form</h4>
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+                    <p className="text-xs text-muted-foreground">Copy this code to embed the form on your website:</p>
+                    <div className="relative">
+                      <pre className="text-xs bg-background p-3 rounded-lg border overflow-x-auto">
+                        {`<iframe src="${window.location.origin}/embed/form/${form.id}" width="100%" height="600" frameborder="0"></iframe>`}
+                      </pre>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-2 right-2 h-7 text-xs"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`<iframe src="${window.location.origin}/embed/form/${form.id}" width="100%" height="600" frameborder="0"></iframe>`);
+                          toast({ title: 'Copied to clipboard' });
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
                   </div>
                 </div>
 

@@ -46,6 +46,7 @@ import Forms from "./pages/Forms";
 import FormBuilder from "./pages/FormBuilder";
 import FormResponses from "./pages/FormResponses";
 import PublicForm from "./pages/PublicForm";
+import EmbedForm from "./pages/EmbedForm";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -207,6 +208,7 @@ const AppRoutes = () => (
     <Route path="/forms/:formId/edit" element={<ProtectedRoute><FormBuilder /></ProtectedRoute>} />
     <Route path="/forms/:formId/responses" element={<ProtectedRoute><FormResponses /></ProtectedRoute>} />
     <Route path="/f/:formIdOrSlug" element={<PublicForm />} />
+    <Route path="/embed/form/:formIdOrSlug" element={<EmbedForm />} />
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
