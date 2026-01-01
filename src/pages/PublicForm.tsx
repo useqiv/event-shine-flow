@@ -395,11 +395,7 @@ const PublicForm = () => {
       case 'image':
         return field.placeholder ? (
           <img src={field.placeholder} alt={field.label} className="max-w-full rounded-xl shadow-sm" />
-        ) : (
-          <div className="bg-muted/50 rounded-xl p-12 text-center text-muted-foreground border border-dashed">
-            Image placeholder
-          </div>
-        );
+        ) : null;
 
       default:
         return (
