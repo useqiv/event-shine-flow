@@ -333,30 +333,6 @@ const PublicForm = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Optional respondent info */}
-                <div className="grid gap-4 sm:grid-cols-2 pb-6 border-b">
-                  <div className="space-y-2">
-                    <Label htmlFor="respondent_name">Your Name (optional)</Label>
-                    <Input
-                      id="respondent_name"
-                      placeholder="John Doe"
-                      value={respondentName}
-                      onChange={(e) => setRespondentName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="respondent_email">Your Email (optional)</Label>
-                    <Input
-                      id="respondent_email"
-                      type="email"
-                      placeholder="john@example.com"
-                      value={respondentEmail}
-                      onChange={(e) => setRespondentEmail(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Form fields */}
                 {fields?.map((field) => (
                   <div key={field.id} className="space-y-2">
                     <Label className="flex items-center gap-1">
