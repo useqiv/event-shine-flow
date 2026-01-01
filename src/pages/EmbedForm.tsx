@@ -325,6 +325,66 @@ const EmbedForm = () => {
       case 'divider':
         return <hr className="border-t border-border/50" />;
 
+      case 'image':
+        return field.placeholder ? (
+          <img src={field.placeholder} alt={field.label} className="max-w-full rounded-lg" />
+        ) : null;
+
+      case 'address':
+        return (
+          <div className="space-y-2">
+            <Input
+              placeholder="Street Address"
+              value={((formData[field.id] as Record<string, string>) || {}).street || ''}
+              onChange={(e) => handleFieldChange(field.id, { 
+                ...((formData[field.id] as Record<string, string>) || {}), 
+                street: e.target.value 
+              })}
+              className={`h-11 transition-all hover:border-primary/50 ${hasError ? 'border-destructive' : ''}`}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                placeholder="City"
+                value={((formData[field.id] as Record<string, string>) || {}).city || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  city: e.target.value 
+                })}
+                className="h-11 transition-all hover:border-primary/50"
+              />
+              <Input
+                placeholder="State/Province"
+                value={((formData[field.id] as Record<string, string>) || {}).state || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  state: e.target.value 
+                })}
+                className="h-11 transition-all hover:border-primary/50"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                placeholder="ZIP/Postal Code"
+                value={((formData[field.id] as Record<string, string>) || {}).zip || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  zip: e.target.value 
+                })}
+                className="h-11 transition-all hover:border-primary/50"
+              />
+              <Input
+                placeholder="Country"
+                value={((formData[field.id] as Record<string, string>) || {}).country || ''}
+                onChange={(e) => handleFieldChange(field.id, { 
+                  ...((formData[field.id] as Record<string, string>) || {}), 
+                  country: e.target.value 
+                })}
+                className="h-11 transition-all hover:border-primary/50"
+              />
+            </div>
+          </div>
+        );
+
       default:
         return (
           <Input
