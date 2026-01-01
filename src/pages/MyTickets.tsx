@@ -310,8 +310,8 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             justify-content: center;
           }
           .qr-code {
-            width: 260px;
-            height: 260px;
+            width: 380px;
+            height: 380px;
             background: white;
             border-radius: 12px;
             padding: 12px;
