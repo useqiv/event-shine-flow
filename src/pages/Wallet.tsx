@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import CurrencySelector, { getCurrencySymbol, getCurrencyMinAmount, useConversionDisplay, currencies } from '@/components/ui/currency-selector';
-import { useWallet, useWalletTransactions, useRedeemVoucher, useUpdateLowBalanceThreshold } from '@/hooks/useWallet';
+import { useWallet, useWalletTransactions, useRedeemVoucher, useUpdateLowBalanceThreshold, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -31,6 +31,7 @@ const WalletPage = () => {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: wallet, isLoading: walletLoading } = useWallet();
+  const { data: currencyBalances, isLoading: balancesLoading } = useWalletCurrencyBalances();
   const { data: transactions, isLoading: txLoading } = useWalletTransactions();
   const flutterwavePayment = useFlutterwavePayment();
   const redeemVoucher = useRedeemVoucher();
@@ -39,8 +40,20 @@ const WalletPage = () => {
   const { convert, getConversion, isLive, lastUpdated } = useConversionDisplay();
   const { preferredCurrency, updatePreferredCurrency } = useUserCurrency();
 
-  // Display currency for wallet balance
+  // Display currency for wallet balance - default to first funded currency or preferredCurrency
+  const fundedCurrencies = useMemo(() => {
+    if (!currencyBalances || currencyBalances.length === 0) return [];
+    return currencyBalances.filter(cb => cb.balance > 0).map(cb => cb.currency);
+  }, [currencyBalances]);
+
   const [displayCurrency, setDisplayCurrency] = useState(preferredCurrency);
+
+  // Set initial display currency to first funded currency if available
+  React.useEffect(() => {
+    if (fundedCurrencies.length > 0 && !fundedCurrencies.includes(displayCurrency)) {
+      setDisplayCurrency(fundedCurrencies[0]);
+    }
+  }, [fundedCurrencies]);
 
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
@@ -66,21 +79,38 @@ const WalletPage = () => {
     }
   }, [wallet]);
 
-  // Check for low balance and show alert
-  const isLowBalance = wallet && wallet.low_balance_threshold !== null && wallet.balance < wallet.low_balance_threshold;
+  // Check for low balance and show alert (using total across all currencies, converted to NGN)
+  const totalBalanceNGN = useMemo(() => {
+    if (!currencyBalances || currencyBalances.length === 0) return 0;
+    return currencyBalances.reduce((sum, cb) => {
+      return sum + convert(cb.balance, cb.currency, 'NGN');
+    }, 0);
+  }, [currencyBalances, convert]);
 
-  // Calculate converted balance for display
-  const walletCurrency = wallet?.balance_currency || 'NGN';
+  const isLowBalance = wallet && wallet.low_balance_threshold !== null && totalBalanceNGN < wallet.low_balance_threshold;
+
+  // Get balance for the selected display currency from the currency balances table
   const displayBalance = useMemo(() => {
-    if (!wallet) return 0;
-    if (displayCurrency === walletCurrency) return wallet.balance;
-    return convert(wallet.balance, walletCurrency, displayCurrency);
-  }, [wallet, displayCurrency, walletCurrency, convert]);
+    if (!currencyBalances || currencyBalances.length === 0) return 0;
+    const currencyBalance = currencyBalances.find(cb => cb.currency === displayCurrency);
+    return currencyBalance?.balance || 0;
+  }, [currencyBalances, displayCurrency]);
 
+  // Get list of currencies that have been funded (for dropdown)
+  const availableCurrencies = useMemo(() => {
+    if (!currencyBalances || currencyBalances.length === 0) {
+      // Show all currencies if none funded yet
+      return currencies;
+    }
+    // Show currencies that have been funded
+    const fundedCodes = currencyBalances.map(cb => cb.currency);
+    return currencies.filter(c => fundedCodes.includes(c.code));
+  }, [currencyBalances]);
   const handleDisplayCurrencyChange = (currency: string) => {
     setDisplayCurrency(currency);
     updatePreferredCurrency(currency);
   };
+  
   // Filtered transactions - exclude pending/failed transactions from display
   const filteredTransactions = useMemo(() => {
     if (!transactions) return [];
@@ -249,22 +279,30 @@ const WalletPage = () => {
                     <ChevronDown className="h-3 w-3 opacity-70" />
                   </SelectTrigger>
                   <SelectContent className="bg-popover">
-                    {currencies.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code}
-                      </SelectItem>
-                    ))}
+                    {availableCurrencies.length > 0 ? (
+                      availableCurrencies.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.symbol} {currency.code}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      currencies.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.symbol} {currency.code}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-              {walletLoading ? <Skeleton className="h-10 w-32 bg-primary-foreground/20" /> : (
+              {(walletLoading || balancesLoading) ? <Skeleton className="h-10 w-32 bg-primary-foreground/20" /> : (
                 <div>
                   <p className="text-3xl font-bold">
                     {getCurrencySymbol(displayCurrency)}{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
-                  {displayCurrency !== walletCurrency && wallet && (
+                  {fundedCurrencies.length > 1 && (
                     <p className="text-xs opacity-70 mt-1">
-                      ≈ {getCurrencySymbol(walletCurrency)}{wallet.balance.toLocaleString()} {walletCurrency}
+                      {fundedCurrencies.length} currencies funded
                     </p>
                   )}
                 </div>

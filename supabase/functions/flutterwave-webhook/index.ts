@@ -613,10 +613,10 @@ async function processSuccessfulPayment(paymentData: any) {
   } else if (type === "wallet" && user_id) {
     console.log("Processing wallet funding...");
 
-    // Get wallet with balance_currency
+    // Get wallet
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
-      .select("id, balance, balance_currency")
+      .select("id")
       .eq("user_id", user_id)
       .single();
 
@@ -626,78 +626,80 @@ async function processSuccessfulPayment(paymentData: any) {
     }
 
     const paymentCurrency = paymentData.currency || "NGN";
-    const walletCurrency = wallet.balance_currency || "NGN";
-    let amountToAdd = paymentData.amount;
-    let convertedMessage = "";
+    const amountToAdd = paymentData.amount;
 
-    // Convert the amount to wallet currency if different
-    if (paymentCurrency !== walletCurrency) {
-      console.log(`Converting ${paymentCurrency} ${amountToAdd} to ${walletCurrency}`);
-      
-      // Fallback exchange rates (USD base)
-      const fallbackRates: Record<string, number> = {
-        USD: 1,
-        NGN: 1550,
-        EUR: 0.92,
-        GBP: 0.79,
-        GHS: 15.5,
-        KES: 153,
-        ZAR: 18.5,
-        XAF: 605,
-        XOF: 605,
-        TZS: 2500,
-        UGX: 3700,
-        RWF: 1300,
-      };
+    // Check if a currency balance already exists for this currency
+    const { data: existingBalance, error: balanceError } = await supabase
+      .from("wallet_currency_balances")
+      .select("id, balance")
+      .eq("wallet_id", wallet.id)
+      .eq("currency", paymentCurrency)
+      .maybeSingle();
 
-      // Try to get live exchange rates
-      let rates = fallbackRates;
-      try {
-        const ratesResponse = await fetch(`${supabaseUrl}/functions/v1/get-exchange-rates`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${supabaseKey}`,
-          },
-        });
-        
-        if (ratesResponse.ok) {
-          const ratesData = await ratesResponse.json();
-          if (ratesData.rates) {
-            rates = ratesData.rates;
-            console.log("Using live exchange rates");
-          }
-        }
-      } catch (rateError: any) {
-        console.log("Using fallback exchange rates:", rateError.message);
-      }
-
-      // Convert: first to USD, then to wallet currency
-      const fromRate = rates[paymentCurrency] || 1;
-      const toRate = rates[walletCurrency] || 1;
-      const amountInUSD = paymentData.amount / fromRate;
-      amountToAdd = Math.round(amountInUSD * toRate * 100) / 100;
-      
-      console.log(`Converted: ${paymentCurrency} ${paymentData.amount} = ${walletCurrency} ${amountToAdd}`);
-      convertedMessage = ` (converted from ${paymentCurrency} ${paymentData.amount.toLocaleString()})`;
+    if (balanceError) {
+      console.error("Error checking existing currency balance:", balanceError.message);
     }
 
-    // Update wallet balance
-    const newBalance = Number(wallet.balance) + amountToAdd;
-    const { error: updateError } = await supabase
-      .from("wallets")
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
-      .eq("id", wallet.id);
+    let newBalance = amountToAdd;
+    let updateOrInsertError = null;
 
-    if (updateError) {
-      console.error("Error updating wallet balance:", updateError.message);
+    if (existingBalance) {
+      // Update existing currency balance
+      newBalance = Number(existingBalance.balance) + amountToAdd;
+      const { error: updateError } = await supabase
+        .from("wallet_currency_balances")
+        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .eq("id", existingBalance.id);
+
+      updateOrInsertError = updateError;
+      if (updateError) {
+        console.error("Error updating currency balance:", updateError.message);
+      } else {
+        console.log(`Updated ${paymentCurrency} balance to ${newBalance}`);
+      }
     } else {
-      console.log("Wallet funded successfully, new balance:", newBalance, walletCurrency);
+      // Insert new currency balance
+      const { error: insertError } = await supabase
+        .from("wallet_currency_balances")
+        .insert({
+          wallet_id: wallet.id,
+          currency: paymentCurrency,
+          balance: amountToAdd,
+        });
 
-      // Create notification with conversion info
+      updateOrInsertError = insertError;
+      if (insertError) {
+        console.error("Error inserting new currency balance:", insertError.message);
+      } else {
+        console.log(`Created new ${paymentCurrency} balance with ${amountToAdd}`);
+      }
+    }
+
+    // Also update the legacy wallet balance for backward compatibility
+    const { data: walletFull } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("id", wallet.id)
+      .single();
+
+    if (walletFull) {
+      await supabase
+        .from("wallets")
+        .update({ 
+          balance: Number(walletFull.balance) + amountToAdd, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", wallet.id);
+    }
+
+    if (!updateOrInsertError) {
+      console.log("Wallet funded successfully with", paymentCurrency, amountToAdd);
+
+      // Create notification
       await supabase.from("notifications").insert({
         user_id,
         title: "Wallet Funded Successfully",
-        message: `Your wallet has been credited with ${walletCurrency} ${amountToAdd.toLocaleString()}${convertedMessage}.`,
+        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()}.`,
         type: "system",
       });
 
@@ -711,8 +713,7 @@ async function processSuccessfulPayment(paymentData: any) {
         payment_method: `Flutterwave`,
         transaction_ref: paymentData.tx_ref,
         new_balance: newBalance,
-        wallet_currency: walletCurrency,
-        converted_amount: paymentCurrency !== walletCurrency ? amountToAdd : undefined,
+        wallet_currency: paymentCurrency,
       });
     }
   } else if (type === "donation" && campaign_id && user_id) {

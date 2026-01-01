@@ -15,6 +15,15 @@ export interface Wallet {
   updated_at: string;
 }
 
+export interface WalletCurrencyBalance {
+  id: string;
+  wallet_id: string;
+  currency: string;
+  balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface WalletTransaction {
   id: string;
   wallet_id: string;
@@ -46,6 +55,29 @@ export const useWallet = () => {
       return data as Wallet | null;
     },
     enabled: !!user?.id,
+  });
+};
+
+// Fetch multi-currency balances for the wallet
+export const useWalletCurrencyBalances = () => {
+  const { user } = useAuth();
+  const { data: wallet } = useWallet();
+
+  return useQuery({
+    queryKey: ['wallet-currency-balances', wallet?.id],
+    queryFn: async () => {
+      if (!wallet?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('wallet_currency_balances')
+        .select('*')
+        .eq('wallet_id', wallet.id)
+        .order('balance', { ascending: false });
+      
+      if (error) throw error;
+      return data as WalletCurrencyBalance[];
+    },
+    enabled: !!wallet?.id,
   });
 };
 
