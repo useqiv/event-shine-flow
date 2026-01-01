@@ -109,8 +109,8 @@ const CreateContest = () => {
       <OrganizationLayout>
         <div className="max-w-3xl mx-auto space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Create New Contest</h1>
-            <p className="text-muted-foreground">What type of contest do you want to create?</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Create New Contest</h1>
+            <p className="text-sm text-muted-foreground">What type of contest do you want to create?</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -176,10 +176,10 @@ const CreateContest = () => {
   return (
     <OrganizationLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Create New Contest</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Create New Contest</h1>
+            <p className="text-sm text-muted-foreground">
               {contestType === 'category' ? 'Category-based contest' : 'Single contest'} • 
               <button 
                 type="button"

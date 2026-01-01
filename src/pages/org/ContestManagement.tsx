@@ -561,31 +561,31 @@ const ContestManagement = () => {
     <OrganizationLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
             <Link to="/org/contests">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{contest.title}</h1>
-              <p className="text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{contest.title}</h1>
+              <p className="text-sm text-muted-foreground">
                 {format(new Date(contest.start_date), 'MMM d')} - {format(new Date(contest.end_date), 'MMM d, yyyy')}
               </p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link to={`/org/contests/${id}/analytics`}>
-              <Button variant="outline">
-                <BarChart3 className="mr-2 h-4 w-4" />
-                Analytics
+              <Button variant="outline" size="sm">
+                <BarChart3 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Analytics</span>
               </Button>
             </Link>
             <Link to={`/org/contests/${id}/marketing`}>
-              <Button variant="outline">
-                <Megaphone className="mr-2 h-4 w-4" />
-                Marketing
+              <Button variant="outline" size="sm">
+                <Megaphone className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Marketing</span>
               </Button>
             </Link>
             <ShareButtons
@@ -593,11 +593,12 @@ const ContestManagement = () => {
               description={contest.description || `Vote now in ${contest.title}`}
               url={`${window.location.origin}/contests/${id}`}
             />
-            <Button variant="outline" onClick={handleCopyLink}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Link
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Copy Link</span>
             </Button>
             <Button
+              size="sm"
               variant={contest.is_active ? "destructive" : "default"}
               onClick={handleToggleActive}
             >
@@ -607,7 +608,7 @@ const ContestManagement = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -695,15 +696,17 @@ const ContestManagement = () => {
         </div>
 
         <Tabs defaultValue="contestants" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="contestants">Contestants</TabsTrigger>
-            {(contest as any)?.contest_type === 'category' && (
-              <TabsTrigger value="categories">Categories</TabsTrigger>
-            )}
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-            <TabsTrigger value="payout">Payout</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-auto">
+              <TabsTrigger value="contestants">Contestants</TabsTrigger>
+              {(contest as any)?.contest_type === 'category' && (
+                <TabsTrigger value="categories">Categories</TabsTrigger>
+              )}
+              <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+              <TabsTrigger value="payout">Payout</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="contestants" className="space-y-4">
             <div className="flex flex-col gap-4">
@@ -795,59 +798,61 @@ const ContestManagement = () => {
               </div>
 
               {/* Search and Filter */}
-              <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search contestants..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search contestants..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <ArrowUpDown className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      <SelectItem value="order">Custom Order</SelectItem>
+                      <SelectItem value="votes-high">Votes: High to Low</SelectItem>
+                      <SelectItem value="votes-low">Votes: Low to High</SelectItem>
+                      <SelectItem value="name">Name: A to Z</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-                  <SelectTrigger className="w-[180px]">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="order">Custom Order</SelectItem>
-                    <SelectItem value="votes-high">Votes: High to Low</SelectItem>
-                    <SelectItem value="votes-low">Votes: Low to High</SelectItem>
-                    <SelectItem value="name">Name: A to Z</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
                   <Input
                     type="number"
-                    placeholder="Min votes"
+                    placeholder="Min"
                     value={minVotes}
                     onChange={(e) => setMinVotes(e.target.value)}
-                    className="w-24"
+                    className="w-20"
                     min="0"
                   />
                   <span className="text-muted-foreground">-</span>
                   <Input
                     type="number"
-                    placeholder="Max votes"
+                    placeholder="Max"
                     value={maxVotes}
                     onChange={(e) => setMaxVotes(e.target.value)}
-                    className="w-24"
+                    className="w-20"
                     min="0"
                   />
+                  <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+                    <SelectTrigger className="w-[90px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      <SelectItem value="6">6 / page</SelectItem>
+                      <SelectItem value="12">12 / page</SelectItem>
+                      <SelectItem value="24">24 / page</SelectItem>
+                      <SelectItem value="48">48 / page</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="6">6 / page</SelectItem>
-                    <SelectItem value="12">12 / page</SelectItem>
-                    <SelectItem value="24">24 / page</SelectItem>
-                    <SelectItem value="48">48 / page</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               
               {(searchQuery || minVotes || maxVotes) && (

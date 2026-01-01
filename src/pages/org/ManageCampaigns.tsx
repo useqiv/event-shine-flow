@@ -117,21 +117,22 @@ const ManageCampaigns: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Manage Campaigns</h1>
-            <p className="text-muted-foreground">View, edit, and manage your fundraising campaigns</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Manage Campaigns</h1>
+            <p className="text-sm text-muted-foreground">View, edit, and manage your fundraising campaigns</p>
           </div>
-          <Button asChild>
+          <Button size="sm" className="sm:size-default" asChild>
             <Link to="/campaigns/create">
-              <Plus className="h-4 w-4 mr-2" />
-              New Campaign
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Campaign</span>
+              <span className="sm:hidden">Create</span>
             </Link>
           </Button>
         </div>
 
 
         {/* Search & Tabs */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="relative w-full sm:w-64">
+        <div className="flex flex-col gap-4">
+          <div className="relative w-full sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search campaigns..."
@@ -140,14 +141,16 @@ const ManageCampaigns: React.FC = () => {
               className="pl-9"
             />
           </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-            <TabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="draft">Drafts</TabsTrigger>
-              <TabsTrigger value="paused">Paused</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <TabsList className="w-max sm:w-auto">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="draft">Drafts</TabsTrigger>
+                <TabsTrigger value="paused">Paused</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+            </div>
           </Tabs>
         </div>
 

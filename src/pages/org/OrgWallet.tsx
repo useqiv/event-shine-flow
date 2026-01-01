@@ -174,10 +174,10 @@ const OrgWallet = () => {
   return (
     <OrganizationLayout>
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Wallet & Finance</h1>
-            <p className="text-muted-foreground">Track your revenue and manage finances.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Wallet & Finance</h1>
+            <p className="text-sm text-muted-foreground">Track your revenue and manage finances.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ const OrgWallet = () => {
         </div>
 
         {/* Revenue Overview - Shows only transactions in selected currency */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -261,7 +261,7 @@ const OrgWallet = () => {
         </div>
 
         {/* Revenue Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">

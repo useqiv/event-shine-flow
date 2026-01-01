@@ -253,44 +253,45 @@ const EventManagement = () => {
     <OrganizationLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
             <Link to="/org/events">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
-              <p className="text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">{event.title}</h1>
+              <p className="text-sm text-muted-foreground truncate">
                 {format(new Date(event.event_date), 'MMM d, yyyy • h:mm a')} • {event.venue}
               </p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Link to={`/org/events/${id}/marketing`}>
-              <Button variant="outline">
-                <Megaphone className="mr-2 h-4 w-4" />
-                Marketing
+              <Button variant="outline" size="sm">
+                <Megaphone className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Marketing</span>
               </Button>
             </Link>
             <Link to={`/org/events/${id}/checkin`}>
-              <Button variant="outline">
-                <Users className="mr-2 h-4 w-4" />
-                Check-in Dashboard
+              <Button variant="outline" size="sm">
+                <Users className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Check-in</span>
               </Button>
             </Link>
             <Link to={`/org/events/${id}/scanner`}>
-              <Button variant="outline">
-                <QrCode className="mr-2 h-4 w-4" />
-                Scanner
+              <Button variant="outline" size="sm">
+                <QrCode className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Scanner</span>
               </Button>
             </Link>
-            <Button variant="outline" onClick={handleCopyLink}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Link
+            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+              <Copy className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Copy Link</span>
             </Button>
             <Button
+              size="sm"
               variant={event.is_active ? "destructive" : "default"}
               onClick={handleToggleActive}
             >
@@ -300,7 +301,7 @@ const EventManagement = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -381,14 +382,16 @@ const EventManagement = () => {
         </div>
 
         <Tabs defaultValue="tickets" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="tickets">Ticket Types</TabsTrigger>
-            <TabsTrigger value="attendees">Attendees</TabsTrigger>
-            <TabsTrigger value="scans">QR Scan Logs</TabsTrigger>
-            <TabsTrigger value="payout">Payout</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="w-max sm:w-auto">
+              <TabsTrigger value="tickets">Tickets</TabsTrigger>
+              <TabsTrigger value="attendees">Attendees</TabsTrigger>
+              <TabsTrigger value="scans">Scans</TabsTrigger>
+              <TabsTrigger value="payout">Payout</TabsTrigger>
+              <TabsTrigger value="marketing">Marketing</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="tickets" className="space-y-4">
             <div className="flex justify-between items-center">
