@@ -172,7 +172,7 @@ const CampaignDetail: React.FC = () => {
 
       <Navbar />
       
-      <main className="flex-1">
+      <main className="flex-1 pt-20">
         <div className="container mx-auto px-4 py-8">
           {/* Back Button */}
           <Button variant="ghost" asChild className="mb-6">
