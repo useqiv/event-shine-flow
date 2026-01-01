@@ -2597,6 +2597,41 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_currency_balances: {
+        Row: {
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          updated_at: string
+          wallet_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          currency: string
+          id?: string
+          updated_at?: string
+          wallet_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          updated_at?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_currency_balances_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_transactions: {
         Row: {
           amount: number
