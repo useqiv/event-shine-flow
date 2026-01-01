@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const ZEPTOMAIL_API_KEY = Deno.env.get("ZEPTOMAIL_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,15 +21,40 @@ interface TransferEmailRequest {
   acceptUrl: string;
 }
 
+const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: { address: "noreply@votepass.com", name: "VotePass" },
+      to: [{ email_address: { address: to, name: toName || "User" } }],
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
+  }
+  
+  return data;
+};
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
+    if (!ZEPTOMAIL_API_KEY) {
+      throw new Error("ZEPTOMAIL_API_KEY is not configured");
     }
 
     const {
@@ -109,30 +134,16 @@ serve(async (req) => {
       </html>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "VoteApp <onboarding@resend.dev>",
-        to: [recipientEmail],
-        subject: `${senderName} wants to transfer a ticket to you! - ${eventTitle}`,
-        html: emailHtml,
-      }),
-    });
+    const emailResponse = await sendZeptoEmail(
+      recipientEmail,
+      recipientName || "User",
+      `${senderName} wants to transfer a ticket to you! - ${eventTitle}`,
+      emailHtml
+    );
 
-    const data = await res.json();
+    console.log("Email sent successfully:", emailResponse);
 
-    if (!res.ok) {
-      console.error("Resend API error:", data);
-      throw new Error(data.message || "Failed to send email");
-    }
-
-    console.log("Email sent successfully:", data);
-
-    return new Response(JSON.stringify({ success: true, data }), {
+    return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

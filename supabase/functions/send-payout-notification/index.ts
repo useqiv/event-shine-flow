@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const ZEPTOMAIL_API_KEY = Deno.env.get("ZEPTOMAIL_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +18,32 @@ interface PayoutNotificationRequest {
   payment_method?: string;
 }
 
+const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: { address: "noreply@votepass.com", name: "VotePass" },
+      to: [{ email_address: { address: to, name: toName || "User" } }],
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
+  }
+  
+  return data;
+};
+
 const formatCurrency = (amount: number, currency: string) => {
   const symbols: Record<string, string> = {
     'NGN': '₦',
@@ -34,13 +59,13 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'approved':
     case 'processing':
-      return '#2563eb'; // Blue
+      return '#2563eb';
     case 'completed':
-      return '#16a34a'; // Green
+      return '#16a34a';
     case 'rejected':
-      return '#dc2626'; // Red
+      return '#dc2626';
     default:
-      return '#6b7280'; // Gray
+      return '#6b7280';
   }
 };
 
@@ -60,12 +85,15 @@ const getStatusMessage = (status: string, amount: string, rejectionReason?: stri
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    if (!ZEPTOMAIL_API_KEY) {
+      throw new Error("ZEPTOMAIL_API_KEY is not configured");
+    }
+
     const {
       payout_id,
       status,
@@ -191,12 +219,12 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: "VotePass <notifications@resend.dev>",
-      to: [organization_email],
-      subject: `Payout ${status.charAt(0).toUpperCase() + status.slice(1)} - ${formattedAmount}`,
-      html: emailHtml,
-    });
+    const emailResponse = await sendZeptoEmail(
+      organization_email,
+      organization_name,
+      `Payout ${status.charAt(0).toUpperCase() + status.slice(1)} - ${formattedAmount}`,
+      emailHtml
+    );
 
     console.log("Payout notification email sent successfully:", emailResponse);
 

@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const ZEPTOMAIL_API_KEY = Deno.env.get("ZEPTOMAIL_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +26,32 @@ interface ReceiptRequest {
   ticket_type?: string;
   qr_code?: string;
 }
+
+const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: { address: "noreply@votepass.com", name: "VotePass" },
+      to: [{ email_address: { address: to, name: toName } }],
+      subject,
+      htmlbody: html,
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
+  }
+  
+  return data;
+};
 
 const generateVoteReceiptHtml = (data: ReceiptRequest) => `
 <!DOCTYPE html>
@@ -202,6 +226,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    if (!ZEPTOMAIL_API_KEY) {
+      throw new Error("ZEPTOMAIL_API_KEY is not configured");
+    }
+
     const data: ReceiptRequest = await req.json();
     console.log("Receipt data:", JSON.stringify(data));
 
@@ -213,12 +241,12 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Vote Receipt - ${data.contest_title}`
       : `Ticket Receipt - ${data.event_title}`;
 
-    const emailResponse = await resend.emails.send({
-      from: "VotePass <receipts@resend.dev>",
-      to: [data.user_email],
+    const emailResponse = await sendZeptoEmail(
+      data.user_email,
+      data.user_name,
       subject,
-      html,
-    });
+      html
+    );
 
     console.log("Email sent successfully:", emailResponse);
 
