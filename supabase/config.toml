@@ -25,7 +25,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-payment-receipt]
-verify_jwt = true
+verify_jwt = false
 
 [functions.check-orphan-transactions]
 verify_jwt = false
