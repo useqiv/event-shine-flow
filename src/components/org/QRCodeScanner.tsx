@@ -129,6 +129,25 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     ]);
   }, []);
 
+  // Fetch initial scan stats from database
+  useEffect(() => {
+    const fetchScanStats = async () => {
+      const { data, error } = await supabase
+        .from('qr_scan_logs')
+        .select('scan_result')
+        .eq('event_id', eventId);
+      
+      if (!error && data) {
+        const total = data.length;
+        const successful = data.filter(s => s.scan_result === 'success').length;
+        const failed = total - successful;
+        setScanStats({ total, successful, failed });
+      }
+    };
+    
+    fetchScanStats();
+  }, [eventId]);
+
   useEffect(() => {
     // Get available cameras
     Html5Qrcode.getCameras().then((devices) => {
