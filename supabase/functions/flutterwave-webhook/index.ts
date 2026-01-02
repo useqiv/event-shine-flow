@@ -551,6 +551,7 @@ async function processSuccessfulPayment(paymentData: any) {
       qr_code,
       status: "active",
       transaction_id: db_transaction_id,
+      payment_reference_id: paymentData.tx_ref, // Store tx_ref for payment callback lookup
       guest_email: isGuestPurchase ? (customer.email || null) : null,
       guest_name: isGuestPurchase ? (customer.name || null) : null,
     });

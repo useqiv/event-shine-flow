@@ -65,18 +65,8 @@ const PaymentCallback = () => {
 
   const fetchTicketByTxRef = async (transactionRef: string) => {
     try {
-      // First, find the wallet transaction by reference_id (which stores the tx_ref)
-      const { data: walletTx, error: walletError } = await supabase
-        .from('wallet_transactions')
-        .select('id')
-        .eq('reference_id', transactionRef)
-        .maybeSingle();
-
-      if (walletError) {
-        console.error('Error finding wallet transaction:', walletError);
-      }
-
-      let ticketQuery = supabase
+      // Query by payment_reference_id which stores the tx_ref directly
+      const { data, error } = await supabase
         .from('tickets')
         .select(`
           id,
@@ -86,22 +76,14 @@ const PaymentCallback = () => {
           quantity,
           event:events(title, venue, event_date),
           ticket_type:ticket_types(name)
-        `);
-
-      // If we found a wallet transaction, use its id; otherwise try the ref directly
-      if (walletTx?.id) {
-        ticketQuery = ticketQuery.eq('transaction_id', walletTx.id);
-      } else {
-        // Fallback: maybe it's stored directly (older records)
-        ticketQuery = ticketQuery.eq('transaction_id', transactionRef);
-      }
-
-      const { data, error } = await ticketQuery.maybeSingle();
+        `)
+        .eq('payment_reference_id', transactionRef)
+        .maybeSingle();
 
       if (!error && data) {
         setTicketData(data as unknown as TicketData);
       } else {
-        console.log('No ticket found for tx_ref:', transactionRef, 'wallet tx:', walletTx?.id);
+        console.log('No ticket found for tx_ref:', transactionRef);
       }
     } catch (error) {
       console.error('Error fetching ticket:', error);
