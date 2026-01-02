@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   useTeamMembers, 
@@ -191,10 +192,11 @@ const TeamMembers = () => {
                 <span className="sm:hidden">Invite</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle>Invite Team Member</DialogTitle>
               </DialogHeader>
+              <ScrollArea className="flex-1 pr-4">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Email Address</Label>
@@ -282,6 +284,7 @@ const TeamMembers = () => {
                   {inviteMember.isPending ? 'Inviting...' : 'Send Invitation'}
                 </Button>
               </div>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
         </div>
