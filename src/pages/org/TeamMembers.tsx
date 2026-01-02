@@ -191,11 +191,14 @@ const TeamMembers = () => {
                 <span className="sm:hidden">Invite</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
+            <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>Invite Team Member</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  Add a new member to your team and set their permissions.
+                </p>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1">
                 <div className="space-y-2">
                   <Label>Email Address</Label>
                   <Input
@@ -274,6 +277,8 @@ const TeamMembers = () => {
                     />
                   </div>
                 </div>
+              </div>
+              <div className="flex-shrink-0 pt-4 border-t border-border">
                 <Button 
                   onClick={handleInvite} 
                   className="w-full" 
