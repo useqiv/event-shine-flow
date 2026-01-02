@@ -210,7 +210,7 @@ export const ShareCardGeneratorMarketing: React.FC = () => {
       ctx.textAlign = 'center';
       
       const contestUrl = selectedContestData.custom_slug 
-        ? `Vote at: /c/${selectedContestData.custom_slug}`
+        ? `Vote at: /${selectedContestData.custom_slug}`
         : 'Vote Now!';
       ctx.fillText(contestUrl, canvas.width / 2, canvas.height - 50);
     } else if (contentType === 'event' && selectedEventData) {

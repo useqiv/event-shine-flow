@@ -47,7 +47,7 @@ export const SocialPostingCard: React.FC<SocialPostingCardProps> = ({ contest, c
   const [postImage, setPostImage] = useState<string>('');
 
   const contestUrl = contest.custom_slug 
-    ? `${window.location.origin}/c/${contest.custom_slug}`
+    ? `${window.location.origin}/${contest.custom_slug}`
     : `${window.location.origin}/contests/${contest.id}`;
 
   const generateMessage = () => {

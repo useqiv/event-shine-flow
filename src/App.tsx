@@ -173,7 +173,6 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
-    <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
@@ -261,6 +260,8 @@ const AppRoutes = () => (
         <Route path="/influencer/payouts" element={<ProtectedRoute><InfluencerPayouts /></ProtectedRoute>} />
         <Route path="/influencer/settings" element={<ProtectedRoute><InfluencerSettings /></ProtectedRoute>} />
         
+        {/* Custom slug route - must be near the end to avoid conflicts */}
+        <Route path="/:slug" element={<PublicContest />} />
         <Route path="*" element={<NotFound />} />
   </Routes>
 );
