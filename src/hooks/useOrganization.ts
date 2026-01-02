@@ -1191,11 +1191,17 @@ export const useEventTickets = (eventId: string) => {
       
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-      // Merge profiles into tickets
-      return tickets.map(ticket => ({
-        ...ticket,
-        profiles: profileMap.get(ticket.user_id) || { full_name: 'Unknown', email: '' },
-      }));
+      // Merge profiles into tickets - prioritize guest_name/guest_email from ticket
+      return tickets.map(ticket => {
+        const profile = profileMap.get(ticket.user_id);
+        return {
+          ...ticket,
+          profiles: {
+            full_name: ticket.guest_name || profile?.full_name || null,
+            email: ticket.guest_email || profile?.email || null,
+          },
+        };
+      });
     },
     enabled: !!eventId,
   });
