@@ -311,7 +311,7 @@ const AdminContestDetail: React.FC = () => {
                 {contest.custom_slug && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Custom URL</span>
-                    <span className="font-mono text-sm">/{contest.custom_slug}</span>
+                    <span className="font-mono text-sm">/c/{contest.custom_slug}</span>
                   </div>
                 )}
                 <div className="flex justify-between">

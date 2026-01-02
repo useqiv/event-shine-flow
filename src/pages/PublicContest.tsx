@@ -27,32 +27,18 @@ const PublicContest = () => {
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  // Fetch contest by slug or ID (fallback)
+  // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
     queryKey: ['public-contest', slug],
     queryFn: async () => {
-      // First try by custom_slug
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('contests')
         .select('*')
         .eq('custom_slug', slug)
         .eq('is_active', true)
-        .maybeSingle();
-      
-      // If not found by slug, try by ID (fallback for direct ID access)
-      if (!data && !error) {
-        const idResult = await supabase
-          .from('contests')
-          .select('*')
-          .eq('id', slug)
-          .eq('is_active', true)
-          .maybeSingle();
-        data = idResult.data;
-        error = idResult.error;
-      }
+        .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Contest not found');
       return data;
     },
     enabled: !!slug,
@@ -85,7 +71,7 @@ const PublicContest = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
-  const contestUrl = `${window.location.origin}/${slug}`;
+  const contestUrl = `${window.location.origin}/c/${slug}`;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
 
   const handleVoteClick = (contestant: any) => {

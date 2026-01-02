@@ -18,7 +18,6 @@ interface ContestantQRDialogProps {
   contestantId: string;
   contestId: string;
   contestTitle: string;
-  customSlug?: string | null;
 }
 
 export const ContestantQRDialog: React.FC<ContestantQRDialogProps> = ({
@@ -28,12 +27,9 @@ export const ContestantQRDialog: React.FC<ContestantQRDialogProps> = ({
   contestantId,
   contestId,
   contestTitle,
-  customSlug,
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
-  const votingUrl = customSlug 
-    ? `${window.location.origin}/${customSlug}?vote=${contestantId}`
-    : `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
+  const votingUrl = `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');

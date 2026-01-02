@@ -47,7 +47,6 @@ import FormBuilder from "./pages/FormBuilder";
 import FormResponses from "./pages/FormResponses";
 import PublicForm from "./pages/PublicForm";
 import EmbedForm from "./pages/EmbedForm";
-import PublicNomination from "./pages/PublicNomination";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -174,6 +173,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
+    <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
@@ -261,12 +261,6 @@ const AppRoutes = () => (
         <Route path="/influencer/payouts" element={<ProtectedRoute><InfluencerPayouts /></ProtectedRoute>} />
         <Route path="/influencer/settings" element={<ProtectedRoute><InfluencerSettings /></ProtectedRoute>} />
         
-        {/* Nomination Routes */}
-        <Route path="/nominations/public/:idOrSlug" element={<PublicNomination />} />
-        <Route path="/n/:slug" element={<PublicNomination />} />
-        
-        {/* Custom slug route for contests - must be last before catch-all to avoid conflicts */}
-        <Route path="/:slug" element={<PublicContest />} />
         <Route path="*" element={<NotFound />} />
   </Routes>
 );

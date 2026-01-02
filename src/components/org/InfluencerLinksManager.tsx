@@ -172,7 +172,7 @@ export const InfluencerLinksManager: React.FC = () => {
     if (linkType === 'contest' && targetId) {
       const contest = contests?.find(c => c.id === targetId);
       url = contest?.custom_slug 
-        ? `${baseUrl}/${contest.custom_slug}?ref=${code}`
+        ? `${baseUrl}/c/${contest.custom_slug}?ref=${code}`
         : `${baseUrl}/contests/${targetId}?ref=${code}`;
     } else if (linkType === 'event' && targetId) {
       url = `${baseUrl}/events/${targetId}?ref=${code}`;

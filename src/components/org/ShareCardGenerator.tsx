@@ -24,7 +24,6 @@ interface ShareCardGeneratorProps {
     title: string;
     brand_primary_color?: string;
     brand_logo_url?: string;
-    custom_slug?: string | null;
   };
 }
 
@@ -39,9 +38,7 @@ export const ShareCardGenerator: React.FC<ShareCardGeneratorProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const primaryColor = contest.brand_primary_color || '#7c3aed';
-  const votingUrl = contest.custom_slug 
-    ? `${window.location.origin}/${contest.custom_slug}?vote=${contestant.id}`
-    : `${window.location.origin}/contests/${contest.id}?vote=${contestant.id}`;
+  const votingUrl = `${window.location.origin}/contests/${contest.id}?vote=${contestant.id}`;
 
   const generateCard = async () => {
     setIsGenerating(true);

@@ -22,7 +22,6 @@ interface SortableContestantCardProps {
   contestId: string;
   contestTitle: string;
   brandPrimaryColor?: string;
-  customSlug?: string | null;
   onSelect: (id: string, selected: boolean) => void;
   onEdit: (contestant: Contestant) => void;
   onDelete: (contestant: Contestant) => void;
@@ -36,7 +35,6 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
   contestId,
   contestTitle,
   brandPrimaryColor,
-  customSlug,
   onSelect,
   onEdit,
   onDelete,
@@ -162,7 +160,6 @@ export const SortableContestantCard: React.FC<SortableContestantCardProps> = ({
           contestantId={contestant.id}
           contestId={contestId}
           contestTitle={contestTitle}
-          customSlug={customSlug}
         />
       </CardContent>
     </Card>

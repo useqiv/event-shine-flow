@@ -164,7 +164,7 @@ const EmbedLeaderboard = () => {
       {/* Footer */}
       <div className="mt-4 pt-4 border-t text-center">
         <a 
-          href={`${window.location.origin}/${contest.custom_slug || contest.id}`}
+          href={`${window.location.origin}/c/${contest.custom_slug || contest.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm font-medium hover:underline"

@@ -93,7 +93,6 @@ interface ContestantShareButtonProps {
   contestantId: string;
   contestantName: string;
   contestTitle: string;
-  customSlug?: string | null;
 }
 
 export const ContestantShareButton = ({
@@ -101,11 +100,8 @@ export const ContestantShareButton = ({
   contestantId,
   contestantName,
   contestTitle,
-  customSlug,
 }: ContestantShareButtonProps) => {
-  const url = customSlug 
-    ? `${window.location.origin}/${customSlug}?vote=${contestantId}`
-    : `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
+  const url = `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
   const title = `Vote for ${contestantName} in ${contestTitle}`;
   const description = `Support ${contestantName} by casting your vote now!`;
 
