@@ -5,7 +5,7 @@ import {
   ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, 
   Type, AlignLeft, Hash, Mail, Calendar, ListFilter, CheckSquare, 
   CircleDot, Star, Upload, Phone, Link2, Clock, MapPin, ToggleLeft,
-  Heading, SeparatorHorizontal, Image, User
+  Heading, SeparatorHorizontal, Image, User, CreditCard, CalendarClock
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -15,13 +15,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useForm, useFormFields, useUpdateForm, useCreateFormField, useUpdateFormField, useDeleteFormField, FormField } from '@/hooks/useForms';
 import { useToast } from '@/hooks/use-toast';
+import ConditionalLogicEditor, { ConditionalLogic } from '@/components/forms/ConditionalLogicEditor';
 
 const FIELD_TYPES = [
   // Text inputs
@@ -81,6 +82,15 @@ const FormBuilder = () => {
     is_accepting_responses: true,
     confirmation_message: 'Thank you for your response!',
     allow_multiple_submissions: true,
+    // Scheduling
+    start_date: '',
+    end_date: '',
+    // Multi-page
+    total_pages: 1,
+    // Payment
+    requires_payment: false,
+    payment_amount: 0,
+    payment_currency: 'NGN',
   });
 
   useEffect(() => {
@@ -93,6 +103,12 @@ const FormBuilder = () => {
         is_accepting_responses: form.is_accepting_responses,
         confirmation_message: form.confirmation_message || 'Thank you for your response!',
         allow_multiple_submissions: form.allow_multiple_submissions,
+        start_date: form.start_date ? new Date(form.start_date).toISOString().slice(0, 16) : '',
+        end_date: form.end_date ? new Date(form.end_date).toISOString().slice(0, 16) : '',
+        total_pages: form.total_pages || 1,
+        requires_payment: form.requires_payment || false,
+        payment_amount: form.payment_amount || 0,
+        payment_currency: form.payment_currency || 'NGN',
       });
     }
   }, [form]);
@@ -103,12 +119,16 @@ const FormBuilder = () => {
       id: formId,
       ...formSettings,
       custom_slug: formSettings.custom_slug || null,
-      allow_multiple_submissions: formSettings.allow_multiple_submissions,
+      start_date: formSettings.start_date ? new Date(formSettings.start_date).toISOString() : null,
+      end_date: formSettings.end_date ? new Date(formSettings.end_date).toISOString() : null,
     });
   };
 
   const handleAddField = async (fieldType: string) => {
     if (!formId) return;
+    
+    // Determine which page to add to (current max page or 1)
+    const currentPage = fields?.length ? Math.max(...fields.map(f => f.page_number || 1)) : 1;
     
     const newField = await createField.mutateAsync({
       form_id: formId,
@@ -116,10 +136,12 @@ const FormBuilder = () => {
       label: `New ${FIELD_TYPES.find(t => t.value === fieldType)?.label || 'Field'}`,
       is_required: false,
       display_order: (fields?.length || 0) + 1,
+      page_number: currentPage,
       description: null,
       placeholder: null,
       options: ['dropdown', 'checkbox', 'radio'].includes(fieldType) ? ['Option 1', 'Option 2'] : null,
       validation_rules: null,
+      conditional_logic: null,
     });
 
     setIsAddFieldOpen(false);
@@ -341,6 +363,28 @@ const FormBuilder = () => {
                         </div>
                       )}
 
+                      {/* Page Number for multi-page forms */}
+                      {formSettings.total_pages > 1 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm">Page</Label>
+                          <Select
+                            value={String(selectedField.page_number || 1)}
+                            onValueChange={(value) => handleUpdateField({ page_number: parseInt(value) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: formSettings.total_pages }, (_, i) => i + 1).map((page) => (
+                                <SelectItem key={page} value={String(page)}>
+                                  Page {page}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between pt-2 border-t">
                         <div>
                           <Label htmlFor="required" className="text-sm">Required</Label>
@@ -350,6 +394,16 @@ const FormBuilder = () => {
                           id="required"
                           checked={selectedField.is_required}
                           onCheckedChange={(checked) => handleUpdateField({ is_required: checked })}
+                        />
+                      </div>
+
+                      {/* Conditional Logic */}
+                      <div className="pt-2 border-t">
+                        <ConditionalLogicEditor
+                          value={selectedField.conditional_logic as ConditionalLogic | null}
+                          onChange={(logic) => handleUpdateField({ conditional_logic: logic as any })}
+                          availableFields={fields || []}
+                          currentFieldId={selectedField.id}
                         />
                       </div>
                     </CardContent>
@@ -421,6 +475,106 @@ const FormBuilder = () => {
                   </div>
                 </div>
 
+                {/* Scheduling */}
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4" />
+                    Form Scheduling
+                  </h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Start Date (optional)</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formSettings.start_date}
+                        onChange={(e) => setFormSettings({ ...formSettings, start_date: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">End Date (optional)</Label>
+                      <Input
+                        type="datetime-local"
+                        value={formSettings.end_date}
+                        onChange={(e) => setFormSettings({ ...formSettings, end_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Multi-page */}
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-medium">Multi-Page Form</h4>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Number of Pages</Label>
+                    <Select
+                      value={String(formSettings.total_pages)}
+                      onValueChange={(value) => setFormSettings({ ...formSettings, total_pages: parseInt(value) })}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5].map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num} {num === 1 ? 'Page' : 'Pages'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Set page numbers for each field in the Fields tab</p>
+                  </div>
+                </div>
+
+                {/* Payment */}
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Payment Collection
+                  </h4>
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <Label className="text-sm">Require Payment</Label>
+                      <p className="text-xs text-muted-foreground">Collect payment before submission</p>
+                    </div>
+                    <Switch
+                      checked={formSettings.requires_payment}
+                      onCheckedChange={(checked) => setFormSettings({ ...formSettings, requires_payment: checked })}
+                    />
+                  </div>
+                  {formSettings.requires_payment && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Amount</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formSettings.payment_amount}
+                          onChange={(e) => setFormSettings({ ...formSettings, payment_amount: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Currency</Label>
+                        <Select
+                          value={formSettings.payment_currency}
+                          onValueChange={(value) => setFormSettings({ ...formSettings, payment_currency: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NGN">NGN - Naira</SelectItem>
+                            <SelectItem value="USD">USD - Dollar</SelectItem>
+                            <SelectItem value="GBP">GBP - Pound</SelectItem>
+                            <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form Status */}
                 <div className="space-y-4 pt-6 border-t">
                   <h4 className="text-sm font-medium">Form Status</h4>
                   <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
