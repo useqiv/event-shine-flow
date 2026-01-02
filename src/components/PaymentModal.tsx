@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useFlutterwavePayment, useCryptoPayment, useVerifyCryptoPayment } from '@/hooks/usePayments';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfile } from '@/hooks/useProfile';
 import { usePromoCodeValidation } from '@/hooks/usePromoCode';
 import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   itemDetails,
 }) => {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
   const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
   const [cryptoCurrency, setCryptoCurrency] = useState<'USDT' | 'USDC'>('USDT');
   const [network, setNetwork] = useState<'ethereum' | 'bsc' | 'polygon' | 'tron'>('bsc');
@@ -95,7 +97,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
   const handleFlutterwavePayment = async () => {
     const email = user?.email || guestEmail;
-    const name = user?.user_metadata?.full_name || guestName || 'Guest';
+    const name = isGuest
+      ? (guestName || 'Guest')
+      : (profile?.full_name || user?.user_metadata?.full_name || 'Guest');
     const userId = user?.id || `guest_${Date.now()}`;
 
     if (!email) {
