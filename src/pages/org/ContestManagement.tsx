@@ -426,13 +426,17 @@ const ContestManagement = () => {
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/contests/${id}`;
+    const url = (contest as any)?.custom_slug 
+      ? `${window.location.origin}/${(contest as any).custom_slug}`
+      : `${window.location.origin}/contests/${id}`;
     navigator.clipboard.writeText(url);
     toast.success('Contest link copied to clipboard!');
   };
 
   const handleCopyContestantLink = (contestantId: string, contestantName: string) => {
-    const url = `${window.location.origin}/contests/${id}?vote=${contestantId}`;
+    const url = (contest as any)?.custom_slug 
+      ? `${window.location.origin}/${(contest as any).custom_slug}?vote=${contestantId}`
+      : `${window.location.origin}/contests/${id}?vote=${contestantId}`;
     navigator.clipboard.writeText(url);
     toast.success(`Link for ${contestantName} copied!`);
   };
@@ -592,7 +596,9 @@ const ContestManagement = () => {
             <ShareButtons
               title={contest.title}
               description={contest.description || `Vote now in ${contest.title}`}
-              url={`${window.location.origin}/contests/${id}`}
+              url={(contest as any)?.custom_slug 
+                ? `${window.location.origin}/${(contest as any).custom_slug}`
+                : `${window.location.origin}/contests/${id}`}
             />
             <Button variant="outline" size="sm" onClick={handleCopyLink}>
               <Copy className="h-4 w-4 sm:mr-2" />
@@ -986,6 +992,7 @@ const ContestManagement = () => {
                         contestId={id || ''}
                         contestTitle={contest?.title || ''}
                         brandPrimaryColor={editForm.brand_primary_color}
+                        customSlug={(contest as any)?.custom_slug}
                         onSelect={handleSelectContestant}
                         onEdit={handleEditContestant}
                         onDelete={(c) => {
@@ -1360,6 +1367,7 @@ const ContestManagement = () => {
               title: contest.title,
               brand_primary_color: (contest as any).brand_primary_color,
               brand_logo_url: (contest as any).brand_logo_url,
+              custom_slug: (contest as any).custom_slug,
             }}
           />
         )}

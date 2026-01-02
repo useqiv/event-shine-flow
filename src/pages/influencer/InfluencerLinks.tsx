@@ -36,10 +36,16 @@ const InfluencerLinks = () => {
   const getShareLink = (link: any) => {
     const baseUrl = window.location.origin;
     if (link.event_id) {
-      return `${baseUrl}/events/${link.event_id}?ref=${link.code}`;
+      const customSlug = link.events?.custom_slug;
+      return customSlug 
+        ? `${baseUrl}/e/${customSlug}?ref=${link.code}`
+        : `${baseUrl}/events/${link.event_id}?ref=${link.code}`;
     }
     if (link.contest_id) {
-      return `${baseUrl}/contests/${link.contest_id}?ref=${link.code}`;
+      const customSlug = link.contests?.custom_slug;
+      return customSlug 
+        ? `${baseUrl}/${customSlug}?ref=${link.code}`
+        : `${baseUrl}/contests/${link.contest_id}?ref=${link.code}`;
     }
     return `${baseUrl}?ref=${link.code}`;
   };

@@ -336,7 +336,9 @@ const ContestDetail = () => {
               <ShareButtons 
                 title={contest.title} 
                 description={contest.description || `Vote now in ${contest.title}`}
-                url={`${window.location.origin}/contests/${id}`}
+                url={(contest as any)?.custom_slug 
+                  ? `${window.location.origin}/${(contest as any).custom_slug}`
+                  : `${window.location.origin}/contests/${id}`}
               />
             </div>
           {contest.description && (
@@ -414,6 +416,7 @@ const ContestDetail = () => {
                                 contestantId={contestant.id} 
                                 contestantName={contestant.name} 
                                 contestTitle={contest?.title || ''} 
+                                customSlug={(contest as any)?.custom_slug}
                               />
                             </div>
                           </div>
@@ -513,6 +516,7 @@ const ContestDetail = () => {
                                     contestantId={contestant.id} 
                                     contestantName={contestant.name} 
                                     contestTitle={contest?.title || ''} 
+                                    customSlug={(contest as any)?.custom_slug}
                                   />
                                 </div>
                               </div>
@@ -576,6 +580,7 @@ const ContestDetail = () => {
                               contestantId={contestant.id} 
                               contestantName={contestant.name} 
                               contestTitle={contest?.title || ''} 
+                              customSlug={(contest as any)?.custom_slug}
                             />
                           </div>
                         </div>
