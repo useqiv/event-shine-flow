@@ -1,9 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import { useMultiCurrencyRevenue } from '@/hooks/useMultiCurrencyRevenue';
@@ -117,32 +116,9 @@ const AlertCard = ({
 const AdminDashboard: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
   const { data: currencyData } = useMultiCurrencyRevenue();
-  const [selectedCurrency, setSelectedCurrency] = useState('all');
   
   // Enable real-time payment notifications
   useRealtimePayments();
-
-  // Get available currencies from actual data
-  const availableCurrencies = useMemo(() => {
-    if (!currencyData) return [];
-    return currencyData.map(item => item.currency);
-  }, [currencyData]);
-
-  // Get revenue for selected currency or total across all
-  const displayRevenue = useMemo(() => {
-    if (!currencyData || currencyData.length === 0) return { amount: 0, currency: 'NGN' };
-    
-    if (selectedCurrency === 'all') {
-      // Show the highest revenue currency as default
-      const topCurrency = currencyData[0];
-      return { amount: topCurrency.totalRevenue, currency: topCurrency.currency };
-    }
-    
-    const currencyItem = currencyData.find(item => item.currency === selectedCurrency);
-    return currencyItem 
-      ? { amount: currencyItem.totalRevenue, currency: currencyItem.currency }
-      : { amount: 0, currency: selectedCurrency };
-  }, [currencyData, selectedCurrency]);
 
   const formatCurrency = (amount: number, currency: string = 'NGN') => {
     const symbol = CURRENCY_SYMBOLS[currency] || currency + ' ';
@@ -275,39 +251,43 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Revenue Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                <SelectTrigger className="w-[100px] h-7 text-xs">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  {availableCurrencies.map(currency => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(displayRevenue.amount, displayRevenue.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {selectedCurrency === 'all' 
-                  ? `Top currency: ${displayRevenue.currency}` 
-                  : 'Platform earnings'}
-              </p>
-              <Link to="/admin/finance" className="mt-3 inline-flex items-center text-xs text-primary hover:underline">
-                View details <ArrowRight className="h-3 w-3 ml-1" />
-              </Link>
-            </CardContent>
-          </Card>
+        {/* Revenue by Currency - Auto-generated cards */}
+        {currencyData && currencyData.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Revenue by Currency</h2>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {currencyData.map((item) => (
+                <Card key={item.currency}>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {item.currency} Revenue
+                    </CardTitle>
+                    <Badge variant="outline">{item.currency}</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {formatCurrency(item.totalRevenue, item.currency)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {item.totalTransactions} transactions
+                    </p>
+                    <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                      {item.voteCount > 0 && <span>{item.voteCount} votes</span>}
+                      {item.ticketCount > 0 && <span>{item.ticketCount} tickets</span>}
+                      {item.donationCount > 0 && <span>{item.donationCount} donations</span>}
+                    </div>
+                    <Link to="/admin/finance" className="mt-3 inline-flex items-center text-xs text-primary hover:underline">
+                      View details <ArrowRight className="h-3 w-3 ml-1" />
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Other Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <StatCard
             title="Pending Payouts"
             value={formatCurrency(stats?.pending_payouts || 0, 'NGN')}
