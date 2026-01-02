@@ -31,6 +31,7 @@ export const useMultiCurrencyRevenue = () => {
       if (voteError) throw voteError;
 
       // Fetch ticket revenue by currency (from event's currency)
+      // Include active, confirmed, and used tickets (exclude cancelled/refunded)
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
         .select(`
@@ -38,7 +39,7 @@ export const useMultiCurrencyRevenue = () => {
           status,
           events!inner(currency)
         `)
-        .eq('status', 'confirmed');
+        .in('status', ['active', 'confirmed', 'used']);
 
       if (ticketError) throw ticketError;
 
