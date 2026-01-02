@@ -2394,6 +2394,7 @@ export type Database = {
           guest_name: string | null
           id: string
           payment_method: string
+          payment_reference_id: string | null
           qr_code: string
           quantity: number
           status: string
@@ -2409,6 +2410,7 @@ export type Database = {
           guest_name?: string | null
           id?: string
           payment_method: string
+          payment_reference_id?: string | null
           qr_code: string
           quantity?: number
           status?: string
@@ -2424,6 +2426,7 @@ export type Database = {
           guest_name?: string | null
           id?: string
           payment_method?: string
+          payment_reference_id?: string | null
           qr_code?: string
           quantity?: number
           status?: string
