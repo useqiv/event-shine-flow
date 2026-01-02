@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Plus, FileText, MoreVertical, Trash2, Copy, ExternalLink, Settings } from 'lucide-react';
+import { Plus, FileText, MoreVertical, Trash2, Copy, ExternalLink, Settings, LayoutTemplate } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,10 +9,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserForms, useCreateForm, useDeleteForm, useDuplicateForm } from '@/hooks/useForms';
+import FormTemplateSelector from '@/components/forms/FormTemplateSelector';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,6 +27,7 @@ const Forms = () => {
   const duplicateForm = useDuplicateForm();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [createTab, setCreateTab] = useState<'blank' | 'template'>('blank');
   const [newFormTitle, setNewFormTitle] = useState('');
   const [newFormDescription, setNewFormDescription] = useState('');
 
@@ -79,41 +82,59 @@ const Forms = () => {
                 Create Form
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Form</DialogTitle>
                 <DialogDescription>
-                  Give your form a title and optional description.
+                  Start from scratch or choose a template.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Form Title</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., Customer Feedback Survey"
-                    value={newFormTitle}
-                    onChange={(e) => setNewFormTitle(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Briefly describe your form..."
-                    value={newFormDescription}
-                    onChange={(e) => setNewFormDescription(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateForm} disabled={!newFormTitle.trim() || createForm.isPending}>
-                  {createForm.isPending ? 'Creating...' : 'Create Form'}
-                </Button>
-              </DialogFooter>
+              
+              <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as 'blank' | 'template')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="blank">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Blank Form
+                  </TabsTrigger>
+                  <TabsTrigger value="template">
+                    <LayoutTemplate className="h-4 w-4 mr-2" />
+                    Use Template
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="blank" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Form Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., Customer Feedback Survey"
+                      value={newFormTitle}
+                      onChange={(e) => setNewFormTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Briefly describe your form..."
+                      value={newFormDescription}
+                      onChange={(e) => setNewFormDescription(e.target.value)}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateForm} disabled={!newFormTitle.trim() || createForm.isPending}>
+                      {createForm.isPending ? 'Creating...' : 'Create Form'}
+                    </Button>
+                  </DialogFooter>
+                </TabsContent>
+                
+                <TabsContent value="template" className="mt-4">
+                  <FormTemplateSelector onClose={() => setIsCreateDialogOpen(false)} />
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
