@@ -479,6 +479,8 @@ export type Database = {
           is_live_voting: boolean
           organization_id: string | null
           start_date: string
+          stream_platform: string | null
+          stream_url: string | null
           title: string
           total_votes: number
           updated_at: string
@@ -502,6 +504,8 @@ export type Database = {
           is_live_voting?: boolean
           organization_id?: string | null
           start_date: string
+          stream_platform?: string | null
+          stream_url?: string | null
           title: string
           total_votes?: number
           updated_at?: string
@@ -525,6 +529,8 @@ export type Database = {
           is_live_voting?: boolean
           organization_id?: string | null
           start_date?: string
+          stream_platform?: string | null
+          stream_url?: string | null
           title?: string
           total_votes?: number
           updated_at?: string
@@ -708,6 +714,8 @@ export type Database = {
           is_featured: boolean
           logo_url: string | null
           organization_id: string | null
+          stream_platform: string | null
+          stream_url: string | null
           title: string
           updated_at: string
           venue: string
@@ -726,6 +734,8 @@ export type Database = {
           is_featured?: boolean
           logo_url?: string | null
           organization_id?: string | null
+          stream_platform?: string | null
+          stream_url?: string | null
           title: string
           updated_at?: string
           venue: string
@@ -744,6 +754,8 @@ export type Database = {
           is_featured?: boolean
           logo_url?: string | null
           organization_id?: string | null
+          stream_platform?: string | null
+          stream_url?: string | null
           title?: string
           updated_at?: string
           venue?: string
