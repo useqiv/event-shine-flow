@@ -169,7 +169,7 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
     
     if (entityType === 'contest') {
       url = customSlug 
-        ? `${baseUrl}/c/${customSlug}?ref=${code}`
+        ? `${baseUrl}/${customSlug}?ref=${code}`
         : `${baseUrl}/contests/${entityId}?ref=${code}`;
     } else {
       url = customSlug

@@ -82,7 +82,7 @@ export const QuickSocialPost: React.FC = () => {
     const contest = contests?.find(c => c.id === contestId);
     if (!contest) return '';
     return contest.custom_slug 
-      ? `${window.location.origin}/c/${contest.custom_slug}`
+      ? `${window.location.origin}/${contest.custom_slug}`
       : `${window.location.origin}/contests/${contestId}`;
   };
 

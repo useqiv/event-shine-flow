@@ -71,7 +71,7 @@ const PublicContest = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
-  const contestUrl = `${window.location.origin}/c/${slug}`;
+  const contestUrl = `${window.location.origin}/${slug}`;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
 
   const handleVoteClick = (contestant: any) => {

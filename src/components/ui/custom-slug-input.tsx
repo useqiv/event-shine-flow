@@ -13,7 +13,7 @@ interface CustomSlugInputProps {
 }
 
 const entityPaths: Record<string, string> = {
-  contest: '/c/',
+  contest: '/',
   event: '/e/',
   campaign: '/p/',
   nomination: '/n/',
