@@ -178,8 +178,8 @@ const EventManagement = () => {
     }
 
     const headers = [
-      { key: 'profiles.full_name', label: 'Name' },
-      { key: 'profiles.email', label: 'Email' },
+      { key: 'guest_name', label: 'Name' },
+      { key: 'guest_email', label: 'Email' },
       { key: 'ticket_types.name', label: 'Ticket Type' },
       { key: 'quantity', label: 'Quantity' },
       { key: 'amount_paid', label: 'Amount Paid' },
@@ -539,8 +539,8 @@ const EventManagement = () => {
                       <TableBody>
                         {tickets.map((ticket: any) => (
                           <TableRow key={ticket.id}>
-                            <TableCell>{ticket.profiles?.full_name || 'N/A'}</TableCell>
-                            <TableCell>{ticket.profiles?.email || 'N/A'}</TableCell>
+                            <TableCell>{ticket.guest_name || ticket.profiles?.full_name || 'N/A'}</TableCell>
+                            <TableCell>{ticket.guest_email || ticket.profiles?.email || 'N/A'}</TableCell>
                             <TableCell>{ticket.ticket_types?.name}</TableCell>
                             <TableCell>{formatCurrency(Number(ticket.amount_paid), ticket.ticket_types?.currency || 'NGN')}</TableCell>
                             <TableCell>{format(new Date(ticket.created_at), 'MMM d, yyyy')}</TableCell>
