@@ -44,7 +44,7 @@ const PaymentCallback = () => {
         origin: { y: 0.6 }
       });
       
-      // Fetch ticket data for guests
+      // Fetch ticket data for all users
       if (isTicket && txRef) {
         fetchTicketByTxRef(txRef);
       }
@@ -324,38 +324,41 @@ const PaymentCallback = () => {
             </div>
           )}
 
-          {/* Guest user ticket success message with download option */}
-          {status === 'success' && isTicket && isGuest && (
+          {/* Ticket success with QR code and download option */}
+          {status === 'success' && isTicket && ticketData && (
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg">
-              <div className="text-center mb-4">
-                <Mail className="h-8 w-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">Check your email!</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Your ticket details and QR code have been sent to your email address.
-                </p>
-              </div>
-              
-              {ticketData && (
-                <div className="border-t border-primary/20 pt-4 mt-4">
-                  <div className="flex justify-center mb-3">
-                    <div id="guest-ticket-qr" className="bg-background p-3 rounded-lg">
-                      <QRCodeSVG value={ticketData.qr_code} size={120} />
-                    </div>
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground mb-3">
-                    {ticketData.event?.title} - {ticketData.ticket_type?.name}
+              {isGuest && (
+                <div className="text-center mb-4">
+                  <Mail className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <p className="text-sm font-medium">Check your email!</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your ticket details and QR code have been sent to your email address.
                   </p>
-                  <Button 
-                    onClick={downloadTicket} 
-                    variant="outline" 
-                    className="w-full"
-                    disabled={isDownloading}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {isDownloading ? 'Preparing...' : 'Download Ticket'}
-                  </Button>
                 </div>
               )}
+              
+              <div className={isGuest ? "border-t border-primary/20 pt-4 mt-4" : ""}>
+                <div className="flex justify-center mb-3">
+                  <div id="guest-ticket-qr" className="bg-background p-3 rounded-lg">
+                    <QRCodeSVG value={ticketData.qr_code} size={120} />
+                  </div>
+                </div>
+                <p className="text-xs text-center text-muted-foreground mb-1">
+                  {ticketData.event?.title}
+                </p>
+                <p className="text-sm text-center font-medium mb-3">
+                  {ticketData.ticket_type?.name} × {ticketData.quantity}
+                </p>
+                <Button 
+                  onClick={downloadTicket} 
+                  variant="outline" 
+                  className="w-full"
+                  disabled={isDownloading}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {isDownloading ? 'Preparing...' : 'Download Ticket'}
+                </Button>
+              </div>
             </div>
           )}
 
