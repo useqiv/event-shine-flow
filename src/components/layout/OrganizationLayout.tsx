@@ -35,7 +35,8 @@ import {
   QrCode,
   HandHeart,
   ClipboardList,
-  ChevronDown
+  ChevronDown,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +48,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const { data: unreadCount } = useUnreadCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
+  const [isManageOpen, setIsManageOpen] = React.useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -57,14 +59,17 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/org/contests/create', label: 'Create Contest', icon: Trophy },
     { path: '/org/events/create', label: 'Create Event', icon: Calendar },
     { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
+  ];
+
+  const manageSubItems = [
+    { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
+    { path: '/org/events', label: 'Manage Events', icon: Calendar },
+    { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
     { path: '/forms', label: 'Forms', icon: ClipboardList },
   ];
 
   const mainNavItems = [
     { path: '/org/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
-    { path: '/org/events', label: 'Manage Events', icon: Calendar },
-    { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
     { path: '/org/event-scanner', label: 'QR Scanner', icon: QrCode },
     { path: '/org/wallet', label: 'Wallet & Finance', icon: Wallet },
     { path: '/org/payouts', label: 'Payouts', icon: CreditCard },
@@ -78,13 +83,17 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
   const isCreateActive = createSubItems.some(item => isActive(item.path));
+  const isManageActive = manageSubItems.some(item => isActive(item.path));
 
-  // Auto-open Create menu if a create sub-item is active
+  // Auto-open Create/Manage menu if a sub-item is active
   React.useEffect(() => {
     if (isCreateActive) {
       setIsCreateOpen(true);
     }
-  }, [isCreateActive]);
+    if (isManageActive) {
+      setIsManageOpen(true);
+    }
+  }, [isCreateActive, isManageActive]);
 
   return (
     <div className="min-h-screen bg-background flex w-full">
@@ -142,6 +151,43 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               </CollapsibleTrigger>
               <CollapsibleContent className="pl-4 space-y-1 mt-1">
                 {createSubItems.map((item) => (
+                  <Link key={item.path} to={item.path}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start gap-3 h-10 px-3 font-medium text-sm",
+                        isActive(item.path) 
+                          ? "bg-primary/10 text-primary border-l-4 border-primary rounded-l-none" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Button>
+                  </Link>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Manage Collapsible */}
+            <Collapsible open={isManageOpen} onOpenChange={setIsManageOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start gap-3 h-11 px-3 font-medium",
+                    isManageActive 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <FolderOpen className="h-5 w-5" />
+                  Manage
+                  <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isManageOpen && "rotate-180")} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                {manageSubItems.map((item) => (
                   <Link key={item.path} to={item.path}>
                     <Button
                       variant="ghost"
@@ -356,6 +402,43 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4 space-y-1 mt-1">
                       {createSubItems.map((item) => (
+                        <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}>
+                          <Button
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start gap-3 h-10 px-3 font-medium text-sm",
+                              isActive(item.path) 
+                                ? "bg-primary/10 text-primary border-l-4 border-primary rounded-l-none" 
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
+                          </Button>
+                        </Link>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Manage Collapsible */}
+                  <Collapsible open={isManageOpen} onOpenChange={setIsManageOpen}>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start gap-3 h-11 px-3 font-medium",
+                          isManageActive 
+                            ? "bg-primary/10 text-primary" 
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        )}
+                      >
+                        <FolderOpen className="h-5 w-5" />
+                        Manage
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isManageOpen && "rotate-180")} />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                      {manageSubItems.map((item) => (
                         <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)}>
                           <Button
                             variant="ghost"
