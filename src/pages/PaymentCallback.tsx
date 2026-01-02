@@ -229,7 +229,7 @@ const PaymentCallback = () => {
               <div class="details-grid">
                 <div class="detail-item full-width">
                   <div class="detail-label">Ticket Holder</div>
-                  <div class="detail-value">${ticketData.guest_name || 'Guest'}</div>
+                  <div class="detail-value">${ticketData.guest_name || 'Guest'}${ticketData.guest_email ? ` (${ticketData.guest_email})` : ''}</div>
                 </div>
                 <div class="detail-item">
                   <div class="detail-label">Date</div>
