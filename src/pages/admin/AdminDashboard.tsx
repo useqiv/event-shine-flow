@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
+import MultiCurrencyRevenueWidget from '@/components/admin/MultiCurrencyRevenueWidget';
 import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWidget';
 import RecentActivityWidget from '@/components/admin/RecentActivityWidget';
 import AdminNotificationCenter from '@/components/admin/AdminNotificationCenter';
@@ -297,6 +298,9 @@ const AdminDashboard: React.FC = () => {
 
         {/* Period Comparison Widget */}
         <DashboardComparisonWidget />
+
+        {/* Multi-Currency Revenue Widget */}
+        <MultiCurrencyRevenueWidget />
 
         {/* Payment Statistics Widget */}
         <PaymentStatsWidget />
