@@ -25,6 +25,12 @@ const MultiCurrencyRevenueWidget: React.FC = () => {
   const { data: currencyData, isLoading } = useMultiCurrencyRevenue();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('all');
 
+  // All hooks must be called before any early returns
+  const availableCurrencies = useMemo(() => {
+    if (!currencyData) return [];
+    return currencyData.map(item => item.currency);
+  }, [currencyData]);
+
   const filteredData = useMemo(() => {
     if (!currencyData) return [];
     if (selectedCurrency === 'all') return currencyData;
@@ -69,11 +75,6 @@ const MultiCurrencyRevenueWidget: React.FC = () => {
       </Card>
     );
   }
-
-  const availableCurrencies = useMemo(() => {
-    if (!currencyData) return [];
-    return currencyData.map(item => item.currency);
-  }, [currencyData]);
 
   return (
     <Card>
