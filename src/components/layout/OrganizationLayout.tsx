@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useProfile } from '@/hooks/useProfile';
 import { useUnreadCount } from '@/hooks/useNotifications';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { 
   Vote, 
   LayoutDashboard, 
@@ -46,37 +47,57 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const location = useLocation();
   const { data: profile } = useProfile();
   const { data: unreadCount } = useUnreadCount();
+  const { data: permissions } = useOrgPermissions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [isManageOpen, setIsManageOpen] = React.useState(false);
+
+  // Check if user is owner (has all permissions)
+  const isOwner = permissions?.isOwner ?? true;
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  const createSubItems = [
-    { path: '/org/contests/create', label: 'Create Contest', icon: Trophy },
-    { path: '/org/events/create', label: 'Create Event', icon: Calendar },
-    { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
-    { path: '/forms/create', label: 'Create Form', icon: ClipboardList },
-  ];
+  // Filter navigation items based on permissions
+  const createSubItems = useMemo(() => {
+    const items = [
+      { path: '/org/contests/create', label: 'Create Contest', icon: Trophy, permission: 'can_edit_contests' as const },
+      { path: '/org/events/create', label: 'Create Event', icon: Calendar, permission: 'can_edit_events' as const },
+      { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart, permission: 'can_edit_campaigns' as const },
+      { path: '/forms/create', label: 'Create Form', icon: ClipboardList, permission: 'can_edit_campaigns' as const },
+    ];
+    
+    if (isOwner) return items;
+    return items.filter(item => permissions?.[item.permission]);
+  }, [isOwner, permissions]);
 
-  const manageSubItems = [
-    { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
-    { path: '/org/events', label: 'Manage Events', icon: Calendar },
-    { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
-    { path: '/forms', label: 'Manage Forms', icon: ClipboardList },
-  ];
+  const manageSubItems = useMemo(() => {
+    const items = [
+      { path: '/org/contests', label: 'Manage Contests', icon: Trophy, viewPermission: 'can_view_contests' as const },
+      { path: '/org/events', label: 'Manage Events', icon: Calendar, viewPermission: 'can_view_events' as const },
+      { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart, viewPermission: 'can_view_campaigns' as const },
+      { path: '/forms', label: 'Manage Forms', icon: ClipboardList, viewPermission: 'can_view_campaigns' as const },
+    ];
+    
+    if (isOwner) return items;
+    return items.filter(item => permissions?.[item.viewPermission]);
+  }, [isOwner, permissions]);
 
-  const mainNavItems = [
-    { path: '/org/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { path: '/org/event-scanner', label: 'QR Scanner', icon: QrCode },
-    { path: '/org/wallet', label: 'Wallet & Finance', icon: Wallet },
-    { path: '/org/payouts', label: 'Payouts', icon: CreditCard },
-    { path: '/org/team', label: 'Team Members', icon: Users },
-    { path: '/org/support', label: 'Support', icon: HelpCircle },
-  ];
+  const mainNavItems = useMemo(() => {
+    const items = [
+      { path: '/org/dashboard', label: 'Overview', icon: LayoutDashboard, alwaysShow: true },
+      { path: '/org/event-scanner', label: 'QR Scanner', icon: QrCode, permission: 'can_scan_tickets' as const },
+      { path: '/org/wallet', label: 'Wallet & Finance', icon: Wallet, permission: 'can_view_analytics' as const },
+      { path: '/org/payouts', label: 'Payouts', icon: CreditCard, permission: 'can_manage_payouts' as const },
+      { path: '/org/team', label: 'Team Members', icon: Users, ownerOnly: true },
+      { path: '/org/support', label: 'Support', icon: HelpCircle, alwaysShow: true },
+    ];
+    
+    if (isOwner) return items;
+    return items.filter(item => item.alwaysShow || (item.permission && permissions?.[item.permission]));
+  }, [isOwner, permissions]);
 
   const bottomNavItems = [
     { path: '/org/settings', label: 'Settings', icon: Settings },
@@ -133,7 +154,8 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               </Button>
             </Link>
 
-            {/* Create Collapsible */}
+            {/* Create Collapsible - only show if user has create permissions */}
+            {createSubItems.length > 0 && (
             <Collapsible open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <CollapsibleTrigger asChild>
                 <Button
@@ -169,8 +191,10 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 ))}
               </CollapsibleContent>
             </Collapsible>
+            )}
 
-            {/* Manage Collapsible */}
+            {/* Manage Collapsible - only show if user has view permissions */}
+            {manageSubItems.length > 0 && (
             <Collapsible open={isManageOpen} onOpenChange={setIsManageOpen}>
               <CollapsibleTrigger asChild>
                 <Button
@@ -206,7 +230,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                 ))}
               </CollapsibleContent>
             </Collapsible>
-
+            )}
             {/* Remaining nav items */}
             {mainNavItems.slice(1).map((item) => (
               <Link key={item.path} to={item.path}>
@@ -384,7 +408,8 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                     </Button>
                   </Link>
 
-                  {/* Create Collapsible */}
+                  {/* Create Collapsible - only show if user has create permissions */}
+                  {createSubItems.length > 0 && (
                   <Collapsible open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <CollapsibleTrigger asChild>
                       <Button
@@ -420,8 +445,10 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       ))}
                     </CollapsibleContent>
                   </Collapsible>
+                  )}
 
-                  {/* Manage Collapsible */}
+                  {/* Manage Collapsible - only show if user has view permissions */}
+                  {manageSubItems.length > 0 && (
                   <Collapsible open={isManageOpen} onOpenChange={setIsManageOpen}>
                     <CollapsibleTrigger asChild>
                       <Button
@@ -457,6 +484,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       ))}
                     </CollapsibleContent>
                   </Collapsible>
+                  )}
 
                   {/* Remaining nav items */}
                   {mainNavItems.slice(1).map((item) => (
