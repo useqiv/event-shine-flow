@@ -65,23 +65,18 @@ const PaymentCallback = () => {
 
   const fetchTicketByTxRef = async (transactionRef: string) => {
     try {
-      // Query by payment_reference_id which stores the tx_ref directly
-      const { data, error } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          qr_code,
-          guest_name,
-          guest_email,
-          quantity,
-          event:events(title, venue, event_date),
-          ticket_type:ticket_types(name)
-        `)
-        .eq('payment_reference_id', transactionRef)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('get-ticket-by-txref', {
+        body: { tx_ref: transactionRef },
+      });
 
-      if (!error && data) {
-        setTicketData(data as unknown as TicketData);
+      if (error) {
+        console.error('Error fetching ticket via function:', error);
+        return;
+      }
+
+      const ticket = (data as any)?.data;
+      if (ticket) {
+        setTicketData(ticket as TicketData);
       } else {
         console.log('No ticket found for tx_ref:', transactionRef);
       }
