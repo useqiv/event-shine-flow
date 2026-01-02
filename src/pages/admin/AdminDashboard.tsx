@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
+import { useExchangeRates } from '@/hooks/useExchangeRates';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
 import MultiCurrencyRevenueWidget from '@/components/admin/MultiCurrencyRevenueWidget';
 import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWidget';
@@ -30,6 +32,17 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR'];
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  NGN: '₦',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  GHS: 'GH₵',
+  KES: 'KSh',
+  ZAR: 'R',
+};
 
 const StatCard = ({ 
   title, 
@@ -103,16 +116,26 @@ const AlertCard = ({
 
 const AdminDashboard: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
+  const { data: exchangeRates } = useExchangeRates();
+  const [selectedCurrency, setSelectedCurrency] = useState('NGN');
   
   // Enable real-time payment notifications
   useRealtimePayments();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
+  const convertedRevenue = useMemo(() => {
+    const baseRevenue = stats?.total_revenue || 0;
+    if (!exchangeRates || selectedCurrency === 'NGN') {
+      return baseRevenue;
+    }
+    // Convert from NGN to selected currency
+    const ngnRate = exchangeRates['NGN'] || 1;
+    const targetRate = exchangeRates[selectedCurrency] || 1;
+    return (baseRevenue / ngnRate) * targetRate;
+  }, [stats?.total_revenue, exchangeRates, selectedCurrency]);
+
+  const formatCurrency = (amount: number, currency: string = 'NGN') => {
+    const symbol = CURRENCY_SYMBOLS[currency] || currency + ' ';
+    return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   if (isLoading) {
@@ -243,16 +266,33 @@ const AdminDashboard: React.FC = () => {
 
         {/* Revenue Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Total Revenue"
-            value={formatCurrency(stats?.total_revenue || 0)}
-            icon={DollarSign}
-            description="Platform earnings"
-            href="/admin/finance"
-          />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger className="w-[100px] h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map(currency => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(convertedRevenue, selectedCurrency)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Platform earnings</p>
+              <Link to="/admin/finance" className="mt-3 inline-flex items-center text-xs text-primary hover:underline">
+                View details <ArrowRight className="h-3 w-3 ml-1" />
+              </Link>
+            </CardContent>
+          </Card>
           <StatCard
             title="Pending Payouts"
-            value={formatCurrency(stats?.pending_payouts || 0)}
+            value={formatCurrency(stats?.pending_payouts || 0, 'NGN')}
             icon={Wallet}
             description="Awaiting approval"
             href="/admin/payouts"
