@@ -106,6 +106,11 @@ const PaymentCallback = () => {
         })
       : 'TBA';
 
+    // For guests: show "Name (email)". For logged-in users: email is more reliable.
+    const ticketHolderDisplay = isGuest
+      ? `${ticketData.guest_name || 'Guest'}${ticketData.guest_email ? ` (${ticketData.guest_email})` : ''}`
+      : (ticketData.guest_email || ticketData.guest_name || 'Guest');
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       setIsDownloading(false);
@@ -229,7 +234,7 @@ const PaymentCallback = () => {
               <div class="details-grid">
                 <div class="detail-item full-width">
                   <div class="detail-label">Ticket Holder</div>
-                  <div class="detail-value">${ticketData.guest_name || 'Guest'}${ticketData.guest_email ? ` (${ticketData.guest_email})` : ''}</div>
+                  <div class="detail-value">${ticketHolderDisplay}</div>
                 </div>
                 <div class="detail-item">
                   <div class="detail-label">Date</div>
