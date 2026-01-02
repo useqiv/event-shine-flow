@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
-import { useExchangeRates } from '@/hooks/useExchangeRates';
+import { useMultiCurrencyRevenue } from '@/hooks/useMultiCurrencyRevenue';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
 import MultiCurrencyRevenueWidget from '@/components/admin/MultiCurrencyRevenueWidget';
 import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWidget';
@@ -33,7 +33,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR'];
+
 const CURRENCY_SYMBOLS: Record<string, string> = {
   NGN: '₦',
   USD: '$',
@@ -116,22 +116,33 @@ const AlertCard = ({
 
 const AdminDashboard: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
-  const { data: exchangeRates } = useExchangeRates();
-  const [selectedCurrency, setSelectedCurrency] = useState('NGN');
+  const { data: currencyData } = useMultiCurrencyRevenue();
+  const [selectedCurrency, setSelectedCurrency] = useState('all');
   
   // Enable real-time payment notifications
   useRealtimePayments();
 
-  const convertedRevenue = useMemo(() => {
-    const baseRevenue = stats?.total_revenue || 0;
-    if (!exchangeRates || selectedCurrency === 'NGN') {
-      return baseRevenue;
+  // Get available currencies from actual data
+  const availableCurrencies = useMemo(() => {
+    if (!currencyData) return [];
+    return currencyData.map(item => item.currency);
+  }, [currencyData]);
+
+  // Get revenue for selected currency or total across all
+  const displayRevenue = useMemo(() => {
+    if (!currencyData || currencyData.length === 0) return { amount: 0, currency: 'NGN' };
+    
+    if (selectedCurrency === 'all') {
+      // Show the highest revenue currency as default
+      const topCurrency = currencyData[0];
+      return { amount: topCurrency.totalRevenue, currency: topCurrency.currency };
     }
-    // Convert from NGN to selected currency
-    const ngnRate = exchangeRates['NGN'] || 1;
-    const targetRate = exchangeRates[selectedCurrency] || 1;
-    return (baseRevenue / ngnRate) * targetRate;
-  }, [stats?.total_revenue, exchangeRates, selectedCurrency]);
+    
+    const currencyItem = currencyData.find(item => item.currency === selectedCurrency);
+    return currencyItem 
+      ? { amount: currencyItem.totalRevenue, currency: currencyItem.currency }
+      : { amount: 0, currency: selectedCurrency };
+  }, [currencyData, selectedCurrency]);
 
   const formatCurrency = (amount: number, currency: string = 'NGN') => {
     const symbol = CURRENCY_SYMBOLS[currency] || currency + ' ';
@@ -271,10 +282,11 @@ const AdminDashboard: React.FC = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                 <SelectTrigger className="w-[100px] h-7 text-xs">
-                  <SelectValue />
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CURRENCIES.map(currency => (
+                  <SelectItem value="all">All</SelectItem>
+                  {availableCurrencies.map(currency => (
                     <SelectItem key={currency} value={currency}>
                       {currency}
                     </SelectItem>
@@ -283,8 +295,14 @@ const AdminDashboard: React.FC = () => {
               </Select>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(convertedRevenue, selectedCurrency)}</div>
-              <p className="text-xs text-muted-foreground mt-1">Platform earnings</p>
+              <div className="text-2xl font-bold">
+                {formatCurrency(displayRevenue.amount, displayRevenue.currency)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedCurrency === 'all' 
+                  ? `Top currency: ${displayRevenue.currency}` 
+                  : 'Platform earnings'}
+              </p>
               <Link to="/admin/finance" className="mt-3 inline-flex items-center text-xs text-primary hover:underline">
                 View details <ArrowRight className="h-3 w-3 ml-1" />
               </Link>
