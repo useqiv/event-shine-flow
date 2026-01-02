@@ -7,16 +7,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEvent } from '@/hooks/useEvents';
 import { useEventTicketTypes, useQRScanLogs } from '@/hooks/useOrganization';
+import { useCanScanEvent } from '@/hooks/useOrgPermissions';
 import QRCodeScanner from '@/components/org/QRCodeScanner';
 import ManualTicketLookup from '@/components/org/ManualTicketLookup';
-import { Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Ticket, QrCode, Search, LayoutDashboard, CheckCircle, Clock, TrendingUp, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EventScanner = () => {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading } = useEvent(id || '');
+  const canScanThisEvent = useCanScanEvent(id || '');
   const { data: ticketTypes } = useEventTicketTypes(id || '');
   const { data: scanLogs, refetch: refetchLogs } = useQRScanLogs(id);
 
@@ -47,6 +50,29 @@ const EventScanner = () => {
           <p className="text-muted-foreground">Event not found</p>
           <Link to="/org/events">
             <Button variant="link">Back to Events</Button>
+          </Link>
+        </div>
+      </OrganizationLayout>
+    );
+  }
+
+  // Check if user has permission to scan this event
+  if (!canScanThisEvent) {
+    return (
+      <OrganizationLayout>
+        <div className="space-y-6 max-w-2xl mx-auto px-4">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Event Check-in</h1>
+            <p className="text-sm text-muted-foreground">{event.title}</p>
+          </div>
+          <Alert variant="destructive">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to scan tickets for this event. Please contact your organization administrator.
+            </AlertDescription>
+          </Alert>
+          <Link to="/org/event-scanner">
+            <Button variant="outline">Back to Event List</Button>
           </Link>
         </div>
       </OrganizationLayout>

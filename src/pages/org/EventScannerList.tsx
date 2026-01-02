@@ -5,17 +5,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOrganizationEvents } from '@/hooks/useOrganization';
-import { QrCode, Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { useOrgPermissions, useAllowedScanEventIds } from '@/hooks/useOrgPermissions';
+import { QrCode, Calendar, MapPin, ArrowRight, ShieldAlert } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
 const EventScannerList = () => {
   const { data: events, isLoading } = useOrganizationEvents();
+  const { data: permissions, isLoading: permissionsLoading } = useOrgPermissions();
+  const allowedEventIds = useAllowedScanEventIds();
 
-  const upcomingEvents = events?.filter(e => !isPast(new Date(e.event_date))) || [];
-  const pastEvents = events?.filter(e => isPast(new Date(e.event_date))) || [];
+  // Filter events based on scan permissions
+  const filterByPermissions = (eventList: typeof events) => {
+    if (!eventList) return [];
+    if (!permissions?.can_scan_tickets) return [];
+    
+    // null means all events allowed
+    if (allowedEventIds === null) return eventList;
+    
+    // Filter to only allowed events
+    return eventList.filter(e => allowedEventIds.includes(e.id));
+  };
 
-  if (isLoading) {
+  const allUpcoming = events?.filter(e => !isPast(new Date(e.event_date))) || [];
+  const allPast = events?.filter(e => isPast(new Date(e.event_date))) || [];
+  
+  const upcomingEvents = filterByPermissions(allUpcoming);
+  const pastEvents = filterByPermissions(allPast);
+
+  if (isLoading || permissionsLoading) {
     return (
       <OrganizationLayout>
         <div className="space-y-6">
@@ -28,12 +47,37 @@ const EventScannerList = () => {
     );
   }
 
+  // Check if user has no scan permissions at all
+  if (permissions && !permissions.can_scan_tickets) {
+    return (
+      <OrganizationLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">QR Scanner</h1>
+            <p className="text-muted-foreground">Select an event to scan tickets</p>
+          </div>
+          <Alert variant="destructive">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertDescription>
+              You don't have permission to scan tickets. Please contact your organization administrator.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </OrganizationLayout>
+    );
+  }
+
   return (
     <OrganizationLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">QR Scanner</h1>
-          <p className="text-muted-foreground">Select an event to scan tickets</p>
+          <p className="text-muted-foreground">
+            {permissions?.isOwner 
+              ? 'Select an event to scan tickets'
+              : `You can scan tickets for ${allowedEventIds === null ? 'all events' : `${allowedEventIds?.length || 0} event(s)`}`
+            }
+          </p>
         </div>
 
         {upcomingEvents.length > 0 && (
