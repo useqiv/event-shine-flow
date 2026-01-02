@@ -112,13 +112,44 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    console.log("Payment request:", JSON.stringify(payload));
+    console.log(
+      "Payment request received:",
+      JSON.stringify({
+        type: payload.type,
+        amount: payload.amount,
+        currency: payload.currency,
+        user_id: payload.user_id,
+      })
+    );
 
-    // Validate required fields
-    if (!payload.user_id || !payload.email || !payload.amount) {
-      console.error("Missing required fields");
+    const purchaserEmailRaw = typeof payload.email === "string" ? payload.email : String(payload.email ?? "");
+    const purchaserEmail = purchaserEmailRaw.trim().toLowerCase().slice(0, 255);
+
+    const purchaserNameRaw = typeof payload.name === "string" ? payload.name : String(payload.name ?? "");
+    const purchaserName = purchaserNameRaw.trim().slice(0, 100);
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Validate required fields (server-side)
+    if (!payload.user_id || !purchaserEmail || !emailRegex.test(purchaserEmail)) {
+      console.error("Missing/invalid required fields");
       return new Response(
-        JSON.stringify({ error: "Missing required fields: user_id, email, or amount" }),
+        JSON.stringify({ error: "Missing or invalid required fields: user_id, email" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!Number.isFinite(payload.amount) || payload.amount <= 0) {
+      return new Response(
+        JSON.stringify({ error: "Amount must be a positive number" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Guests must provide full name for ticket purchases
+    if (payload.type === "ticket" && String(payload.user_id).startsWith("guest_") && !purchaserName) {
+      return new Response(
+        JSON.stringify({ error: "Full name is required for guest ticket purchases" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -129,7 +160,12 @@ const handler = async (req: Request): Promise<Response> => {
     const meta: Record<string, any> = {
       user_id: payload.user_id,
       type: payload.type,
+      // Always include purchaser identity in meta so we can trust it later
+      // even if Flutterwave normalizes/overwrites `customer.name`.
+      purchaser_email: purchaserEmail,
     };
+
+    if (purchaserName) meta.purchaser_name = purchaserName;
 
     // Add influencer tracking if present
     if (payload.influencer_link_id) {
@@ -182,9 +218,9 @@ const handler = async (req: Request): Promise<Response> => {
       currency: payload.currency || defaultCurrency,
       redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
       customer: {
-        email: payload.email,
+        email: purchaserEmail,
         phonenumber: payload.phone || "",
-        name: payload.name || "Customer",
+        name: purchaserName || "Customer",
       },
       meta,
       customizations: {
