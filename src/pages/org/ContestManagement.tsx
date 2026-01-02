@@ -19,6 +19,7 @@ import { CSVImport, ContestantCSVRow } from '@/components/ui/csv-import';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { SortableContestantCard } from '@/components/org/SortableContestantCard';
 import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
+import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
@@ -703,6 +704,7 @@ const ContestManagement = () => {
                 <TabsTrigger value="categories">Categories</TabsTrigger>
               )}
               <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="payout">Payout</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
@@ -1167,6 +1169,14 @@ const ContestManagement = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <EntityTransactionHistory
+              entityType="contest"
+              entityId={id || ''}
+              currency={contest.vote_currency || 'NGN'}
+            />
           </TabsContent>
 
           <TabsContent value="payout" className="space-y-6">

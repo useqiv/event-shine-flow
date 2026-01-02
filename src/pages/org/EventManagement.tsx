@@ -19,6 +19,7 @@ import CurrencySelector, { getCurrencySymbol, formatCurrency } from '@/component
 import { useEvent } from '@/hooks/useEvents';
 import { useUpdateEvent, useCreateTicketType, useEventTicketTypes, useEventTickets, useQRScanLogs, useOrganizationSettings } from '@/hooks/useOrganization';
 import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
+import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
@@ -386,6 +387,7 @@ const EventManagement = () => {
             <TabsList className="w-max sm:w-auto">
               <TabsTrigger value="tickets">Tickets</TabsTrigger>
               <TabsTrigger value="attendees">Attendees</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
               <TabsTrigger value="scans">Scans</TabsTrigger>
               <TabsTrigger value="payout">Payout</TabsTrigger>
               <TabsTrigger value="marketing">Marketing</TabsTrigger>
@@ -597,6 +599,14 @@ const EventManagement = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <EntityTransactionHistory
+              entityType="event"
+              entityId={id || ''}
+              currency={(event as any)?.currency || 'NGN'}
+            />
           </TabsContent>
 
           <TabsContent value="payout" className="space-y-6">

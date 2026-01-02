@@ -53,6 +53,7 @@ import CampaignUpdatesManager from '@/components/org/CampaignUpdatesManager';
 import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
 import { AdjustGoalDialog } from '@/components/AdjustGoalDialog';
 import { CampaignStatusToggle } from '@/components/CampaignStatusToggle';
+import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -249,9 +250,10 @@ const CampaignDashboard: React.FC = () => {
         </Card>
 
         <Tabs defaultValue="trends" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
             <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="donors">Donors</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="traffic">Traffic</TabsTrigger>
             <TabsTrigger value="updates">Updates</TabsTrigger>
             <TabsTrigger value="share">Share</TabsTrigger>
@@ -442,6 +444,14 @@ const CampaignDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <EntityTransactionHistory
+              entityType="campaign"
+              entityId={id || ''}
+              currency={campaign.currency || 'USD'}
+            />
           </TabsContent>
 
           <TabsContent value="traffic" className="space-y-4">
