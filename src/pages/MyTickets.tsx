@@ -399,7 +399,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             <div class="details-grid">
               <div class="detail-item full-width">
                 <div class="detail-label">Ticket Holder</div>
-                <div class="detail-value holder-name">${ticket.guest_name || 'Guest'}${ticket.guest_email ? ` (${ticket.guest_email})` : ''}</div>
+                <div class="detail-value holder-name">${ticket.guest_email || ticket.guest_name || 'Guest'}</div>
               </div>
               <div class="detail-item">
                 <div class="detail-label">Date</div>

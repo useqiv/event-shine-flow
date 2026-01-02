@@ -99,7 +99,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     const email = user?.email || guestEmail;
     const name = isGuest
       ? (guestName || 'Guest')
-      : (profile?.full_name || user?.user_metadata?.full_name || 'Guest');
+      : (user?.user_metadata?.full_name || profile?.full_name || (email ? email.split('@')[0] : 'Guest'));
     const userId = user?.id || `guest_${Date.now()}`;
 
     if (!email) {
