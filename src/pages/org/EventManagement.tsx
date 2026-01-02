@@ -23,7 +23,8 @@ import EntityTransactionHistory from '@/components/org/EntityTransactionHistory'
 import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info } from 'lucide-react';
+import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -98,6 +99,8 @@ const EventManagement = () => {
     venue: '',
     address: '',
     custom_slug: '',
+    stream_url: '',
+    stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
   });
 
   // Initialize edit form when event data loads
@@ -113,6 +116,8 @@ const EventManagement = () => {
         venue: event.venue || '',
         address: event.address || '',
         custom_slug: (event as any).custom_slug || '',
+        stream_url: (event as any).stream_url || '',
+        stream_platform: (event as any).stream_platform || 'youtube',
       });
     }
   }, [event]);
@@ -132,6 +137,8 @@ const EventManagement = () => {
         id: event.id,
         ...editForm,
         custom_slug: editForm.custom_slug || null,
+        stream_url: editForm.stream_url || null,
+        stream_platform: editForm.stream_platform || 'youtube',
       });
       toast.success('Event details updated successfully');
     } catch (error) {
@@ -728,6 +735,31 @@ const EventManagement = () => {
                   value={editForm.custom_slug}
                   onChange={(value) => setEditForm(prev => ({ ...prev, custom_slug: value }))}
                   entityType="event"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Live Stream */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Live Stream
+                </CardTitle>
+                <CardDescription>
+                  Embed a YouTube or Twitch live stream for your event
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LiveStreamEmbed
+                  streamUrl={editForm.stream_url}
+                  platform={editForm.stream_platform}
+                  isEditable={true}
+                  onStreamChange={(url, platform) => setEditForm(prev => ({ 
+                    ...prev, 
+                    stream_url: url, 
+                    stream_platform: platform 
+                  }))}
                 />
               </CardContent>
             </Card>

@@ -25,6 +25,7 @@ import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
 import { CategoryManager } from '@/components/org/CategoryManager';
 import { useContestCategories } from '@/hooks/useContestCategories';
+import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
 
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
@@ -49,7 +50,7 @@ import {
   sortableKeyboardCoordinates, 
   verticalListSortingStrategy 
 } from '@dnd-kit/sortable';
-import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info, DollarSign, Megaphone } from 'lucide-react';
+import { Trophy, Users, Vote, PlusCircle, BarChart3, Download, ArrowLeft, Edit, Copy, Link as LinkIcon, Save, FileSpreadsheet, Share2, Pencil, Camera, Trash2, Search, ArrowUpDown, ChevronLeft, ChevronRight, Filter, TrendingUp, Award, PieChart, Info, DollarSign, Megaphone, Video } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
@@ -247,6 +248,8 @@ const ContestManagement = () => {
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
     is_live_voting: false,
+    stream_url: '',
+    stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
   });
 
   // Share card state
@@ -269,6 +272,8 @@ const ContestManagement = () => {
         brand_secondary_color: (contest as any).brand_secondary_color || '#f97316',
         brand_logo_url: (contest as any).brand_logo_url || '',
         is_live_voting: (contest as any).is_live_voting || false,
+        stream_url: (contest as any).stream_url || '',
+        stream_platform: (contest as any).stream_platform || 'youtube',
       });
     }
   }, [contest]);
@@ -472,6 +477,8 @@ const ContestManagement = () => {
         brand_secondary_color: editForm.brand_secondary_color || '#f97316',
         brand_logo_url: editForm.brand_logo_url || null,
         is_live_voting: editForm.is_live_voting,
+        stream_url: editForm.stream_url || null,
+        stream_platform: editForm.stream_platform || 'youtube',
       });
     } catch (error: any) {
       console.error('Failed to update contest:', error);
@@ -1310,6 +1317,31 @@ const ContestManagement = () => {
                     onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_live_voting: checked }))}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Live Stream */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Video className="h-5 w-5" />
+                  Live Stream
+                </CardTitle>
+                <CardDescription>
+                  Embed a YouTube or Twitch live stream for your contest
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <LiveStreamEmbed
+                  streamUrl={editForm.stream_url}
+                  platform={editForm.stream_platform}
+                  isEditable={true}
+                  onStreamChange={(url, platform) => setEditForm(prev => ({ 
+                    ...prev, 
+                    stream_url: url, 
+                    stream_platform: platform 
+                  }))}
+                />
               </CardContent>
             </Card>
 
