@@ -222,9 +222,7 @@ const PaymentCallback = () => {
           <div class="ticket">
             <div class="qr-section">
               <div class="qr-code">
-                <svg viewBox="0 0 256 256">
-                  ${document.getElementById('guest-ticket-qr')?.innerHTML || ''}
-                </svg>
+                ${document.getElementById('guest-ticket-qr-print')?.innerHTML || ''}
               </div>
               <p class="qr-label">Scan for entry</p>
             </div>
@@ -342,8 +340,14 @@ const PaymentCallback = () => {
               
               <div className={isGuest ? "border-t border-primary/20 pt-4 mt-4" : ""}>
                 <div className="flex justify-center mb-3">
-                  <div id="guest-ticket-qr" className="bg-background p-3 rounded-lg">
-                    <QRCodeSVG value={ticketData.qr_code} size={120} />
+                  <div className="bg-background p-3 rounded-lg">
+                    <div id="guest-ticket-qr" aria-hidden="true">
+                      <QRCodeSVG value={ticketData.qr_code} size={120} />
+                    </div>
+                    {/* Hidden, high-res QR used by the print/download popup */}
+                    <div id="guest-ticket-qr-print" className="sr-only" aria-hidden="true">
+                      <QRCodeSVG value={ticketData.qr_code} size={380} level="H" includeMargin />
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-center text-muted-foreground mb-1">
