@@ -518,10 +518,13 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", ticket_type_id)
       .single();
 
-    // Ticket holder details: prefer the name/email provided in the payment initiation (customer)
-    // so the downloaded ticket matches what the buyer entered. Only fallback to profile if missing.
-    let ticketHolderName = customer.name || null;
-    let ticketHolderEmail = customer.email || null;
+    // Ticket holder details: trust the values we set at payment init time (meta),
+    // because Flutterwave may normalize/replace `customer.name`.
+    const metaPurchaserName = typeof meta.purchaser_name === "string" ? meta.purchaser_name.trim() : "";
+    const metaPurchaserEmail = typeof meta.purchaser_email === "string" ? meta.purchaser_email.trim().toLowerCase() : "";
+
+    let ticketHolderName = metaPurchaserName || customer.name || null;
+    let ticketHolderEmail = metaPurchaserEmail || customer.email || null;
 
     if ((!ticketHolderName || !ticketHolderEmail) && !isGuestPurchase && actualUserId) {
       const { data: profile } = await supabase
@@ -535,7 +538,6 @@ async function processSuccessfulPayment(paymentData: any) {
         if (!ticketHolderEmail) ticketHolderEmail = profile.email || null;
       }
     }
-
     console.log("Ticket holder name:", ticketHolderName);
 
     // Generate QR code
@@ -607,8 +609,8 @@ async function processSuccessfulPayment(paymentData: any) {
       // Send email receipt with QR code
       await sendReceipt({
         type: "ticket",
-        user_email: customer.email,
-        user_name: customer.name || "Valued Customer",
+        user_email: ticketHolderEmail || customer.email,
+        user_name: ticketHolderName || "Valued Customer",
         amount: paymentData.amount,
         currency: paymentData.currency || "NGN",
         quantity: ticket_quantity || 1,
