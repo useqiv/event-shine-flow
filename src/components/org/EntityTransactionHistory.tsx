@@ -57,11 +57,12 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
   const { data, isLoading } = useQuery({
     queryKey: ['entity-transactions', entityType, entityId, statusFilter, page],
     queryFn: async () => {
-      let query;
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
       
       if (entityType === 'contest') {
         // Votes don't have status, so we treat all as completed
-        query = supabase
+        const { data, error } = await supabase
           .from('votes')
           .select(`
             id,
@@ -69,13 +70,40 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             amount_paid,
             payment_method,
             created_at,
-            contestant:contestants(name),
-            user:profiles!votes_user_id_fkey(full_name, email)
+            contestant_id,
+            user_id
           `)
           .eq('contest_id', entityId)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(from, to);
+        
+        if (error) throw error;
+        
+        // Fetch related data separately
+        const contestantIds = [...new Set(data?.map(v => v.contestant_id).filter(Boolean))];
+        const userIds = [...new Set(data?.map(v => v.user_id).filter(Boolean))];
+        
+        const [contestantsRes, usersRes] = await Promise.all([
+          contestantIds.length > 0 
+            ? supabase.from('contestants').select('id, name').in('id', contestantIds)
+            : { data: [] },
+          userIds.length > 0 
+            ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
+            : { data: [] },
+        ]);
+        
+        const contestantsMap = new Map((contestantsRes.data || []).map(c => [c.id, c]));
+        const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
+        
+        const enrichedData = data?.map(v => ({
+          ...v,
+          contestant: contestantsMap.get(v.contestant_id),
+          user: usersMap.get(v.user_id),
+        }));
+        
+        return { transactions: enrichedData || [] };
       } else if (entityType === 'event') {
-        query = supabase
+        let query = supabase
           .from('tickets')
           .select(`
             id,
@@ -86,8 +114,8 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             created_at,
             guest_name,
             guest_email,
-            ticket_type:ticket_types(name),
-            user:profiles!tickets_user_id_fkey(full_name, email)
+            ticket_type_id,
+            user_id
           `)
           .eq('event_id', entityId)
           .order('created_at', { ascending: false });
@@ -101,9 +129,36 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           };
           query = query.in('status', statusMap[statusFilter] || [statusFilter]);
         }
+        
+        const { data, error } = await query.range(from, to);
+        if (error) throw error;
+        
+        // Fetch related data separately
+        const ticketTypeIds = [...new Set(data?.map(t => t.ticket_type_id).filter(Boolean))];
+        const userIds = [...new Set(data?.map(t => t.user_id).filter(Boolean))];
+        
+        const [ticketTypesRes, usersRes] = await Promise.all([
+          ticketTypeIds.length > 0 
+            ? supabase.from('ticket_types').select('id, name').in('id', ticketTypeIds)
+            : { data: [] },
+          userIds.length > 0 
+            ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
+            : { data: [] },
+        ]);
+        
+        const ticketTypesMap = new Map((ticketTypesRes.data || []).map(tt => [tt.id, tt]));
+        const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
+        
+        const enrichedData = data?.map(t => ({
+          ...t,
+          ticket_type: ticketTypesMap.get(t.ticket_type_id),
+          user: usersMap.get(t.user_id),
+        }));
+        
+        return { transactions: enrichedData || [] };
       } else {
         // Campaign donations
-        query = supabase
+        let query = supabase
           .from('donations')
           .select(`
             id,
@@ -113,7 +168,7 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             status,
             is_anonymous,
             created_at,
-            donor:profiles!donations_donor_id_fkey(full_name, email)
+            donor_id
           `)
           .eq('campaign_id', entityId)
           .order('created_at', { ascending: false });
@@ -127,17 +182,26 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           };
           query = query.in('status', statusMap[statusFilter] || [statusFilter]);
         }
+        
+        const { data, error } = await query.range(from, to);
+        if (error) throw error;
+        
+        // Fetch donor data separately
+        const donorIds = [...new Set(data?.map(d => d.donor_id).filter(Boolean))];
+        
+        const donorsRes = donorIds.length > 0 
+          ? await supabase.from('profiles').select('id, full_name, email').in('id', donorIds)
+          : { data: [] };
+        
+        const donorsMap = new Map((donorsRes.data || []).map(d => [d.id, d]));
+        
+        const enrichedData = data?.map(d => ({
+          ...d,
+          donor: donorsMap.get(d.donor_id),
+        }));
+        
+        return { transactions: enrichedData || [] };
       }
-      
-      // Pagination
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
-      if (error) throw error;
-      
-      return { transactions: data || [], count };
     },
     enabled: !!entityId,
   });
@@ -151,9 +215,9 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           id: t.id,
           user_name: t.user?.full_name || 'Anonymous',
           user_email: t.user?.email || '',
-          amount: t.amount_paid,
-          quantity: t.quantity,
-          payment_method: t.payment_method,
+          amount: t.amount_paid || 0,
+          quantity: t.quantity || 1,
+          payment_method: t.payment_method || 'unknown',
           status: 'completed', // Votes are always completed
           created_at: t.created_at,
           item_name: t.contestant?.name || 'Unknown',
@@ -163,9 +227,9 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           id: t.id,
           user_name: t.guest_name || t.user?.full_name || 'Guest',
           user_email: t.guest_email || t.user?.email || '',
-          amount: t.amount_paid,
-          quantity: t.quantity,
-          payment_method: t.payment_method,
+          amount: t.amount_paid || 0,
+          quantity: t.quantity || 1,
+          payment_method: t.payment_method || 'unknown',
           status: t.status || 'active',
           created_at: t.created_at,
           item_name: t.ticket_type?.name || 'Ticket',
@@ -175,9 +239,9 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           id: t.id,
           user_name: t.is_anonymous ? 'Anonymous' : (t.donor?.full_name || 'Anonymous'),
           user_email: t.is_anonymous ? '' : (t.donor?.email || ''),
-          amount: t.amount,
+          amount: t.amount || 0,
           quantity: 1,
-          payment_method: t.payment_method,
+          payment_method: t.payment_method || 'unknown',
           status: t.status || 'completed',
           created_at: t.created_at,
           item_name: 'Donation',
