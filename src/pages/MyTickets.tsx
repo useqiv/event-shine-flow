@@ -435,7 +435,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
       <div ref={qrRef} className="sr-only" aria-hidden="true">
         <QRCodeSVG
           value={ticket.qr_code}
-          size={150}
+          size={380}
           level="H"
           includeMargin={true}
         />
