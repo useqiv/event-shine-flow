@@ -518,6 +518,25 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", ticket_type_id)
       .single();
 
+    // For authenticated users, fetch their profile name
+    let ticketHolderName = customer.name || null;
+    let ticketHolderEmail = customer.email || null;
+    
+    if (!isGuestPurchase && actualUserId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", actualUserId)
+        .single();
+      
+      if (profile) {
+        ticketHolderName = profile.full_name || customer.name || null;
+        ticketHolderEmail = profile.email || customer.email || null;
+      }
+    }
+
+    console.log("Ticket holder name:", ticketHolderName);
+
     // Generate QR code
     const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -539,8 +558,7 @@ async function processSuccessfulPayment(paymentData: any) {
       }
     }
 
-    // Record ticket purchase – use wallet_transactions.id for idempotency/FK
-    // For guest purchases, store their email and name instead of user_id
+    // Record ticket purchase – store holder name for both guest and authenticated users
     const { error: ticketError } = await supabase.from("tickets").insert({
       user_id: actualUserId,
       event_id,
@@ -551,9 +569,9 @@ async function processSuccessfulPayment(paymentData: any) {
       qr_code,
       status: "active",
       transaction_id: db_transaction_id,
-      payment_reference_id: paymentData.tx_ref, // Store tx_ref for payment callback lookup
-      guest_email: isGuestPurchase ? (customer.email || null) : null,
-      guest_name: isGuestPurchase ? (customer.name || null) : null,
+      payment_reference_id: paymentData.tx_ref,
+      guest_email: ticketHolderEmail,
+      guest_name: ticketHolderName,
     });
 
     if (ticketError) {
