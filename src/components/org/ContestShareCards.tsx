@@ -17,6 +17,7 @@ interface Contest {
   title: string;
   brand_primary_color?: string;
   brand_logo_url?: string;
+  custom_slug?: string | null;
 }
 
 interface ContestShareCardsProps {

@@ -27,18 +27,32 @@ const PublicContest = () => {
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  // Fetch contest by slug
+  // Fetch contest by slug or ID (fallback)
   const { data: contest, isLoading: contestLoading } = useQuery({
     queryKey: ['public-contest', slug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try by custom_slug
+      let { data, error } = await supabase
         .from('contests')
         .select('*')
         .eq('custom_slug', slug)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
+      
+      // If not found by slug, try by ID (fallback for direct ID access)
+      if (!data && !error) {
+        const idResult = await supabase
+          .from('contests')
+          .select('*')
+          .eq('id', slug)
+          .eq('is_active', true)
+          .maybeSingle();
+        data = idResult.data;
+        error = idResult.error;
+      }
       
       if (error) throw error;
+      if (!data) throw new Error('Contest not found');
       return data;
     },
     enabled: !!slug,
