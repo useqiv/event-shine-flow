@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef } from 'react';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,17 +39,15 @@ const defaultPermissions: TeamMemberPermissions = {
 };
 
 // Component for scan tickets permission with event selection
-const ScanTicketsPermission = ({
-  canScan,
-  eventIds,
-  onCanScanChange,
-  onEventIdsChange,
-}: {
+interface ScanTicketsPermissionProps {
   canScan: boolean;
   eventIds: string[];
   onCanScanChange: (checked: boolean) => void;
   onEventIdsChange: (eventIds: string[]) => void;
-}) => {
+}
+
+const ScanTicketsPermission = forwardRef<HTMLDivElement, ScanTicketsPermissionProps>(
+  ({ canScan, eventIds, onCanScanChange, onEventIdsChange }, ref) => {
   const { data: events } = useEvents();
   const orgEvents = events || [];
 
@@ -125,7 +123,9 @@ const ScanTicketsPermission = ({
       )}
     </div>
   );
-};
+});
+
+ScanTicketsPermission.displayName = 'ScanTicketsPermission';
 
 const TeamMembers = () => {
   const { data: members, isLoading } = useTeamMembers();
