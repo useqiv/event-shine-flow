@@ -39,6 +39,7 @@ const FIELD_TYPES = [
   { value: 'date', label: 'Date', icon: Calendar, category: 'datetime' },
   { value: 'time', label: 'Time', icon: Clock, category: 'datetime' },
   { value: 'datetime', label: 'Date & Time', icon: Calendar, category: 'datetime' },
+  { value: 'datetime_picker', label: 'Advanced Date/Time', icon: CalendarClock, category: 'datetime' },
   
   // Choice fields
   { value: 'dropdown', label: 'Dropdown', icon: ListFilter, category: 'choice' },
@@ -48,6 +49,7 @@ const FIELD_TYPES = [
   
   // Advanced
   { value: 'rating', label: 'Rating (1-5)', icon: Star, category: 'advanced' },
+  { value: 'star_rating', label: 'Star Rating', icon: Star, category: 'advanced' },
   { value: 'scale', label: 'Linear Scale', icon: Hash, category: 'advanced' },
   { value: 'file', label: 'File Upload', icon: Upload, category: 'advanced' },
   { value: 'address', label: 'Address', icon: MapPin, category: 'advanced' },
