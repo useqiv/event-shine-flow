@@ -518,20 +518,21 @@ async function processSuccessfulPayment(paymentData: any) {
       .eq("id", ticket_type_id)
       .single();
 
-    // For authenticated users, fetch their profile name
+    // Ticket holder details: prefer the name/email provided in the payment initiation (customer)
+    // so the downloaded ticket matches what the buyer entered. Only fallback to profile if missing.
     let ticketHolderName = customer.name || null;
     let ticketHolderEmail = customer.email || null;
-    
-    if (!isGuestPurchase && actualUserId) {
+
+    if ((!ticketHolderName || !ticketHolderEmail) && !isGuestPurchase && actualUserId) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, email")
         .eq("id", actualUserId)
-        .single();
-      
+        .maybeSingle();
+
       if (profile) {
-        ticketHolderName = profile.full_name || customer.name || null;
-        ticketHolderEmail = profile.email || customer.email || null;
+        if (!ticketHolderName) ticketHolderName = profile.full_name || null;
+        if (!ticketHolderEmail) ticketHolderEmail = profile.email || null;
       }
     }
 
