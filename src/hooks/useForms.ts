@@ -14,6 +14,15 @@ export interface Form {
   is_accepting_responses: boolean;
   confirmation_message: string | null;
   allow_multiple_submissions: boolean;
+  // Scheduling
+  start_date: string | null;
+  end_date: string | null;
+  // Multi-page
+  total_pages: number;
+  // Payment
+  requires_payment: boolean;
+  payment_amount: number;
+  payment_currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +38,18 @@ export interface FormField {
   options: string[] | null;
   validation_rules: Json | null;
   display_order: number;
+  // Multi-page
+  page_number: number;
+  // Conditional logic
+  conditional_logic: {
+    action: 'show' | 'hide';
+    logic_type: 'all' | 'any';
+    rules: Array<{
+      field_id: string;
+      operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty';
+      value: string;
+    }>;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -41,6 +62,9 @@ export interface FormResponse {
   response_data: Json;
   status: string;
   submitted_at: string;
+  payment_status: string | null;
+  payment_reference: string | null;
+  payment_amount: number | null;
 }
 
 export const useUserForms = () => {
@@ -241,10 +265,16 @@ export const useCreateFormField = () => {
       options: Json | null;
       validation_rules: Json | null;
       display_order: number;
+      page_number?: number;
+      conditional_logic?: Json | null;
     }) => {
       const { data, error } = await supabase
         .from('form_fields')
-        .insert(fieldData)
+        .insert({
+          ...fieldData,
+          page_number: fieldData.page_number || 1,
+          conditional_logic: fieldData.conditional_logic || null,
+        })
         .select()
         .single();
 
@@ -272,6 +302,8 @@ export const useUpdateFormField = () => {
       options?: Json | null;
       validation_rules?: Json | null;
       display_order?: number;
+      page_number?: number;
+      conditional_logic?: Json | null;
     }) => {
       const { data, error } = await supabase
         .from('form_fields')

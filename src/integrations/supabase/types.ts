@@ -789,6 +789,7 @@ export type Database = {
       }
       form_fields: {
         Row: {
+          conditional_logic: Json | null
           created_at: string
           description: string | null
           display_order: number
@@ -798,11 +799,13 @@ export type Database = {
           is_required: boolean
           label: string
           options: Json | null
+          page_number: number | null
           placeholder: string | null
           updated_at: string
           validation_rules: Json | null
         }
         Insert: {
+          conditional_logic?: Json | null
           created_at?: string
           description?: string | null
           display_order?: number
@@ -812,11 +815,13 @@ export type Database = {
           is_required?: boolean
           label: string
           options?: Json | null
+          page_number?: number | null
           placeholder?: string | null
           updated_at?: string
           validation_rules?: Json | null
         }
         Update: {
+          conditional_logic?: Json | null
           created_at?: string
           description?: string | null
           display_order?: number
@@ -826,6 +831,7 @@ export type Database = {
           is_required?: boolean
           label?: string
           options?: Json | null
+          page_number?: number | null
           placeholder?: string | null
           updated_at?: string
           validation_rules?: Json | null
@@ -844,6 +850,9 @@ export type Database = {
         Row: {
           form_id: string
           id: string
+          payment_amount: number | null
+          payment_reference: string | null
+          payment_status: string | null
           respondent_email: string | null
           respondent_name: string | null
           response_data: Json
@@ -853,6 +862,9 @@ export type Database = {
         Insert: {
           form_id: string
           id?: string
+          payment_amount?: number | null
+          payment_reference?: string | null
+          payment_status?: string | null
           respondent_email?: string | null
           respondent_name?: string | null
           response_data: Json
@@ -862,6 +874,9 @@ export type Database = {
         Update: {
           form_id?: string
           id?: string
+          payment_amount?: number | null
+          payment_reference?: string | null
+          payment_status?: string | null
           respondent_email?: string | null
           respondent_name?: string | null
           response_data?: Json
@@ -878,6 +893,45 @@ export type Database = {
           },
         ]
       }
+      form_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields_data: Json
+          id: string
+          is_public: boolean | null
+          name: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields_data?: Json
+          id?: string
+          is_public?: boolean | null
+          name: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields_data?: Json
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       forms: {
         Row: {
           allow_multiple_submissions: boolean
@@ -885,11 +939,17 @@ export type Database = {
           created_at: string
           custom_slug: string | null
           description: string | null
+          end_date: string | null
           id: string
           is_accepting_responses: boolean
           is_active: boolean
           logo_url: string | null
+          payment_amount: number | null
+          payment_currency: string | null
+          requires_payment: boolean | null
+          start_date: string | null
           title: string
+          total_pages: number | null
           updated_at: string
           user_id: string
         }
@@ -899,11 +959,17 @@ export type Database = {
           created_at?: string
           custom_slug?: string | null
           description?: string | null
+          end_date?: string | null
           id?: string
           is_accepting_responses?: boolean
           is_active?: boolean
           logo_url?: string | null
+          payment_amount?: number | null
+          payment_currency?: string | null
+          requires_payment?: boolean | null
+          start_date?: string | null
           title: string
+          total_pages?: number | null
           updated_at?: string
           user_id: string
         }
@@ -913,11 +979,17 @@ export type Database = {
           created_at?: string
           custom_slug?: string | null
           description?: string | null
+          end_date?: string | null
           id?: string
           is_accepting_responses?: boolean
           is_active?: boolean
           logo_url?: string | null
+          payment_amount?: number | null
+          payment_currency?: string | null
+          requires_payment?: boolean | null
+          start_date?: string | null
           title?: string
+          total_pages?: number | null
           updated_at?: string
           user_id?: string
         }
