@@ -3,23 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+export interface TeamMemberPermissions {
+  can_view_contests: boolean;
+  can_edit_contests: boolean;
+  can_view_events: boolean;
+  can_edit_events: boolean;
+  can_view_campaigns: boolean;
+  can_edit_campaigns: boolean;
+  can_scan_tickets: boolean;
+  scan_tickets_event_ids?: string[]; // Optional: specific events they can scan for (empty = all events)
+  can_view_analytics: boolean;
+  can_manage_payouts: boolean;
+}
+
 export interface TeamMember {
   id: string;
   organization_id: string;
   email: string;
   name: string | null;
   role: string;
-  permissions: {
-    can_view_contests: boolean;
-    can_edit_contests: boolean;
-    can_view_events: boolean;
-    can_edit_events: boolean;
-    can_view_campaigns: boolean;
-    can_edit_campaigns: boolean;
-    can_scan_tickets: boolean;
-    can_view_analytics: boolean;
-    can_manage_payouts: boolean;
-  };
+  permissions: TeamMemberPermissions;
   status: string;
   invited_at: string;
   accepted_at: string | null;
@@ -41,7 +44,11 @@ export const useTeamMembers = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as TeamMember[];
+      // Transform the data to match our interface
+      return (data || []).map(member => ({
+        ...member,
+        permissions: member.permissions as unknown as TeamMemberPermissions,
+      })) as TeamMember[];
     },
     enabled: !!user,
   });
@@ -74,13 +81,13 @@ export const useInviteTeamMember = () => {
       // Get the team member record to get its ID for the notification
       const { data: teamMember, error } = await supabase
         .from('team_members')
-        .insert({
+        .insert([{
           organization_id: user!.id,
           email: memberData.email,
           name: memberData.name || existingUser.full_name,
           role: memberData.role,
-          permissions: memberData.permissions,
-        })
+          permissions: JSON.parse(JSON.stringify(memberData.permissions)),
+        }])
         .select('id')
         .single();
       
@@ -122,9 +129,17 @@ export const useUpdateTeamMember = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<TeamMember> & { id: string }) => {
+      // Cast permissions to JSON format for Supabase
+      const updateData: Record<string, unknown> = { ...updates };
+      if (updates.permissions) {
+        updateData.permissions = JSON.parse(JSON.stringify(updates.permissions));
+      }
+      // Remove id from updates
+      delete updateData.id;
+      
       const { error } = await supabase
         .from('team_members')
-        .update(updates)
+        .update(updateData)
         .eq('id', id);
       
       if (error) throw error;

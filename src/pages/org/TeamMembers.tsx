@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -15,14 +16,16 @@ import {
   useInviteTeamMember, 
   useUpdateTeamMember, 
   useRemoveTeamMember,
-  TeamMember 
+  TeamMember,
+  TeamMemberPermissions
 } from '@/hooks/useTeamMembers';
 import { useProfile } from '@/hooks/useProfile';
 import { useOrganizationSettings } from '@/hooks/useOrganization';
-import { UserPlus, Users, Mail, Trash2, Edit, Shield } from 'lucide-react';
+import { useEvents } from '@/hooks/useEvents';
+import { UserPlus, Users, Mail, Trash2, Edit, Shield, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
-const defaultPermissions: TeamMember['permissions'] = {
+const defaultPermissions: TeamMemberPermissions = {
   can_view_contests: true,
   can_edit_contests: false,
   can_view_events: true,
@@ -30,8 +33,98 @@ const defaultPermissions: TeamMember['permissions'] = {
   can_view_campaigns: true,
   can_edit_campaigns: false,
   can_scan_tickets: true,
+  scan_tickets_event_ids: [], // Empty means all events
   can_view_analytics: false,
   can_manage_payouts: false,
+};
+
+// Component for scan tickets permission with event selection
+const ScanTicketsPermission = ({
+  canScan,
+  eventIds,
+  onCanScanChange,
+  onEventIdsChange,
+}: {
+  canScan: boolean;
+  eventIds: string[];
+  onCanScanChange: (checked: boolean) => void;
+  onEventIdsChange: (eventIds: string[]) => void;
+}) => {
+  const { data: events } = useEvents();
+  const orgEvents = events || [];
+
+  const toggleEvent = (eventId: string) => {
+    if (eventIds.includes(eventId)) {
+      onEventIdsChange(eventIds.filter(id => id !== eventId));
+    } else {
+      onEventIdsChange([...eventIds, eventId]);
+    }
+  };
+
+  const selectAllEvents = () => {
+    onEventIdsChange([]);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm">Scan Tickets</span>
+        <Switch checked={canScan} onCheckedChange={onCanScanChange} />
+      </div>
+      {canScan && (
+        <div className="ml-4 space-y-2 border-l-2 border-border pl-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Assign to specific events
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 text-xs"
+              onClick={selectAllEvents}
+            >
+              {eventIds.length === 0 ? 'All Events' : 'Clear Selection'}
+            </Button>
+          </div>
+          {orgEvents.length > 0 ? (
+            <div className="space-y-1 max-h-32 overflow-y-auto">
+              {orgEvents.map((event) => (
+                <div key={event.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`event-${event.id}`}
+                    checked={eventIds.length === 0 || eventIds.includes(event.id)}
+                    onCheckedChange={() => {
+                      if (eventIds.length === 0) {
+                        // Currently "all events" - switch to only this event
+                        onEventIdsChange([event.id]);
+                      } else {
+                        toggleEvent(event.id);
+                      }
+                    }}
+                  />
+                  <label 
+                    htmlFor={`event-${event.id}`} 
+                    className="text-xs cursor-pointer flex-1 truncate"
+                  >
+                    {event.title}
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">No events found</p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {eventIds.length === 0 
+              ? 'Can scan tickets for all events' 
+              : `Can scan tickets for ${eventIds.length} event${eventIds.length > 1 ? 's' : ''}`
+            }
+          </p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const TeamMembers = () => {
@@ -146,14 +239,13 @@ const TeamMembers = () => {
                       { key: 'can_edit_events', label: 'Edit Events' },
                       { key: 'can_view_campaigns', label: 'View Campaigns' },
                       { key: 'can_edit_campaigns', label: 'Edit Campaigns' },
-                      { key: 'can_scan_tickets', label: 'Scan Tickets' },
                       { key: 'can_view_analytics', label: 'View Analytics' },
                       { key: 'can_manage_payouts', label: 'Manage Payouts' },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-sm">{label}</span>
                         <Switch
-                          checked={inviteData.permissions[key as keyof typeof inviteData.permissions]}
+                          checked={inviteData.permissions[key as keyof Omit<TeamMemberPermissions, 'scan_tickets_event_ids'>] as boolean}
                           onCheckedChange={(checked) => 
                             setInviteData(prev => ({
                               ...prev,
@@ -163,6 +255,23 @@ const TeamMembers = () => {
                         />
                       </div>
                     ))}
+                    {/* Scan Tickets with event selection */}
+                    <ScanTicketsPermission
+                      canScan={inviteData.permissions.can_scan_tickets}
+                      eventIds={inviteData.permissions.scan_tickets_event_ids || []}
+                      onCanScanChange={(checked) =>
+                        setInviteData(prev => ({
+                          ...prev,
+                          permissions: { ...prev.permissions, can_scan_tickets: checked }
+                        }))
+                      }
+                      onEventIdsChange={(eventIds) =>
+                        setInviteData(prev => ({
+                          ...prev,
+                          permissions: { ...prev.permissions, scan_tickets_event_ids: eventIds }
+                        }))
+                      }
+                    />
                   </div>
                 </div>
                 <Button 
@@ -307,14 +416,13 @@ const TeamMembers = () => {
                       { key: 'can_edit_events', label: 'Edit Events' },
                       { key: 'can_view_campaigns', label: 'View Campaigns' },
                       { key: 'can_edit_campaigns', label: 'Edit Campaigns' },
-                      { key: 'can_scan_tickets', label: 'Scan Tickets' },
                       { key: 'can_view_analytics', label: 'View Analytics' },
                       { key: 'can_manage_payouts', label: 'Manage Payouts' },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between">
                         <span className="text-sm">{label}</span>
                         <Switch
-                          checked={selectedMember.permissions[key as keyof typeof selectedMember.permissions]}
+                          checked={selectedMember.permissions[key as keyof Omit<TeamMemberPermissions, 'scan_tickets_event_ids'>] as boolean}
                           onCheckedChange={(checked) => 
                             setSelectedMember(prev => prev ? {
                               ...prev,
@@ -324,6 +432,23 @@ const TeamMembers = () => {
                         />
                       </div>
                     ))}
+                    {/* Scan Tickets with event selection */}
+                    <ScanTicketsPermission
+                      canScan={selectedMember.permissions.can_scan_tickets}
+                      eventIds={selectedMember.permissions.scan_tickets_event_ids || []}
+                      onCanScanChange={(checked) =>
+                        setSelectedMember(prev => prev ? {
+                          ...prev,
+                          permissions: { ...prev.permissions, can_scan_tickets: checked }
+                        } : null)
+                      }
+                      onEventIdsChange={(eventIds) =>
+                        setSelectedMember(prev => prev ? {
+                          ...prev,
+                          permissions: { ...prev.permissions, scan_tickets_event_ids: eventIds }
+                        } : null)
+                      }
+                    />
                   </div>
                 </div>
                 <Button 
