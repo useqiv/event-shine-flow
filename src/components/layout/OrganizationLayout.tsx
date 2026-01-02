@@ -59,13 +59,14 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { path: '/org/contests/create', label: 'Create Contest', icon: Trophy },
     { path: '/org/events/create', label: 'Create Event', icon: Calendar },
     { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
+    { path: '/forms/create', label: 'Create Form', icon: ClipboardList },
   ];
 
   const manageSubItems = [
     { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
     { path: '/org/events', label: 'Manage Events', icon: Calendar },
     { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
-    { path: '/forms', label: 'Forms', icon: ClipboardList },
+    { path: '/forms', label: 'Manage Forms', icon: ClipboardList },
   ];
 
   const mainNavItems = [
