@@ -56,12 +56,12 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const createSubItems = [
     { path: '/org/contests/create', label: 'Create Contest', icon: Trophy },
     { path: '/org/events/create', label: 'Create Event', icon: Calendar },
+    { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
     { path: '/forms', label: 'Forms', icon: ClipboardList },
   ];
 
   const mainNavItems = [
     { path: '/org/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart },
     { path: '/org/contests', label: 'Manage Contests', icon: Trophy },
     { path: '/org/events', label: 'Manage Events', icon: Calendar },
     { path: '/org/campaigns', label: 'Manage Campaigns', icon: HandHeart },
