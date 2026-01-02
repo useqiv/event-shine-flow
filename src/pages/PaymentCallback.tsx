@@ -133,7 +133,7 @@ const PaymentCallback = () => {
               width: 100%;
               max-width: 400px;
               margin: 0 auto;
-              border: 2px solid #7c3aed;
+              border: 2px solid #f05a28;
               border-radius: 12px;
               overflow: hidden;
               display: flex;
@@ -141,7 +141,7 @@ const PaymentCallback = () => {
               background: #fff;
             }
             .qr-section {
-              background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+              background: linear-gradient(135deg, #f05a28 0%, #ff8c5a 100%);
               padding: 32px;
               display: flex;
               flex-direction: column;
@@ -178,7 +178,7 @@ const PaymentCallback = () => {
             }
             .ticket-type { 
               font-size: 13px; 
-              color: #7c3aed;
+              color: #f05a28;
               font-weight: 600;
               text-align: center;
               margin-bottom: 16px;
@@ -214,7 +214,7 @@ const PaymentCallback = () => {
             }
             @media print {
               body { padding: 0; background: white; }
-              .ticket { box-shadow: none; border: 2px solid #7c3aed; }
+              .ticket { box-shadow: none; border: 2px solid #f05a28; }
             }
           </style>
         </head>
