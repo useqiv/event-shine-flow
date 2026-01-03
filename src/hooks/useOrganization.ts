@@ -1110,11 +1110,15 @@ export const useUpdateContest = () => {
       return id;
     },
     onSuccess: (contestId) => {
-      // Invalidate all contest-related queries to ensure fresh data
+      // Invalidate all contest-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['organization-contests'] });
       queryClient.invalidateQueries({ queryKey: ['contests'] });
       queryClient.invalidateQueries({ queryKey: ['contest', contestId] });
       queryClient.invalidateQueries({ queryKey: ['admin-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-contest-detail', contestId] });
+      queryClient.invalidateQueries({ queryKey: ['featured-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contestants', contestId] });
       toast.success('Contest updated successfully');
     },
     onError: (error: any) => {
@@ -1137,9 +1141,15 @@ export const useUpdateEvent = () => {
       
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate all event-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['organization-events'] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-all-events'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-event-detail', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['featured-events'] });
       toast.success('Event updated');
     },
     onError: (error) => {

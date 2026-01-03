@@ -218,8 +218,12 @@ export const useUpdateForm = () => {
       return data as Form;
     },
     onSuccess: (data) => {
+      // Invalidate all form-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['user-forms'] });
       queryClient.invalidateQueries({ queryKey: ['form', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-forms'] });
+      queryClient.invalidateQueries({ queryKey: ['public-form', data.custom_slug || data.id] });
       toast({ title: 'Form updated successfully' });
     },
     onError: (error) => {

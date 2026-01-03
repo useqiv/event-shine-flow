@@ -116,8 +116,13 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
       if (error) throw error;
 
       toast.success('Contest updated successfully');
+      // Invalidate all contest-related queries for app-wide consistency
       queryClient.invalidateQueries({ queryKey: ['admin-contest-detail', contest.id] });
       queryClient.invalidateQueries({ queryKey: ['admin-all-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contests'] });
+      queryClient.invalidateQueries({ queryKey: ['contest', contest.id] });
+      queryClient.invalidateQueries({ queryKey: ['featured-contests'] });
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating contest:', error);
