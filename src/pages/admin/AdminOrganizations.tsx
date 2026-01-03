@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import OrganizationDetailsDialog from '@/components/admin/OrganizationDetailsDialog';
 
 const AdminOrganizations: React.FC = () => {
   const { data: organizations, isLoading } = useAllOrganizations();
@@ -427,88 +428,12 @@ const AdminOrganizations: React.FC = () => {
         </Dialog>
 
         {/* View Details Dialog */}
-        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Organization Details</DialogTitle>
-            </DialogHeader>
-            {selectedOrg && (
-              <div className="space-y-6 py-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={selectedOrg.avatar_url || ''} />
-                    <AvatarFallback className="text-lg">
-                      <Building2 className="h-6 w-6" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="text-lg font-semibold">{selectedOrg.full_name}</h3>
-                    <p className="text-muted-foreground">{selectedOrg.email}</p>
-                    <div className="mt-2">{getStatusBadge(selectedOrg)}</div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium">{selectedOrg.phone || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Commission Rate</p>
-                    <p className="font-medium">
-                      {selectedOrg.approval?.special_commission_rate 
-                        ? `${selectedOrg.approval.special_commission_rate}%`
-                        : 'Default (10%)'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Joined</p>
-                    <p className="font-medium">{format(new Date(selectedOrg.created_at), 'PPP')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Approval Date</p>
-                    <p className="font-medium">
-                      {selectedOrg.approval?.reviewed_at 
-                        ? format(new Date(selectedOrg.approval.reviewed_at), 'PPP')
-                        : 'Not reviewed'}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedOrg.settings && (
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3">Company Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Company Name</p>
-                        <p className="font-medium">{selectedOrg.settings.company_name || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Company Email</p>
-                        <p className="font-medium">{selectedOrg.settings.company_email || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Company Phone</p>
-                        <p className="font-medium">{selectedOrg.settings.company_phone || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Payout Method</p>
-                        <p className="font-medium capitalize">{selectedOrg.settings.preferred_payout_method || 'Bank'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedOrg.approval?.rejection_reason && (
-                  <div className="p-4 bg-destructive/10 rounded-lg">
-                    <p className="text-sm font-medium text-destructive">Rejection Reason</p>
-                    <p className="text-sm mt-1">{selectedOrg.approval.rejection_reason}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <OrganizationDetailsDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          organization={selectedOrg}
+          getStatusBadge={getStatusBadge}
+        />
 
         {/* Edit Commission Dialog */}
         <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
