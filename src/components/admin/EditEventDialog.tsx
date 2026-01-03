@@ -116,8 +116,13 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       if (error) throw error;
 
       toast.success('Event updated successfully');
+      // Invalidate all event-related queries for app-wide consistency
       queryClient.invalidateQueries({ queryKey: ['admin-event-detail', event.id] });
       queryClient.invalidateQueries({ queryKey: ['admin-all-events'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-events'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event', event.id] });
+      queryClient.invalidateQueries({ queryKey: ['featured-events'] });
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating event:', error);

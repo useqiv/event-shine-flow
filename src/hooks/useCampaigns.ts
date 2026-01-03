@@ -230,9 +230,15 @@ export const useUpdateCampaign = () => {
       return data;
     },
     onSuccess: (data) => {
+      // Invalidate all campaign-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['my-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['campaign', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['featured-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-donations', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-updates', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['campaign-analytics', data.id] });
       toast.success('Campaign updated!');
     },
     onError: (error: Error) => {
