@@ -17,6 +17,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -25,6 +32,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
+const CURRENCIES = ['NGN', 'USD', 'EUR', 'GBP', 'GHS', 'KES', 'ZAR'] as const;
+
 const eventSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100),
   description: z.string().max(1000).optional(),
@@ -32,6 +41,7 @@ const eventSchema = z.object({
   venue: z.string().min(1, 'Venue is required'),
   address: z.string().max(255).optional(),
   event_date: z.string().min(1, 'Event date is required'),
+  currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
   is_active: z.boolean(),
 });
@@ -49,6 +59,7 @@ interface EditEventDialogProps {
     venue: string;
     address: string | null;
     event_date: string;
+    currency: string;
     is_featured: boolean;
     is_active: boolean;
   };
@@ -76,6 +87,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       venue: event.venue,
       address: event.address || '',
       event_date: formatDateForInput(event.event_date),
+      currency: event.currency || 'NGN',
       is_featured: event.is_featured,
       is_active: event.is_active,
     },
@@ -90,6 +102,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
         venue: event.venue,
         address: event.address || '',
         event_date: formatDateForInput(event.event_date),
+        currency: event.currency || 'NGN',
         is_featured: event.is_featured,
         is_active: event.is_active,
       });
@@ -108,6 +121,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           venue: data.venue,
           address: data.address || null,
           event_date: new Date(data.event_date).toISOString(),
+          currency: data.currency,
           is_featured: data.is_featured,
           is_active: data.is_active,
         })
@@ -217,6 +231,30 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                   <FormControl>
                     <Input type="datetime-local" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CURRENCIES.map((currency) => (
+                        <SelectItem key={currency} value={currency}>
+                          {currency}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
