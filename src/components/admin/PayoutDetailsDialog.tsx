@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOrganizationDetails } from '@/hooks/useOrganizationDetails';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   Mail, 
@@ -20,9 +22,9 @@ import {
   Calendar, 
   Heart, 
   FileText,
-  CreditCard,
   Wallet,
-  Clock
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 
 interface PayoutDetailsDialogProps {
@@ -40,7 +42,46 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
     payout?.organization_id || null
   );
 
+  // Fetch organization's wallet balance
+  const { data: walletData, isLoading: walletLoading } = useQuery({
+    queryKey: ['org-wallet', payout?.organization_id],
+    queryFn: async () => {
+      if (!payout?.organization_id) return null;
+      
+      const { data: wallet, error } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', payout.organization_id)
+        .maybeSingle();
+      
+      if (error) throw error;
+
+      // Also fetch multi-currency balances
+      let currencyBalances: any[] = [];
+      if (wallet?.id) {
+        const { data: balances } = await supabase
+          .from('wallet_currency_balances')
+          .select('*')
+          .eq('wallet_id', wallet.id)
+          .order('balance', { ascending: false });
+        currencyBalances = balances || [];
+      }
+
+      return { wallet, currencyBalances };
+    },
+    enabled: !!payout?.organization_id,
+  });
+
   if (!payout) return null;
+
+  const wallet = walletData?.wallet;
+  const currencyBalances = walletData?.currencyBalances || [];
+  const requestedCurrencyBalance = currencyBalances.find(
+    (b: any) => b.currency === payout.currency
+  );
+  const hasSufficientBalance = requestedCurrencyBalance 
+    ? requestedCurrencyBalance.balance >= payout.amount
+    : (wallet?.balance_currency === payout.currency && wallet?.balance >= payout.amount);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -110,6 +151,96 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                   <p className="text-sm text-muted-foreground">Payment Reference</p>
                   <p className="font-mono">{payout.reference_id}</p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Wallet Balance - Critical for Approval */}
+          <Card className={`border-2 ${hasSufficientBalance ? 'border-green-500/50' : 'border-destructive/50'}`}>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Organization Wallet Balance
+                {!walletLoading && (
+                  hasSufficientBalance ? (
+                    <Badge className="bg-green-500 ml-2">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Sufficient Funds
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="ml-2">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Insufficient Funds
+                    </Badge>
+                  )
+                )}
+              </h3>
+              
+              {walletLoading ? (
+                <Skeleton className="h-20 w-full" />
+              ) : wallet ? (
+                <div className="space-y-4">
+                  {/* Main balance in default currency */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Main Balance</p>
+                      <p className="text-xl font-bold">
+                        <CurrencyDisplay amount={wallet.balance || 0} currency={wallet.balance_currency || 'USD'} />
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Referral Earnings</p>
+                      <p className="text-xl font-bold">
+                        <CurrencyDisplay amount={wallet.referral_earnings || 0} currency={wallet.balance_currency || 'USD'} />
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Requested Amount</p>
+                      <p className="text-xl font-bold text-primary">
+                        <CurrencyDisplay amount={payout.amount} currency={payout.currency || 'USD'} />
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Multi-currency balances */}
+                  {currencyBalances.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Currency Balances</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {currencyBalances.map((balance: any) => (
+                          <div 
+                            key={balance.id} 
+                            className={`p-2 rounded border ${balance.currency === payout.currency ? 'border-primary bg-primary/10' : ''}`}
+                          >
+                            <p className="text-xs text-muted-foreground">{balance.currency}</p>
+                            <p className="font-semibold">
+                              <CurrencyDisplay amount={balance.balance} currency={balance.currency} />
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Balance comparison */}
+                  <div className={`p-3 rounded-lg ${hasSufficientBalance ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'}`}>
+                    <div className="flex items-center gap-2">
+                      {hasSufficientBalance ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                      )}
+                      <p className={`font-medium ${hasSufficientBalance ? 'text-green-600' : 'text-destructive'}`}>
+                        {hasSufficientBalance 
+                          ? `Organization has sufficient balance to cover this payout`
+                          : `Warning: Organization may not have sufficient ${payout.currency} balance for this payout`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No wallet found for this organization</p>
               )}
             </CardContent>
           </Card>
