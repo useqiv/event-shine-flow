@@ -8,8 +8,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
       { name: "Features", href: "#features" },
       { name: "For Organizers", href: "#organizers" },
       { name: "For Participants", href: "#users" },
-      { name: "Pricing", href: "#pricing" },
-      { name: "API Docs", href: "#api" }
+      { name: "Pricing", href: "#pricing" }
     ],
     company: [
       { name: "About Us", href: "#about" },
