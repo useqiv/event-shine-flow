@@ -84,11 +84,9 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
         {/* Logo */}
         <div className="p-6 border-b border-border">
-          <Link to="/admin/dashboard" className="flex items-center gap-3">
+          <Link to="/admin/dashboard" className="flex flex-col items-center gap-2">
             <img src={appLogo} alt="USEQIV" className="h-10" />
-            <div>
-              <p className="text-xs text-muted-foreground">Admin Panel</p>
-            </div>
+            <p className="text-xs text-muted-foreground">Admin Panel</p>
           </Link>
         </div>
 
