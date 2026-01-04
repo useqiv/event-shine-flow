@@ -375,26 +375,6 @@ const Showcase = () => {
               </div>
             </div>
           </div>
-
-          {/* Bottom Stats Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
-            {[
-              { icon: Vote, label: "Votes Cast", value: "1M+" },
-              { icon: Ticket, label: "Tickets Sold", value: "50K+" },
-              { icon: BarChart3, label: "Events Hosted", value: "2K+" },
-              { icon: Wallet, label: "Payouts Made", value: "$500K+" },
-            ].map((stat, i) => (
-              <div key={i} className="flex items-center gap-4 p-5 bg-muted border border-border rounded-2xl group hover:border-primary/30 transition-colors">
-                <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                  <stat.icon className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <div className="text-xl lg:text-2xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
