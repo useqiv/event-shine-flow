@@ -82,7 +82,7 @@ serve(async (req) => {
         }).join("\n")}`
       : "No active campaigns at the moment.";
 
-    const systemPrompt = `You are VoteBot, a friendly AI assistant for a voting, events, and crowdfunding platform. You help users:
+    const systemPrompt = `You are QIV, a friendly AI assistant for USEQIV - a voting, events, and crowdfunding platform. You help users:
 - Discover contestants based on their preferences (category, style, personality)
 - Find active contests and vote for their favorite contestants
 - Find upcoming events and buy tickets
