@@ -5,7 +5,7 @@ const Hero = () => {
   const stats = [
     { value: "1M+", label: "Votes Cast" },
     { value: "500+", label: "Organizers" },
-    { value: "50K+", label: "Tickets Sold" },
+    { value: "₦50M+", label: "Raised" },
   ];
 
   const trustedBy = [
@@ -59,20 +59,20 @@ const Hero = () => {
 
               {/* Headline */}
               <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-[1.1] mb-6">
-                The Future of{" "}
+                The Complete{" "}
                 <span className="text-primary relative">
-                  Contest Voting
+                  Event Platform
                   <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
                     <path d="M0 6 Q50 0, 100 6 T200 6" stroke="currentColor" strokeWidth="4" fill="none" />
                   </svg>
                 </span>{" "}
-                & <span className="text-accent">Ticketing</span>
+                for <span className="text-accent">Africa</span>
               </h1>
 
               {/* Subheadline */}
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-                Run fraud-proof voting for pageants, competitions, and awards. 
-                Sell QR-verified tickets with real-time analytics. All in one platform.
+                Voting. Ticketing. Crowdfunding. Forms. Nominations. 
+                One powerful platform to run contests, events, and campaigns.
               </p>
 
               {/* CTAs */}

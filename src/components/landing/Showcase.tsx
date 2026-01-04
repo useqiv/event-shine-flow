@@ -17,14 +17,14 @@ const Showcase = () => {
           <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-6">
               <Trophy className="h-4 w-4 text-primary" />
-              <span className="text-sm text-foreground font-medium">Built for Entertainment & Events</span>
+              <span className="text-sm text-foreground font-medium">Complete Event Management Suite</span>
             </div>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Two Powerful Products,{" "}
+              Six Powerful Products,{" "}
               <span className="text-primary">One Platform</span>
             </h2>
             <p className="text-muted-foreground text-base lg:text-lg">
-              Whether you're running a beauty pageant or selling concert tickets, USEQIV has you covered.
+              Contests, events, crowdfunding, forms, nominations, and influencer marketing — all in USEQIV.
             </p>
           </div>
 

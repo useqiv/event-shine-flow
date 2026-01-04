@@ -32,13 +32,13 @@ const CTA = () => {
 
               {/* Headline */}
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-tight">
-                Ready to Transform Your{" "}
-                <span className="text-primary">Events & Contests</span>?
+                Ready to Launch Your{" "}
+                <span className="text-primary">Next Big Thing</span>?
               </h2>
               
               <p className="text-muted-foreground text-lg mb-10 max-w-2xl mx-auto">
-                Join 500+ organizers who've already modernized their voting and ticketing. 
-                Launch your first contest or event in minutes.
+                Join 500+ organizers running contests, events, campaigns, and more. 
+                Launch your first project in minutes.
               </p>
 
               {/* Benefits */}

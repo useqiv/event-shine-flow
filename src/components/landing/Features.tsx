@@ -15,41 +15,46 @@ import {
   CreditCard,
   Smartphone,
   Lock,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  Heart,
+  ClipboardList,
+  TrendingUp,
+  Gift
 } from "lucide-react";
 
 const Features = () => {
   const organizerFeatures = [
     {
-      icon: Shield,
-      title: "AI Anti-Fraud Engine",
-      description: "Machine learning detects vote manipulation and suspicious patterns in real-time.",
+      icon: Vote,
+      title: "Contest Voting",
+      description: "Run secure, anti-fraud voting for pageants, awards, and competitions with live leaderboards.",
       highlight: true
     },
     {
-      icon: QrCode,
-      title: "QR Code Tickets",
-      description: "Generate secure QR tickets with built-in scanner app for seamless check-ins."
+      icon: Ticket,
+      title: "Event Ticketing",
+      description: "Sell QR-verified tickets with tiered pricing, instant check-ins, and capacity tracking."
     },
     {
-      icon: BarChart3,
-      title: "Live Analytics Dashboard",
-      description: "Track votes, ticket sales, and engagement with real-time visualizations."
+      icon: Heart,
+      title: "Crowdfunding Campaigns",
+      description: "Launch fundraising campaigns with goal tracking, donor leaderboards, and social sharing."
     },
     {
-      icon: Share2,
-      title: "Auto-Generated Share Links",
-      description: "Each contestant gets unique shareable links for social media promotion."
+      icon: FileText,
+      title: "Custom Forms",
+      description: "Build multi-page forms with conditional logic, payments, and response management."
     },
     {
-      icon: Palette,
-      title: "Custom Branding",
-      description: "White-label your voting pages with your company's logo and colors."
+      icon: ClipboardList,
+      title: "Public Nominations",
+      description: "Collect nominee submissions from the public with category-based organization."
     },
     {
-      icon: CreditCard,
-      title: "Automated Payouts",
-      description: "Automatic commission calculation and instant payouts to your bank."
+      icon: TrendingUp,
+      title: "Influencer Marketing",
+      description: "Track referral links, commissions, and conversions for your influencer partners."
     }
   ];
 
@@ -57,32 +62,32 @@ const Features = () => {
     {
       icon: Wallet,
       title: "Digital Wallet",
-      description: "Pre-load credits for instant voting and ticket purchases."
+      description: "Pre-load credits for instant voting, ticket purchases, and donations."
     },
     {
       icon: Smartphone,
-      title: "One-Tap Voting",
-      description: "Vote for your favorites instantly with a single tap."
+      title: "One-Tap Actions",
+      description: "Vote, donate, and buy tickets instantly with a single tap."
     },
     {
-      icon: Award,
-      title: "Earn Rewards & Badges",
-      description: "Get points for participation and redeem for discounts."
+      icon: Gift,
+      title: "Referral Bonuses",
+      description: "Earn ₦500 for every friend you refer who makes their first transaction."
     },
     {
       icon: Bell,
       title: "Smart Notifications",
-      description: "Real-time alerts when events go live or votes are needed."
+      description: "Real-time alerts for contests, events, and campaign updates."
     },
     {
-      icon: Users,
-      title: "Referral Bonuses",
-      description: "Invite friends and earn bonus credits for each signup."
+      icon: Award,
+      title: "Track Favorites",
+      description: "Save your favorite contestants and events for quick access."
     },
     {
-      icon: Sparkles,
-      title: "Fast Checkout",
-      description: "Buy tickets in seconds with saved payment methods."
+      icon: QrCode,
+      title: "Digital Tickets",
+      description: "Access QR tickets directly from your wallet - no printing needed."
     }
   ];
 
