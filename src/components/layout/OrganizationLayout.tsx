@@ -124,7 +124,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
         {/* Logo */}
         <div className="p-6 border-b border-border">
-          <Link to="/org/dashboard" className="flex items-center gap-3">
+          <Link to="/org/dashboard" className="flex flex-col items-center gap-2">
             <img src={appLogo} alt="USEQIV" className="h-10" />
             <p className="text-xs text-muted-foreground">Organization</p>
           </Link>
