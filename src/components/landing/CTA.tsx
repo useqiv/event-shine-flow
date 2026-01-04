@@ -41,18 +41,6 @@ const CTA = () => {
                 Launch your first project in minutes.
               </p>
 
-              {/* Benefits */}
-              <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 mb-10">
-                {benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <benefit.icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-foreground font-medium">{benefit.text}</span>
-                  </div>
-                ))}
-              </div>
-
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
                 <Button variant="default" size="lg" className="group rounded-full px-10 text-base h-14 shadow-lg shadow-primary/20">
