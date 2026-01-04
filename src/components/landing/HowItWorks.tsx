@@ -1,4 +1,4 @@
-import { Building2, Users, Vote, Ticket, DollarSign, CheckCircle, ArrowRight, Sparkles } from "lucide-react";
+import { Building2, Users, Vote, Ticket, DollarSign, CheckCircle, ArrowRight, Sparkles, Megaphone, Link2, Wallet } from "lucide-react";
 
 const HowItWorks = () => {
   const organizerSteps = [
@@ -43,6 +43,27 @@ const HowItWorks = () => {
     }
   ];
 
+  const influencerSteps = [
+    {
+      step: 1,
+      icon: Megaphone,
+      title: "Join as an Influencer",
+      description: "Sign up and get approved to promote contests and events to your audience."
+    },
+    {
+      step: 2,
+      icon: Link2,
+      title: "Share Your Unique Links",
+      description: "Get custom referral links for each campaign. Track clicks and conversions in real-time."
+    },
+    {
+      step: 3,
+      icon: Wallet,
+      title: "Earn Commissions",
+      description: "Get paid automatically for every sale. Request payouts to your bank or USDT wallet."
+    }
+  ];
+
   return (
     <section id="how-it-works" className="py-14 lg:py-20 bg-card relative overflow-hidden">
       {/* Background Elements */}
@@ -61,12 +82,12 @@ const HowItWorks = () => {
               <span className="text-primary">3 Simple Steps</span>
             </h2>
             <p className="text-muted-foreground text-base lg:text-lg">
-              Whether you're an organizer or participant, getting started takes just minutes.
+              Whether you're an organizer, participant, or influencer, getting started takes just minutes.
             </p>
           </div>
 
-          {/* Two Column Layout */}
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Three Column Layout */}
+          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Organizer Flow */}
             <div className="bg-muted border border-border rounded-3xl p-6 lg:p-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full mb-8 shadow-md">
@@ -92,6 +113,19 @@ const HowItWorks = () => {
                 ))}
               </div>
             </div>
+
+            {/* Influencer Flow */}
+            <div className="bg-muted border border-border rounded-3xl p-6 lg:p-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-full mb-8 shadow-md">
+                <Megaphone className="h-4 w-4" />
+                <span className="text-sm font-semibold">For Influencers</span>
+              </div>
+              <div className="space-y-0">
+                {influencerSteps.map((item, index) => (
+                  <StepCard key={index} {...item} isLast={index === influencerSteps.length - 1} variant="secondary" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -105,32 +139,46 @@ interface StepCardProps {
   title: string;
   description: string;
   isLast: boolean;
-  variant: "primary" | "accent";
+  variant: "primary" | "accent" | "secondary";
 }
 
 const StepCard = ({ step, icon: Icon, title, description, isLast, variant }: StepCardProps) => {
-  const isPrimary = variant === "primary";
+  const colorClasses = {
+    primary: {
+      bg: 'bg-primary text-primary-foreground',
+      line: 'bg-primary/20',
+      icon: 'text-primary'
+    },
+    accent: {
+      bg: 'bg-accent text-accent-foreground',
+      line: 'bg-accent/20',
+      icon: 'text-accent'
+    },
+    secondary: {
+      bg: 'bg-secondary text-secondary-foreground',
+      line: 'bg-secondary/20',
+      icon: 'text-secondary-foreground'
+    }
+  };
+  
+  const colors = colorClasses[variant];
   
   return (
     <div className="relative flex gap-5 group">
       {/* Step Number & Line */}
       <div className="flex flex-col items-center">
-        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform ${
-          isPrimary 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-accent text-accent-foreground'
-        }`}>
+        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-bold text-xl shrink-0 shadow-lg group-hover:scale-110 transition-transform ${colors.bg}`}>
           {step}
         </div>
         {!isLast && (
-          <div className={`w-0.5 h-full min-h-[60px] mt-3 ${isPrimary ? 'bg-primary/20' : 'bg-accent/20'}`} />
+          <div className={`w-0.5 h-full min-h-[60px] mt-3 ${colors.line}`} />
         )}
       </div>
 
       {/* Content */}
       <div className="pb-10 pt-1">
         <div className="flex items-center gap-2.5 mb-2">
-          <Icon className={`h-5 w-5 ${isPrimary ? 'text-primary' : 'text-accent'}`} />
+          <Icon className={`h-5 w-5 ${colors.icon}`} />
           <h4 className="text-lg font-bold text-foreground">{title}</h4>
         </div>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
