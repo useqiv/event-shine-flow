@@ -216,6 +216,8 @@ async function recordInfluencerConversion(supabase: any, influencerLinkId: strin
       commission = link.commission_value;
     }
 
+    console.log("Calculated commission:", commission, "for amount:", amount, "commission_type:", link.commission_type, "commission_value:", link.commission_value);
+
     // Find the most recent untracked click for this link
     const { data: clicks, error: clickError } = await supabase
       .from("influencer_clicks")
@@ -261,6 +263,73 @@ async function recordInfluencerConversion(supabase: any, influencerLinkId: strin
       console.error("Error updating influencer link stats:", updateLinkError.message);
     } else {
       console.log("Updated influencer link stats - conversions:", link.total_conversions + 1, "revenue:", link.total_revenue + amount, "commission:", link.total_commission + commission);
+    }
+
+    // Credit commission to influencer's profile if they have claimed the link
+    if (link.influencer_user_id && commission > 0) {
+      console.log("Crediting commission to influencer:", link.influencer_user_id);
+
+      // Check if influencer profile exists
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from("influencer_profiles")
+        .select("id, pending_earnings, total_earnings")
+        .eq("user_id", link.influencer_user_id)
+        .maybeSingle();
+
+      if (profileCheckError) {
+        console.error("Error checking influencer profile:", profileCheckError.message);
+      }
+
+      if (existingProfile) {
+        // Update existing profile - add to pending_earnings and total_earnings
+        const newPendingEarnings = (existingProfile.pending_earnings || 0) + commission;
+        const newTotalEarnings = (existingProfile.total_earnings || 0) + commission;
+
+        const { error: updateProfileError } = await supabase
+          .from("influencer_profiles")
+          .update({
+            pending_earnings: newPendingEarnings,
+            total_earnings: newTotalEarnings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingProfile.id);
+
+        if (updateProfileError) {
+          console.error("Error updating influencer profile earnings:", updateProfileError.message);
+        } else {
+          console.log("Credited", commission, "to influencer profile. New pending:", newPendingEarnings, "Total:", newTotalEarnings);
+        }
+      } else {
+        // Create new profile with the commission
+        const { error: insertProfileError } = await supabase
+          .from("influencer_profiles")
+          .insert({
+            user_id: link.influencer_user_id,
+            pending_earnings: commission,
+            total_earnings: commission,
+            paid_earnings: 0,
+          });
+
+        if (insertProfileError) {
+          console.error("Error creating influencer profile:", insertProfileError.message);
+        } else {
+          console.log("Created influencer profile with initial commission:", commission);
+        }
+      }
+
+      // Send notification to the influencer about their earned commission
+      const commissionCurrency = link.commission_currency || "NGN";
+      await supabase.from("notifications").insert({
+        user_id: link.influencer_user_id,
+        title: "Commission Earned!",
+        message: `You earned ${commissionCurrency} ${commission.toFixed(2)} commission from a referral purchase.`,
+        type: "influencer",
+        reference_id: link.id,
+      });
+
+      console.log("Sent commission notification to influencer:", link.influencer_user_id);
+    } else if (!link.influencer_user_id) {
+      console.log("Influencer link not yet claimed by any user, commission tracked but not credited to profile");
     }
 
   } catch (error: any) {
