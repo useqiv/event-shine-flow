@@ -23,6 +23,7 @@ interface PaymentTransaction {
   id: string;
   type: 'vote' | 'ticket';
   amount: number;
+  currency: string;
   status: string;
   payment_method: string;
   created_at: string;
@@ -60,9 +61,10 @@ const AdminPaymentHistory = () => {
           id,
           quantity,
           amount_paid,
+          currency,
           payment_method,
           created_at,
-          contest:contests(id, title),
+          contest:contests(id, title, vote_currency),
           contestant:contestants(name)
         `)
         .order('created_at', { ascending: false });
@@ -82,10 +84,11 @@ const AdminPaymentHistory = () => {
           id,
           quantity,
           amount_paid,
+          currency,
           payment_method,
           status,
           created_at,
-          event:events(id, title),
+          event:events(id, title, currency),
           ticket_type:ticket_types(name)
         `)
         .order('created_at', { ascending: false });
@@ -140,6 +143,7 @@ const AdminPaymentHistory = () => {
         id: vote.id,
         type: 'vote',
         amount: vote.amount_paid,
+        currency: vote.currency || vote.contest?.vote_currency || 'NGN',
         status: 'completed',
         payment_method: vote.payment_method,
         created_at: vote.created_at,
@@ -156,6 +160,7 @@ const AdminPaymentHistory = () => {
         id: ticket.id,
         type: 'ticket',
         amount: ticket.amount_paid,
+        currency: ticket.currency || ticket.event?.currency || 'NGN',
         status: ticket.status,
         payment_method: ticket.payment_method,
         created_at: ticket.created_at,
@@ -231,12 +236,13 @@ const AdminPaymentHistory = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Type', 'Entity', 'Quantity', 'Amount', 'Payment Method', 'Status', 'ID'];
+    const headers = ['Date', 'Type', 'Entity', 'Quantity', 'Currency', 'Amount', 'Payment Method', 'Status', 'ID'];
     const rows = filteredTransactions.map(tx => [
       format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
       tx.type,
       tx.contest_title || tx.event_title || '-',
       tx.quantity,
+      tx.currency,
       tx.amount,
       tx.payment_method,
       tx.status,
@@ -419,6 +425,7 @@ const AdminPaymentHistory = () => {
                     <TableHead>Type</TableHead>
                     <TableHead>Contest/Event</TableHead>
                     <TableHead>Quantity</TableHead>
+                    <TableHead>Currency</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead>Status</TableHead>
@@ -427,7 +434,7 @@ const AdminPaymentHistory = () => {
                 <TableBody>
                   {filteredTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                         No transactions found
                       </TableCell>
                     </TableRow>
@@ -446,7 +453,12 @@ const AdminPaymentHistory = () => {
                           {tx.contest_title || tx.event_title || '-'}
                         </TableCell>
                         <TableCell>{tx.quantity}</TableCell>
-                        <TableCell className="font-medium"><CurrencyDisplay amount={tx.amount} currency={platformCurrency} /></TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{tx.currency}</Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <CurrencyDisplay amount={tx.amount} currency={tx.currency} />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {tx.payment_method === 'crypto' ? (
