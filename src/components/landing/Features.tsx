@@ -179,13 +179,6 @@ interface FeatureCardProps {
 const FeatureCard = ({ icon: Icon, title, description, highlight }: FeatureCardProps) => {
   return (
     <div className={`group relative p-6 bg-card border rounded-2xl hover:shadow-xl transition-all duration-300 ${highlight ? 'border-primary/50 shadow-lg ring-1 ring-primary/10' : 'border-border hover:border-primary/30'}`}>
-      {highlight && (
-        <div className="absolute -top-3 left-5">
-          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-md">
-            Popular
-          </span>
-        </div>
-      )}
       <div className="h-12 w-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-5 group-hover:border-primary/50 group-hover:scale-110 transition-all">
         <Icon className="h-6 w-6 text-primary" />
       </div>
