@@ -54,6 +54,8 @@ import ForOrganizers from "./pages/ForOrganizers";
 import ForParticipants from "./pages/ForParticipants";
 import ForInfluencers from "./pages/ForInfluencers";
 import HelpCenter from "./pages/HelpCenter";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -187,6 +189,8 @@ const AppRoutes = () => (
     <Route path="/for-participants" element={<ForParticipants />} />
     <Route path="/for-influencers" element={<ForInfluencers />} />
     <Route path="/help" element={<HelpCenter />} />
+    <Route path="/privacy" element={<PrivacyPolicy />} />
+    <Route path="/terms" element={<TermsOfService />} />
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
