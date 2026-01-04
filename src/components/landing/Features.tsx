@@ -81,11 +81,6 @@ const Features = () => {
                 <p className="text-muted-foreground text-sm">Tools to run successful contests and events</p>
               </div>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              {organizerFeatures.map((feature, index) => (
-                <FeatureCard key={index} {...feature} />
-              ))}
-            </div>
           </div>
 
 
