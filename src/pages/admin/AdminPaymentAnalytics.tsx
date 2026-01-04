@@ -27,7 +27,7 @@ const AdminPaymentAnalytics = () => {
   // Platform default currency from settings
   const platformCurrency = usePlatformCurrency();
 
-  // Fetch votes
+  // Fetch votes - currency comes from contest.vote_currency
   const { data: votes, isLoading: votesLoading } = useQuery({
     queryKey: ['analytics-votes', timeRange],
     queryFn: async () => {
@@ -36,7 +36,14 @@ const AdminPaymentAnalytics = () => {
       
       const { data, error } = await supabase
         .from('votes')
-        .select('id, amount_paid, payment_method, created_at, quantity')
+        .select(`
+          id,
+          amount_paid,
+          payment_method,
+          created_at,
+          quantity,
+          contest:contests(vote_currency)
+        `)
         .gte('created_at', startDate)
         .order('created_at', { ascending: true });
       
@@ -45,7 +52,7 @@ const AdminPaymentAnalytics = () => {
     },
   });
 
-  // Fetch tickets
+  // Fetch tickets - currency comes from ticket_type.currency
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: ['analytics-tickets', timeRange],
     queryFn: async () => {
@@ -54,7 +61,15 @@ const AdminPaymentAnalytics = () => {
       
       const { data, error } = await supabase
         .from('tickets')
-        .select('id, amount_paid, payment_method, created_at, quantity')
+        .select(`
+          id,
+          amount_paid,
+          payment_method,
+          created_at,
+          quantity,
+          status,
+          ticket_type:ticket_types(currency)
+        `)
         .gte('created_at', startDate)
         .order('created_at', { ascending: true });
       
@@ -62,6 +77,104 @@ const AdminPaymentAnalytics = () => {
       return data;
     },
   });
+
+  // Fetch donations
+  const { data: donations, isLoading: donationsLoading } = useQuery({
+    queryKey: ['analytics-donations', timeRange],
+    queryFn: async () => {
+      const daysBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      const startDate = subDays(new Date(), daysBack).toISOString();
+      
+      const { data, error } = await supabase
+        .from('donations')
+        .select('id, amount, currency, payment_method, created_at, status')
+        .gte('created_at', startDate)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch form payments
+  const { data: formPayments, isLoading: formsLoading } = useQuery({
+    queryKey: ['analytics-forms', timeRange],
+    queryFn: async () => {
+      const daysBack = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+      const startDate = subDays(new Date(), daysBack).toISOString();
+      
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select(`
+          id,
+          payment_amount,
+          payment_status,
+          submitted_at,
+          form:forms(payment_currency)
+        `)
+        .gte('submitted_at', startDate)
+        .eq('payment_status', 'completed')
+        .not('payment_amount', 'is', null)
+        .order('submitted_at', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Filter successful transactions (same logic as payment history)
+  const successStatuses = ['completed', 'active', 'confirmed', 'used'];
+
+  // Multi-currency revenue breakdown
+  const currencyBreakdown = useMemo(() => {
+    const byCurrency: Record<string, { votes: number; tickets: number; donations: number; forms: number; total: number; count: number }> = {};
+    
+    votes?.forEach((v: any) => {
+      const currency = v.contest?.vote_currency || 'NGN';
+      if (!byCurrency[currency]) {
+        byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
+      }
+      byCurrency[currency].votes += v.amount_paid;
+      byCurrency[currency].total += v.amount_paid;
+      byCurrency[currency].count += 1;
+    });
+    
+    tickets?.forEach((t: any) => {
+      if (!successStatuses.includes(t.status)) return;
+      const currency = t.ticket_type?.currency || 'NGN';
+      if (!byCurrency[currency]) {
+        byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
+      }
+      byCurrency[currency].tickets += t.amount_paid;
+      byCurrency[currency].total += t.amount_paid;
+      byCurrency[currency].count += 1;
+    });
+
+    donations?.forEach((d: any) => {
+      const currency = d.currency || 'USD';
+      if (!byCurrency[currency]) {
+        byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
+      }
+      byCurrency[currency].donations += d.amount;
+      byCurrency[currency].total += d.amount;
+      byCurrency[currency].count += 1;
+    });
+
+    formPayments?.forEach((f: any) => {
+      const currency = f.form?.payment_currency || 'NGN';
+      if (!byCurrency[currency]) {
+        byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
+      }
+      byCurrency[currency].forms += f.payment_amount || 0;
+      byCurrency[currency].total += f.payment_amount || 0;
+      byCurrency[currency].count += 1;
+    });
+    
+    return Object.entries(byCurrency)
+      .map(([currency, data]) => ({ currency, ...data }))
+      .sort((a, b) => b.total - a.total);
+  }, [votes, tickets, donations, formPayments]);
 
   // Revenue trend data
   const revenueTrendData = useMemo(() => {
@@ -76,37 +189,55 @@ const AdminPaymentAnalytics = () => {
       const dayEnd = new Date(dayStart);
       dayEnd.setDate(dayEnd.getDate() + 1);
 
-      const voteRevenue = votes?.filter(v => {
+      const voteRevenue = votes?.filter((v: any) => {
         const date = new Date(v.created_at);
         return date >= dayStart && date < dayEnd;
-      }).reduce((sum, v) => sum + v.amount_paid, 0) || 0;
+      }).reduce((sum: number, v: any) => sum + v.amount_paid, 0) || 0;
 
-      const ticketRevenue = tickets?.filter(t => {
+      const ticketRevenue = tickets?.filter((t: any) => {
         const date = new Date(t.created_at);
+        return date >= dayStart && date < dayEnd && successStatuses.includes(t.status);
+      }).reduce((sum: number, t: any) => sum + t.amount_paid, 0) || 0;
+
+      const donationRevenue = donations?.filter((d: any) => {
+        const date = new Date(d.created_at);
         return date >= dayStart && date < dayEnd;
-      }).reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+      }).reduce((sum: number, d: any) => sum + d.amount, 0) || 0;
+
+      const formRevenue = formPayments?.filter((f: any) => {
+        const date = new Date(f.submitted_at);
+        return date >= dayStart && date < dayEnd;
+      }).reduce((sum: number, f: any) => sum + (f.payment_amount || 0), 0) || 0;
 
       return {
         date: format(day, timeRange === '7d' ? 'EEE' : 'MMM d'),
         votes: voteRevenue,
         tickets: ticketRevenue,
-        total: voteRevenue + ticketRevenue
+        donations: donationRevenue,
+        forms: formRevenue,
+        total: voteRevenue + ticketRevenue + donationRevenue + formRevenue
       };
     });
-  }, [votes, tickets, timeRange]);
+  }, [votes, tickets, donations, formPayments, timeRange]);
 
   // Payment method distribution
   const paymentMethodData = useMemo(() => {
     const methods: Record<string, number> = {};
     
-    votes?.forEach(v => {
+    votes?.forEach((v: any) => {
       const method = v.payment_method || 'unknown';
       methods[method] = (methods[method] || 0) + v.amount_paid;
     });
     
-    tickets?.forEach(t => {
+    tickets?.forEach((t: any) => {
+      if (!successStatuses.includes(t.status)) return;
       const method = t.payment_method || 'unknown';
       methods[method] = (methods[method] || 0) + t.amount_paid;
+    });
+
+    donations?.forEach((d: any) => {
+      const method = d.payment_method || 'unknown';
+      methods[method] = (methods[method] || 0) + d.amount;
     });
 
     return Object.entries(methods).map(([name, value]) => ({
@@ -117,7 +248,7 @@ const AdminPaymentAnalytics = () => {
       ...item,
       percentage: Math.round((item.value / arr.reduce((s, i) => s + i.value, 0)) * 100) || 0
     }));
-  }, [votes, tickets]);
+  }, [votes, tickets, donations]);
 
   // Peak transaction hours
   const peakHoursData = useMemo(() => {
@@ -128,49 +259,71 @@ const AdminPaymentAnalytics = () => {
       amount: 0
     }));
 
-    votes?.forEach(v => {
+    votes?.forEach((v: any) => {
       const hour = new Date(v.created_at).getHours();
       hours[hour].transactions += 1;
       hours[hour].amount += v.amount_paid;
     });
 
-    tickets?.forEach(t => {
+    tickets?.forEach((t: any) => {
+      if (!successStatuses.includes(t.status)) return;
       const hour = new Date(t.created_at).getHours();
       hours[hour].transactions += 1;
       hours[hour].amount += t.amount_paid;
     });
 
+    donations?.forEach((d: any) => {
+      const hour = new Date(d.created_at).getHours();
+      hours[hour].transactions += 1;
+      hours[hour].amount += d.amount;
+    });
+
+    formPayments?.forEach((f: any) => {
+      const hour = new Date(f.submitted_at).getHours();
+      hours[hour].transactions += 1;
+      hours[hour].amount += f.payment_amount || 0;
+    });
+
     return hours;
-  }, [votes, tickets]);
+  }, [votes, tickets, donations, formPayments]);
 
   // Summary stats
   const summaryStats = useMemo(() => {
-    const totalVoteRevenue = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
-    const totalTicketRevenue = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
-    const totalTransactions = (votes?.length || 0) + (tickets?.length || 0);
-    const avgTransaction = totalTransactions > 0 
-      ? (totalVoteRevenue + totalTicketRevenue) / totalTransactions 
-      : 0;
+    const totalVoteRevenue = votes?.reduce((sum: number, v: any) => sum + v.amount_paid, 0) || 0;
+    const totalTicketRevenue = tickets?.filter((t: any) => successStatuses.includes(t.status))
+      .reduce((sum: number, t: any) => sum + t.amount_paid, 0) || 0;
+    const totalDonationRevenue = donations?.reduce((sum: number, d: any) => sum + d.amount, 0) || 0;
+    const totalFormRevenue = formPayments?.reduce((sum: number, f: any) => sum + (f.payment_amount || 0), 0) || 0;
+    
+    const totalTransactions = (votes?.length || 0) + 
+      (tickets?.filter((t: any) => successStatuses.includes(t.status)).length || 0) + 
+      (donations?.length || 0) + 
+      (formPayments?.length || 0);
+    
+    const totalRevenue = totalVoteRevenue + totalTicketRevenue + totalDonationRevenue + totalFormRevenue;
+    const avgTransaction = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
     // Find peak hour
     const peakHour = peakHoursData.reduce((max, h) => 
       h.transactions > max.transactions ? h : max, peakHoursData[0]);
 
     return {
-      totalRevenue: totalVoteRevenue + totalTicketRevenue,
+      totalRevenue,
       voteRevenue: totalVoteRevenue,
       ticketRevenue: totalTicketRevenue,
+      donationRevenue: totalDonationRevenue,
+      formRevenue: totalFormRevenue,
       totalTransactions,
       avgTransaction,
       peakHour: peakHour.label
     };
-  }, [votes, tickets, peakHoursData]);
+  }, [votes, tickets, donations, formPayments, peakHoursData]);
 
   const formatAmount = (amount: number) => {
     return formatCurrency(amount, platformCurrency);
   };
 
-  const isLoading = votesLoading || ticketsLoading;
+  const isLoading = votesLoading || ticketsLoading || donationsLoading || formsLoading;
 
   return (
     <AdminLayout>
@@ -416,23 +569,58 @@ const AdminPaymentAnalytics = () => {
           </Card>
         </div>
 
-        {/* Revenue Breakdown */}
+        {/* Multi-Currency Revenue Breakdown */}
+        {currencyBreakdown.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue by Currency</CardTitle>
+              <CardDescription>Breakdown of revenue across all currencies</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-20 w-full" />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {currencyBreakdown.map((item) => (
+                    <div key={item.currency} className="p-4 rounded-lg bg-muted/50 border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-lg">{item.currency}</span>
+                        <span className="text-xs text-muted-foreground">{item.count} txns</span>
+                      </div>
+                      <div className="text-2xl font-bold">
+                        <CurrencyDisplay amount={item.total} currency={item.currency} size="lg" />
+                      </div>
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {item.votes > 0 && <div>Votes: <CurrencyDisplay amount={item.votes} currency={item.currency} size="sm" /></div>}
+                        {item.tickets > 0 && <div>Tickets: <CurrencyDisplay amount={item.tickets} currency={item.currency} size="sm" /></div>}
+                        {item.donations > 0 && <div>Donations: <CurrencyDisplay amount={item.donations} currency={item.currency} size="sm" /></div>}
+                        {item.forms > 0 && <div>Forms: <CurrencyDisplay amount={item.forms} currency={item.currency} size="sm" /></div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Revenue Breakdown by Type */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenue Breakdown</CardTitle>
-            <CardDescription>Compare vote revenue vs ticket revenue</CardDescription>
+            <CardTitle>Revenue Breakdown by Type</CardTitle>
+            <CardDescription>Compare revenue from different sources</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-20 w-full" />
             ) : (
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Wallet className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Vote Revenue</span>
+                    <span className="font-medium">Votes</span>
                   </div>
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-xl font-bold text-primary">
                     <CurrencyDisplay amount={summaryStats.voteRevenue} currency={platformCurrency} size="lg" />
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
@@ -442,13 +630,37 @@ const AdminPaymentAnalytics = () => {
                 <div className="p-4 rounded-lg bg-chart-2/10 border border-chart-2/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="h-5 w-5 text-chart-2" />
-                    <span className="font-medium">Ticket Revenue</span>
+                    <span className="font-medium">Tickets</span>
                   </div>
-                  <div className="text-2xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>
+                  <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>
                     <CurrencyDisplay amount={summaryStats.ticketRevenue} currency={platformCurrency} size="lg" />
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
-                    {tickets?.length || 0} transactions
+                    {tickets?.filter((t: any) => successStatuses.includes(t.status)).length || 0} transactions
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-chart-3/10 border border-chart-3/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="h-5 w-5 text-chart-3" />
+                    <span className="font-medium">Donations</span>
+                  </div>
+                  <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-3))' }}>
+                    <CurrencyDisplay amount={summaryStats.donationRevenue} currency={platformCurrency} size="lg" />
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {donations?.length || 0} transactions
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-chart-4/10 border border-chart-4/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="h-5 w-5 text-chart-4" />
+                    <span className="font-medium">Forms</span>
+                  </div>
+                  <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-4))' }}>
+                    <CurrencyDisplay amount={summaryStats.formRevenue} currency={platformCurrency} size="lg" />
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {formPayments?.length || 0} transactions
                   </div>
                 </div>
               </div>
