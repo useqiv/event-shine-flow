@@ -39,11 +39,22 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
     payout?.organization_id || null
   );
 
-  // Fetch revenue from contests (votes) and events (tickets)
+  // Fetch revenue from contests (votes) and events (tickets) with commission rates
   const { data: revenueData, isLoading: revenueLoading } = useQuery({
     queryKey: ['org-revenue', payout?.organization_id],
     queryFn: async () => {
       if (!payout?.organization_id) return null;
+      
+      // Get organization commission rates
+      const { data: approval } = await supabase
+        .from('organization_approvals')
+        .select('ticket_commission_rate, vote_commission_rate')
+        .eq('organization_id', payout.organization_id)
+        .maybeSingle();
+      
+      // Default commission rates (10% if not set)
+      const ticketCommissionRate = approval?.ticket_commission_rate ?? 10;
+      const voteCommissionRate = approval?.vote_commission_rate ?? 10;
       
       // Get contest revenue - fetch votes for contests owned by this org
       const { data: contestsData } = await supabase
@@ -51,14 +62,19 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
         .select('id, title, vote_price, vote_currency, total_votes')
         .eq('organization_id', payout.organization_id);
 
-      const contestRevenue = (contestsData || []).map(contest => ({
-        id: contest.id,
-        title: contest.title,
-        totalVotes: contest.total_votes || 0,
-        votePrice: contest.vote_price || 0,
-        currency: contest.vote_currency || 'USD',
-        totalRevenue: (contest.total_votes || 0) * (contest.vote_price || 0)
-      }));
+      const contestRevenue = (contestsData || []).map(contest => {
+        const grossRevenue = (contest.total_votes || 0) * (contest.vote_price || 0);
+        const netRevenue = grossRevenue * (1 - voteCommissionRate / 100);
+        return {
+          id: contest.id,
+          title: contest.title,
+          totalVotes: contest.total_votes || 0,
+          votePrice: contest.vote_price || 0,
+          currency: contest.vote_currency || 'USD',
+          grossRevenue,
+          netRevenue
+        };
+      });
 
       // Get event revenue - fetch tickets for events owned by this org
       const { data: eventsData } = await supabase
@@ -73,7 +89,8 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
           .eq('event_id', event.id)
           .in('status', ['active', 'confirmed', 'used']);
         
-        const totalRevenue = (tickets || []).reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+        const grossRevenue = (tickets || []).reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+        const netRevenue = grossRevenue * (1 - ticketCommissionRate / 100);
         const ticketCount = tickets?.length || 0;
 
         return {
@@ -81,22 +98,29 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
           title: event.title,
           ticketCount,
           currency: event.currency || 'NGN',
-          totalRevenue
+          grossRevenue,
+          netRevenue
         };
       }));
 
-      // Calculate totals by currency
-      const totalsByCurrency: Record<string, number> = {};
+      // Calculate net totals by currency
+      const netTotalsByCurrency: Record<string, number> = {};
       
       contestRevenue.forEach(c => {
-        totalsByCurrency[c.currency] = (totalsByCurrency[c.currency] || 0) + c.totalRevenue;
+        netTotalsByCurrency[c.currency] = (netTotalsByCurrency[c.currency] || 0) + c.netRevenue;
       });
       
       eventRevenue.forEach(e => {
-        totalsByCurrency[e.currency] = (totalsByCurrency[e.currency] || 0) + e.totalRevenue;
+        netTotalsByCurrency[e.currency] = (netTotalsByCurrency[e.currency] || 0) + e.netRevenue;
       });
 
-      return { contestRevenue, eventRevenue, totalsByCurrency };
+      return { 
+        contestRevenue, 
+        eventRevenue, 
+        netTotalsByCurrency,
+        voteCommissionRate,
+        ticketCommissionRate
+      };
     },
     enabled: !!payout?.organization_id,
   });
@@ -105,7 +129,9 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
 
   const contestRevenue = revenueData?.contestRevenue || [];
   const eventRevenue = revenueData?.eventRevenue || [];
-  const totalsByCurrency = revenueData?.totalsByCurrency || {};
+  const netTotalsByCurrency = revenueData?.netTotalsByCurrency || {};
+  const voteCommissionRate = revenueData?.voteCommissionRate ?? 10;
+  const ticketCommissionRate = revenueData?.ticketCommissionRate ?? 10;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -179,32 +205,35 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
             </CardContent>
           </Card>
 
-          {/* Revenue Breakdown */}
+          {/* Revenue Breakdown (Net - After Commission) */}
           <Card className="border-2 border-primary/30">
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Trophy className="h-5 w-5" />
-                Revenue Breakdown
+                Net Revenue Breakdown
               </h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                After platform commission (Votes: {voteCommissionRate}%, Tickets: {ticketCommissionRate}%)
+              </p>
               
               {revenueLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : (
                 <div className="space-y-4">
-                  {/* Total Revenue by Currency */}
+                  {/* Net Revenue by Currency */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Object.entries(totalsByCurrency).map(([currency, total]) => (
+                    {Object.entries(netTotalsByCurrency).map(([currency, total]) => (
                       <div 
                         key={currency} 
                         className={`p-3 rounded-lg border ${currency === payout.currency ? 'border-primary bg-primary/10' : 'bg-muted'}`}
                       >
-                        <p className="text-xs text-muted-foreground">Total {currency}</p>
+                        <p className="text-xs text-muted-foreground">Net {currency}</p>
                         <p className="text-lg font-bold">
                           <CurrencyDisplay amount={total as number} currency={currency} />
                         </p>
                       </div>
                     ))}
-                    {Object.keys(totalsByCurrency).length === 0 && (
+                    {Object.keys(netTotalsByCurrency).length === 0 && (
                       <p className="text-muted-foreground col-span-4">No revenue data available</p>
                     )}
                   </div>
@@ -213,7 +242,7 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                   {contestRevenue.length > 0 && (
                     <div>
                       <p className="text-sm font-medium mb-2 flex items-center gap-1">
-                        <Trophy className="h-4 w-4" /> Contest Revenue
+                        <Trophy className="h-4 w-4" /> Contest Net Revenue
                       </p>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {contestRevenue.map((contest: any) => (
@@ -225,7 +254,7 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                               </p>
                             </div>
                             <p className="font-bold">
-                              <CurrencyDisplay amount={contest.totalRevenue} currency={contest.currency} />
+                              <CurrencyDisplay amount={contest.netRevenue} currency={contest.currency} />
                             </p>
                           </div>
                         ))}
@@ -237,7 +266,7 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                   {eventRevenue.length > 0 && (
                     <div>
                       <p className="text-sm font-medium mb-2 flex items-center gap-1">
-                        <Calendar className="h-4 w-4" /> Event Revenue
+                        <Calendar className="h-4 w-4" /> Event Net Revenue
                       </p>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {eventRevenue.map((event: any) => (
@@ -249,7 +278,7 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                               </p>
                             </div>
                             <p className="font-bold">
-                              <CurrencyDisplay amount={event.totalRevenue} currency={event.currency} />
+                              <CurrencyDisplay amount={event.netRevenue} currency={event.currency} />
                             </p>
                           </div>
                         ))}
