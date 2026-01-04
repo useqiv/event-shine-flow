@@ -56,18 +56,6 @@ const Features = () => {
       <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
         <div className="max-w-[1600px] mx-auto">
 
-          {/* Organizer Features */}
-          <div id="organizers" className="mb-14 lg:mb-20">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-xl lg:text-2xl font-bold text-foreground">For Organizers</h3>
-                <p className="text-muted-foreground text-sm">Tools to run successful contests and events</p>
-              </div>
-            </div>
-          </div>
 
 
           {/* Platform Highlights */}
