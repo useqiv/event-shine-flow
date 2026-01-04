@@ -20,11 +20,11 @@ const Showcase = () => {
               <span className="text-sm text-foreground font-medium">Complete Event Management Suite</span>
             </div>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Six Powerful Products,{" "}
+              Five Powerful Products,{" "}
               <span className="text-primary">One Platform</span>
             </h2>
             <p className="text-muted-foreground text-base lg:text-lg">
-              Contests, events, crowdfunding, forms, nominations, and influencer marketing — all in USEQIV.
+              Contests, events, crowdfunding, forms, and influencer marketing — all in USEQIV.
             </p>
           </div>
 
