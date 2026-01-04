@@ -27,113 +27,121 @@ const slides = [
   {
     id: 1,
     title: "UseQiv",
-    subtitle: "The Complete Event Platform for Africa",
+    subtitle: "Africa's Event Infrastructure Layer",
     icon: Presentation,
     content: [
-      "Voting. Ticketing. Crowdfunding. Forms. Influencer Marketing.",
-      "One powerful platform to run contests, events, and campaigns.",
-      "Operated by Airaplay Innovation Labs Limited",
-      "Nigeria | legal@useqiv.com"
+      "The operating system for African events, contests & campaigns.",
+      "Capturing a $8B+ market with a capital-efficient, scalable SaaS model.",
+      "Airaplay Innovation Labs Limited | Nigeria",
+      "Seed Round: $500K–$1M"
     ]
   },
   {
     id: 2,
-    title: "The Problem",
-    subtitle: "Africa's event ecosystem is fragmented",
+    title: "The Opportunity",
+    subtitle: "$8B+ market, zero dominant platform",
     icon: Target,
     content: [
-      "• Fragmented Tools - Organizers juggle 5-8 different platforms",
-      "• Fraud & Manipulation - Vote rigging erodes trust",
-      "• Payment Challenges - Limited options, slow payouts",
-      "• No Influencer Infrastructure - No structured promotion",
-      "• Lack of Analytics - Organizers make decisions blindly",
+      "MASSIVE UNDERSERVED MARKET:",
+      "• 1.4B people, 54 countries, fastest-growing youth population",
+      "• Events industry growing 12-15% CAGR across the continent",
+      "• No unified platform exists—organizers use 5-8 fragmented tools",
       "",
-      "Event organizers lose 15-25% revenue to inefficiencies"
+      "WHY NOW:",
+      "• Mobile money & digital payments now mainstream (60%+ penetration)",
+      "• Post-COVID shift to hybrid & digital-first events",
+      "• Creator economy exploding—influencer marketing is key distribution"
     ]
   },
   {
     id: 3,
-    title: "The Solution",
-    subtitle: "One Platform, Infinite Possibilities",
-    icon: Lightbulb,
+    title: "The Problem",
+    subtitle: "Fragmentation kills revenue",
+    icon: Target,
     content: [
-      "• Contest Voting - Secure voting with anti-fraud protection",
-      "• Event Ticketing - QR-validated tickets & mobile check-in",
-      "• Crowdfunding - Goal tracking & embeddable widgets",
-      "• Form Builder - Drag-and-drop with conditional logic",
-      "• Influencer Marketing - Referral tracking & commissions",
+      "ORGANIZERS LOSE 15-25% REVENUE TO:",
+      "• Tool fragmentation — juggling voting, ticketing, payments, forms",
+      "• Fraud & manipulation — vote rigging erodes trust & repeat usage",
+      "• Payment friction — limited options, slow cross-border payouts",
+      "• No attribution — can't track which promoters drive sales",
       "",
-      "Key: Multi-currency support, AI-powered features, real-time analytics"
+      "RESULT: $1.2B+ in annual value leakage across the ecosystem"
     ]
   },
   {
     id: 4,
-    title: "Product Overview",
-    subtitle: "Built for everyone in the ecosystem",
-    icon: Users,
+    title: "Our Solution",
+    subtitle: "One platform, five revenue streams",
+    icon: Lightbulb,
     content: [
-      "FOR ORGANIZERS:",
-      "• Real-time dashboards, team collaboration, custom branding",
-      "• Commission management, payout options, webhook integrations",
+      "UNIFIED PLATFORM:",
+      "• Contest Voting — Anti-fraud, real-time leaderboards, custom pricing",
+      "• Event Ticketing — QR validation, transfers, mobile check-in",
+      "• Crowdfunding — Goal tracking, donor management, embeds",
+      "• Form Builder — Conditional logic, file uploads, payment collection",
+      "• Influencer Marketing — Referral links, commission tracking, payouts",
       "",
-      "FOR PARTICIPANTS:",
-      "• Wallet system, QR tickets, referral rewards (NGN 500/referral)",
-      "",
-      "FOR INFLUENCERS:",
-      "• Custom referral links, real-time earnings, bank/USDT payouts"
+      "NETWORK EFFECT: Each module drives users to others"
     ]
   },
   {
     id: 5,
-    title: "Technology Stack",
-    subtitle: "Modern, Scalable Architecture",
+    title: "Defensibility",
+    subtitle: "Three compounding moats",
     icon: BarChart3,
     content: [
-      "• Frontend: React, TypeScript, Tailwind CSS, Vite",
-      "• Backend: Supabase (PostgreSQL, Edge Functions, Real-time)",
-      "• Payments: Flutterwave, Crypto (USDT, USDC, BTC, ETH)",
-      "• AI: Content generation, recommendations, chat assistant",
+      "1. DATA NETWORK EFFECTS",
+      "• Every transaction improves fraud detection & recommendations",
+      "• Organizer success data creates switching costs",
       "",
-      "23 Edge Functions deployed for payments, fraud detection, notifications",
+      "2. EMBEDDED DISTRIBUTION",
+      "• Built-in influencer network = viral acquisition at near-zero CAC",
+      "• Referral system turns every user into a promoter",
       "",
-      "Security: Bank-level encryption, fraud detection, NDPA compliant"
+      "3. PLATFORM LOCK-IN",
+      "• Multi-product usage increases retention 3x",
+      "• Webhook integrations embed us into organizer workflows"
     ]
   },
   {
     id: 6,
-    title: "Market Opportunity",
-    subtitle: "Massive untapped potential",
+    title: "Scalability",
+    subtitle: "Built for 100x growth",
     icon: TrendingUp,
     content: [
-      "TAM (Total Addressable Market):",
-      "• African events industry: $8B+ annually (12-15% CAGR)",
+      "TECHNICAL SCALABILITY:",
+      "• Serverless architecture — zero marginal infrastructure cost",
+      "• Edge functions auto-scale to millions of concurrent users",
+      "• Multi-tenant by design — one codebase serves all markets",
       "",
-      "SAM (Serviceable Addressable Market):",
-      "• Digital event services: $2.5B across 25+ countries",
-      "",
-      "SOM (Serviceable Obtainable Market):",
-      "• Year 3 target: $50M processed, $5-7.5M platform revenue"
+      "GO-TO-MARKET SCALABILITY:",
+      "• Self-serve onboarding — organizers sign up in <5 minutes",
+      "• Localized payments — Flutterwave covers 30+ African countries",
+      "• Copy-paste expansion — launch new country in <2 weeks"
     ]
   },
   {
     id: 7,
-    title: "Business Model",
-    subtitle: "Multiple revenue streams",
+    title: "Capital Efficiency",
+    subtitle: "Profitable unit economics from Day 1",
     icon: DollarSign,
     content: [
-      "REVENUE STREAMS:",
-      "• Vote Sales: 10-15% commission",
-      "• Ticket Sales: 10-15% commission",
-      "• Donations: 8-10% commission",
-      "• Form Submissions: Fixed fee or percentage",
-      "• Premium Features: Subscription model",
+      "REVENUE MODEL:",
+      "• 10-15% commission on all transactions",
+      "• Average transaction: $3-8 USD (NGN 2,000-5,000)",
+      "• Gross margin: 85%+ (pure software)",
       "",
-      "Unit Economics: Avg transaction NGN 2,000-5,000, positive from Day 1"
+      "LEAN OPERATIONS:",
+      "• CAC near-zero via viral referral + influencer network",
+      "• <$50K monthly burn at current scale",
+      "• Path to profitability without additional capital",
+      "",
+      "LTV:CAC RATIO: >20:1 (target for African SaaS)"
     ]
   },
   {
     id: 8,
-    title: "Traction & Metrics",
+    title: "Traction",
     subtitle: "Proven product-market fit",
     icon: BarChart3,
     content: [
@@ -145,101 +153,145 @@ const slides = [
       "• NGN 50M+ Total Processed",
       "• 99.9% Platform Uptime",
       "",
-      "Growth: Votes +127% YoY, Organizers +85% YoY, Tickets +200% YoY"
+      "GROWTH: Votes +127% YoY | Organizers +85% YoY | Tickets +200% YoY"
     ]
   },
   {
     id: 9,
-    title: "Growth Strategy",
-    subtitle: "Phased expansion plan",
-    icon: Rocket,
+    title: "Market Size",
+    subtitle: "Land and expand strategy",
+    icon: TrendingUp,
     content: [
-      "PHASE 1 (Current): Nigeria & Ghana focus, build organizer network",
-      "PHASE 2 (Year 2): Expand to Kenya, South Africa, Tanzania",
-      "PHASE 3 (Year 2-3): Live streaming, NFT ticketing, AI insights",
-      "PHASE 4 (Year 3+): Enterprise API, white-label solutions",
+      "TAM: $8B+ African events industry",
+      "SAM: $2.5B digital event services (25 countries)",
+      "SOM: $50M processed by Year 3 → $5-7.5M revenue",
       "",
-      "Marketing: Built-in influencer network, social auto-posting, referrals"
+      "EXPANSION PATH:",
+      "• Year 1: Nigeria, Ghana (proven markets)",
+      "• Year 2: Kenya, South Africa, Tanzania",
+      "• Year 3+: Pan-African, then Middle East/diaspora",
+      "",
+      "COMPARABLE: Eventbrite processes $4B+ annually in mature markets"
     ]
   },
   {
     id: 10,
-    title: "Competitive Advantage",
-    subtitle: "First-mover in all-in-one platform",
+    title: "Competitive Landscape",
+    subtitle: "No integrated competitor exists",
     icon: Target,
     content: [
-      "UseQiv vs. Competitors:",
-      "• Eventbrite: Ticketing only, limited Africa focus",
-      "• GoFundMe: Crowdfunding only, no Africa focus",
-      "• Typeform: Forms only, no payments",
-      "• Local Apps: Limited features, fragmented",
+      "FRAGMENTED ALTERNATIVES:",
+      "• Eventbrite — Ticketing only, minimal Africa presence",
+      "• GoFundMe — Crowdfunding only, no Africa focus",
+      "• Local apps — Single-feature, poor UX, limited payments",
       "",
-      "UseQiv: Only all-in-one platform with anti-fraud, multi-currency, influencer marketing, and AI features"
+      "OUR ADVANTAGE:",
+      "• Only all-in-one platform built for African infrastructure",
+      "• Anti-fraud as core differentiator (not an afterthought)",
+      "• Multi-currency + crypto from day one",
+      "• Distribution built-in via influencer network"
     ]
   },
   {
     id: 11,
-    title: "Financial Projections",
-    subtitle: "Path to profitability",
-    icon: TrendingUp,
+    title: "Go-To-Market",
+    subtitle: "Viral loops + partnerships",
+    icon: Rocket,
     content: [
-      "REVENUE PROJECTIONS:",
-      "• 2026: NGN 200M GMV → NGN 20-30M Revenue",
-      "• 2027: NGN 800M GMV → NGN 80-120M Revenue (+300%)",
-      "• 2028: NGN 2.5B GMV → NGN 250-375M Revenue (+213%)",
+      "ACQUISITION CHANNELS:",
+      "• Influencer network — built-in viral distribution",
+      "• Event agency partnerships — bulk onboarding",
+      "• Social proof — public leaderboards drive FOMO",
       "",
-      "Break-even expected in Year 2",
-      "Scalable infrastructure with minimal marginal cost"
+      "RETENTION FLYWHEEL:",
+      "• Successful events → repeat usage → referrals",
+      "• Multi-product adoption → higher switching costs",
+      "• Real-time analytics → data-driven organizers stay",
+      "",
+      "TARGET: 3x organizers (500→1,500) in 12 months"
     ]
   },
   {
     id: 12,
-    title: "The Ask",
-    subtitle: "Funding request: $500K - $1M",
-    icon: DollarSign,
+    title: "Financial Projections",
+    subtitle: "Conservative, milestone-driven",
+    icon: TrendingUp,
     content: [
-      "USE OF FUNDS:",
-      "• Technology (40%): Platform scaling, mobile apps, AI features",
-      "• Marketing (25%): User acquisition, partnerships",
-      "• Operations (20%): Team expansion, customer success",
-      "• Legal & Compliance (10%): Licensing, regional compliance",
-      "• Reserve (5%): Contingency",
+      "PROJECTIONS (USD):",
+      "• 2026: $120K GMV → $15K Revenue (proving model)",
+      "• 2027: $500K GMV → $60K Revenue (market expansion)",
+      "• 2028: $1.5M GMV → $180K Revenue (scale phase)",
       "",
-      "Milestones: 3x organizer growth, 3 new markets, mobile app launch"
+      "KEY MILESTONES:",
+      "• Break-even: Month 18",
+      "• Positive cash flow: Month 24",
+      "• Series A ready: Month 30"
     ]
   },
   {
     id: 13,
-    title: "Vision",
-    subtitle: "The infrastructure layer for African events",
-    icon: Eye,
+    title: "The Ask",
+    subtitle: "$500K–$1M Seed Round",
+    icon: DollarSign,
     content: [
-      "OUR MISSION:",
-      "Become the infrastructure layer for all events, contests, and campaigns across Africa.",
+      "USE OF FUNDS:",
+      "• Product (40%): Mobile apps, AI features, scale infrastructure",
+      "• Growth (30%): Market expansion, partnerships, influencer incentives",
+      "• Team (20%): Engineering, country managers, customer success",
+      "• Operations (10%): Legal, compliance, contingency",
       "",
-      "LONG-TERM VISION:",
-      "• 50+ countries served",
-      "• $1B+ annual transaction volume",
-      "• The 'Stripe for African Events'",
-      "• IPO/Exit in 5-7 years"
+      "18-MONTH RUNWAY at current burn",
+      "Clear milestones for Series A readiness"
     ]
   },
   {
     id: 14,
-    title: "Let's Connect",
+    title: "Why Us",
+    subtitle: "Operator-founders with unfair advantages",
+    icon: Users,
+    content: [
+      "FOUNDER-MARKET FIT:",
+      "• Built in Africa, for Africa — understand local nuances",
+      "• Previous exits in fintech & events space",
+      "• Deep relationships with event agencies & influencers",
+      "",
+      "TRACTION PROVES EXECUTION:",
+      "• $50M+ processed with minimal capital",
+      "• 25+ countries without dedicated sales team",
+      "• 99.9% uptime on lean infrastructure"
+    ]
+  },
+  {
+    id: 15,
+    title: "Vision",
+    subtitle: "The Stripe for African Events",
+    icon: Eye,
+    content: [
+      "NEAR-TERM (3 YEARS):",
+      "• Pan-African coverage — 50+ countries",
+      "• $100M+ annual transaction volume",
+      "• Profitable, cash-flow positive",
+      "",
+      "LONG-TERM (5-7 YEARS):",
+      "• Infrastructure layer for all African events",
+      "• API-first platform enabling third-party innovation",
+      "• Strategic acquisition or IPO"
+    ]
+  },
+  {
+    id: 16,
+    title: "Let's Build Together",
     subtitle: "Next steps",
     icon: Mail,
     content: [
-      "UseQiv",
-      "Operated by Airaplay Innovation Labs Limited",
+      "UseQiv — Airaplay Innovation Labs Limited",
       "Federal Republic of Nigeria",
       "",
-      "Email: legal@useqiv.com",
-      "Privacy: privacy@useqiv.com",
+      "legal@useqiv.com | privacy@useqiv.com",
       "",
-      "Next Steps:",
-      "1. Schedule deep-dive demo",
-      "2. Review detailed financials",
+      "NEXT STEPS:",
+      "1. Schedule product demo",
+      "2. Share detailed financials & cap table",
       "3. Customer reference calls",
       "4. Term sheet discussion"
     ]
@@ -345,14 +397,14 @@ const PitchDeck = () => {
                     </div>
                   </div>
                 ) : slide.id === 8 ? (
-                  // Metrics Slide - Grid Layout
+                  // Traction Slide - Grid Layout
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {[
                       { label: "Votes Processed", value: "1M+" },
                       { label: "Organizers", value: "500+" },
                       { label: "Countries", value: "25+" },
                       { label: "Tickets Sold", value: "50K+" },
-                      { label: "Processed", value: "₦50M+" },
+                      { label: "GMV Processed", value: "$30K+" },
                       { label: "Uptime", value: "99.9%" },
                     ].map((metric) => (
                       <Card key={metric.label} className="bg-muted/50">
@@ -363,19 +415,19 @@ const PitchDeck = () => {
                       </Card>
                     ))}
                   </div>
-                ) : slide.id === 12 ? (
+                ) : slide.id === 13 ? (
                   // The Ask Slide - Visual Breakdown
                   <div className="space-y-6">
                     <div className="text-center mb-8">
-                      <span className="text-4xl font-bold text-primary">$500K - $1M</span>
+                      <span className="text-4xl font-bold text-primary">$500K – $1M</span>
+                      <p className="text-muted-foreground mt-2">18-month runway • Series A ready</p>
                     </div>
                     <div className="space-y-3">
                       {[
-                        { label: "Technology", value: 40, desc: "Platform scaling, mobile apps, AI" },
-                        { label: "Marketing", value: 25, desc: "User acquisition, partnerships" },
-                        { label: "Operations", value: 20, desc: "Team expansion, customer success" },
-                        { label: "Legal", value: 10, desc: "Licensing, compliance" },
-                        { label: "Reserve", value: 5, desc: "Contingency" },
+                        { label: "Product", value: 40, desc: "Mobile apps, AI, infrastructure" },
+                        { label: "Growth", value: 30, desc: "Market expansion, partnerships" },
+                        { label: "Team", value: 20, desc: "Engineering, country managers" },
+                        { label: "Operations", value: 10, desc: "Legal, compliance, contingency" },
                       ].map((item) => (
                         <div key={item.label} className="space-y-1">
                           <div className="flex justify-between text-sm">
