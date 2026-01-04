@@ -75,20 +75,6 @@ const Hero = () => {
                 One powerful platform to run contests, events, and campaigns.
               </p>
 
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10">
-                <Button variant="default" size="lg" className="rounded-full px-8 h-14 text-base shadow-lg shadow-primary/25 group">
-                  Start Free Trial
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button variant="outline" size="lg" className="rounded-full px-8 h-14 text-base group">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 group-hover:bg-primary/20 transition-colors">
-                    <Play className="h-3.5 w-3.5 text-primary fill-primary" />
-                  </div>
-                  Watch Demo
-                </Button>
-              </div>
-
               {/* Trust Indicators */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
                 {[
