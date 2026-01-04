@@ -119,9 +119,10 @@ const AdminSettings: React.FC = () => {
 
   // Commission form state
   const [commissionForm, setCommissionForm] = useState({
-    platform_commission_percentage: '',
     vote_commission_percentage: '',
     ticket_commission_percentage: '',
+    campaign_commission_percentage: '',
+    influencer_commission_percentage: '',
   });
   const [commissionFormDirty, setCommissionFormDirty] = useState(false);
   const [isSavingCommission, setIsSavingCommission] = useState(false);
@@ -130,9 +131,10 @@ const AdminSettings: React.FC = () => {
   useEffect(() => {
     if (settings) {
       setCommissionForm({
-        platform_commission_percentage: settings.find(s => s.setting_key === 'platform_commission_percentage')?.setting_value || '',
         vote_commission_percentage: settings.find(s => s.setting_key === 'vote_commission_percentage')?.setting_value || '',
         ticket_commission_percentage: settings.find(s => s.setting_key === 'ticket_commission_percentage')?.setting_value || '',
+        campaign_commission_percentage: settings.find(s => s.setting_key === 'campaign_commission_percentage')?.setting_value || '',
+        influencer_commission_percentage: settings.find(s => s.setting_key === 'influencer_commission_percentage')?.setting_value || '',
       });
       setCommissionFormDirty(false);
     }
@@ -147,9 +149,10 @@ const AdminSettings: React.FC = () => {
     setIsSavingCommission(true);
     try {
       await Promise.all([
-        updateSetting.mutateAsync({ key: 'platform_commission_percentage', value: commissionForm.platform_commission_percentage }),
         updateSetting.mutateAsync({ key: 'vote_commission_percentage', value: commissionForm.vote_commission_percentage }),
         updateSetting.mutateAsync({ key: 'ticket_commission_percentage', value: commissionForm.ticket_commission_percentage }),
+        updateSetting.mutateAsync({ key: 'campaign_commission_percentage', value: commissionForm.campaign_commission_percentage }),
+        updateSetting.mutateAsync({ key: 'influencer_commission_percentage', value: commissionForm.influencer_commission_percentage }),
       ]);
       toast.success('Commission settings saved successfully');
       setCommissionFormDirty(false);
@@ -447,32 +450,41 @@ const AdminSettings: React.FC = () => {
                 <CardDescription>Configure platform commission rates</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label>Platform Commission (%)</Label>
-                    <Input 
-                      type="number" 
-                      value={commissionForm.platform_commission_percentage}
-                      onChange={(e) => handleCommissionFormChange('platform_commission_percentage', e.target.value)}
-                      className="mt-2" 
-                    />
-                  </div>
+                <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <Label>Vote Commission (%)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Commission on all vote purchases</p>
                     <Input 
                       type="number" 
                       value={commissionForm.vote_commission_percentage}
                       onChange={(e) => handleCommissionFormChange('vote_commission_percentage', e.target.value)}
-                      className="mt-2" 
                     />
                   </div>
                   <div>
                     <Label>Ticket Commission (%)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Commission on all ticket sales</p>
                     <Input 
                       type="number" 
                       value={commissionForm.ticket_commission_percentage}
                       onChange={(e) => handleCommissionFormChange('ticket_commission_percentage', e.target.value)}
-                      className="mt-2" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Campaign/Donation Commission (%)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Commission on crowdfunding donations</p>
+                    <Input 
+                      type="number" 
+                      value={commissionForm.campaign_commission_percentage}
+                      onChange={(e) => handleCommissionFormChange('campaign_commission_percentage', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Default Influencer Commission (%)</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Default commission for influencer referrals</p>
+                    <Input 
+                      type="number" 
+                      value={commissionForm.influencer_commission_percentage}
+                      onChange={(e) => handleCommissionFormChange('influencer_commission_percentage', e.target.value)}
                     />
                   </div>
                 </div>
