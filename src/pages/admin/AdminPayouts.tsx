@@ -25,7 +25,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminPayouts, useApprovePayout, useRejectPayout } from '@/hooks/useAdminData';
 import { useBulkApprovePayouts, useBulkRejectPayouts, useLogAdminActivity } from '@/hooks/useAdminActivityLog';
-import { Search, CheckCircle, XCircle, Download, Clock, Wallet, CheckSquare } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Download, Clock, Wallet, CheckSquare, Eye } from 'lucide-react';
+import PayoutDetailsDialog from '@/components/admin/PayoutDetailsDialog';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
@@ -46,6 +47,8 @@ const AdminPayouts: React.FC = () => {
   const [selectedPayouts, setSelectedPayouts] = useState<Set<string>>(new Set());
   const [bulkActionDialogOpen, setBulkActionDialogOpen] = useState(false);
   const [bulkActionType, setBulkActionType] = useState<'approve' | 'reject'>('approve');
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsPayout, setDetailsPayout] = useState<any>(null);
 
   // Platform default currency from settings
   const platformCurrency = usePlatformCurrency();
@@ -200,30 +203,43 @@ const AdminPayouts: React.FC = () => {
               <TableCell>{getStatusBadge(payout.status)}</TableCell>
               <TableCell>{format(new Date(payout.created_at), 'MMM d, yyyy')}</TableCell>
               <TableCell className="text-right">
-                {payout.status === 'pending' && (
-                  <div className="flex justify-end gap-2">
-                    <Button 
-                      size="sm" 
-                      className="bg-green-500 hover:bg-green-600"
-                      onClick={() => {
-                        setSelectedPayout(payout);
-                        setApproveDialogOpen(true);
-                      }}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      onClick={() => handleReject(payout)}
-                      disabled={rejectPayout.isPending}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                )}
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => {
+                      setDetailsPayout(payout);
+                      setDetailsDialogOpen(true);
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Details
+                  </Button>
+                  {payout.status === 'pending' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        className="bg-green-500 hover:bg-green-600"
+                        onClick={() => {
+                          setSelectedPayout(payout);
+                          setApproveDialogOpen(true);
+                        }}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        onClick={() => handleReject(payout)}
+                        disabled={rejectPayout.isPending}
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
                 {payout.reference_id && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Ref: {payout.reference_id}
@@ -518,6 +534,13 @@ const AdminPayouts: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Payout Details Dialog */}
+        <PayoutDetailsDialog
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+          payout={detailsPayout}
+        />
       </div>
     </AdminLayout>
   );
