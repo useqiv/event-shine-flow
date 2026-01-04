@@ -7,16 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
-import { CalendarIcon, Download, Search, Filter, CreditCard, Wallet } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { Download, Search, Filter, CreditCard, Wallet } from 'lucide-react';
+import { format, subDays, isAfter } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface PaymentTransaction {
@@ -48,10 +46,7 @@ const AdminPaymentHistory = () => {
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [entityFilter, setEntityFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: startOfMonth(new Date()),
-    to: endOfMonth(new Date()),
-  });
+  const [daysFilter, setDaysFilter] = useState<string>('30');
 
   // Fetch votes - currency comes from contest.vote_currency
   const { data: votes, isLoading: votesLoading } = useQuery({
@@ -275,16 +270,17 @@ const AdminPaymentHistory = () => {
         }
       }
 
-      // Date filter
+      // Date filter based on days
       let dateMatch = true;
-      if (dateRange.from && dateRange.to) {
+      if (daysFilter !== 'all') {
+        const daysAgo = subDays(new Date(), parseInt(daysFilter));
         const txDate = new Date(tx.created_at);
-        dateMatch = isWithinInterval(txDate, { start: dateRange.from, end: dateRange.to });
+        dateMatch = isAfter(txDate, daysAgo);
       }
 
       return searchMatch && statusMatch && methodMatch && typeMatch && entityMatch && dateMatch;
     });
-  }, [allTransactions, searchTerm, statusFilter, methodFilter, typeFilter, entityFilter, dateRange, votes, tickets]);
+  }, [allTransactions, searchTerm, statusFilter, methodFilter, typeFilter, entityFilter, daysFilter, votes, tickets]);
 
   // Calculate totals per currency
   const currencyTotals = useMemo(() => {
@@ -470,26 +466,19 @@ const AdminPaymentHistory = () => {
                 </SelectContent>
               </Select>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("justify-start text-left font-normal")}>
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.from && dateRange.to ? (
-                      `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d')}`
-                    ) : (
-                      "Date Range"
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="range"
-                    selected={{ from: dateRange.from, to: dateRange.to }}
-                    onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                    numberOfMonths={2}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Select value={daysFilter} onValueChange={setDaysFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Date Range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                  <SelectItem value="120">Last 120 days</SelectItem>
+                  <SelectItem value="240">Last 240 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
