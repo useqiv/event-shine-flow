@@ -295,12 +295,12 @@ const AdminSettings: React.FC = () => {
     queryKey: ['admin-recent-transactions', dateRange.from, dateRange.to, transactionTypeFilter],
     queryFn: async () => {
       const types = transactionTypeFilter === 'all' 
-        ? ['vote_purchase', 'ticket_purchase', 'deposit', 'refund']
+        ? ['vote_purchase', 'ticket_purchase', 'deposit', 'refund', 'vote', 'ticket']
         : [transactionTypeFilter];
 
       let query = supabase
         .from('wallet_transactions')
-        .select('*, wallets(user_id, profiles:user_id(full_name, email))')
+        .select('*')
         .in('type', types)
         .eq('status', 'completed')
         .order('created_at', { ascending: false });
@@ -315,7 +315,24 @@ const AdminSettings: React.FC = () => {
       const { data, error } = await query.limit(100);
       
       if (error) throw error;
-      return data;
+
+      // Fetch user profiles separately for the transactions
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map((tx: any) => tx.user_id).filter(Boolean))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        
+        return data.map((tx: any) => ({
+          ...tx,
+          profile: profileMap.get(tx.user_id) || null
+        }));
+      }
+      
+      return data || [];
     },
   });
 
@@ -872,10 +889,11 @@ const AdminSettings: React.FC = () => {
                           }
                           const exportData = recentTransactions.map((tx: any) => ({
                             date: formatDateForExport(tx.created_at),
-                            user_name: tx.wallets?.profiles?.full_name || 'Unknown',
-                            user_email: tx.wallets?.profiles?.email || '',
+                            user_name: tx.profile?.full_name || 'Unknown',
+                            user_email: tx.profile?.email || '',
                             type: tx.type.replace('_', ' '),
                             amount: formatCurrencyForExport(tx.amount),
+                            currency: tx.currency || 'NGN',
                             status: tx.status,
                             reference: tx.reference_id || '',
                             description: tx.description || '',
@@ -885,7 +903,8 @@ const AdminSettings: React.FC = () => {
                             { key: 'user_name', label: 'User Name' },
                             { key: 'user_email', label: 'Email' },
                             { key: 'type', label: 'Type' },
-                            { key: 'amount', label: 'Amount (NGN)' },
+                            { key: 'amount', label: 'Amount' },
+                            { key: 'currency', label: 'Currency' },
                             { key: 'status', label: 'Status' },
                             { key: 'reference', label: 'Reference' },
                             { key: 'description', label: 'Description' },
@@ -1071,8 +1090,8 @@ const AdminSettings: React.FC = () => {
                             </TableCell>
                             <TableCell>
                               <div>
-                                <p className="text-sm font-medium">{tx.wallets?.profiles?.full_name || 'Unknown'}</p>
-                                <p className="text-xs text-muted-foreground">{tx.wallets?.profiles?.email}</p>
+                                <p className="text-sm font-medium">{tx.profile?.full_name || 'Unknown'}</p>
+                                <p className="text-xs text-muted-foreground">{tx.profile?.email}</p>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1081,7 +1100,7 @@ const AdminSettings: React.FC = () => {
                               </Badge>
                             </TableCell>
                             <TableCell className="font-mono">
-                              ₦{tx.amount?.toLocaleString()}
+                              {tx.currency || 'NGN'} {tx.amount?.toLocaleString()}
                             </TableCell>
                             <TableCell>
                               <Badge variant={
