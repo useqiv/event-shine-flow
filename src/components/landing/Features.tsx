@@ -45,11 +45,6 @@ const Features = () => {
       title: "Custom Forms",
       description: "Build multi-page forms with conditional logic, payments, and response management."
     },
-    {
-      icon: TrendingUp,
-      title: "Influencer Marketing",
-      description: "Track referral links, commissions, and conversions for your influencer partners."
-    }
   ];
 
   const userFeatures = [
