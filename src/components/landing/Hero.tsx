@@ -71,7 +71,7 @@ const Hero = () => {
 
               {/* Subheadline */}
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-                Voting. Ticketing. Crowdfunding. Forms. 
+                Voting. Ticketing. Crowdfunding. Forms. Influencer Marketing. 
                 One powerful platform to run contests, events, and campaigns.
               </p>
 
