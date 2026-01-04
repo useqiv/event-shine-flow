@@ -1,4 +1,4 @@
-import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight } from "lucide-react";
+import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Showcase = () => {
@@ -28,8 +28,8 @@ const Showcase = () => {
             </p>
           </div>
 
-          {/* Product Cards */}
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mb-12 lg:mb-16">
+          {/* Product Cards - Row 1 */}
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mb-6 lg:mb-8">
             {/* Voting Product */}
             <div className="group relative bg-muted border border-border rounded-3xl p-6 md:p-8 lg:p-10 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 overflow-hidden">
               {/* Decorative Elements */}
@@ -162,6 +162,129 @@ const Showcase = () => {
 
                 <Button variant="outline" className="w-full mt-6 rounded-full border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground" size="lg">
                   Create Event
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Product Cards - Row 2 */}
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 mb-12 lg:mb-16">
+            {/* Crowdfunding Product */}
+            <div className="group relative bg-muted border border-border rounded-3xl p-6 md:p-8 lg:p-10 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+              
+              <div className="relative">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+                    <Heart className="h-7 w-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl lg:text-2xl font-bold text-foreground">Crowdfunding</h3>
+                    <p className="text-sm text-muted-foreground">For causes, projects & campaigns</p>
+                  </div>
+                </div>
+
+                <p className="text-muted-foreground mb-6">
+                  Launch fundraising campaigns with built-in payment processing. Track donations, share updates, and reach your goals faster.
+                </p>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {[
+                    { icon: "🎯", text: "Goal tracking" },
+                    { icon: "💳", text: "Secure payments" },
+                    { icon: "📢", text: "Campaign updates" },
+                    { icon: "🏆", text: "Donor leaderboard" },
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                      <span className="text-lg">{feature.icon}</span>
+                      <span className="text-sm text-foreground font-medium">{feature.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mini Campaign Preview */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-foreground">Build a School Project</span>
+                    <span className="text-xs text-primary font-semibold">78% funded</span>
+                  </div>
+                  <div className="h-3 bg-border rounded-full overflow-hidden mb-3">
+                    <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full" style={{ width: '78%' }} />
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground font-semibold">₦7,800,000</span>
+                    <span className="text-muted-foreground">of ₦10,000,000 goal</span>
+                  </div>
+                </div>
+
+                <Button variant="default" className="w-full mt-6 rounded-full" size="lg">
+                  Start Campaign
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Forms Product */}
+            <div className="group relative bg-muted border border-border rounded-3xl p-6 md:p-8 lg:p-10 hover:border-accent/50 hover:shadow-2xl transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+              
+              <div className="relative">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-14 w-14 rounded-2xl bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 group-hover:scale-110 transition-all">
+                    <FileText className="h-7 w-7 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl lg:text-2xl font-bold text-foreground">Smart Forms</h3>
+                    <p className="text-sm text-muted-foreground">For registrations, surveys & applications</p>
+                  </div>
+                </div>
+
+                <p className="text-muted-foreground mb-6">
+                  Create beautiful forms with payment collection, conditional logic, and real-time response tracking.
+                </p>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {[
+                    { icon: "📝", text: "Drag & drop builder" },
+                    { icon: "💵", text: "Payment forms" },
+                    { icon: "🔀", text: "Conditional logic" },
+                    { icon: "📊", text: "Response analytics" },
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                      <span className="text-lg">{feature.icon}</span>
+                      <span className="text-sm text-foreground font-medium">{feature.text}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mini Form Preview */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="text-sm font-medium text-foreground mb-4">Event Registration Form</div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Users className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 h-8 bg-muted rounded-lg" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <Target className="h-4 w-4 text-accent" />
+                      </div>
+                      <div className="flex-1 h-8 bg-muted rounded-lg" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">247 responses</span>
+                    <span className="text-primary font-medium">Active</span>
+                  </div>
+                </div>
+
+                <Button variant="outline" className="w-full mt-6 rounded-full border-accent/50 text-accent hover:bg-accent hover:text-accent-foreground" size="lg">
+                  Create Form
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </div>
