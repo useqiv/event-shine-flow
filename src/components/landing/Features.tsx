@@ -58,6 +58,60 @@ const Features = () => {
 
 
 
+          {/* AI Features Section */}
+          <div className="text-center mb-10">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
+              <Sparkles className="h-4 w-4" />
+              AI-Powered Platform
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              Intelligent Features That Work For You
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Leverage cutting-edge AI to automate tasks, generate content, and get smart recommendations.
+            </p>
+          </div>
+
+          {/* AI Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              { 
+                icon: Sparkles, 
+                title: "AI Chat Assistant", 
+                desc: "Get instant answers about contests, events, and recommendations with our intelligent QIV assistant.",
+                highlight: true
+              },
+              { 
+                icon: FileText, 
+                title: "AI Content Generation", 
+                desc: "Auto-generate compelling descriptions for events, contests, and campaigns in seconds."
+              },
+              { 
+                icon: TrendingUp, 
+                title: "Smart Recommendations", 
+                desc: "Personalized suggestions based on your voting history and preferences."
+              },
+              { 
+                icon: Share2, 
+                title: "AI Social Posts", 
+                desc: "Generate engaging social media content tailored for each platform automatically."
+              },
+            ].map((item, i) => (
+              <div 
+                key={i} 
+                className={`p-6 bg-card border rounded-2xl hover:shadow-xl transition-all duration-300 group ${
+                  item.highlight ? 'border-primary/50 shadow-lg ring-1 ring-primary/10' : 'border-border hover:border-primary/30'
+                }`}
+              >
+                <div className="h-12 w-12 rounded-xl bg-muted border border-border flex items-center justify-center mb-5 group-hover:border-primary/50 group-hover:scale-110 transition-all">
+                  <item.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground mb-2">{item.title}</h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
           {/* Platform Highlights */}
           <div className="bg-card border border-border rounded-3xl p-6 lg:p-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
