@@ -321,54 +321,26 @@ const PitchDeck = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <Home className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Investor Pitch Deck</h1>
-              <p className="text-sm text-muted-foreground">UseQiv - Airaplay Innovation Labs</p>
-            </div>
-          </div>
-          <Button onClick={handleExport} disabled={isExporting}>
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? "Exporting..." : "Export PDF"}
+      {/* Minimal Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Home className="h-5 w-5" />
+          </Link>
+          <span className="text-sm text-muted-foreground font-medium">
+            {currentSlide + 1} / {slides.length}
+          </span>
+          <Button variant="ghost" size="sm" onClick={handleExport} disabled={isExporting}>
+            <Download className="h-4 w-4" />
           </Button>
         </div>
-        <Progress value={progress} className="h-1" />
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Slide Counter */}
-          <div className="flex items-center justify-between mb-6">
-            <Badge variant="secondary" className="text-sm">
-              <CurrentIcon className="h-4 w-4 mr-2" />
-              Slide {currentSlide + 1} of {slides.length}
-            </Badge>
-            <div className="flex gap-1">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    index === currentSlide 
-                      ? "bg-primary w-6" 
-                      : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
+      <main className="pt-20 pb-24 px-4">
+        <div className="max-w-4xl mx-auto">
           {/* Slide Content */}
-          <div className="relative min-h-[600px]">
+          <div className="relative min-h-[560px]">
             {slides.map((slide, index) => (
               <PitchDeckSlide
                 key={slide.id}
@@ -377,81 +349,70 @@ const PitchDeck = () => {
                 isActive={index === currentSlide}
               >
                 {slide.id === 1 ? (
-                  // Title Slide - Special Layout
-                  <div className="text-center py-12">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6">
-                      <Presentation className="h-10 w-10 text-primary" />
-                    </div>
-                    <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+                  // Title Slide - Clean Hero
+                  <div className="py-8">
+                    <p className="text-xl md:text-2xl text-foreground leading-relaxed max-w-xl">
                       {slide.content[0]}
                     </p>
-                    <p className="text-lg text-foreground mb-4">
+                    <p className="text-lg text-muted-foreground mt-6">
                       {slide.content[1]}
                     </p>
-                    <div className="flex flex-wrap gap-2 justify-center mt-8">
-                      {["Voting", "Ticketing", "Crowdfunding", "Forms", "Influencers"].map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-sm">
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div className="mt-12 pt-8 border-t border-border/50">
+                      <p className="text-sm text-muted-foreground">{slide.content[2]}</p>
+                      <p className="text-primary font-semibold mt-1">{slide.content[3]}</p>
                     </div>
                   </div>
                 ) : slide.id === 8 ? (
-                  // Traction Slide - Grid Layout
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  // Traction Slide - Clean Grid
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     {[
-                      { label: "Votes Processed", value: "1M+" },
+                      { label: "Votes", value: "1M+" },
                       { label: "Organizers", value: "500+" },
                       { label: "Countries", value: "25+" },
-                      { label: "Tickets Sold", value: "50K+" },
-                      { label: "GMV Processed", value: "$30K+" },
+                      { label: "Tickets", value: "50K+" },
+                      { label: "GMV", value: "$30K+" },
                       { label: "Uptime", value: "99.9%" },
                     ].map((metric) => (
-                      <Card key={metric.label} className="bg-muted/50">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-2xl md:text-3xl font-bold text-primary">{metric.value}</p>
-                          <p className="text-sm text-muted-foreground">{metric.label}</p>
-                        </CardContent>
-                      </Card>
+                      <div key={metric.label} className="text-center py-4">
+                        <p className="text-3xl md:text-4xl font-bold text-foreground">{metric.value}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{metric.label}</p>
+                      </div>
                     ))}
                   </div>
                 ) : slide.id === 13 ? (
-                  // The Ask Slide - Visual Breakdown
-                  <div className="space-y-6">
-                    <div className="text-center mb-8">
-                      <span className="text-4xl font-bold text-primary">$500K – $1M</span>
-                      <p className="text-muted-foreground mt-2">18-month runway • Series A ready</p>
+                  // The Ask Slide - Clean Breakdown
+                  <div className="space-y-8">
+                    <div className="text-center">
+                      <span className="text-5xl md:text-6xl font-bold text-foreground">$500K–$1M</span>
+                      <p className="text-muted-foreground mt-3">18-month runway → Series A ready</p>
                     </div>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 border-t border-border/50">
                       {[
-                        { label: "Product", value: 40, desc: "Mobile apps, AI, infrastructure" },
-                        { label: "Growth", value: 30, desc: "Market expansion, partnerships" },
-                        { label: "Team", value: 20, desc: "Engineering, country managers" },
-                        { label: "Operations", value: 10, desc: "Legal, compliance, contingency" },
+                        { label: "Product", value: "40%" },
+                        { label: "Growth", value: "30%" },
+                        { label: "Team", value: "20%" },
+                        { label: "Ops", value: "10%" },
                       ].map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">{item.label} ({item.value}%)</span>
-                            <span className="text-muted-foreground">{item.desc}</span>
-                          </div>
-                          <Progress value={item.value} className="h-2" />
+                        <div key={item.label} className="text-center">
+                          <p className="text-2xl font-bold text-foreground">{item.value}</p>
+                          <p className="text-sm text-muted-foreground">{item.label}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  // Default Layout
-                  <div className="space-y-3">
+                  // Default Layout - Clean Typography
+                  <div className="space-y-4">
                     {slide.content.map((line, i) => (
                       <p 
                         key={i} 
-                        className={`text-base md:text-lg ${
+                        className={`text-lg leading-relaxed ${
                           line.startsWith("•") 
-                            ? "text-foreground pl-4" 
+                            ? "text-foreground pl-5" 
                             : line.endsWith(":") 
-                              ? "font-semibold text-primary mt-4" 
+                              ? "font-semibold text-foreground mt-6 first:mt-0" 
                               : line === "" 
-                                ? "h-4" 
+                                ? "h-2" 
                                 : "text-muted-foreground"
                         }`}
                       >
@@ -464,26 +425,39 @@ const PitchDeck = () => {
             ))}
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8">
-            <Button
-              variant="outline"
+          {/* Minimal Navigation */}
+          <div className="flex items-center justify-between mt-12">
+            <button
               onClick={() => goToSlide(currentSlide - 1)}
               disabled={currentSlide === 0}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              Previous
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              Use arrow keys or swipe to navigate
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-sm">Back</span>
+            </button>
+            
+            <div className="flex gap-1.5">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    index === currentSlide 
+                      ? "bg-foreground w-6" 
+                      : "bg-muted-foreground/20 w-1.5 hover:bg-muted-foreground/40"
+                  }`}
+                />
+              ))}
             </div>
-            <Button
+            
+            <button
               onClick={() => goToSlide(currentSlide + 1)}
               disabled={currentSlide === slides.length - 1}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              Next
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
+              <span className="text-sm">Next</span>
+              <ChevronRight className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </main>
