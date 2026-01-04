@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
+import appLogo from "@/assets/logo.png";
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut } = useAuth();
@@ -84,11 +85,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/admin/dashboard" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-destructive flex items-center justify-center">
-              <Shield className="h-6 w-6 text-destructive-foreground" />
-            </div>
+            <img src={appLogo} alt="USEQIV" className="h-10" />
             <div>
-              <span className="font-bold text-lg text-destructive">VotePass</span>
               <p className="text-xs text-muted-foreground">Admin Panel</p>
             </div>
           </Link>
@@ -166,10 +164,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
               {/* Mobile Logo */}
               <Link to="/admin/dashboard" className="flex items-center gap-2 md:hidden">
-                <div className="h-8 w-8 rounded-lg bg-destructive flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-destructive-foreground" />
-                </div>
-                <span className="font-bold text-lg text-destructive">Admin</span>
+                <img src={appLogo} alt="USEQIV" className="h-8" />
+                <span className="font-bold text-lg text-foreground">Admin</span>
               </Link>
 
               {/* Page Title - Desktop */}
@@ -230,13 +226,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* Mobile Logo */}
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <Link to="/admin/dashboard" className="flex items-center gap-3" onClick={() => setIsMobileMenuOpen(false)}>
-                  <div className="h-10 w-10 rounded-xl bg-destructive flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-destructive-foreground" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-lg text-destructive">VotePass</span>
-                    <p className="text-xs text-muted-foreground">Admin Panel</p>
-                  </div>
+                  <img src={appLogo} alt="USEQIV" className="h-10" />
+                  <p className="text-xs text-muted-foreground">Admin Panel</p>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                   <X className="h-5 w-5" />

@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
-import { Vote, Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, ArrowRight } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin, Youtube, Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import appLogo from "@/assets/logo.png";
 const Footer = (props: HTMLAttributes<HTMLElement>) => {
   const footerLinks = {
     product: [
@@ -50,7 +50,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div>
                 <h3 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
-                  Stay updated with VotePass
+                  Stay updated with USEQIV
                 </h3>
                 <p className="text-muted-foreground">
                   Get the latest news, updates, and tips delivered to your inbox.
@@ -78,10 +78,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
             {/* Brand Column */}
             <div className="col-span-2">
               <a href="/" className="flex items-center gap-2.5 mb-5">
-                <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center">
-                  <Vote className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold text-foreground">VotePass</span>
+                <img src={appLogo} alt="USEQIV" className="h-11" />
               </a>
               <p className="text-muted-foreground text-sm mb-6 leading-relaxed max-w-xs">
                 The modern platform for secure contest voting and event ticketing. 
@@ -162,7 +159,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
           {/* Bottom Bar */}
           <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              © {new Date().getFullYear()} VotePass. All rights reserved.
+              © {new Date().getFullYear()} USEQIV. All rights reserved.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">

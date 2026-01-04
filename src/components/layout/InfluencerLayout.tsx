@@ -14,6 +14,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 import { useState } from 'react';
+import appLogo from "@/assets/logo.png";
 
 interface InfluencerLayoutProps {
   children: React.ReactNode;
@@ -56,7 +57,8 @@ const InfluencerLayout: React.FC<InfluencerLayoutProps> = ({ children }) => {
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
               <Link to="/influencer" className="flex items-center gap-2">
-                <span className="text-xl font-bold text-primary">Influencer Portal</span>
+                <img src={appLogo} alt="USEQIV" className="h-8" />
+                <span className="text-sm font-medium text-muted-foreground">Influencer Portal</span>
               </Link>
             </div>
 
