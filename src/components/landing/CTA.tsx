@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Sparkles, Shield, Clock, Play } from "lucide-react";
+import { ArrowRight, CheckCircle, Sparkles, Shield, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CTA = () => {
   const benefits = [
@@ -41,15 +42,13 @@ const CTA = () => {
                 Launch your first project in minutes.
               </p>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-                <Button variant="default" size="lg" className="group rounded-full px-10 text-base h-14 shadow-lg shadow-primary/20">
-                  Start Free Trial
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button variant="outline" size="lg" className="rounded-full px-10 text-base h-14">
-                  <Play className="h-5 w-5 mr-2" />
-                  Watch Demo
+              {/* CTA Button */}
+              <div className="flex items-center justify-center mb-8">
+                <Button asChild variant="default" size="lg" className="group rounded-full px-10 text-base h-14 shadow-lg shadow-primary/20">
+                  <Link to="/auth">
+                    Get Started
+                    <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Link>
                 </Button>
               </div>
 
