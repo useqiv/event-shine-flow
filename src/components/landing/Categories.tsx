@@ -1,13 +1,13 @@
-import { Music, Shirt, Trophy, UtensilsCrossed, MonitorSmartphone, PartyPopper } from "lucide-react";
+import { Vote, Ticket, Heart, FileText, ClipboardList, TrendingUp } from "lucide-react";
 
 const Categories = () => {
   const categories = [
-    { icon: Music, label: "Music", color: "group-hover:bg-pink-500/10 group-hover:border-pink-500/30" },
-    { icon: Shirt, label: "Fashion", color: "group-hover:bg-purple-500/10 group-hover:border-purple-500/30" },
-    { icon: Trophy, label: "Sport", color: "group-hover:bg-amber-500/10 group-hover:border-amber-500/30" },
-    { icon: UtensilsCrossed, label: "Food", color: "group-hover:bg-green-500/10 group-hover:border-green-500/30" },
-    { icon: MonitorSmartphone, label: "Tech", color: "group-hover:bg-blue-500/10 group-hover:border-blue-500/30" },
-    { icon: PartyPopper, label: "Nightlife", color: "group-hover:bg-orange-500/10 group-hover:border-orange-500/30" },
+    { icon: Vote, label: "Contests", color: "group-hover:bg-primary/10 group-hover:border-primary/30" },
+    { icon: Ticket, label: "Events", color: "group-hover:bg-accent/10 group-hover:border-accent/30" },
+    { icon: Heart, label: "Campaigns", color: "group-hover:bg-pink-500/10 group-hover:border-pink-500/30" },
+    { icon: FileText, label: "Forms", color: "group-hover:bg-blue-500/10 group-hover:border-blue-500/30" },
+    { icon: ClipboardList, label: "Nominations", color: "group-hover:bg-amber-500/10 group-hover:border-amber-500/30" },
+    { icon: TrendingUp, label: "Influencers", color: "group-hover:bg-green-500/10 group-hover:border-green-500/30" },
   ];
 
   return (
@@ -16,9 +16,9 @@ const Categories = () => {
         <div className="max-w-[1600px] mx-auto">
           {/* Section Header */}
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl lg:text-2xl font-bold text-foreground">Categories</h2>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">What You Can Create</h2>
             <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-              View All
+              Get Started
             </button>
           </div>
           

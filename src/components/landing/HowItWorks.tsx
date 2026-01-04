@@ -6,19 +6,19 @@ const HowItWorks = () => {
       step: 1,
       icon: Building2,
       title: "Create Your Account",
-      description: "Sign up as an organizer in minutes. Set up your company profile with branding, logo, and payout details."
+      description: "Sign up as an organizer in minutes. Set up your profile with branding, logo, and payout details."
     },
     {
       step: 2,
       icon: Vote,
-      title: "Launch Contests & Events",
-      description: "Create voting contests or ticketed events with custom pricing, rules, and beautiful contestant pages."
+      title: "Launch Your Project",
+      description: "Create contests, events, crowdfunding campaigns, forms, or nominations with our easy builder."
     },
     {
       step: 3,
       icon: DollarSign,
       title: "Get Paid Automatically",
-      description: "Watch earnings flow in as users vote and buy tickets. Withdraw to your bank anytime."
+      description: "Watch earnings flow in from votes, tickets, and donations. Withdraw to your bank anytime."
     }
   ];
 
@@ -32,14 +32,14 @@ const HowItWorks = () => {
     {
       step: 2,
       icon: Ticket,
-      title: "Vote & Buy Tickets",
-      description: "Support your favorite contestants with one-tap voting. Purchase event tickets instantly."
+      title: "Vote, Donate & Buy Tickets",
+      description: "Support contestants, donate to campaigns, and purchase event tickets instantly."
     },
     {
       step: 3,
       icon: CheckCircle,
       title: "Enjoy & Earn Rewards",
-      description: "Attend events with QR tickets, track your favorites, and earn points for every action."
+      description: "Attend events with QR tickets, track your favorites, and earn ₦500 for every referral."
     }
   ];
 
