@@ -21,10 +21,7 @@ import {
   Trophy, 
   Calendar, 
   Heart, 
-  FileText,
-  Wallet,
-  AlertCircle,
-  CheckCircle
+  FileText
 } from 'lucide-react';
 
 interface PayoutDetailsDialogProps {
@@ -42,46 +39,73 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
     payout?.organization_id || null
   );
 
-  // Fetch organization's wallet balance
-  const { data: walletData, isLoading: walletLoading } = useQuery({
-    queryKey: ['org-wallet', payout?.organization_id],
+  // Fetch revenue from contests (votes) and events (tickets)
+  const { data: revenueData, isLoading: revenueLoading } = useQuery({
+    queryKey: ['org-revenue', payout?.organization_id],
     queryFn: async () => {
       if (!payout?.organization_id) return null;
       
-      const { data: wallet, error } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', payout.organization_id)
-        .maybeSingle();
+      // Get contest revenue - fetch votes for contests owned by this org
+      const { data: contestsData } = await supabase
+        .from('contests')
+        .select('id, title, vote_price, vote_currency, total_votes')
+        .eq('organization_id', payout.organization_id);
+
+      const contestRevenue = (contestsData || []).map(contest => ({
+        id: contest.id,
+        title: contest.title,
+        totalVotes: contest.total_votes || 0,
+        votePrice: contest.vote_price || 0,
+        currency: contest.vote_currency || 'USD',
+        totalRevenue: (contest.total_votes || 0) * (contest.vote_price || 0)
+      }));
+
+      // Get event revenue - fetch tickets for events owned by this org
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('id, title, currency')
+        .eq('organization_id', payout.organization_id);
+
+      const eventRevenue = await Promise.all((eventsData || []).map(async (event) => {
+        const { data: tickets } = await supabase
+          .from('tickets')
+          .select('amount_paid')
+          .eq('event_id', event.id)
+          .in('status', ['active', 'confirmed', 'used']);
+        
+        const totalRevenue = (tickets || []).reduce((sum, t) => sum + (t.amount_paid || 0), 0);
+        const ticketCount = tickets?.length || 0;
+
+        return {
+          id: event.id,
+          title: event.title,
+          ticketCount,
+          currency: event.currency || 'NGN',
+          totalRevenue
+        };
+      }));
+
+      // Calculate totals by currency
+      const totalsByCurrency: Record<string, number> = {};
       
-      if (error) throw error;
+      contestRevenue.forEach(c => {
+        totalsByCurrency[c.currency] = (totalsByCurrency[c.currency] || 0) + c.totalRevenue;
+      });
+      
+      eventRevenue.forEach(e => {
+        totalsByCurrency[e.currency] = (totalsByCurrency[e.currency] || 0) + e.totalRevenue;
+      });
 
-      // Also fetch multi-currency balances
-      let currencyBalances: any[] = [];
-      if (wallet?.id) {
-        const { data: balances } = await supabase
-          .from('wallet_currency_balances')
-          .select('*')
-          .eq('wallet_id', wallet.id)
-          .order('balance', { ascending: false });
-        currencyBalances = balances || [];
-      }
-
-      return { wallet, currencyBalances };
+      return { contestRevenue, eventRevenue, totalsByCurrency };
     },
     enabled: !!payout?.organization_id,
   });
 
   if (!payout) return null;
 
-  const wallet = walletData?.wallet;
-  const currencyBalances = walletData?.currencyBalances || [];
-  const requestedCurrencyBalance = currencyBalances.find(
-    (b: any) => b.currency === payout.currency
-  );
-  const hasSufficientBalance = requestedCurrencyBalance 
-    ? requestedCurrencyBalance.balance >= payout.amount
-    : (wallet?.balance_currency === payout.currency && wallet?.balance >= payout.amount);
+  const contestRevenue = revenueData?.contestRevenue || [];
+  const eventRevenue = revenueData?.eventRevenue || [];
+  const totalsByCurrency = revenueData?.totalsByCurrency || {};
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -99,7 +123,7 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
+            <Trophy className="h-5 w-5" />
             Payout Request Details
           </DialogTitle>
         </DialogHeader>
@@ -155,66 +179,53 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
             </CardContent>
           </Card>
 
-          {/* Wallet Balance - Critical for Approval */}
-          <Card className={`border-2 ${hasSufficientBalance ? 'border-green-500/50' : 'border-destructive/50'}`}>
+          {/* Revenue Breakdown */}
+          <Card className="border-2 border-primary/30">
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Wallet className="h-5 w-5" />
-                Organization Wallet Balance
-                {!walletLoading && (
-                  hasSufficientBalance ? (
-                    <Badge className="bg-green-500 ml-2">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Sufficient Funds
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive" className="ml-2">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      Insufficient Funds
-                    </Badge>
-                  )
-                )}
+                <Trophy className="h-5 w-5" />
+                Revenue Breakdown
               </h3>
               
-              {walletLoading ? (
-                <Skeleton className="h-20 w-full" />
-              ) : wallet ? (
+              {revenueLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
                 <div className="space-y-4">
-                  {/* Main balance in default currency */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="p-3 rounded-lg bg-muted">
-                      <p className="text-sm text-muted-foreground">Main Balance</p>
-                      <p className="text-xl font-bold">
-                        <CurrencyDisplay amount={wallet.balance || 0} currency={wallet.balance_currency || 'USD'} />
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted">
-                      <p className="text-sm text-muted-foreground">Referral Earnings</p>
-                      <p className="text-xl font-bold">
-                        <CurrencyDisplay amount={wallet.referral_earnings || 0} currency={wallet.balance_currency || 'USD'} />
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted">
-                      <p className="text-sm text-muted-foreground">Requested Amount</p>
-                      <p className="text-xl font-bold text-primary">
-                        <CurrencyDisplay amount={payout.amount} currency={payout.currency || 'USD'} />
-                      </p>
-                    </div>
+                  {/* Total Revenue by Currency */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {Object.entries(totalsByCurrency).map(([currency, total]) => (
+                      <div 
+                        key={currency} 
+                        className={`p-3 rounded-lg border ${currency === payout.currency ? 'border-primary bg-primary/10' : 'bg-muted'}`}
+                      >
+                        <p className="text-xs text-muted-foreground">Total {currency}</p>
+                        <p className="text-lg font-bold">
+                          <CurrencyDisplay amount={total as number} currency={currency} />
+                        </p>
+                      </div>
+                    ))}
+                    {Object.keys(totalsByCurrency).length === 0 && (
+                      <p className="text-muted-foreground col-span-4">No revenue data available</p>
+                    )}
                   </div>
 
-                  {/* Multi-currency balances */}
-                  {currencyBalances.length > 0 && (
+                  {/* Contest Revenue */}
+                  {contestRevenue.length > 0 && (
                     <div>
-                      <p className="text-sm font-medium mb-2">Currency Balances</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {currencyBalances.map((balance: any) => (
-                          <div 
-                            key={balance.id} 
-                            className={`p-2 rounded border ${balance.currency === payout.currency ? 'border-primary bg-primary/10' : ''}`}
-                          >
-                            <p className="text-xs text-muted-foreground">{balance.currency}</p>
-                            <p className="font-semibold">
-                              <CurrencyDisplay amount={balance.balance} currency={balance.currency} />
+                      <p className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <Trophy className="h-4 w-4" /> Contest Revenue
+                      </p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {contestRevenue.map((contest: any) => (
+                          <div key={contest.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
+                            <div>
+                              <p className="font-medium text-sm">{contest.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {contest.totalVotes.toLocaleString()} votes × <CurrencyDisplay amount={contest.votePrice} currency={contest.currency} />
+                              </p>
+                            </div>
+                            <p className="font-bold">
+                              <CurrencyDisplay amount={contest.totalRevenue} currency={contest.currency} />
                             </p>
                           </div>
                         ))}
@@ -222,25 +233,30 @@ const PayoutDetailsDialog: React.FC<PayoutDetailsDialogProps> = ({
                     </div>
                   )}
 
-                  {/* Balance comparison */}
-                  <div className={`p-3 rounded-lg ${hasSufficientBalance ? 'bg-green-500/10 border border-green-500/30' : 'bg-destructive/10 border border-destructive/30'}`}>
-                    <div className="flex items-center gap-2">
-                      {hasSufficientBalance ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-destructive" />
-                      )}
-                      <p className={`font-medium ${hasSufficientBalance ? 'text-green-600' : 'text-destructive'}`}>
-                        {hasSufficientBalance 
-                          ? `Organization has sufficient balance to cover this payout`
-                          : `Warning: Organization may not have sufficient ${payout.currency} balance for this payout`
-                        }
+                  {/* Event Revenue */}
+                  {eventRevenue.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2 flex items-center gap-1">
+                        <Calendar className="h-4 w-4" /> Event Revenue
                       </p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {eventRevenue.map((event: any) => (
+                          <div key={event.id} className="flex items-center justify-between p-2 rounded border bg-muted/50">
+                            <div>
+                              <p className="font-medium text-sm">{event.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {event.ticketCount.toLocaleString()} tickets sold
+                              </p>
+                            </div>
+                            <p className="font-bold">
+                              <CurrencyDisplay amount={event.totalRevenue} currency={event.currency} />
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-              ) : (
-                <p className="text-muted-foreground">No wallet found for this organization</p>
               )}
             </CardContent>
           </Card>
