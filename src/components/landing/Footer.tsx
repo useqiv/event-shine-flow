@@ -5,20 +5,18 @@ import appLogo from "@/assets/logo.png";
 const Footer = (props: HTMLAttributes<HTMLElement>) => {
   const footerLinks = {
     product: [
-      { name: "Features", href: "#features" },
-      { name: "For Organizers", href: "#organizers" },
-      { name: "For Participants", href: "#users" },
-      { name: "Pricing", href: "#pricing" }
+      { name: "Features", href: "/features" },
+      { name: "For Organizers", href: "/for-organizers" },
+      { name: "For Participants", href: "/for-participants" },
+      { name: "For Influencers", href: "/for-influencers" }
     ],
     company: [
-      { name: "About Us", href: "#about" },
-      { name: "Careers", href: "#careers" },
+      { name: "About Us", href: "/about" },
       { name: "Blog", href: "#blog" },
-      { name: "Press", href: "#press" },
-      { name: "Contact", href: "#contact" }
+      { name: "Contact", href: "/contact" }
     ],
     resources: [
-      { name: "Help Center", href: "#help" },
+      { name: "Help Center", href: "/help" },
       { name: "Community", href: "#community" }
     ],
     legal: [
