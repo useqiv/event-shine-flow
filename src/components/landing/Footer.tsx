@@ -19,16 +19,12 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
     ],
     resources: [
       { name: "Help Center", href: "#help" },
-      { name: "Community", href: "#community" },
-      { name: "Webinars", href: "#webinars" },
-      { name: "Case Studies", href: "#case-studies" },
-      { name: "Status Page", href: "#status" }
+      { name: "Community", href: "#community" }
     ],
     legal: [
       { name: "Privacy Policy", href: "#privacy" },
       { name: "Terms of Service", href: "#terms" },
-      { name: "Cookie Policy", href: "#cookies" },
-      { name: "GDPR", href: "#gdpr" }
+      { name: "Cookie Policy", href: "#cookies" }
     ]
   };
 
