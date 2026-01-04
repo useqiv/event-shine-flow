@@ -1,4 +1,4 @@
-import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users } from "lucide-react";
+import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Showcase = () => {
@@ -287,6 +287,91 @@ const Showcase = () => {
                   Create Form
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Influencer Marketing - Full Width */}
+          <div className="mb-12 lg:mb-16">
+            <div className="group relative bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-border rounded-3xl p-6 md:p-8 lg:p-10 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl group-hover:bg-accent/10 transition-colors" />
+              
+              <div className="relative grid lg:grid-cols-2 gap-8 items-center">
+                <div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center group-hover:scale-110 transition-all">
+                      <Megaphone className="h-7 w-7 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl lg:text-2xl font-bold text-foreground">Influencer Marketing</h3>
+                      <p className="text-sm text-muted-foreground">For creators, promoters & affiliates</p>
+                    </div>
+                  </div>
+
+                  <p className="text-muted-foreground mb-6">
+                    Empower influencers with their own dashboard. Track referrals, manage commissions, and automate payouts for your marketing partners.
+                  </p>
+
+                  {/* Features Grid */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {[
+                      { icon: "🔗", text: "Unique referral links" },
+                      { icon: "💸", text: "Auto commissions" },
+                      { icon: "📊", text: "Performance dashboard" },
+                      { icon: "💰", text: "Easy payouts" },
+                    ].map((feature, i) => (
+                      <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                        <span className="text-lg">{feature.icon}</span>
+                        <span className="text-sm text-foreground font-medium">{feature.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Button variant="default" className="rounded-full" size="lg">
+                    Become an Influencer
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+
+                {/* Mini Influencer Dashboard Preview */}
+                <div className="bg-card border border-border rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-foreground">Influencer Dashboard</span>
+                    <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-full font-semibold">Pro</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {[
+                      { label: "Clicks", value: "2,847" },
+                      { label: "Conversions", value: "324" },
+                      { label: "Earnings", value: "₦180K" },
+                    ].map((stat, i) => (
+                      <div key={i} className="text-center p-3 bg-muted rounded-xl">
+                        <div className="text-lg font-bold text-foreground">{stat.value}</div>
+                        <div className="text-xs text-muted-foreground">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2">
+                    {[
+                      { name: "Miss Ghana 2024", clicks: 1203, earnings: "₦85,000" },
+                      { name: "Afrobeats Festival", clicks: 892, earnings: "₦62,000" },
+                    ].map((campaign, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <Link2 className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">{campaign.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">{campaign.clicks} clicks</div>
+                          <div className="text-sm font-semibold text-primary">{campaign.earnings}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
