@@ -161,14 +161,6 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
             <p className="text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} USEQIV. All rights reserved.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                <span className="h-2 w-2 bg-green-500 rounded-full" />
-                All systems operational
-              </div>
-              <span className="text-xs sm:text-sm text-muted-foreground">🌍 50+ currencies</span>
-              <span className="text-xs sm:text-sm text-muted-foreground">🔒 SSL Secured</span>
-            </div>
           </div>
         </div>
       </div>
