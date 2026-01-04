@@ -120,20 +120,6 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
               </ul>
             </div>
 
-            {/* Resources */}
-            <div>
-              <h4 className="font-semibold text-foreground mb-5">Resources</h4>
-              <ul className="space-y-3">
-                {footerLinks.resources.map((link, index) => (
-                  <li key={index}>
-                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                      {link.name}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {/* Legal */}
             <div>
               <h4 className="font-semibold text-foreground mb-5">Legal</h4>
