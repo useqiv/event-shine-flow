@@ -55,20 +55,6 @@ const Features = () => {
 
       <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
         <div className="max-w-[1600px] mx-auto">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full mb-6">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm text-foreground font-medium">Powerful Features</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Everything You Need to Run{" "}
-              <span className="text-primary">World-Class Events</span>
-            </h2>
-            <p className="text-muted-foreground text-base lg:text-lg">
-              A comprehensive platform packed with features for organizers and participants alike.
-            </p>
-          </div>
 
           {/* Organizer Features */}
           <div id="organizers" className="mb-14 lg:mb-20">
