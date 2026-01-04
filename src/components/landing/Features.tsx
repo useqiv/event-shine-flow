@@ -47,39 +47,6 @@ const Features = () => {
     },
   ];
 
-  const userFeatures = [
-    {
-      icon: Wallet,
-      title: "Digital Wallet",
-      description: "Pre-load credits for instant voting, ticket purchases, and donations."
-    },
-    {
-      icon: Smartphone,
-      title: "One-Tap Actions",
-      description: "Vote, donate, and buy tickets instantly with a single tap."
-    },
-    {
-      icon: Gift,
-      title: "Referral Bonuses",
-      description: "Earn ₦500 for every friend you refer who makes their first transaction."
-    },
-    {
-      icon: Bell,
-      title: "Smart Notifications",
-      description: "Real-time alerts for contests, events, and campaign updates."
-    },
-    {
-      icon: Award,
-      title: "Track Favorites",
-      description: "Save your favorite contestants and events for quick access."
-    },
-    {
-      icon: QrCode,
-      title: "Digital Tickets",
-      description: "Access QR tickets directly from your wallet - no printing needed."
-    }
-  ];
-
   return (
     <section id="features" className="py-14 lg:py-20 bg-muted relative overflow-hidden">
       {/* Background Decorations */}
@@ -121,23 +88,6 @@ const Features = () => {
             </div>
           </div>
 
-          {/* User Features */}
-          <div id="users" className="mb-14 lg:mb-20">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="h-12 w-12 rounded-2xl bg-accent/20 flex items-center justify-center">
-                <Vote className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <h3 className="text-xl lg:text-2xl font-bold text-foreground">For Participants</h3>
-                <p className="text-muted-foreground text-sm">Seamless voting and ticket buying experience</p>
-              </div>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-              {userFeatures.map((feature, index) => (
-                <FeatureCard key={index} {...feature} />
-              ))}
-            </div>
-          </div>
 
           {/* Platform Highlights */}
           <div className="bg-card border border-border rounded-3xl p-6 lg:p-8">
