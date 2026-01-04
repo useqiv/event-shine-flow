@@ -1,4 +1,4 @@
-import { Vote, Ticket, Heart, FileText, ClipboardList, TrendingUp } from "lucide-react";
+import { Vote, Ticket, Heart, FileText, TrendingUp } from "lucide-react";
 
 const Categories = () => {
   const categories = [
@@ -6,7 +6,6 @@ const Categories = () => {
     { icon: Ticket, label: "Events", color: "group-hover:bg-accent/10 group-hover:border-accent/30" },
     { icon: Heart, label: "Campaigns", color: "group-hover:bg-pink-500/10 group-hover:border-pink-500/30" },
     { icon: FileText, label: "Forms", color: "group-hover:bg-blue-500/10 group-hover:border-blue-500/30" },
-    { icon: ClipboardList, label: "Nominations", color: "group-hover:bg-amber-500/10 group-hover:border-amber-500/30" },
     { icon: TrendingUp, label: "Influencers", color: "group-hover:bg-green-500/10 group-hover:border-green-500/30" },
   ];
 
@@ -23,7 +22,7 @@ const Categories = () => {
           </div>
           
           {/* Categories Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 lg:gap-4">
             {categories.map((category, index) => (
               <button
                 key={index}

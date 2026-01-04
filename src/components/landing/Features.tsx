@@ -18,7 +18,6 @@ import {
   ArrowRight,
   FileText,
   Heart,
-  ClipboardList,
   TrendingUp,
   Gift
 } from "lucide-react";
@@ -45,11 +44,6 @@ const Features = () => {
       icon: FileText,
       title: "Custom Forms",
       description: "Build multi-page forms with conditional logic, payments, and response management."
-    },
-    {
-      icon: ClipboardList,
-      title: "Public Nominations",
-      description: "Collect nominee submissions from the public with category-based organization."
     },
     {
       icon: TrendingUp,
