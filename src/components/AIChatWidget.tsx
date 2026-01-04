@@ -18,7 +18,7 @@ export const AIChatWidget = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm VoteBot 🤖 I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
+      content: "Hi! I'm QIV 🤖 I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
     },
   ]);
   const [input, setInput] = useState("");
@@ -156,7 +156,7 @@ export const AIChatWidget = () => {
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm">VoteBot</h3>
+              <h3 className="font-semibold text-sm">QIV</h3>
               <p className="text-xs text-muted-foreground">AI Voting Assistant</p>
             </div>
           </div>
