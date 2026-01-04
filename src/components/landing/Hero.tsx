@@ -80,7 +80,7 @@ const Hero = () => {
                 {[
                   { icon: Shield, text: "Anti-Fraud Protected" },
                   { icon: Zap, text: "Real-time Results" },
-                  { icon: CheckCircle, text: "No Credit Card" },
+                  { icon: CheckCircle, text: "Instant Setup" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <item.icon className="h-4 w-4 text-primary" />
