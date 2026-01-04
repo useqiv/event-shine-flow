@@ -81,11 +81,13 @@ const Hero = () => {
                   <Sparkles className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium text-foreground">AI-Powered</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-2 bg-muted border border-border rounded-full">
-                  <span className="text-xs text-muted-foreground">Smart Recommendations</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Smart Recommendations</span>
                 </div>
-                <div className="inline-flex items-center gap-2 px-3 py-2 bg-muted border border-border rounded-full">
-                  <span className="text-xs text-muted-foreground">Auto Content Generation</span>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Auto Content Generation</span>
                 </div>
               </div>
 
