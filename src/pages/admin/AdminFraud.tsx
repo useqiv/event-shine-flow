@@ -90,15 +90,15 @@ const AdminFraud: React.FC = () => {
   };
 
   const AlertsTable = ({ alerts }: { alerts: any[] }) => (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-x-auto">
+      <Table className="min-w-[650px]">
         <TableHeader>
           <TableRow>
             <TableHead>Type</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Entity</TableHead>
+            <TableHead className="hidden sm:table-cell">Description</TableHead>
+            <TableHead className="hidden md:table-cell">Entity</TableHead>
             <TableHead>Severity</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead className="hidden sm:table-cell">Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -108,17 +108,17 @@ const AdminFraud: React.FC = () => {
               <TableCell>
                 <div className="flex items-center gap-2">
                   {getAlertTypeIcon(alert.alert_type)}
-                  <span className="capitalize">{alert.alert_type.replace(/_/g, ' ')}</span>
+                  <span className="capitalize text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">{alert.alert_type.replace(/_/g, ' ')}</span>
                 </div>
               </TableCell>
-              <TableCell className="max-w-md truncate">{alert.description}</TableCell>
-              <TableCell>
-                <Badge variant="outline" className="capitalize">
+              <TableCell className="max-w-md truncate hidden sm:table-cell text-xs sm:text-sm">{alert.description}</TableCell>
+              <TableCell className="hidden md:table-cell">
+                <Badge variant="outline" className="capitalize text-xs">
                   {alert.entity_type}
                 </Badge>
               </TableCell>
               <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
-              <TableCell>{format(new Date(alert.created_at), 'MMM d, yyyy HH:mm')}</TableCell>
+              <TableCell className="hidden sm:table-cell text-xs sm:text-sm">{format(new Date(alert.created_at), 'MMM d, HH:mm')}</TableCell>
               <TableCell className="text-right">
                 {alert.status === 'pending' || alert.status === 'investigating' ? (
                   <div className="flex justify-end gap-2">
@@ -178,12 +178,12 @@ const AdminFraud: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Fraud Detection</h1>
-          <p className="text-muted-foreground">Monitor and investigate fraud alerts</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Fraud Detection</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Monitor and investigate fraud alerts</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card className={pendingAlerts.length > 0 ? 'border-destructive' : ''}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">

@@ -401,8 +401,8 @@ const AdminSettings: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Platform Settings</h1>
-          <p className="text-muted-foreground">Configure platform-wide settings</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Platform Settings</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Configure platform-wide settings</p>
         </div>
 
         {/* Unsaved Changes Dialog */}
@@ -427,37 +427,39 @@ const AdminSettings: React.FC = () => {
         </AlertDialog>
 
         <Tabs value={currentTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="commission">
-              Commission
-              {commissionFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
-            </TabsTrigger>
-            <TabsTrigger value="payments">
-              Payments
-              {flutterwaveFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
-            </TabsTrigger>
-            <TabsTrigger value="crypto">
-              Crypto
-              {cryptoFormDirty && <span className="ml-1.5 h-2 w-2 rounded-full bg-amber-500" />}
-            </TabsTrigger>
-            <TabsTrigger value="fraud-rules">
-              <Shield className="h-4 w-4 mr-1" />
-              Fraud Rules
-            </TabsTrigger>
-            <TabsTrigger value="roles">
-              <ShieldCheck className="h-4 w-4 mr-1" />
-              Roles
-            </TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="security">
-              <Shield className="h-4 w-4 mr-1" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="backups">
-              <Database className="h-4 w-4 mr-1" />
-              Backups
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full sm:grid-cols-4 lg:grid-cols-8 h-auto flex-wrap">
+              <TabsTrigger value="commission" className="text-xs sm:text-sm whitespace-nowrap">
+                Commission
+                {commissionFormDirty && <span className="ml-1 h-2 w-2 rounded-full bg-amber-500" />}
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="text-xs sm:text-sm whitespace-nowrap">
+                Payments
+                {flutterwaveFormDirty && <span className="ml-1 h-2 w-2 rounded-full bg-amber-500" />}
+              </TabsTrigger>
+              <TabsTrigger value="crypto" className="text-xs sm:text-sm whitespace-nowrap">
+                Crypto
+                {cryptoFormDirty && <span className="ml-1 h-2 w-2 rounded-full bg-amber-500" />}
+              </TabsTrigger>
+              <TabsTrigger value="fraud-rules" className="text-xs sm:text-sm whitespace-nowrap">
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                <span className="hidden sm:inline">Fraud</span> Rules
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="text-xs sm:text-sm whitespace-nowrap">
+                <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                Roles
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs sm:text-sm whitespace-nowrap">Notify</TabsTrigger>
+              <TabsTrigger value="security" className="text-xs sm:text-sm whitespace-nowrap">
+                <Shield className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                Security
+              </TabsTrigger>
+              <TabsTrigger value="backups" className="text-xs sm:text-sm whitespace-nowrap">
+                <Database className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                Backups
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="commission" className="space-y-6 mt-6">
             {/* Commission Settings */}

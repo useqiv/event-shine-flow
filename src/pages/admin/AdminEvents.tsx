@@ -89,37 +89,37 @@ const AdminEvents: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Event Management</h1>
-          <p className="text-muted-foreground">View and manage all events</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Event Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">View and manage all events</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{events?.length || 0}</div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">{events?.length || 0}</div>
               <p className="text-xs text-muted-foreground">Total Events</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-500">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-green-500">
                 {events?.filter(e => e.is_active && new Date(e.event_date) > new Date()).length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Active</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {events?.reduce((sum, e) => sum + (e.tickets?.[0]?.count || 0), 0)?.toLocaleString() || 0}
               </div>
               <p className="text-xs text-muted-foreground">Tickets Sold</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {events?.reduce((sum, e) => sum + (e.ticket_types?.[0]?.count || 0), 0) || 0}
               </div>
               <p className="text-xs text-muted-foreground">Ticket Types</p>
@@ -130,7 +130,7 @@ const AdminEvents: React.FC = () => {
         {/* Events Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Events</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">All Events</CardTitle>
             <CardDescription>View event details and ticket sales</CardDescription>
           </CardHeader>
           <CardContent>
@@ -148,16 +148,16 @@ const AdminEvents: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Event</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead className="hidden sm:table-cell">Category</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Venue</TableHead>
-                    <TableHead>Tickets Sold</TableHead>
-                    <TableHead>Event Date</TableHead>
+                    <TableHead className="hidden md:table-cell">Venue</TableHead>
+                    <TableHead>Tickets</TableHead>
+                    <TableHead className="hidden sm:table-cell">Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -165,29 +165,29 @@ const AdminEvents: React.FC = () => {
                   {filteredEvents.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           {event.image_url && (
                             <img 
                               src={event.image_url} 
                               alt={event.title}
-                              className="h-10 w-10 rounded object-cover"
+                              className="h-8 w-8 sm:h-10 sm:w-10 rounded object-cover"
                             />
                           )}
-                          <span className="font-medium">{event.title}</span>
+                          <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{event.title}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline">{event.category}</Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(event)}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-1 text-sm">
                           <MapPin className="h-3 w-3" />
-                          {event.venue}
+                          <span className="truncate max-w-[100px]">{event.venue}</span>
                         </div>
                       </TableCell>
                       <TableCell>{event.tickets?.[0]?.count || 0}</TableCell>
-                      <TableCell>{event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'TBD'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'TBD'}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

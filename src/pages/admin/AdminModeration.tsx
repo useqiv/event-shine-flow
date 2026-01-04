@@ -26,7 +26,7 @@ const AdminModeration: React.FC = () => {
   };
 
   const ContentGrid = ({ items }: { items: any[] }) => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
         <Card key={item.id}>
           <CardContent className="p-4">
@@ -63,14 +63,14 @@ const AdminModeration: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Content Moderation</h1>
-          <p className="text-muted-foreground">Review and approve uploaded content</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Content Moderation</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Review and approve uploaded content</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent className="p-4"><div className="flex items-center gap-2"><Clock className="h-5 w-5 text-yellow-500" /><div><div className="text-2xl font-bold">{pending.length}</div><p className="text-xs text-muted-foreground">Pending</p></div></div></CardContent></Card>
-          <Card><CardContent className="p-4"><div className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500" /><div><div className="text-2xl font-bold">{approved.length}</div><p className="text-xs text-muted-foreground">Approved</p></div></div></CardContent></Card>
-          <Card><CardContent className="p-4"><div className="flex items-center gap-2"><XCircle className="h-5 w-5 text-destructive" /><div><div className="text-2xl font-bold">{rejected.length}</div><p className="text-xs text-muted-foreground">Rejected</p></div></div></CardContent></Card>
+        <div className="grid gap-3 sm:gap-4 grid-cols-3">
+          <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2"><Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" /><div><div className="text-xl sm:text-2xl font-bold">{pending.length}</div><p className="text-xs text-muted-foreground">Pending</p></div></div></CardContent></Card>
+          <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2"><CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" /><div><div className="text-xl sm:text-2xl font-bold">{approved.length}</div><p className="text-xs text-muted-foreground">Approved</p></div></div></CardContent></Card>
+          <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2"><XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-destructive" /><div><div className="text-xl sm:text-2xl font-bold">{rejected.length}</div><p className="text-xs text-muted-foreground">Rejected</p></div></div></CardContent></Card>
         </div>
 
         <Card>
