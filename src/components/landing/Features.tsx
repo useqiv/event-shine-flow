@@ -96,7 +96,7 @@ const Features = () => {
                 { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
                 { icon: Globe, title: "Multi-Currency", desc: "50+ currencies supported" },
                 { icon: Smartphone, title: "Mobile-First", desc: "All devices optimized" },
-                { icon: BarChart3, title: "API Ready", desc: "RESTful APIs available" },
+                { icon: CreditCard, title: "Fast Payouts", desc: "Quick settlements" },
               ].map((item, i) => (
                 <div key={i} className="text-center p-5 lg:p-6 bg-muted rounded-2xl hover:bg-primary/5 transition-colors group">
                   <div className="h-12 w-12 rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-4 group-hover:border-primary/50 transition-colors">
