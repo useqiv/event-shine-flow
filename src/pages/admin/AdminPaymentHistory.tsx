@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 interface PaymentTransaction {
   id: string;
-  type: 'vote' | 'ticket';
+  type: 'vote' | 'ticket' | 'donation' | 'form';
   amount: number;
   currency: string;
   status: string;
@@ -31,6 +31,8 @@ interface PaymentTransaction {
   user_email: string | null;
   event_title?: string;
   contest_title?: string;
+  campaign_title?: string;
+  form_title?: string;
   quantity: number;
 }
 
@@ -98,16 +100,45 @@ const AdminPaymentHistory = () => {
     },
   });
 
-  // Fetch wallet transactions for crypto payments
-  const { data: walletTxs, isLoading: walletLoading } = useQuery({
-    queryKey: ['admin-wallet-transactions'],
+  // Fetch donations
+  const { data: donations, isLoading: donationsLoading } = useQuery({
+    queryKey: ['admin-donations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('wallet_transactions')
-        .select('*')
-        .in('type', ['vote_purchase', 'ticket_purchase', 'crypto_payment'])
-        .eq('status', 'completed')
+        .from('donations')
+        .select(`
+          id,
+          amount,
+          currency,
+          payment_method,
+          status,
+          created_at,
+          campaign:campaigns(id, title, currency)
+        `)
         .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch form responses with payments
+  const { data: formResponses, isLoading: formsLoading } = useQuery({
+    queryKey: ['admin-form-payments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('form_responses')
+        .select(`
+          id,
+          payment_amount,
+          payment_status,
+          payment_reference,
+          submitted_at,
+          form:forms(id, title, payment_currency)
+        `)
+        .not('payment_amount', 'is', null)
+        .gt('payment_amount', 0)
+        .order('submitted_at', { ascending: false });
       
       if (error) throw error;
       return data;
@@ -171,10 +202,46 @@ const AdminPaymentHistory = () => {
       });
     });
 
+    // Add donations
+    donations?.forEach((donation: any) => {
+      transactions.push({
+        id: donation.id,
+        type: 'donation',
+        amount: donation.amount,
+        currency: donation.currency || donation.campaign?.currency || 'NGN',
+        status: donation.status,
+        payment_method: donation.payment_method,
+        created_at: donation.created_at,
+        user_name: null,
+        user_email: null,
+        campaign_title: donation.campaign?.title,
+        quantity: 1,
+      });
+    });
+
+    // Add form payments
+    formResponses?.forEach((response: any) => {
+      if (response.payment_amount && response.payment_amount > 0) {
+        transactions.push({
+          id: response.id,
+          type: 'form',
+          amount: response.payment_amount,
+          currency: response.form?.payment_currency || 'NGN',
+          status: response.payment_status || 'pending',
+          payment_method: 'flutterwave',
+          created_at: response.submitted_at,
+          user_name: null,
+          user_email: null,
+          form_title: response.form?.title,
+          quantity: 1,
+        });
+      }
+    });
+
     return transactions.sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [votes, tickets]);
+  }, [votes, tickets, donations, formResponses]);
 
   // Apply filters
   const filteredTransactions = useMemo(() => {
@@ -183,6 +250,8 @@ const AdminPaymentHistory = () => {
       const searchMatch = !searchTerm || 
         tx.contest_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.event_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.campaign_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.form_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.id.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Status filter
@@ -246,7 +315,7 @@ const AdminPaymentHistory = () => {
     const rows = filteredTransactions.map(tx => [
       format(new Date(tx.created_at), 'yyyy-MM-dd HH:mm'),
       tx.type,
-      tx.contest_title || tx.event_title || '-',
+      tx.contest_title || tx.event_title || tx.campaign_title || tx.form_title || '-',
       tx.quantity,
       tx.currency,
       tx.amount,
@@ -265,7 +334,7 @@ const AdminPaymentHistory = () => {
     URL.revokeObjectURL(url);
   };
 
-  const isLoading = votesLoading || ticketsLoading || walletLoading;
+  const isLoading = votesLoading || ticketsLoading || donationsLoading || formsLoading;
 
   return (
     <AdminLayout>
@@ -352,6 +421,8 @@ const AdminPaymentHistory = () => {
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="vote">Votes</SelectItem>
                   <SelectItem value="ticket">Tickets</SelectItem>
+                  <SelectItem value="donation">Donations</SelectItem>
+                  <SelectItem value="form">Form Payments</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -466,12 +537,12 @@ const AdminPaymentHistory = () => {
                           {format(new Date(tx.created_at), 'MMM d, yyyy HH:mm')}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={tx.type === 'vote' ? 'default' : 'secondary'}>
-                            {tx.type === 'vote' ? '🗳️ Vote' : '🎫 Ticket'}
+                          <Badge variant={tx.type === 'vote' ? 'default' : tx.type === 'ticket' ? 'secondary' : tx.type === 'donation' ? 'outline' : 'default'}>
+                            {tx.type === 'vote' ? '🗳️ Vote' : tx.type === 'ticket' ? '🎫 Ticket' : tx.type === 'donation' ? '💝 Donation' : '📋 Form'}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
-                          {tx.contest_title || tx.event_title || '-'}
+                          {tx.contest_title || tx.event_title || tx.campaign_title || tx.form_title || '-'}
                         </TableCell>
                         <TableCell>{tx.quantity}</TableCell>
                         <TableCell>
