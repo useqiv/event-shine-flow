@@ -24,7 +24,7 @@ const Showcase = () => {
               <span className="text-primary">One Platform</span>
             </h2>
             <p className="text-muted-foreground text-base lg:text-lg">
-              Whether you're running a beauty pageant or selling concert tickets, VotePass has you covered.
+              Whether you're running a beauty pageant or selling concert tickets, USEQIV has you covered.
             </p>
           </div>
 

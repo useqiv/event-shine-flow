@@ -194,7 +194,7 @@ const Hero = () => {
                 </div>
                 <div>
                   <div className="text-xs sm:text-sm font-bold text-foreground">500+ Organizers</div>
-                  <div className="text-xs text-muted-foreground">Trust VotePass</div>
+                  <div className="text-xs text-muted-foreground">Trust USEQIV</div>
                 </div>
               </div>
             </div>
