@@ -1,0 +1,134 @@
+import Navbar from "@/components/landing/Navbar";
+import Footer from "@/components/landing/Footer";
+import { Users, Target, Award, Globe, Heart, Zap } from "lucide-react";
+
+const About = () => {
+  const values = [
+    { icon: Heart, title: "Trust & Transparency", description: "We believe in building trust through transparent processes and secure systems." },
+    { icon: Users, title: "Community First", description: "Our platform is designed to empower communities and bring people together." },
+    { icon: Zap, title: "Innovation", description: "We continuously innovate to provide the best tools for event organizers." },
+    { icon: Globe, title: "Accessibility", description: "Making event management accessible to organizers of all sizes across Africa." },
+  ];
+
+  const team = [
+    { name: "Team Member 1", role: "CEO & Founder", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop" },
+    { name: "Team Member 2", role: "CTO", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop" },
+    { name: "Team Member 3", role: "Head of Operations", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop" },
+    { name: "Team Member 4", role: "Head of Marketing", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section className="pt-32 pb-16 bg-muted">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
+              About <span className="text-primary">USEQIV</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground">
+              We're on a mission to revolutionize how events are organized, managed, and experienced across Africa.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="py-16 lg:py-24">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
+                <Target className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Our Mission</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+                Empowering Event Organizers Across Africa
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                USEQIV was founded with a simple yet powerful vision: to provide African event organizers with world-class tools to create, manage, and grow their events.
+              </p>
+              <p className="text-muted-foreground">
+                From voting contests to ticketed events, crowdfunding campaigns to form submissions, we provide an all-in-one platform that handles every aspect of event management with security, transparency, and ease of use at its core.
+              </p>
+            </div>
+            <div className="bg-muted rounded-3xl p-8 border border-border">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="text-center p-4">
+                  <div className="text-4xl font-bold text-primary mb-2">1M+</div>
+                  <div className="text-sm text-muted-foreground">Votes Cast</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-4xl font-bold text-primary mb-2">500+</div>
+                  <div className="text-sm text-muted-foreground">Organizers</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-4xl font-bold text-primary mb-2">25+</div>
+                  <div className="text-sm text-muted-foreground">Countries</div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-4xl font-bold text-primary mb-2">₦50M+</div>
+                  <div className="text-sm text-muted-foreground">Processed</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="py-16 lg:py-24 bg-muted">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Our Values</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The principles that guide everything we do at USEQIV.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value, index) => (
+              <div key={index} className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <value.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{value.title}</h3>
+                <p className="text-sm text-muted-foreground">{value.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-16 lg:py-24">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Meet Our Team</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The passionate people behind USEQIV working to transform the event industry.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {team.map((member, index) => (
+              <div key={index} className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
+                <img 
+                  src={member.image} 
+                  alt={member.name}
+                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
+                />
+                <h3 className="text-lg font-semibold text-foreground mb-1">{member.name}</h3>
+                <p className="text-sm text-muted-foreground">{member.role}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+};
+
+export default About;

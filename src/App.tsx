@@ -47,6 +47,13 @@ import FormBuilder from "./pages/FormBuilder";
 import FormResponses from "./pages/FormResponses";
 import PublicForm from "./pages/PublicForm";
 import EmbedForm from "./pages/EmbedForm";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Features from "./pages/Features";
+import ForOrganizers from "./pages/ForOrganizers";
+import ForParticipants from "./pages/ForParticipants";
+import ForInfluencers from "./pages/ForInfluencers";
+import HelpCenter from "./pages/HelpCenter";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
@@ -173,6 +180,13 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/contact" element={<Contact />} />
+    <Route path="/features" element={<Features />} />
+    <Route path="/for-organizers" element={<ForOrganizers />} />
+    <Route path="/for-participants" element={<ForParticipants />} />
+    <Route path="/for-influencers" element={<ForInfluencers />} />
+    <Route path="/help" element={<HelpCenter />} />
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
