@@ -288,7 +288,9 @@ const AdminPaymentHistory = () => {
 
   // Calculate totals per currency
   const currencyTotals = useMemo(() => {
-    const completed = filteredTransactions.filter(t => t.status === 'completed' || t.status === 'active');
+    // Include all successful transaction statuses for revenue calculation
+    const successStatuses = ['completed', 'active', 'confirmed', 'used'];
+    const completed = filteredTransactions.filter(t => successStatuses.includes(t.status));
     const byCurrency: Record<string, number> = {};
     
     completed.forEach(t => {
