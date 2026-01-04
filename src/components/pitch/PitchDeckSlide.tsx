@@ -19,21 +19,21 @@ export const PitchDeckSlide = ({
   return (
     <div 
       className={cn(
-        "min-h-[600px] p-8 md:p-12 rounded-2xl bg-card border border-border shadow-xl",
-        "transition-all duration-500 ease-out",
-        isActive ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-8 scale-95 absolute pointer-events-none",
+        "min-h-[560px] p-10 md:p-16 rounded-xl bg-card border border-border/50",
+        "transition-all duration-300 ease-out",
+        isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 absolute pointer-events-none",
         className
       )}
     >
-      <div className="mb-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+      <div className="mb-10">
+        <h2 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-lg text-muted-foreground">{subtitle}</p>
+          <p className="text-lg text-muted-foreground mt-2 font-medium">{subtitle}</p>
         )}
       </div>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {children}
       </div>
     </div>
