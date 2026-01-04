@@ -219,21 +219,27 @@ const AdminPaymentHistory = () => {
     });
   }, [allTransactions, searchTerm, statusFilter, methodFilter, typeFilter, entityFilter, dateRange, votes, tickets]);
 
-  // Calculate totals
-  const totals = useMemo(() => {
+  // Calculate totals per currency
+  const currencyTotals = useMemo(() => {
     const completed = filteredTransactions.filter(t => t.status === 'completed' || t.status === 'active');
+    const byCurrency: Record<string, number> = {};
+    
+    completed.forEach(t => {
+      const currency = t.currency || 'NGN';
+      byCurrency[currency] = (byCurrency[currency] || 0) + t.amount;
+    });
+    
+    return byCurrency;
+  }, [filteredTransactions]);
+
+  // Calculate count totals
+  const totals = useMemo(() => {
     return {
-      total: filteredTransactions.reduce((sum, t) => sum + t.amount, 0),
-      completed: completed.reduce((sum, t) => sum + t.amount, 0),
       count: filteredTransactions.length,
       votes: filteredTransactions.filter(t => t.type === 'vote').length,
       tickets: filteredTransactions.filter(t => t.type === 'ticket').length,
     };
   }, [filteredTransactions]);
-
-  const formatAmount = (amount: number) => {
-    return formatCurrency(amount, platformCurrency);
-  };
 
   const exportToCSV = () => {
     const headers = ['Date', 'Type', 'Entity', 'Quantity', 'Currency', 'Amount', 'Payment Method', 'Status', 'ID'];
@@ -276,17 +282,11 @@ const AdminPaymentHistory = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Transactions</CardDescription>
               <CardTitle className="text-2xl">{totals.count}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Revenue</CardDescription>
-              <CardTitle className="text-2xl"><CurrencyDisplay amount={totals.completed} currency={platformCurrency} size="lg" /></CardTitle>
             </CardHeader>
           </Card>
           <Card>
@@ -302,6 +302,27 @@ const AdminPaymentHistory = () => {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Revenue by Currency Cards */}
+        {Object.keys(currencyTotals).length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.entries(currencyTotals)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([currency, amount]) => (
+                <Card key={currency} className="border-l-4 border-l-primary">
+                  <CardHeader className="pb-2">
+                    <CardDescription className="flex items-center gap-2">
+                      <Badge variant="outline">{currency}</Badge>
+                      Revenue
+                    </CardDescription>
+                    <CardTitle className="text-2xl">
+                      <CurrencyDisplay amount={amount} currency={currency} />
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+              ))}
+          </div>
+        )}
 
         {/* Filters */}
         <Card>
