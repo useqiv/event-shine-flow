@@ -40,6 +40,7 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import appLogo from "@/assets/logo.png";
 
 const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut } = useAuth();
@@ -124,13 +125,8 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/org/dashboard" className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-              <Vote className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <span className="font-bold text-lg text-primary">VotePass</span>
-              <p className="text-xs text-muted-foreground">Organization</p>
-            </div>
+            <img src={appLogo} alt="USEQIV" className="h-10" />
+            <p className="text-xs text-muted-foreground">Organization</p>
           </Link>
         </div>
 
@@ -300,10 +296,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
               {/* Mobile Logo */}
               <Link to="/org/dashboard" className="flex items-center gap-2 md:hidden">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Vote className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <span className="font-bold text-lg text-primary">VotePass</span>
+                <img src={appLogo} alt="USEQIV" className="h-8" />
               </Link>
 
               {/* Page Title - Desktop */}
@@ -375,13 +368,8 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               {/* Mobile Logo */}
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <Link to="/org/dashboard" className="flex items-center gap-3" onClick={() => setIsMobileMenuOpen(false)}>
-                  <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-                    <Vote className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-lg text-primary">VotePass</span>
-                    <p className="text-xs text-muted-foreground">Organization</p>
-                  </div>
+                  <img src={appLogo} alt="USEQIV" className="h-10" />
+                  <p className="text-xs text-muted-foreground">Organization</p>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                   <X className="h-5 w-5" />

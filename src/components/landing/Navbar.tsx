@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Vote, Search, User, LogOut } from "lucide-react";
+import { Menu, X, Search, User, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-
+import appLogo from "@/assets/logo.png";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -99,10 +99,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16 md:h-20 gap-4">
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="flex items-center gap-0.5 h-10 w-10 bg-primary rounded-xl justify-center group-hover:scale-105 transition-transform">
-              <Vote className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground hidden sm:block">VotePass</span>
+            <img src={appLogo} alt="USEQIV" className="h-10 group-hover:scale-105 transition-transform" />
           </a>
 
           {/* Search Bar - Desktop */}
