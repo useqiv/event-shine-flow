@@ -267,11 +267,8 @@ const Auth = () => {
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Home</span>
           </Link>
-          <Link to="/" className="flex items-center justify-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-              <Vote className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-2xl text-foreground">VoteApp</span>
+          <Link to="/" className="flex items-center justify-center">
+            <img src="/favicon.png" alt="USEQIV" className="h-12 w-auto" />
           </Link>
         </div>
 
