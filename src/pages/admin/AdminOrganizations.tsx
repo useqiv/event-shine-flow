@@ -152,37 +152,37 @@ const AdminOrganizations: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Organization Management</h1>
-          <p className="text-muted-foreground">Manage company accounts</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Organization Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Manage company accounts</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{organizations?.length || 0}</div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">{organizations?.length || 0}</div>
               <p className="text-xs text-muted-foreground">Total Organizations</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-500">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-green-500">
                 {organizations?.filter(o => o.approval?.status === 'approved').length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Approved</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-500">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-500">
                 {organizations?.filter(o => !o.approval || o.approval?.status === 'pending').length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Pending</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-destructive">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-destructive">
                 {organizations?.filter(o => o.approval?.is_blacklisted).length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Blacklisted</p>
@@ -193,7 +193,7 @@ const AdminOrganizations: React.FC = () => {
         {/* Organizations Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Organizations</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">All Organizations</CardTitle>
             <CardDescription>View and manage organization accounts</CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,15 +211,15 @@ const AdminOrganizations: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Organization</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Commission Rate</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead className="hidden md:table-cell">Commission Rate</TableHead>
+                    <TableHead className="hidden sm:table-cell">Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -227,19 +227,21 @@ const AdminOrganizations: React.FC = () => {
                   {filteredOrgs.map((org) => (
                     <TableRow key={org.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                             <AvatarImage src={org.avatar_url || ''} />
                             <AvatarFallback>
                               <Building2 className="h-4 w-4" />
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{org.full_name || 'Unknown'}</span>
+                          <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{org.full_name || 'Unknown'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{org.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <span className="truncate max-w-[150px] block">{org.email}</span>
+                      </TableCell>
                       <TableCell>{getStatusBadge(org)}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div className="text-sm">
                           {org.approval?.vote_commission_rate || org.approval?.ticket_commission_rate ? (
                             <div className="space-y-0.5">
@@ -260,7 +262,7 @@ const AdminOrganizations: React.FC = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{format(new Date(org.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{format(new Date(org.created_at), 'MMM d, yyyy')}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

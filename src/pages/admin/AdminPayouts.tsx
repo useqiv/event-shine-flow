@@ -145,8 +145,8 @@ const AdminPayouts: React.FC = () => {
   };
 
   const PayoutTable = ({ payouts, showCheckbox = false }: { payouts: any[]; showCheckbox?: boolean }) => (
-    <div className="rounded-md border">
-      <Table>
+    <div className="rounded-md border overflow-x-auto">
+      <Table className="min-w-[800px]">
         <TableHeader>
           <TableRow>
             {showCheckbox && (
@@ -159,10 +159,10 @@ const AdminPayouts: React.FC = () => {
             )}
             <TableHead>Organization</TableHead>
             <TableHead>Amount</TableHead>
-            <TableHead>Method</TableHead>
-            <TableHead>Account Details</TableHead>
+            <TableHead className="hidden sm:table-cell">Method</TableHead>
+            <TableHead className="hidden md:table-cell">Account Details</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead className="hidden sm:table-cell">Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -179,17 +179,17 @@ const AdminPayouts: React.FC = () => {
               )}
               <TableCell>
                 <div>
-                  <p className="font-medium">{payout.organization?.full_name || 'Unknown'}</p>
-                  <p className="text-xs text-muted-foreground">{payout.organization?.email}</p>
+                  <p className="font-medium truncate max-w-[120px] sm:max-w-none">{payout.organization?.full_name || 'Unknown'}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">{payout.organization?.email}</p>
                 </div>
               </TableCell>
               <TableCell className="font-medium">
                 <CurrencyDisplay amount={payout.amount} currency={payout.currency || 'USD'} />
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden sm:table-cell">
                 <Badge variant="outline" className="capitalize">{payout.payment_method}</Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 {payout.payment_method === 'bank' ? (
                   <div className="text-sm">
                     <p>{payout.bank_name}</p>
@@ -197,13 +197,13 @@ const AdminPayouts: React.FC = () => {
                     <p className="text-muted-foreground">{payout.account_name}</p>
                   </div>
                 ) : (
-                  <p className="text-sm font-mono">{payout.usdt_address}</p>
+                  <p className="text-sm font-mono truncate max-w-[150px]">{payout.usdt_address}</p>
                 )}
               </TableCell>
               <TableCell>{getStatusBadge(payout.status)}</TableCell>
-              <TableCell>{format(new Date(payout.created_at), 'MMM d, yyyy')}</TableCell>
+              <TableCell className="hidden sm:table-cell">{format(new Date(payout.created_at), 'MMM d, yyyy')}</TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-1 sm:gap-2 flex-wrap">
                   <Button 
                     size="sm" 
                     variant="outline"
@@ -212,8 +212,8 @@ const AdminPayouts: React.FC = () => {
                       setDetailsDialogOpen(true);
                     }}
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Details
+                    <Eye className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Details</span>
                   </Button>
                   {payout.status === 'pending' && (
                     <>
@@ -225,8 +225,8 @@ const AdminPayouts: React.FC = () => {
                           setApproveDialogOpen(true);
                         }}
                       >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
+                        <CheckCircle className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Approve</span>
                       </Button>
                       <Button 
                         size="sm" 
@@ -234,8 +234,8 @@ const AdminPayouts: React.FC = () => {
                         onClick={() => handleReject(payout)}
                         disabled={rejectPayout.isPending}
                       >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
+                        <XCircle className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Reject</span>
                       </Button>
                     </>
                   )}
@@ -284,12 +284,12 @@ const AdminPayouts: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Payout Management</h1>
-          <p className="text-muted-foreground">Process payout requests</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Payout Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Process payout requests</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -358,40 +358,42 @@ const AdminPayouts: React.FC = () => {
 
         {/* Payouts Tabs */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>All Payouts</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">All Payouts</CardTitle>
                 <CardDescription>Review and process payout requests</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {selectedPayouts.size > 0 && (
                   <>
                     <Button 
+                      size="sm"
                       className="bg-green-500 hover:bg-green-600"
                       onClick={() => {
                         setBulkActionType('approve');
                         setBulkActionDialogOpen(true);
                       }}
                     >
-                      <CheckSquare className="h-4 w-4 mr-2" />
-                      Approve {selectedPayouts.size}
+                      <CheckSquare className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Approve</span> {selectedPayouts.size}
                     </Button>
                     <Button 
+                      size="sm"
                       variant="destructive"
                       onClick={() => {
                         setBulkActionType('reject');
                         setBulkActionDialogOpen(true);
                       }}
                     >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject {selectedPayouts.size}
+                      <XCircle className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Reject</span> {selectedPayouts.size}
                     </Button>
                   </>
                 )}
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Report
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Export Report</span>
                 </Button>
               </div>
             </div>

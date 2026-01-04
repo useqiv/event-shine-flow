@@ -179,60 +179,60 @@ const AdminRefunds = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Refund Management</h1>
-          <p className="text-muted-foreground">Process and manage refund requests</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Refund Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Process and manage refund requests</p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-500/10 rounded-lg">
-                  <Clock className="h-5 w-5 text-yellow-500" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-yellow-500/10 rounded-lg">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pending</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.pending}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/10 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-green-500/10 rounded-lg">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Processed</p>
-                  <p className="text-2xl font-bold">{stats.processed}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Processed</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.processed}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500/10 rounded-lg">
-                  <XCircle className="h-5 w-5 text-red-500" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-red-500/10 rounded-lg">
+                  <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Rejected</p>
-                  <p className="text-2xl font-bold">{stats.rejected}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-xl sm:text-2xl font-bold">{stats.rejected}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-primary" />
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Refunded</p>
-                  <p className="text-2xl font-bold">₦{stats.totalAmount.toLocaleString()}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Refunded</p>
+                  <p className="text-xl sm:text-2xl font-bold">₦{stats.totalAmount.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -268,9 +268,9 @@ const AdminRefunds = () => {
         </Card>
 
         {/* Refunds Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Refund Requests</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base sm:text-lg">Refund Requests</CardTitle>
             <Button 
               variant="outline" 
               size="sm"
@@ -307,21 +307,21 @@ const AdminRefunds = () => {
               <Download className="h-4 w-4 mr-2" /> Export CSV
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden sm:table-cell">Type</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Reason</TableHead>
+                    <TableHead className="hidden md:table-cell">Reason</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead className="hidden sm:table-cell">Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -339,15 +339,15 @@ const AdminRefunds = () => {
                         <TableRow key={refund.id}>
                           <TableCell>
                             <div>
-                              <p className="font-medium">{user?.full_name || 'Unknown'}</p>
-                              <p className="text-xs text-muted-foreground">{user?.email}</p>
+                              <p className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{user?.full_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-none">{user?.email}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="capitalize">{refund.original_transaction_type}</TableCell>
-                          <TableCell className="font-medium">₦{Number(refund.amount).toLocaleString()}</TableCell>
-                          <TableCell className="max-w-xs truncate">{refund.reason}</TableCell>
+                          <TableCell className="capitalize hidden sm:table-cell text-sm">{refund.original_transaction_type}</TableCell>
+                          <TableCell className="font-medium text-sm">₦{Number(refund.amount).toLocaleString()}</TableCell>
+                          <TableCell className="max-w-xs truncate hidden md:table-cell text-sm">{refund.reason}</TableCell>
                           <TableCell>{getStatusBadge(refund.status)}</TableCell>
-                          <TableCell>{format(new Date(refund.created_at), 'MMM d, yyyy')}</TableCell>
+                          <TableCell className="hidden sm:table-cell text-sm">{format(new Date(refund.created_at), 'MMM d, yyyy')}</TableCell>
                           <TableCell>
                             {refund.status === 'pending' ? (
                               <div className="flex gap-2">

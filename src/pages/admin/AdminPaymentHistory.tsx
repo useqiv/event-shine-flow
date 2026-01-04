@@ -335,52 +335,52 @@ const AdminPaymentHistory = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Payment History</h1>
-            <p className="text-muted-foreground">View and analyze all payment transactions</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Payment History</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">View and analyze all payment transactions</p>
           </div>
-          <Button onClick={exportToCSV} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
+          <Button onClick={exportToCSV} variant="outline" size="sm">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export CSV</span>
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-3">
           <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Transactions</CardDescription>
-              <CardTitle className="text-2xl">{totals.count}</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardDescription className="text-xs sm:text-sm">Total Transactions</CardDescription>
+              <CardTitle className="text-lg sm:text-2xl">{totals.count}</CardTitle>
             </CardHeader>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Vote Purchases</CardDescription>
-              <CardTitle className="text-2xl">{totals.votes}</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardDescription className="text-xs sm:text-sm">Vote Purchases</CardDescription>
+              <CardTitle className="text-lg sm:text-2xl">{totals.votes}</CardTitle>
             </CardHeader>
           </Card>
           <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Ticket Purchases</CardDescription>
-              <CardTitle className="text-2xl">{totals.tickets}</CardTitle>
+            <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+              <CardDescription className="text-xs sm:text-sm">Ticket Purchases</CardDescription>
+              <CardTitle className="text-lg sm:text-2xl">{totals.tickets}</CardTitle>
             </CardHeader>
           </Card>
         </div>
 
         {/* Revenue by Currency Cards */}
         {Object.keys(currencyTotals).length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
             {Object.entries(currencyTotals)
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([currency, amount]) => (
                 <Card key={currency} className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-2">
-                    <CardDescription className="flex items-center gap-2">
-                      <Badge variant="outline">{currency}</Badge>
+                  <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-6">
+                    <CardDescription className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Badge variant="outline" className="text-xs">{currency}</Badge>
                       Revenue
                     </CardDescription>
-                    <CardTitle className="text-2xl">
+                    <CardTitle className="text-base sm:text-2xl">
                       <CurrencyDisplay amount={amount} currency={currency} />
                     </CardTitle>
                   </CardHeader>
@@ -391,21 +391,21 @@ const AdminPaymentHistory = () => {
 
         {/* Filters */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
               Filters
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="relative">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+              <div className="relative col-span-2 sm:col-span-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 text-sm"
                 />
               </div>
 
@@ -485,13 +485,13 @@ const AdminPaymentHistory = () => {
 
         {/* Transactions Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Transactions</CardTitle>
-            <CardDescription>
+          <CardHeader className="pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">Transactions</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Showing {filteredTransactions.length} of {allTransactions.length} transactions
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             {isLoading ? (
               <div className="space-y-3">
                 {[...Array(5)].map((_, i) => (
@@ -499,17 +499,17 @@ const AdminPaymentHistory = () => {
                 ))}
               </div>
             ) : (
-              <Table>
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Contest/Event</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Currency</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Type</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden sm:table-cell">Contest/Event</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden md:table-cell">Qty</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden md:table-cell">Currency</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Amount</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Method</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,32 +522,33 @@ const AdminPaymentHistory = () => {
                   ) : (
                     filteredTransactions.slice(0, 100).map((tx) => (
                       <TableRow key={tx.id}>
-                        <TableCell className="text-sm">
-                          {format(new Date(tx.created_at), 'MMM d, yyyy HH:mm')}
+                        <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                          {format(new Date(tx.created_at), 'MMM d, HH:mm')}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={tx.type === 'vote' ? 'default' : tx.type === 'ticket' ? 'secondary' : tx.type === 'donation' ? 'outline' : 'default'}>
-                            {tx.type === 'vote' ? '🗳️ Vote' : tx.type === 'ticket' ? '🎫 Ticket' : tx.type === 'donation' ? '💝 Donation' : '📋 Form'}
+                          <Badge variant={tx.type === 'vote' ? 'default' : tx.type === 'ticket' ? 'secondary' : tx.type === 'donation' ? 'outline' : 'default'} className="text-xs">
+                            {tx.type === 'vote' ? '🗳️' : tx.type === 'ticket' ? '🎫' : tx.type === 'donation' ? '💝' : '📋'}
+                            <span className="hidden sm:inline ml-1">{tx.type}</span>
                           </Badge>
                         </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
+                        <TableCell className="max-w-[150px] truncate hidden sm:table-cell text-xs sm:text-sm">
                           {tx.contest_title || tx.event_title || tx.campaign_title || tx.form_title || '-'}
                         </TableCell>
-                        <TableCell>{tx.quantity}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{tx.currency}</Badge>
+                        <TableCell className="hidden md:table-cell text-xs sm:text-sm">{tx.quantity}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <Badge variant="outline" className="text-xs">{tx.currency}</Badge>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-xs sm:text-sm">
                           <CurrencyDisplay amount={tx.amount} currency={tx.currency} />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-1">
                             {tx.payment_method === 'crypto' ? (
-                              <Wallet className="h-4 w-4" />
+                              <Wallet className="h-3 w-3 sm:h-4 sm:w-4" />
                             ) : (
-                              <CreditCard className="h-4 w-4" />
+                              <CreditCard className="h-3 w-3 sm:h-4 sm:w-4" />
                             )}
-                            <span className="capitalize text-sm">{tx.payment_method}</span>
+                            <span className="capitalize text-xs sm:text-sm">{tx.payment_method}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -559,6 +560,7 @@ const AdminPaymentHistory = () => {
                                 ? 'secondary'
                                 : 'destructive'
                             }
+                            className="text-xs"
                           >
                             {tx.status}
                           </Badge>

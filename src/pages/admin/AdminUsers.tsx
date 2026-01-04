@@ -156,37 +156,37 @@ const AdminUsers: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">Manage all platform users</p>
+          <h1 className="text-xl sm:text-2xl font-bold">User Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Manage all platform users</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{users?.length || 0}</div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">{users?.length || 0}</div>
               <p className="text-xs text-muted-foreground">Total Users</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {users?.filter(u => u.role === 'user').length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Regular Users</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {users?.filter(u => u.role === 'organization').length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Organizations</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-destructive">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-destructive">
                 {users?.filter(u => u.is_suspended).length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Suspended</p>
@@ -196,31 +196,33 @@ const AdminUsers: React.FC = () => {
 
         {/* Users Table */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>All Users</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">All Users</CardTitle>
                 <CardDescription>View and manage user accounts</CardDescription>
               </div>
               {selectedUsers.size > 0 && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {selectedActiveUsers.length > 0 && (
                     <Button 
+                      size="sm"
                       variant="destructive"
                       onClick={() => setBulkSuspendDialogOpen(true)}
                     >
-                      <UserX className="h-4 w-4 mr-2" />
-                      Suspend {selectedActiveUsers.length}
+                      <UserX className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Suspend</span> {selectedActiveUsers.length}
                     </Button>
                   )}
                   {selectedSuspendedUsers.length > 0 && (
                     <Button 
+                      size="sm"
                       className="bg-green-500 hover:bg-green-600"
                       onClick={handleBulkActivate}
                       disabled={bulkActivate.isPending}
                     >
-                      <UserCheck className="h-4 w-4 mr-2" />
-                      Activate {selectedSuspendedUsers.length}
+                      <UserCheck className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Activate</span> {selectedSuspendedUsers.length}
                     </Button>
                   )}
                 </div>
@@ -242,8 +244,8 @@ const AdminUsers: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
@@ -253,11 +255,11 @@ const AdminUsers: React.FC = () => {
                       />
                     </TableHead>
                     <TableHead>User</TableHead>
-                    <TableHead>Email</TableHead>
+                    <TableHead className="hidden sm:table-cell">Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Fraud Score</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead className="hidden md:table-cell">Fraud Score</TableHead>
+                    <TableHead className="hidden sm:table-cell">Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -271,17 +273,19 @@ const AdminUsers: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                             <AvatarImage src={user.avatar_url || ''} />
                             <AvatarFallback>
                               {user.full_name?.charAt(0) || 'U'}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="font-medium">{user.full_name || 'Unknown'}</span>
+                          <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{user.full_name || 'Unknown'}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <span className="truncate max-w-[150px] block">{user.email}</span>
+                      </TableCell>
                       <TableCell>{getRoleBadge(user.role)}</TableCell>
                       <TableCell>
                         {user.is_suspended ? (
@@ -290,12 +294,12 @@ const AdminUsers: React.FC = () => {
                           <Badge variant="outline">Active</Badge>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant={user.fraud_score > 50 ? 'destructive' : user.fraud_score > 25 ? 'secondary' : 'outline'}>
                           {user.fraud_score}
                         </Badge>
                       </TableCell>
-                      <TableCell>{format(new Date(user.created_at), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{format(new Date(user.created_at), 'MMM d, yyyy')}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

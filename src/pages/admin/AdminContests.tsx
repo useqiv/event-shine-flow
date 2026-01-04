@@ -100,37 +100,37 @@ const AdminContests: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Contest Management</h1>
-          <p className="text-muted-foreground">View and manage all contests</p>
+          <h1 className="text-xl sm:text-2xl font-bold">Contest Management</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">View and manage all contests</p>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{contests?.length || 0}</div>
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">{contests?.length || 0}</div>
               <p className="text-xs text-muted-foreground">Total Contests</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-500">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold text-green-500">
                 {contests?.filter(c => c.is_active && new Date(c.end_date) > new Date()).length || 0}
               </div>
               <p className="text-xs text-muted-foreground">Active</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {contests?.reduce((sum, c) => sum + (c.total_votes || 0), 0)?.toLocaleString() || 0}
               </div>
               <p className="text-xs text-muted-foreground">Total Votes</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">
+            <CardContent className="p-3 sm:p-4">
+              <div className="text-xl sm:text-2xl font-bold">
                 {formatCurrency(contests?.reduce((sum, c) => sum + (c.total_votes || 0) * (c.vote_price || 0), 0) || 0)}
               </div>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
@@ -141,7 +141,7 @@ const AdminContests: React.FC = () => {
         {/* Contests Table */}
         <Card>
           <CardHeader>
-            <CardTitle>All Contests</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">All Contests</CardTitle>
             <CardDescription>View contest details and analytics</CardDescription>
           </CardHeader>
           <CardContent>
@@ -159,17 +159,17 @@ const AdminContests: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Contest</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead className="hidden sm:table-cell">Category</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Contestants</TableHead>
+                    <TableHead className="hidden md:table-cell">Contestants</TableHead>
                     <TableHead>Votes</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>End Date</TableHead>
+                    <TableHead className="hidden sm:table-cell">Revenue</TableHead>
+                    <TableHead className="hidden md:table-cell">End Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -177,27 +177,27 @@ const AdminContests: React.FC = () => {
                   {filteredContests.map((contest) => (
                     <TableRow key={contest.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           {contest.image_url && (
                             <img 
                               src={contest.image_url} 
                               alt={contest.title}
-                              className="h-10 w-10 rounded object-cover"
+                              className="h-8 w-8 sm:h-10 sm:w-10 rounded object-cover"
                             />
                           )}
-                          <span className="font-medium">{contest.title}</span>
+                          <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{contest.title}</span>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline">{contest.category}</Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(contest)}</TableCell>
-                      <TableCell>{contest.contestants?.[0]?.count || 0}</TableCell>
+                      <TableCell className="hidden md:table-cell">{contest.contestants?.[0]?.count || 0}</TableCell>
                       <TableCell>{contest.total_votes?.toLocaleString() || 0}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {formatCurrency((contest.total_votes || 0) * (contest.vote_price || 0), contest.vote_currency)}
                       </TableCell>
-                      <TableCell>{format(new Date(contest.end_date), 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="hidden md:table-cell">{format(new Date(contest.end_date), 'MMM d, yyyy')}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

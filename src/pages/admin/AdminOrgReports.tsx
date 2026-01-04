@@ -255,19 +255,19 @@ const AdminOrgReports: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Organization Revenue Reports</h1>
-            <p className="text-muted-foreground">View and download revenue summaries for all organizations</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Organization Revenue Reports</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">View and download revenue summaries for all organizations</p>
           </div>
-          <Button onClick={handleExportAll} variant="outline">
-            <FileDown className="h-4 w-4 mr-2" />
-            Export All (CSV)
+          <Button onClick={handleExportAll} variant="outline" size="sm">
+            <FileDown className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export All (CSV)</span>
           </Button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
