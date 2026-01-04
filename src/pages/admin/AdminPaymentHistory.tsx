@@ -53,7 +53,7 @@ const AdminPaymentHistory = () => {
     to: endOfMonth(new Date()),
   });
 
-  // Fetch votes
+  // Fetch votes - currency comes from contest.vote_currency
   const { data: votes, isLoading: votesLoading } = useQuery({
     queryKey: ['admin-votes'],
     queryFn: async () => {
@@ -63,7 +63,6 @@ const AdminPaymentHistory = () => {
           id,
           quantity,
           amount_paid,
-          currency,
           payment_method,
           created_at,
           contest:contests(id, title, vote_currency),
@@ -76,7 +75,7 @@ const AdminPaymentHistory = () => {
     },
   });
 
-  // Fetch tickets
+  // Fetch tickets - currency comes from ticket_type.currency
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: ['admin-tickets'],
     queryFn: async () => {
@@ -86,12 +85,11 @@ const AdminPaymentHistory = () => {
           id,
           quantity,
           amount_paid,
-          currency,
           payment_method,
           status,
           created_at,
-          event:events(id, title, currency),
-          ticket_type:ticket_types(name)
+          event:events(id, title),
+          ticket_type:ticket_types(name, currency)
         `)
         .order('created_at', { ascending: false });
       
@@ -168,13 +166,13 @@ const AdminPaymentHistory = () => {
   const allTransactions = useMemo(() => {
     const transactions: PaymentTransaction[] = [];
 
-    // Add votes
+    // Add votes - get currency from contest.vote_currency
     votes?.forEach((vote: any) => {
       transactions.push({
         id: vote.id,
         type: 'vote',
         amount: vote.amount_paid,
-        currency: vote.currency || vote.contest?.vote_currency || 'NGN',
+        currency: vote.contest?.vote_currency || 'NGN',
         status: 'completed',
         payment_method: vote.payment_method,
         created_at: vote.created_at,
@@ -185,13 +183,13 @@ const AdminPaymentHistory = () => {
       });
     });
 
-    // Add tickets
+    // Add tickets - get currency from ticket_type.currency
     tickets?.forEach((ticket: any) => {
       transactions.push({
         id: ticket.id,
         type: 'ticket',
         amount: ticket.amount_paid,
-        currency: ticket.currency || ticket.event?.currency || 'NGN',
+        currency: ticket.ticket_type?.currency || 'NGN',
         status: ticket.status,
         payment_method: ticket.payment_method,
         created_at: ticket.created_at,
