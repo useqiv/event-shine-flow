@@ -13,12 +13,26 @@ interface Message {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-voting-assistant`;
 
+const INTRO_MESSAGE: Message = {
+  role: "assistant",
+  content: "Hi! I'm QIV 🤖 I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
+};
+
 export const AIChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [hasShownIntro, setHasShownIntro] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Show intro message when chat is opened for the first time
+  useEffect(() => {
+    if (isOpen && !hasShownIntro && messages.length === 0) {
+      setMessages([INTRO_MESSAGE]);
+      setHasShownIntro(true);
+    }
+  }, [isOpen, hasShownIntro, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
