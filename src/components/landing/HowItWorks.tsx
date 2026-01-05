@@ -116,7 +116,7 @@ const HowItWorks = () => {
 
             {/* Influencer Flow */}
             <div className="bg-muted border border-border rounded-3xl p-6 lg:p-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-full mb-8 shadow-md">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-full mb-8 shadow-md">
                 <Megaphone className="h-4 w-4" />
                 <span className="text-sm font-semibold">For Influencers</span>
               </div>
