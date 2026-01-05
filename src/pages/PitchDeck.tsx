@@ -141,19 +141,22 @@ const slides = [
   },
   {
     id: 8,
-    title: "Traction",
-    subtitle: "Proven product-market fit",
+    title: "Platform Status",
+    subtitle: "Built, tested, and ready to scale",
     icon: BarChart3,
     content: [
-      "CURRENT PERFORMANCE:",
-      "• 1M+ Votes Processed",
-      "• 500+ Organizers",
-      "• 25+ Countries Served",
-      "• 50K+ Tickets Sold",
-      "• NGN 50M+ Total Processed",
-      "• 99.9% Platform Uptime",
+      "DEVELOPMENT COMPLETE:",
+      "• Full-featured platform — voting, ticketing, crowdfunding, forms",
+      "• Payment integrations live — Flutterwave, crypto support",
+      "• Anti-fraud system tested & operational",
+      "• Influencer tracking & payout infrastructure ready",
       "",
-      "GROWTH: Votes +127% YoY | Organizers +85% YoY | Tickets +200% YoY"
+      "TECHNICAL READINESS:",
+      "• Production-grade architecture deployed",
+      "• Serverless infrastructure scaling to millions",
+      "• 99.9% uptime during internal testing",
+      "",
+      "NEXT MILESTONE: First paying customers (actively in pilot discussions)"
     ]
   },
   {
@@ -218,14 +221,15 @@ const slides = [
     icon: TrendingUp,
     content: [
       "PROJECTIONS (USD):",
-      "• 2026: $120K GMV → $15K Revenue (proving model)",
-      "• 2027: $500K GMV → $60K Revenue (market expansion)",
-      "• 2028: $1.5M GMV → $180K Revenue (scale phase)",
+      "• Year 1: $50K GMV → $6K Revenue (first customers, validation)",
+      "• Year 2: $300K GMV → $40K Revenue (market expansion)",
+      "• Year 3: $1.2M GMV → $150K Revenue (scale phase)",
       "",
       "KEY MILESTONES:",
+      "• First revenue: Month 3",
+      "• 50 paying organizers: Month 9",
       "• Break-even: Month 18",
-      "• Positive cash flow: Month 24",
-      "• Series A ready: Month 30"
+      "• Series A ready: Month 24"
     ]
   },
   {
@@ -252,13 +256,13 @@ const slides = [
     content: [
       "FOUNDER-MARKET FIT:",
       "• Built in Africa, for Africa — understand local nuances",
-      "• Previous exits in fintech & events space",
-      "• Deep relationships with event agencies & influencers",
+      "• Deep experience in fintech & events space",
+      "• Strong relationships with event agencies & influencers",
       "",
-      "TRACTION PROVES EXECUTION:",
-      "• $50M+ processed with minimal capital",
-      "• 25+ countries without dedicated sales team",
-      "• 99.9% uptime on lean infrastructure"
+      "EXECUTION PROVES CAPABILITY:",
+      "• Full platform built with minimal capital (<$20K)",
+      "• Production-ready in 6 months from concept",
+      "• Pilot discussions active with 10+ organizers"
     ]
   },
   {
@@ -363,21 +367,27 @@ const PitchDeck = () => {
                     </div>
                   </div>
                 ) : slide.id === 8 ? (
-                  // Traction Slide - Clean Grid
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                    {[
-                      { label: "Votes", value: "1M+" },
-                      { label: "Organizers", value: "500+" },
-                      { label: "Countries", value: "25+" },
-                      { label: "Tickets", value: "50K+" },
-                      { label: "GMV", value: "$30K+" },
-                      { label: "Uptime", value: "99.9%" },
-                    ].map((metric) => (
-                      <div key={metric.label} className="text-center py-4">
-                        <p className="text-3xl md:text-4xl font-bold text-foreground">{metric.value}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{metric.label}</p>
-                      </div>
-                    ))}
+                  // Platform Status Slide - Clean Checklist
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-2 gap-6">
+                      {[
+                        { label: "Voting System", status: "Live" },
+                        { label: "Ticketing", status: "Live" },
+                        { label: "Crowdfunding", status: "Live" },
+                        { label: "Form Builder", status: "Live" },
+                        { label: "Payments", status: "Integrated" },
+                        { label: "Influencer Tools", status: "Ready" },
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center justify-between py-3 border-b border-border/30">
+                          <span className="text-foreground">{item.label}</span>
+                          <span className="text-sm font-medium text-primary">{item.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-center pt-4 border-t border-border/50">
+                      <p className="text-2xl font-bold text-foreground">Ready for Launch</p>
+                      <p className="text-muted-foreground mt-1">Seeking first pilot customers</p>
+                    </div>
                   </div>
                 ) : slide.id === 13 ? (
                   // The Ask Slide - Clean Breakdown
