@@ -15,7 +15,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-voting-as
 
 const INTRO_MESSAGE: Message = {
   role: "assistant",
-  content: "Hi! I'm QIV 🤖 I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
+  content: "Hi! I'm QIV, I can help you:\n\n• Discover contestants based on your interests\n• Find contests & events\n• Learn about campaigns to support\n• Answer voting questions\n\nTell me what you're into (music, fashion, sports...) and I'll suggest who to vote for!",
 };
 
 export const AIChatWidget = () => {
