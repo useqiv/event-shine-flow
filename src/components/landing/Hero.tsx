@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, Ticket, TrendingUp } from "lucide-react";
+import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, Ticket, TrendingUp, Sparkles } from "lucide-react";
 
 const Hero = () => {
   const stats = [
@@ -73,6 +73,20 @@ const Hero = () => {
                 Voting. Ticketing. Crowdfunding. Forms. Influencer Marketing. One powerful platform to run contests,
                 events, campaigns and more.
               </p>
+
+              {/* AI Features Badges */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-6">
+                {[
+                  { text: "AI-Powered" },
+                  { text: "Smart Recommendations" },
+                  { text: "Auto Content Generation" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-medium text-foreground">{item.text}</span>
+                  </div>
+                ))}
+              </div>
 
               {/* Trust Indicators */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
