@@ -125,8 +125,8 @@ const Hero = () => {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
                   {stats.map((stat, i) => (
-                    <div key={i} className="text-center p-2 sm:p-4 bg-muted rounded-xl sm:rounded-2xl">
-                      <div className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground mb-0.5 sm:mb-1">{stat.value}</div>
+                    <div key={i} className="text-center p-2 sm:p-3 lg:p-4 bg-muted rounded-xl sm:rounded-2xl">
+                      <div className="text-base sm:text-xl lg:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">{stat.value}</div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground">{stat.label}</div>
                     </div>
                   ))}
