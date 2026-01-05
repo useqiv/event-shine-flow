@@ -148,34 +148,34 @@ const OrgDashboard = () => {
           </div>
 
           {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             {[...Array(4)].map((_, i) => (
               <Card key={i}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-8 w-28" />
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-3 sm:h-4 w-16 sm:w-24" />
+                      <Skeleton className="h-6 sm:h-8 w-12 sm:w-28" />
                     </div>
-                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <Skeleton className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl flex-shrink-0" />
                   </div>
-                  <Skeleton className="h-4 w-32 mt-3" />
+                  <Skeleton className="h-3 sm:h-4 w-20 sm:w-32 mt-2 sm:mt-3" />
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {/* Secondary Stats Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {[...Array(3)].map((_, i) => (
               <Card key={i}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
+                <CardContent className="p-3 sm:pt-6 sm:px-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-3 sm:h-4 w-14 sm:w-28" />
+                      <Skeleton className="h-5 sm:h-8 w-8 sm:w-16" />
                     </div>
-                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-5 w-5 sm:h-8 sm:w-8 hidden sm:block" />
                   </div>
                 </CardContent>
               </Card>
@@ -229,71 +229,76 @@ const OrgDashboard = () => {
     <OrganizationLayout>
       <div className="space-y-6">
         {/* Welcome Section */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Organization Dashboard</h1>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">Organization Dashboard</h1>
               <Badge variant="outline" className="gap-1 text-xs">
                 <Zap className="h-3 w-3 text-green-500" />
                 Live
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm sm:text-base">Manage your contests, events, and finances.</p>
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Manage your contests, events, and finances.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Currency Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground hidden lg:inline">Display in:</span>
-              <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
-                <SelectTrigger className="w-[100px] sm:w-[120px]">
-                  <SelectValue placeholder="Currency" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {currencies.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      {currency.symbol} {currency.code}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Badge variant="outline" className="text-xs hidden sm:flex">
-                      Filtered
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">
-                      Showing only contests/events with {displayCurrency} as their native currency
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          
+          {/* Currency Selector - Full width on mobile */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs sm:text-sm text-muted-foreground">Display:</span>
+            <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
+              <SelectTrigger className="w-[90px] sm:w-[120px] h-8 sm:h-10 text-xs sm:text-sm">
+                <SelectValue placeholder="Currency" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {currencies.map((currency) => (
+                  <SelectItem key={currency.code} value={currency.code}>
+                    {currency.symbol} {currency.code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="outline" className="text-xs hidden sm:flex">
+                    Filtered
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">
+                    Showing only contests/events with {displayCurrency} as their native currency
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="ml-auto">
+              <ExportRevenueButton currency={displayCurrency} />
             </div>
-            <ExportRevenueButton currency={displayCurrency} />
-            <Link to="/org/contests/create">
-              <Button size="sm" className="sm:size-default">
-                <PlusCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">New Contest</span>
+          </div>
+
+          {/* Action Buttons - Grid on mobile */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <Link to="/org/contests/create" className="contents">
+              <Button size="sm" className="h-9 text-xs sm:text-sm">
+                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                New Contest
               </Button>
             </Link>
-            <Link to="/org/events/create">
-              <Button variant="outline" size="sm" className="sm:size-default">
-                <PlusCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">New Event</span>
+            <Link to="/org/events/create" className="contents">
+              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
+                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                New Event
               </Button>
             </Link>
-            <Link to="/campaigns/create">
-              <Button variant="outline" size="sm" className="sm:size-default">
-                <PlusCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">New Campaign</span>
+            <Link to="/campaigns/create" className="contents">
+              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
+                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                Campaign
               </Button>
             </Link>
-            <Link to="/forms">
-              <Button variant="outline" size="sm" className="sm:size-default">
-                <PlusCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Forms</span>
+            <Link to="/forms" className="contents">
+              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
+                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                Forms
               </Button>
             </Link>
           </div>
@@ -308,23 +313,23 @@ const OrgDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {/* Total Revenue */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Revenue</p>
                   {statsLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
+                    <Skeleton className="h-6 sm:h-8 w-16 sm:w-24 mt-1" />
                   ) : (
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground truncate">
                       {formatCurrency(displayTotalRevenue, displayCurrency)}
                     </p>
                   )}
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-primary" />
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -332,15 +337,15 @@ const OrgDashboard = () => {
 
           {/* Net Revenue */}
           <Card className="border-green-200 dark:border-green-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
-                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Net Revenue</p>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
-                          <Info className="h-3 w-3 text-muted-foreground" />
+                          <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           <p className="text-xs">
@@ -354,15 +359,15 @@ const OrgDashboard = () => {
                     </TooltipProvider>
                   </div>
                   {statsLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1" />
+                    <Skeleton className="h-6 sm:h-8 w-16 sm:w-24 mt-1" />
                   ) : (
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-green-600 dark:text-green-400 truncate">
                       {formatCurrency(displayNetRevenue, displayCurrency)}
                     </p>
                   )}
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </CardContent>
@@ -370,91 +375,91 @@ const OrgDashboard = () => {
 
           {/* Total Votes */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Votes</p>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Votes</p>
                   {statsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
+                    <Skeleton className="h-6 sm:h-8 w-12 sm:w-16 mt-1" />
                   ) : (
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground">
                       {stats?.totalVotes?.toLocaleString() || 0}
                     </p>
                   )}
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <Vote className="h-6 w-6 text-accent" />
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                  <Vote className="h-4 w-4 sm:h-6 sm:w-6 text-accent" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {formatCurrency(displayVoteRevenue, displayCurrency)} in revenue
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 truncate">
+                {formatCurrency(displayVoteRevenue, displayCurrency)} revenue
               </p>
             </CardContent>
           </Card>
 
           {/* Tickets Sold */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Tickets Sold</p>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Tickets Sold</p>
                   {statsLoading ? (
-                    <Skeleton className="h-8 w-16 mt-1" />
+                    <Skeleton className="h-6 sm:h-8 w-12 sm:w-16 mt-1" />
                   ) : (
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground">
                       {stats?.ticketsSold?.toLocaleString() || 0}
                     </p>
                   )}
                 </div>
-                <div className="h-12 w-12 rounded-xl bg-chart-3/10 flex items-center justify-center">
-                  <Ticket className="h-6 w-6 text-chart-3" />
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-chart-3/10 flex items-center justify-center flex-shrink-0">
+                  <Ticket className="h-4 w-4 sm:h-6 sm:w-6 text-chart-3" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {formatCurrency(displayTicketRevenue, displayCurrency)} in revenue
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 truncate">
+                {formatCurrency(displayTicketRevenue, displayCurrency)} revenue
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Contests</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">Active Contests</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">
                     {stats?.activeContests || 0}
                   </p>
                 </div>
-                <Trophy className="h-8 w-8 text-muted-foreground" />
+                <Trophy className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Events</p>
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">Active Events</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">
                     {stats?.activeEvents || 0}
                   </p>
                 </div>
-                <Calendar className="h-8 w-8 text-muted-foreground" />
+                <Calendar className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending Payouts</p>
-                  <p className="text-2xl font-bold text-foreground">
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-sm text-muted-foreground">Pending Payouts</p>
+                  <p className="text-sm sm:text-2xl font-bold text-foreground truncate">
                     {formatCurrency(displayPendingPayouts, displayCurrency)}
                   </p>
                 </div>
-                <CreditCard className="h-8 w-8 text-muted-foreground" />
+                <CreditCard className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
               </div>
             </CardContent>
           </Card>
