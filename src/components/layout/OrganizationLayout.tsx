@@ -119,7 +119,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [isCreateActive, isManageActive]);
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
         {/* Logo */}
@@ -279,10 +279,10 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 md:ml-64 w-full max-w-full overflow-x-hidden">
         {/* Top Header */}
         <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur-xl">
-          <div className="px-4 md:px-6">
+          <div className="px-3 sm:px-4 md:px-6">
             <div className="flex h-16 items-center justify-between">
               {/* Mobile Menu Toggle */}
               <Button
@@ -531,7 +531,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Main Content */}
-        <main className="p-3 sm:p-4 md:p-6 overflow-x-hidden w-full max-w-full">
+        <main className="p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-hidden">
           {children}
         </main>
       </div>
