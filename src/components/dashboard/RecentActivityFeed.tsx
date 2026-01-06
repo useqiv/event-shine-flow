@@ -16,6 +16,7 @@ interface ActivityItem {
   title: string;
   subtitle: string;
   amount: number;
+  currency?: string;
   isCredit: boolean;
   timestamp: Date;
   link?: string;
@@ -75,6 +76,7 @@ export const RecentActivityFeed = () => {
               : 'Referral bonus',
           subtitle: tx.description || 'Transaction',
           amount: Math.abs(tx.amount),
+          currency: tx.currency || 'NGN',
           isCredit: true,
           timestamp: new Date(tx.created_at),
           link: '/wallet',
@@ -169,7 +171,9 @@ export const RecentActivityFeed = () => {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className={`text-sm font-medium ${activity.isCredit ? 'text-green-500' : ''}`}>
-                    {activity.isCredit ? '+' : '-'}₦{activity.amount.toLocaleString()}
+                    {activity.isCredit ? '+' : '-'}
+                    {activity.currency === 'NGN' || !activity.currency ? '₦' : activity.currency + ' '}
+                    {activity.amount.toLocaleString()}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
