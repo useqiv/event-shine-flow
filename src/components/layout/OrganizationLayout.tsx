@@ -367,7 +367,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             >
               {/* Mobile Logo */}
               <div className="p-6 border-b border-border flex items-center justify-between">
-                <Link to="/org/dashboard" className="flex items-center gap-3" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/org/dashboard" className="flex flex-col items-center gap-1" onClick={() => setIsMobileMenuOpen(false)}>
                   <img src={appLogo} alt="USEQIV" className="h-10" />
                   <p className="text-xs text-muted-foreground">Organization</p>
                 </Link>
