@@ -45,7 +45,7 @@ const Hero = () => {
               </div>
 
               {/* Headline */}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-[1.1] mb-6">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-foreground leading-[1.1] mb-6">
                 The Complete{" "}
                 <span className="text-primary relative">
                   Event Platform
