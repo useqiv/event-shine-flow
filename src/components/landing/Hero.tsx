@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, Ticket, TrendingUp, Sparkles } from "lucide-react";
-
 const Hero = () => {
-  const stats = [
-    { value: "1M+", label: "Votes Cast" },
-    { value: "20", label: "Events" },
-    { value: "50k+", label: "Attendees" },
-  ];
-
+  const stats = [{
+    value: "1M+",
+    label: "Votes Cast"
+  }, {
+    value: "20",
+    label: "Events"
+  }, {
+    value: "50k+",
+    label: "Attendees"
+  }];
   const trustedBy = ["Miss Ghana", "Ghana Music Awards", "African Fashion Week", "Tech Summit Africa"];
-
-  return (
-    <section className="pt-24 lg:pt-28 pb-16 lg:pb-20 bg-muted relative overflow-hidden">
+  return <section className="pt-24 lg:pt-28 pb-16 lg:pb-20 bg-muted relative overflow-hidden">
       {/* Background Decorations */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
@@ -57,11 +58,7 @@ const Hero = () => {
                 The Complete{" "}
                 <span className="text-primary relative">
                   Event Platform
-                  <svg
-                    className="absolute -bottom-2 left-0 w-full h-3 text-primary/30"
-                    viewBox="0 0 200 12"
-                    preserveAspectRatio="none"
-                  >
+                  <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
                     <path d="M0 6 Q50 0, 100 6 T200 6" stroke="currentColor" strokeWidth="4" fill="none" />
                   </svg>
                 </span>{" "}
@@ -76,30 +73,33 @@ const Hero = () => {
 
               {/* AI Features Badges */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-6">
-                {[
-                  { text: "AI-Powered" },
-                  { text: "Smart Recommendations" },
-                  { text: "Auto Content Generation" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+                {[{
+                text: "AI-Powered"
+              }, {
+                text: "Smart Recommendations"
+              }, {
+                text: "Auto Content Generation"
+              }].map((item, i) => <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
                     <Sparkles className="h-3.5 w-3.5 text-primary" />
                     <span className="text-sm font-medium text-foreground">{item.text}</span>
-                  </div>
-                ))}
+                  </div>)}
               </div>
 
               {/* Trust Indicators */}
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
-                {[
-                  { icon: Shield, text: "Anti-Fraud Protected" },
-                  { icon: Zap, text: "Real-time Results" },
-                  { icon: CheckCircle, text: "Instant Setup" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                {[{
+                icon: Shield,
+                text: "Anti-Fraud Protected"
+              }, {
+                icon: Zap,
+                text: "Real-time Results"
+              }, {
+                icon: CheckCircle,
+                text: "Instant Setup"
+              }].map((item, i) => <div key={i} className="flex items-center gap-2">
                     <item.icon className="h-4 w-4 text-primary" />
                     <span className="text-sm text-muted-foreground">{item.text}</span>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
 
@@ -124,12 +124,10 @@ const Hero = () => {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                  {stats.map((stat, i) => (
-                    <div key={i} className="text-center p-2 sm:p-3 lg:p-4 bg-muted rounded-xl sm:rounded-2xl">
+                  {stats.map((stat, i) => <div key={i} className="text-center p-2 sm:p-3 lg:p-4 bg-muted rounded-xl sm:rounded-2xl">
                       <div className="text-base sm:text-xl lg:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">{stat.value}</div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground">{stat.label}</div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Mini Leaderboard */}
@@ -139,12 +137,19 @@ const Hero = () => {
                     <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                   </div>
                   <div className="space-y-2 sm:space-y-3">
-                    {[
-                      { name: "Sarah Johnson", votes: 2847, change: "+12%" },
-                      { name: "Maria Santos", votes: 2534, change: "+8%" },
-                      { name: "Emily Chen", votes: 2198, change: "+5%" },
-                    ].map((contestant, i) => (
-                      <div key={i} className="flex items-center gap-2 sm:gap-3">
+                    {[{
+                    name: "Sarah Johnson",
+                    votes: 2847,
+                    change: "+12%"
+                  }, {
+                    name: "Maria Santos",
+                    votes: 2534,
+                    change: "+8%"
+                  }, {
+                    name: "Emily Chen",
+                    votes: 2198,
+                    change: "+5%"
+                  }].map((contestant, i) => <div key={i} className="flex items-center gap-2 sm:gap-3">
                         <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs sm:text-sm font-bold text-primary-foreground shrink-0">
                           {i + 1}
                         </div>
@@ -155,8 +160,7 @@ const Hero = () => {
                           </div>
                           <div className="text-[10px] sm:text-xs text-muted-foreground">{contestant.votes.toLocaleString()} votes</div>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
 
@@ -164,20 +168,13 @@ const Hero = () => {
                 <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-xl sm:rounded-2xl">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="flex -space-x-1.5 sm:-space-x-2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div
-                          key={i}
-                          className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] sm:text-xs font-bold text-foreground"
-                        >
+                      {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] sm:text-xs font-bold text-foreground">
                           {String.fromCharCode(64 + i)}
-                        </div>
-                      ))}
+                        </div>)}
                     </div>
                     <div>
                       <div className="flex items-center gap-0.5 sm:gap-1">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary fill-primary" />
-                        ))}
+                        {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary fill-primary" />)}
                       </div>
                       <div className="text-[10px] sm:text-xs text-muted-foreground">500+ reviews</div>
                     </div>
@@ -195,7 +192,7 @@ const Hero = () => {
                   <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <div className="text-xs sm:text-sm font-bold text-foreground">500+ Organizers</div>
+                  <div className="text-xs sm:text-sm font-bold text-foreground">100+ Organizers</div>
                   <div className="text-xs text-muted-foreground">Trust USEQIV</div>
                 </div>
               </div>
@@ -215,11 +212,9 @@ const Hero = () => {
                 </div>
               ))}
             </div>
-          </div> */}
+           </div> */}
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
