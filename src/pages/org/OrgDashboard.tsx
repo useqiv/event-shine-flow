@@ -227,7 +227,7 @@ const OrgDashboard = () => {
 
   return (
     <OrganizationLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
         {/* Welcome Section */}
         <div className="flex flex-col gap-3 sm:gap-4">
           <div>

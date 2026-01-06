@@ -531,7 +531,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Main Content */}
-        <main className="p-4 md:p-6">
+        <main className="p-3 sm:p-4 md:p-6 overflow-x-hidden w-full max-w-full">
           {children}
         </main>
       </div>

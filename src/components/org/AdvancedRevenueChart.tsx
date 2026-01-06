@@ -100,25 +100,25 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
               Revenue Analytics
             </CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               {/* PDF Export Button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleExportPdf}
                 disabled={isExporting || !hasData}
-                className="h-8"
+                className="h-7 sm:h-8 px-2 sm:px-3"
               >
                 {isExporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                 ) : (
-                  <Download className="h-4 w-4" />
+                  <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
                 <span className="ml-1 hidden sm:inline">PDF</span>
               </Button>
@@ -128,25 +128,25 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
                 <Button
                   variant={chartType === 'area' ? 'secondary' : 'ghost'}
                   size="sm"
-                  className="rounded-none"
+                  className="rounded-none h-7 sm:h-8 w-7 sm:w-8 p-0"
                   onClick={() => setChartType('area')}
                 >
-                  <LineChart className="h-4 w-4" />
+                  <LineChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant={chartType === 'bar' ? 'secondary' : 'ghost'}
                   size="sm"
-                  className="rounded-none"
+                  className="rounded-none h-7 sm:h-8 w-7 sm:w-8 p-0"
                   onClick={() => setChartType('bar')}
                 >
-                  <BarChart3 className="h-4 w-4" />
+                  <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
               
               {/* Date Range Selector */}
               <Select value={dateRange.toString()} onValueChange={(v) => setDateRange(parseInt(v))}>
-                <SelectTrigger className="w-[110px] h-8">
-                  <Calendar className="h-3.5 w-3.5 mr-1" />
+                <SelectTrigger className="w-[80px] sm:w-[110px] h-7 sm:h-8 text-xs sm:text-sm">
+                  <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1 flex-shrink-0" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,7 +160,7 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
               
               {/* Currency Selector */}
               <Select value={displayCurrency} onValueChange={handleCurrencyChange}>
-                <SelectTrigger className="w-[100px] h-8">
+                <SelectTrigger className="w-[70px] sm:w-[100px] h-7 sm:h-8 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -175,28 +175,28 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
           </div>
           
           {/* Stats Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <p className="text-xs text-muted-foreground">Total Revenue</p>
-              <p className="text-lg font-bold">{formatCurrency(currentTotal, displayCurrency)}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+            <div className="p-2 sm:p-3 rounded-lg bg-secondary/50">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Total Revenue</p>
+              <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(currentTotal, displayCurrency)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <p className="text-xs text-muted-foreground">Ticket Sales</p>
-              <p className="text-lg font-bold">{formatCurrency(ticketTotal, displayCurrency)}</p>
+            <div className="p-2 sm:p-3 rounded-lg bg-secondary/50">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Ticket Sales</p>
+              <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(ticketTotal, displayCurrency)}</p>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <p className="text-xs text-muted-foreground">Vote Revenue</p>
-              <p className="text-lg font-bold">{formatCurrency(voteTotal, displayCurrency)}</p>
+            <div className="p-2 sm:p-3 rounded-lg bg-secondary/50">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Vote Revenue</p>
+              <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(voteTotal, displayCurrency)}</p>
             </div>
-            <div className={`p-3 rounded-lg ${isPositiveGrowth ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-              <p className="text-xs text-muted-foreground">vs Previous Period</p>
+            <div className={`p-2 sm:p-3 rounded-lg ${isPositiveGrowth ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">vs Previous</p>
               <div className="flex items-center gap-1">
                 {isPositiveGrowth ? (
-                  <TrendingUp className="h-4 w-4 text-green-500" />
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 flex-shrink-0" />
                 ) : (
-                  <TrendingDown className="h-4 w-4 text-red-500" />
+                  <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
                 )}
-                <p className={`text-lg font-bold ${isPositiveGrowth ? 'text-green-500' : 'text-red-500'}`}>
+                <p className={`text-sm sm:text-lg font-bold ${isPositiveGrowth ? 'text-green-500' : 'text-red-500'}`}>
                   {isPositiveGrowth ? '+' : ''}{growthPercent.toFixed(1)}%
                 </p>
               </div>
