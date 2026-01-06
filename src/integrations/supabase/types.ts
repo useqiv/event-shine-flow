@@ -1160,6 +1160,8 @@ export type Database = {
           commission_value: number
           contest_id: string | null
           created_at: string
+          discount_type: string | null
+          discount_value: number | null
           event_id: string | null
           id: string
           influencer_email: string | null
@@ -1180,6 +1182,8 @@ export type Database = {
           commission_value?: number
           contest_id?: string | null
           created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
           event_id?: string | null
           id?: string
           influencer_email?: string | null
@@ -1200,6 +1204,8 @@ export type Database = {
           commission_value?: number
           contest_id?: string | null
           created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
           event_id?: string | null
           id?: string
           influencer_email?: string | null
