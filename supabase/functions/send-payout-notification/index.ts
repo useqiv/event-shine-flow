@@ -27,7 +27,7 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
       "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
-      from: { address: "noreply@votepass.com", name: "VotePass" },
+      from: { address: "noreply@useqiv.com", name: "Useqiv" },
       to: [{ email_address: { address: to, name: toName || "User" } }],
       subject,
       htmlbody: html,
@@ -130,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="display: inline-block; background: #7c3aed; color: white; font-size: 24px; font-weight: bold; padding: 12px 24px; border-radius: 12px;">
-              VotePass
+              Useqiv
             </div>
           </div>
           
@@ -197,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
               
               <!-- CTA Button -->
               <div style="text-align: center; margin-top: 30px;">
-                <a href="${Deno.env.get('FRONTEND_URL') || 'https://votepass.com'}/org/payouts" 
+                <a href="${Deno.env.get('FRONTEND_URL') || 'https://useqiv.com'}/org/payouts" 
                    style="display: inline-block; background: #7c3aed; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
                   View Payout Details
                 </a>
@@ -208,10 +208,10 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Footer -->
           <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 13px;">
             <p style="margin: 0 0 8px;">
-              This is an automated notification from VotePass.
+              This is an automated notification from Useqiv.
             </p>
             <p style="margin: 0;">
-              © ${new Date().getFullYear()} VotePass. All rights reserved.
+              © ${new Date().getFullYear()} Useqiv. All rights reserved.
             </p>
           </div>
         </div>

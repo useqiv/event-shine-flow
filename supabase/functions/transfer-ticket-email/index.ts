@@ -30,7 +30,7 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
       "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
-      from: { address: "noreply@votepass.com", name: "VotePass" },
+      from: { address: "noreply@useqiv.com", name: "Useqiv" },
       to: [{ email_address: { address: to, name: toName || "User" } }],
       subject,
       htmlbody: html,
