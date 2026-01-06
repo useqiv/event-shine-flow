@@ -22,12 +22,16 @@ interface TransferEmailRequest {
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
+  const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
+    ? ZEPTOMAIL_API_KEY 
+    : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
+
   const response = await fetch("https://api.zeptomail.com/v1.1/email", {
     method: "POST",
     headers: {
       "Accept": "application/json",
       "Content-Type": "application/json",
-      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+      "Authorization": apiKey,
     },
     body: JSON.stringify({
       from: { address: "noreply@useqiv.com", name: "Useqiv" },
@@ -37,13 +41,13 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
     }),
   });
 
-  const data = await response.json();
-  
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
+  const responseText = await response.text();
+  if (!responseText || responseText.trim() === "") {
+    if (response.ok) return { success: true };
+    throw new Error(`ZeptoMail error: ${response.status}`);
   }
-  
+  const data = JSON.parse(responseText);
+  if (!response.ok) throw new Error(data.message || "Failed to send email");
   return data;
 };
 

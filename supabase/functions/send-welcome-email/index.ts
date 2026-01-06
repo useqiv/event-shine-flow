@@ -19,56 +19,63 @@ interface WelcomeEmailRequest {
 async function sendZeptoEmail(to: string, toName: string, subject: string, html: string) {
   console.log("=== ZeptoMail Email Send ===");
   console.log("To:", to);
-  console.log("API Key present:", !!ZEPTOMAIL_API_KEY);
-  console.log("API Key first 10 chars:", ZEPTOMAIL_API_KEY?.substring(0, 10));
+  
+  // Check if API key already contains the prefix
+  const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
+    ? ZEPTOMAIL_API_KEY 
+    : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
+  
+  console.log("Auth header starts with:", apiKey?.substring(0, 25));
   
   const payload = {
-    from: { address: "noreply@useqiv.com", name: "Useqiv" },
-    to: [{ email_address: { address: to, name: toName } }],
+    from: { 
+      address: "noreply@useqiv.com", 
+      name: "Useqiv" 
+    },
+    to: [{ 
+      email_address: { 
+        address: to, 
+        name: toName 
+      } 
+    }],
     subject,
     htmlbody: html,
   };
   
-  try {
-    const response = await fetch("https://api.zeptomail.com/v1.1/email", {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  console.log("Sending request to ZeptoMail...");
+  
+  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
 
-    console.log("Response status:", response.status, response.statusText);
-    
-    const responseText = await response.text();
-    console.log("Response body:", responseText || "(empty)");
-    
-    // Handle empty responses
-    if (!responseText || responseText.trim() === "") {
-      if (response.ok) {
-        console.log("Success with empty response");
-        return { success: true };
-      } else {
-        throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
-      }
+  console.log("Response status:", response.status, response.statusText);
+  
+  const responseText = await response.text();
+  console.log("Response body:", responseText || "(empty)");
+  
+  if (!responseText || responseText.trim() === "") {
+    if (response.ok) {
+      return { success: true };
     }
-    
-    const data = JSON.parse(responseText);
-    
-    if (!response.ok) {
-      console.error("ZeptoMail API error:", JSON.stringify(data));
-      const errorMsg = data.message || data.error?.message || data.error?.details || JSON.stringify(data);
-      throw new Error(errorMsg);
-    }
-
-    console.log("Email sent successfully");
-    return data;
-  } catch (error: any) {
-    console.error("ZeptoMail fetch error:", error.message);
-    throw error;
+    throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
+  
+  const data = JSON.parse(responseText);
+  
+  if (!response.ok) {
+    console.error("ZeptoMail API error:", JSON.stringify(data));
+    const errorMsg = data.message || data.error?.message || data.error?.details || JSON.stringify(data);
+    throw new Error(errorMsg);
+  }
+
+  console.log("Email sent successfully:", JSON.stringify(data));
+  return data;
 }
 
 function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
