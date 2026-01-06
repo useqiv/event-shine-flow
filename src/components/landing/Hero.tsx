@@ -95,7 +95,7 @@ const Hero = () => {
             </div>
 
             {/* Right Content - Stats Card */}
-            <div className="relative max-w-md mx-auto lg:max-w-none lg:ml-auto">
+            <div className="relative max-w-md lg:max-w-none lg:ml-auto lg:mr-0">
               {/* Main Stats Card */}
               <div className="bg-card border border-border rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-2xl relative overflow-hidden">
                 {/* Decorative */}
