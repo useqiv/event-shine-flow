@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link2, PlusCircle, Trash2, Copy, TrendingUp, MousePointerClick, DollarSign, Users } from 'lucide-react';
+import { Link2, PlusCircle, Trash2, Copy, TrendingUp, MousePointerClick, DollarSign, Users, Percent, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 
@@ -24,6 +24,8 @@ interface InfluencerLink {
   event_id: string | null;
   commission_type: string;
   commission_value: number;
+  discount_type: string | null;
+  discount_value: number;
   total_clicks: number;
   total_conversions: number;
   total_revenue: number;
@@ -58,6 +60,9 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
     email: '',
     commission_type: 'percentage',
     commission_value: '',
+    discount_enabled: false,
+    discount_type: 'percentage',
+    discount_value: '',
   });
 
   // Fetch influencer links for this entity
@@ -107,6 +112,8 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
         commission_type: newLink.commission_type,
         commission_value: Number(newLink.commission_value) || 0,
         commission_currency: currency,
+        discount_type: newLink.discount_enabled ? newLink.discount_type : null,
+        discount_value: newLink.discount_enabled ? Number(newLink.discount_value) || 0 : 0,
       });
 
       if (error) throw error;
@@ -120,6 +127,9 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
         email: '',
         commission_type: 'percentage',
         commission_value: '',
+        discount_enabled: false,
+        discount_type: 'percentage',
+        discount_value: '',
       });
       toast.success('Influencer link created!');
     },
@@ -324,6 +334,52 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                     </div>
                   </div>
 
+                  {/* Discount Section */}
+                  <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        <Label className="font-medium">Customer Discount</Label>
+                      </div>
+                      <Switch
+                        checked={newLink.discount_enabled}
+                        onCheckedChange={(checked) => setNewLink(prev => ({ ...prev, discount_enabled: checked }))}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Enable to give customers a discount when using this referral link
+                    </p>
+                    
+                    {newLink.discount_enabled && (
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-2">
+                          <Label>Discount Type</Label>
+                          <Select
+                            value={newLink.discount_type}
+                            onValueChange={(value) => setNewLink(prev => ({ ...prev, discount_type: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="percentage">Percentage (%)</SelectItem>
+                              <SelectItem value="fixed">Fixed Amount ({getCurrencySymbol(currency)})</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Discount Value</Label>
+                          <Input
+                            type="number"
+                            placeholder={newLink.discount_type === 'percentage' ? '10' : '500'}
+                            value={newLink.discount_value}
+                            onChange={(e) => setNewLink(prev => ({ ...prev, discount_value: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <Button 
                     onClick={() => createMutation.mutate()} 
                     className="w-full" 
@@ -363,6 +419,13 @@ export const EntityInfluencerLinks: React.FC<EntityInfluencerLinksProps> = ({
                         {link.commission_type === 'percentage' 
                           ? `${link.commission_value}% commission`
                           : `${formatCurrency(link.commission_value, currency)} per conversion`}
+                        {link.discount_type && (
+                          <span className="ml-2 text-primary">
+                            • {link.discount_type === 'percentage' 
+                              ? `${link.discount_value}% discount`
+                              : `${formatCurrency(link.discount_value, currency)} off`}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
