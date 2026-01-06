@@ -202,8 +202,8 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Trusted By Section */}
-          <div className="mt-16 lg:mt-20 pt-10 border-t border-border">
+          {/* Trusted By Section - Hidden for now */}
+          {/* <div className="mt-16 lg:mt-20 pt-10 border-t border-border">
             <p className="text-center text-sm text-muted-foreground mb-6">Trusted by leading event organizers</p>
             <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
               {trustedBy.map((brand, i) => (
@@ -215,7 +215,7 @@ const Hero = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </section>
