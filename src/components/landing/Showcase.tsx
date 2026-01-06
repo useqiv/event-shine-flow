@@ -1,14 +1,12 @@
 import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 const Showcase = () => {
-  return (
-    <section className="py-14 lg:py-20 bg-card relative overflow-hidden">
+  return <section className="py-14 lg:py-20 bg-card relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-[0.02]">
         <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      }} />
       </div>
 
       <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
@@ -52,17 +50,22 @@ const Showcase = () => {
 
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { Icon: Shield, text: "Anti-fraud protection" },
-                    { Icon: BarChart3, text: "Live leaderboards" },
-                    { Icon: Share2, text: "Shareable vote links" },
-                    { Icon: DollarSign, text: "Monetized voting" },
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                  {[{
+                  Icon: Shield,
+                  text: "Anti-fraud protection"
+                }, {
+                  Icon: BarChart3,
+                  text: "Live leaderboards"
+                }, {
+                  Icon: Share2,
+                  text: "Shareable vote links"
+                }, {
+                  Icon: DollarSign,
+                  text: "Monetized voting"
+                }].map((feature, i) => <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
                       <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Mini Dashboard Preview */}
@@ -75,12 +78,19 @@ const Showcase = () => {
                     </span>
                   </div>
                   <div className="space-y-3">
-                    {[
-                      { name: "Sarah Johnson", votes: 2847, percent: 100 },
-                      { name: "Maria Santos", votes: 2534, percent: 89 },
-                      { name: "Emily Chen", votes: 2198, percent: 77 },
-                    ].map((contestant, i) => (
-                      <div key={i} className="flex items-center gap-3">
+                    {[{
+                    name: "Sarah Johnson",
+                    votes: 2847,
+                    percent: 100
+                  }, {
+                    name: "Maria Santos",
+                    votes: 2534,
+                    percent: 89
+                  }, {
+                    name: "Emily Chen",
+                    votes: 2198,
+                    percent: 77
+                  }].map((contestant, i) => <div key={i} className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                           {i + 1}
                         </div>
@@ -90,14 +100,12 @@ const Showcase = () => {
                             <span className="text-xs font-medium text-muted-foreground">{contestant.votes.toLocaleString()}</span>
                           </div>
                           <div className="h-2 bg-border rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
-                              style={{ width: `${contestant.percent}%` }}
-                            />
+                            <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500" style={{
+                          width: `${contestant.percent}%`
+                        }} />
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
 
@@ -130,17 +138,22 @@ const Showcase = () => {
 
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { Icon: Smartphone, text: "QR code tickets" },
-                    { Icon: Zap, text: "Instant check-in" },
-                    { Icon: Ticket, text: "Tiered pricing" },
-                    { Icon: TrendingUp, text: "Sales analytics" },
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                  {[{
+                  Icon: Smartphone,
+                  text: "QR code tickets"
+                }, {
+                  Icon: Zap,
+                  text: "Instant check-in"
+                }, {
+                  Icon: Ticket,
+                  text: "Tiered pricing"
+                }, {
+                  Icon: TrendingUp,
+                  text: "Sales analytics"
+                }].map((feature, i) => <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
                       <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Mini Ticket Preview */}
@@ -150,7 +163,7 @@ const Showcase = () => {
                       <QrCode className="h-12 w-12 text-accent" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-base font-bold text-foreground mb-1">Miss Universe 2024 Finals</div>
+                      <div className="text-base font-bold text-foreground mb-1">Miss Venaria 2024 Finals</div>
                       <div className="text-sm text-muted-foreground mb-2">VIP Section • Seat A-12</div>
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 bg-primary/10 text-primary text-xs rounded-full font-semibold">VALID</span>
@@ -191,17 +204,22 @@ const Showcase = () => {
 
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { Icon: Target, text: "Goal tracking" },
-                    { Icon: CreditCard, text: "Secure payments" },
-                    { Icon: Megaphone, text: "Campaign updates" },
-                    { Icon: Trophy, text: "Donor leaderboard" },
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                  {[{
+                  Icon: Target,
+                  text: "Goal tracking"
+                }, {
+                  Icon: CreditCard,
+                  text: "Secure payments"
+                }, {
+                  Icon: Megaphone,
+                  text: "Campaign updates"
+                }, {
+                  Icon: Trophy,
+                  text: "Donor leaderboard"
+                }].map((feature, i) => <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
                       <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Mini Campaign Preview */}
@@ -211,7 +229,9 @@ const Showcase = () => {
                     <span className="text-xs text-primary font-semibold">78% funded</span>
                   </div>
                   <div className="h-3 bg-border rounded-full overflow-hidden mb-3">
-                    <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full" style={{ width: '78%' }} />
+                    <div className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full" style={{
+                    width: '78%'
+                  }} />
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-foreground font-semibold">₦7,800,000</span>
@@ -247,17 +267,22 @@ const Showcase = () => {
 
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  {[
-                    { Icon: PenTool, text: "Drag & drop builder" },
-                    { Icon: DollarSign, text: "Payment forms" },
-                    { Icon: GitBranch, text: "Conditional logic" },
-                    { Icon: BarChart3, text: "Response analytics" },
-                  ].map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                  {[{
+                  Icon: PenTool,
+                  text: "Drag & drop builder"
+                }, {
+                  Icon: DollarSign,
+                  text: "Payment forms"
+                }, {
+                  Icon: GitBranch,
+                  text: "Conditional logic"
+                }, {
+                  Icon: BarChart3,
+                  text: "Response analytics"
+                }].map((feature, i) => <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
                       <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
 
                 {/* Mini Form Preview */}
@@ -315,17 +340,22 @@ const Showcase = () => {
 
                   {/* Features Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-6">
-                    {[
-                      { Icon: Link2, text: "Unique referral links" },
-                      { Icon: Wallet, text: "Auto commissions" },
-                      { Icon: BarChart3, text: "Performance dashboard" },
-                      { Icon: DollarSign, text: "Easy payouts" },
-                    ].map((feature, i) => (
-                      <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
+                    {[{
+                    Icon: Link2,
+                    text: "Unique referral links"
+                  }, {
+                    Icon: Wallet,
+                    text: "Auto commissions"
+                  }, {
+                    Icon: BarChart3,
+                    text: "Performance dashboard"
+                  }, {
+                    Icon: DollarSign,
+                    text: "Easy payouts"
+                  }].map((feature, i) => <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
                         <feature.Icon className="h-5 w-5 text-primary" />
                         <span className="text-sm text-foreground font-medium">{feature.text}</span>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
 
                   <Button variant="default" className="rounded-full" size="lg">
@@ -342,24 +372,31 @@ const Showcase = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-3 mb-4">
-                    {[
-                      { label: "Clicks", value: "2,847" },
-                      { label: "Conversions", value: "324" },
-                      { label: "Earnings", value: "₦180K" },
-                    ].map((stat, i) => (
-                      <div key={i} className="text-center p-3 bg-muted rounded-xl">
+                    {[{
+                    label: "Clicks",
+                    value: "2,847"
+                  }, {
+                    label: "Conversions",
+                    value: "324"
+                  }, {
+                    label: "Earnings",
+                    value: "₦180K"
+                  }].map((stat, i) => <div key={i} className="text-center p-3 bg-muted rounded-xl">
                         <div className="text-lg font-bold text-foreground">{stat.value}</div>
                         <div className="text-xs text-muted-foreground">{stat.label}</div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
 
                   <div className="space-y-2">
-                    {[
-                      { name: "Miss Ghana 2024", clicks: 1203, earnings: "₦85,000" },
-                      { name: "Afrobeats Festival", clicks: 892, earnings: "₦62,000" },
-                    ].map((campaign, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-xl">
+                    {[{
+                    name: "Miss Ghana 2024",
+                    clicks: 1203,
+                    earnings: "₦85,000"
+                  }, {
+                    name: "Afrobeats Festival",
+                    clicks: 892,
+                    earnings: "₦62,000"
+                  }].map((campaign, i) => <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-xl">
                         <div className="flex items-center gap-2">
                           <Link2 className="h-4 w-4 text-primary" />
                           <span className="text-sm font-medium text-foreground">{campaign.name}</span>
@@ -368,8 +405,7 @@ const Showcase = () => {
                           <div className="text-xs text-muted-foreground">{campaign.clicks} clicks</div>
                           <div className="text-sm font-semibold text-primary">{campaign.earnings}</div>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
               </div>
@@ -377,8 +413,6 @@ const Showcase = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Showcase;
