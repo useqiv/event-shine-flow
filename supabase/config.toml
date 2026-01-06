@@ -49,7 +49,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.share-ticket-email]
-verify_jwt = true
+verify_jwt = false
 
 [functions.transfer-ticket-email]
 verify_jwt = true

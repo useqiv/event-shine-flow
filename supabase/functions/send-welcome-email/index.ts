@@ -245,24 +245,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { userId, email, fullName }: WelcomeEmailRequest = await req.json();
 
-    if (!userId || !email) {
-      throw new Error("userId and email are required");
+    if (!email) {
+      throw new Error("email is required");
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    // Get user's referral code from wallet
-    const { data: wallet, error: walletError } = await supabase
-      .from("wallets")
-      .select("referral_code")
-      .eq("user_id", userId)
-      .single();
+    // Get user's referral code from wallet (if userId provided)
+    let referralCode = "USEQIV";
+    if (userId) {
+      const { data: wallet, error: walletError } = await supabase
+        .from("wallets")
+        .select("referral_code")
+        .eq("user_id", userId)
+        .single();
 
-    if (walletError) {
-      console.error("Error fetching wallet:", walletError);
+      if (walletError) {
+        console.error("Error fetching wallet:", walletError);
+      }
+      referralCode = wallet?.referral_code || "USEQIV";
     }
-
-    const referralCode = wallet?.referral_code || "USEQIV";
     const userName = fullName || email.split("@")[0];
 
     const html = buildWelcomeEmailHtml(userName, referralCode);
