@@ -4,7 +4,7 @@ import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, Ticket, 
 const Hero = () => {
   const stats = [
     { value: "1M+", label: "Votes Cast" },
-    { value: "10", label: "Events" },
+    { value: "20", label: "Events" },
     { value: "50k+", label: "Attendees" },
   ];
 
