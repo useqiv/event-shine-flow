@@ -36,7 +36,7 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
       "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "Useqiv" },
+      from: { address: "noreply@votepass.com", name: "VotePass" },
       to: [{ email_address: { address: to, name: toName } }],
       subject,
       htmlbody: html,
@@ -117,8 +117,8 @@ const generateVoteReceiptHtml = (data: ReceiptRequest) => `
     <!-- Footer -->
     <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
       <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        Useqiv - Your trusted voting platform<br>
-        Questions? Contact support@useqiv.com
+        VotePass - Your trusted voting platform<br>
+        Questions? Contact support@votepass.com
       </p>
     </div>
   </div>
@@ -209,8 +209,8 @@ const generateTicketReceiptHtml = (data: ReceiptRequest) => `
     <!-- Footer -->
     <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
       <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        Useqiv - Your trusted event platform<br>
-        Questions? Contact support@useqiv.com
+        VotePass - Your trusted event platform<br>
+        Questions? Contact support@votepass.com
       </p>
     </div>
   </div>

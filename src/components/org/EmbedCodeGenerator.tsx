@@ -31,7 +31,7 @@ export const EmbedCodeGenerator: React.FC = () => {
   title="Contest Leaderboard"
 ></iframe>`;
 
-  const scriptCode = `<div id="useqiv-leaderboard" data-contest-id="${selectedContest}"></div>
+  const scriptCode = `<div id="votepass-leaderboard" data-contest-id="${selectedContest}"></div>
 <script src="${baseUrl}/embed.js"></script>`;
 
   const handleCopy = (code: string) => {

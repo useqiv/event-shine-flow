@@ -30,7 +30,7 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
       "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "Useqiv" },
+      from: { address: "noreply@votepass.com", name: "VotePass" },
       to: [{ email_address: { address: to, name: toName || "User" } }],
       subject,
       htmlbody: html,
@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Footer -->
           <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              Powered by Useqiv • Your voting and events platform
+              Powered by VotePass • Your voting and events platform
             </p>
           </div>
         </div>

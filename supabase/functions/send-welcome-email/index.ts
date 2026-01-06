@@ -24,7 +24,7 @@ async function sendZeptoEmail(to: string, toName: string, subject: string, html:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "Useqiv" },
+      from: { address: "noreply@useqiv.com", name: "VotePass" },
       to: [{ email_address: { address: to, name: toName } }],
       subject,
       htmlbody: html,
@@ -56,7 +56,7 @@ function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
               <!-- Header -->
               <tr>
                 <td style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 50px 40px; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">🎉 Welcome to Useqiv!</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">🎉 Welcome to VotePass!</h1>
                   <p style="color: rgba(255,255,255,0.9); margin: 16px 0 0 0; font-size: 18px;">Your gateway to exciting contests & events</p>
                 </td>
               </tr>
@@ -67,7 +67,7 @@ function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
                   <p style="color: #374151; font-size: 18px; margin: 0 0 24px 0;">Hi ${userName}! 👋</p>
                   
                   <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
-                    Thank you for joining Useqiv! We're thrilled to have you on board. Get ready to discover amazing contests, events, and campaigns happening around you.
+                    Thank you for joining VotePass! We're thrilled to have you on board. Get ready to discover amazing contests, events, and campaigns happening around you.
                   </p>
                   
                   <!-- Getting Started Section -->
@@ -137,7 +137,7 @@ function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
                   </table>
                   
                   <!-- Features Grid -->
-                  <h2 style="color: #111827; font-size: 18px; margin: 30px 0 16px 0;">What you can do on Useqiv:</h2>
+                  <h2 style="color: #111827; font-size: 18px; margin: 30px 0 16px 0;">What you can do on VotePass:</h2>
                   
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
@@ -180,7 +180,7 @@ function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
                     <a href="mailto:support@useqiv.com" style="color: #8b5cf6;">support@useqiv.com</a>
                   </p>
                   <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                    © 2024 Useqiv. All rights reserved.<br>
+                    © 2024 VotePass. All rights reserved.<br>
                     <a href="https://useqiv.com/privacy-policy" style="color: #9ca3af;">Privacy Policy</a> • 
                     <a href="https://useqiv.com/terms-of-service" style="color: #9ca3af;">Terms of Service</a>
                   </p>
@@ -224,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error fetching wallet:", walletError);
     }
 
-    const referralCode = wallet?.referral_code || "USEQIV";
+    const referralCode = wallet?.referral_code || "VOTEPASS";
     const userName = fullName || email.split("@")[0];
 
     const html = buildWelcomeEmailHtml(userName, referralCode);
@@ -232,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
     await sendZeptoEmail(
       email,
       userName,
-      "🎉 Welcome to Useqiv - Let's Get Started!",
+      "🎉 Welcome to VotePass - Let's Get Started!",
       html
     );
 

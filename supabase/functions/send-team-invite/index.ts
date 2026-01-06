@@ -26,7 +26,7 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
       "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "Useqiv" },
+      from: { address: "noreply@votepass.com", name: "VotePass" },
       to: [{ email_address: { address: to, name: toName || "User" } }],
       subject,
       htmlbody: html,
@@ -86,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
             </p>
             
             <p style="color: #18181b; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-              <strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> as a <strong>${role}</strong> on Useqiv.
+              <strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> as a <strong>${role}</strong> on VotePass.
             </p>
             
             <div style="background-color: #faf5ff; border-left: 4px solid #7c3aed; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
@@ -97,11 +97,11 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <p style="color: #52525b; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-              To accept this invitation, please log in to your Useqiv account. If you don't have an account yet, you can create one using this email address.
+              To accept this invitation, please log in to your VotePass account. If you don't have an account yet, you can create one using this email address.
             </p>
             
             <div style="text-align: center; margin: 32px 0;">
-              <a href="https://useqiv.com/auth" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              <a href="https://votepass.com/auth" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                 Accept Invitation
               </a>
             </div>
@@ -114,7 +114,7 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           
           <p style="color: #a1a1aa; font-size: 12px; text-align: center; margin-top: 24px;">
-            © ${new Date().getFullYear()} Useqiv. All rights reserved.
+            © ${new Date().getFullYear()} VotePass. All rights reserved.
           </p>
         </div>
       </body>
