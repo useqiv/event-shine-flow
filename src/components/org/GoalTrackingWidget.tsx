@@ -95,13 +95,13 @@ const GoalTrackingWidget = ({
             
             return (
               <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{goal.label}</span>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm font-medium truncate">{goal.label}</span>
                     {getStatusBadge(progress)}
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                     {goal.format(goal.current)} / {goal.format(goal.target)}
                   </span>
                 </div>

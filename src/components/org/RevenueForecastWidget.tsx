@@ -173,41 +173,41 @@ const RevenueForecastWidget = ({ currency = 'USD' }: RevenueForecastWidgetProps)
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Weekly Growth</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+          <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Weekly Growth</p>
             <div className="flex items-center gap-1">
-              <p className={`text-lg font-bold ${metrics.weeklyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-sm sm:text-lg font-bold ${metrics.weeklyGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {metrics.weeklyGrowth >= 0 ? '+' : ''}{metrics.weeklyGrowth.toFixed(1)}%
               </p>
               {metrics.trend === 'up' ? (
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
               ) : metrics.trend === 'down' ? (
-                <TrendingDown className="h-4 w-4 text-red-600" />
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
               ) : null}
             </div>
           </div>
           
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">30-Day Projection</p>
-            <p className="text-lg font-bold">{formatCurrency(metrics.monthlyProjection, currency)}</p>
+          <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">30-Day Projection</p>
+            <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(metrics.monthlyProjection, currency)}</p>
           </div>
           
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Confidence</p>
-            <div className="flex items-center gap-2">
-              <p className="text-lg font-bold">{metrics.confidence}%</p>
-              <Badge variant={metrics.confidence >= 70 ? 'default' : metrics.confidence >= 50 ? 'secondary' : 'outline'} className="text-xs">
+          <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Confidence</p>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <p className="text-sm sm:text-lg font-bold">{metrics.confidence}%</p>
+              <Badge variant={metrics.confidence >= 70 ? 'default' : metrics.confidence >= 50 ? 'secondary' : 'outline'} className="text-[10px] sm:text-xs">
                 {metrics.confidence >= 70 ? 'High' : metrics.confidence >= 50 ? 'Med' : 'Low'}
               </Badge>
             </div>
           </div>
           
-          <div className="bg-muted/50 rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Forecast Period</p>
+          <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Forecast Period</p>
             <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <p className="text-lg font-bold">14 Days</p>
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <p className="text-sm sm:text-lg font-bold">14 Days</p>
             </div>
           </div>
         </div>

@@ -197,13 +197,13 @@ const ExportRevenueButton = ({ currency = 'USD' }: ExportRevenueButtonProps) => 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isExporting}>
+        <Button variant="outline" size="sm" disabled={isExporting} className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm">
           {isExporting ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin sm:mr-2" />
           ) : (
-            <FileDown className="h-4 w-4 mr-2" />
+            <FileDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:mr-2" />
           )}
-          Export
+          <span className="hidden sm:inline">Export</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-popover">
