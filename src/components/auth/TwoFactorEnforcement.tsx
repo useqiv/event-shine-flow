@@ -57,7 +57,7 @@ const TwoFactorEnforcement: React.FC<TwoFactorEnforcementProps> = ({
     try {
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: 'VotePass Authenticator',
+        friendlyName: 'Useqiv Authenticator',
       });
 
       if (error) {

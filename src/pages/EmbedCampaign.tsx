@@ -130,7 +130,7 @@ const EmbedCampaign = () => {
             className="text-xs text-muted-foreground hover:text-primary flex items-center justify-center gap-1"
           >
             <ExternalLink className="h-3 w-3" />
-            View on VotePass
+            View on Useqiv
           </a>
         </div>
       </div>

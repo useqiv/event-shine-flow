@@ -32,7 +32,7 @@ export const CampaignEmbedGenerator: React.FC<CampaignEmbedGeneratorProps> = ({
   title="${campaignTitle} - Fundraising Campaign"
 ></iframe>`;
 
-  const scriptCode = `<div id="votepass-campaign" data-campaign-id="${campaignId}"></div>
+  const scriptCode = `<div id="useqiv-campaign" data-campaign-id="${campaignId}"></div>
 <script src="${baseUrl}/campaign-embed.js"></script>`;
 
   const handleCopy = (code: string) => {

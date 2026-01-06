@@ -174,7 +174,7 @@ const DatabaseBackupManager: React.FC = () => {
         const url = URL.createObjectURL(jsonBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `votepass_backup_${timestamp}.json`;
+        a.download = `useqiv_backup_${timestamp}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
