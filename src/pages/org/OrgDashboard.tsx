@@ -275,33 +275,6 @@ const OrgDashboard = () => {
             </div>
           </div>
 
-          {/* Action Buttons - Grid on mobile */}
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-            <Link to="/org/contests/create" className="contents">
-              <Button size="sm" className="h-9 text-xs sm:text-sm">
-                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                New Contest
-              </Button>
-            </Link>
-            <Link to="/org/events/create" className="contents">
-              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
-                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                New Event
-              </Button>
-            </Link>
-            <Link to="/campaigns/create" className="contents">
-              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
-                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                Campaign
-              </Button>
-            </Link>
-            <Link to="/forms" className="contents">
-              <Button variant="outline" size="sm" className="h-9 text-xs sm:text-sm">
-                <PlusCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                Forms
-              </Button>
-            </Link>
-          </div>
         </div>
 
         {/* Payout Status Alerts */}
