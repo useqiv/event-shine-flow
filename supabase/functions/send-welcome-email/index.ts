@@ -20,8 +20,9 @@ async function sendZeptoEmail(to: string, toName: string, subject: string, html:
   const response = await fetch("https://api.zeptomail.com/v1.1/email", {
     method: "POST",
     headers: {
-      "Authorization": ZEPTOMAIL_API_KEY!,
+      "Accept": "application/json",
       "Content-Type": "application/json",
+      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
     },
     body: JSON.stringify({
       from: { address: "noreply@useqiv.com", name: "Useqiv" },
@@ -31,13 +32,14 @@ async function sendZeptoEmail(to: string, toName: string, subject: string, html:
     }),
   });
 
+  const data = await response.json();
+  
   if (!response.ok) {
-    const error = await response.text();
-    console.error("ZeptoMail error:", error);
-    throw new Error(`Failed to send email: ${error}`);
+    console.error("ZeptoMail API error:", data);
+    throw new Error(data.message || "Failed to send email");
   }
 
-  return response.json();
+  return data;
 }
 
 function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
