@@ -34,7 +34,7 @@ const Hero = () => {
           {/* Main Hero Content */}
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
-            <div className="text-center">
+            <div className="text-center lg:text-left">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full mb-6 shadow-sm">
                 <span className="flex h-2 w-2">
@@ -57,13 +57,13 @@ const Hero = () => {
               </h1>
 
               {/* Subheadline */}
-              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
+              <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
                 Voting. Ticketing. Crowdfunding. Forms. Influencer Marketing. One powerful platform to run contests,
                 events, campaigns and more.
               </p>
 
               {/* AI Features Badges */}
-              <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-6">
                 {[{
                 text: "AI-Powered"
               }, {
@@ -77,7 +77,7 @@ const Hero = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex flex-wrap items-center justify-center gap-6">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6">
                 {[{
                 icon: Shield,
                 text: "Anti-Fraud Protected"
