@@ -18,7 +18,7 @@ async function sendZeptoEmail(to: string, toName: string, subject: string, html:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "VotePass" },
+      from: { address: "noreply@useqiv.com", name: "Useqiv" },
       to: [{ email_address: { address: to, name: toName } }],
       subject,
       htmlbody: html,
@@ -181,7 +181,7 @@ function buildReminderEmailHtml(
                     Need help? Contact us at <a href="mailto:support@useqiv.com" style="color: #8b5cf6;">support@useqiv.com</a>
                   </p>
                   <p style="color: #9ca3af; font-size: 12px; margin: 16px 0 0 0;">
-                    © 2024 VotePass. All rights reserved.
+                    © 2024 Useqiv. All rights reserved.
                   </p>
                 </td>
               </tr>

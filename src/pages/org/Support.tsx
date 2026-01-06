@@ -281,7 +281,7 @@ const Support = () => {
                 <CardTitle>Contact Us</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>Email: support@votepass.com</p>
+                <p>Email: support@useqiv.com</p>
                 <p>WhatsApp: +234 800 000 0000</p>
                 <p className="text-xs">Support hours: Mon-Fri, 9am-6pm WAT</p>
               </CardContent>
