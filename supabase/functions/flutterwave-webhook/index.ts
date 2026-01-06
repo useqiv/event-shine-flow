@@ -337,8 +337,33 @@ async function recordInfluencerConversion(supabase: any, influencerLinkId: strin
   }
 }
 
-async function sendReceipt(receiptData: any) {
+async function sendReceipt(receiptData: any, userId?: string, supabaseClient?: any) {
   try {
+    // Fallback to profile email if customer email is missing
+    if (!receiptData.user_email && userId && supabaseClient) {
+      console.log("No customer email provided, looking up profile for user:", userId);
+      const { data: profile, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", userId)
+        .single();
+      
+      if (profileError) {
+        console.error("Failed to fetch profile for email fallback:", profileError.message);
+      } else if (profile?.email) {
+        receiptData.user_email = profile.email;
+        receiptData.user_name = profile.full_name || receiptData.user_name || "Valued Customer";
+        console.log("Using profile email for receipt:", profile.email);
+      }
+    }
+
+    if (!receiptData.user_email) {
+      console.error("Cannot send receipt - no email address available. Receipt data:", JSON.stringify(receiptData));
+      return;
+    }
+
+    console.log("Sending receipt email to:", receiptData.user_email, "Type:", receiptData.type);
+    
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const response = await fetch(`${supabaseUrl}/functions/v1/send-payment-receipt`, {
       method: "POST",
@@ -349,13 +374,15 @@ async function sendReceipt(receiptData: any) {
       body: JSON.stringify(receiptData),
     });
 
+    const responseText = await response.text();
+    
     if (response.ok) {
-      console.log("Receipt email sent successfully");
+      console.log("Receipt email sent successfully. Response:", responseText);
     } else {
-      console.error("Failed to send receipt:", await response.text());
+      console.error("Failed to send receipt. Status:", response.status, "Response:", responseText);
     }
   } catch (error: any) {
-    console.error("Error sending receipt:", error.message);
+    console.error("Error sending receipt:", error.message, error.stack);
   }
 }
 
@@ -551,7 +578,7 @@ async function processSuccessfulPayment(paymentData: any) {
         reference_id: contest_id,
       });
 
-      // Send email receipt
+      // Send email receipt - pass user_id and supabase for email fallback
       await sendReceipt({
         type: "vote",
         user_email: customer.email,
@@ -563,7 +590,7 @@ async function processSuccessfulPayment(paymentData: any) {
         transaction_ref: paymentData.tx_ref,
         contest_title: contest?.title || "Contest",
         contestant_name: contestant?.name || "Contestant",
-      });
+      }, user_id, supabase);
     }
   } else if (type === "ticket" && event_id && ticket_type_id) {
     console.log("Recording ticket purchase...");
