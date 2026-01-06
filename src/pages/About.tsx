@@ -45,7 +45,7 @@ const About = () => {
                 USEQIV was founded with a simple yet powerful vision: to provide African event organizers with world-class tools to create, manage, and grow their events. We understand the unique challenges faced by organizers in our region, from payment processing complexities to audience engagement, and we've built a platform that addresses each one.
               </p>
               <p>
-                Our journey began when we noticed a gap in the market for a comprehensive, Africa-focused event management solution. Traditional platforms didn't cater to local payment methods, currencies, or the specific needs of African audiences. We set out to change that.
+                Our journey began when we noticed a gap in the market for a comprehensive, Africa focused event management solution. Traditional platforms didn't cater to local payment methods, currencies, or the specific needs of African audiences. We set out to change that.
               </p>
               <p>
                 From voting contests that power pageants and talent shows, to ticketed events for concerts and conferences, crowdfunding campaigns for creative projects, and form submissions for registrations and surveys, we provide an all-in-one platform that handles every aspect of event management with security, transparency, and ease of use at its core.
