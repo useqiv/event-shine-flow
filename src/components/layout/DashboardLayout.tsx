@@ -70,7 +70,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
         {/* Logo */}
@@ -135,7 +135,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 md:ml-64 w-full min-w-0 overflow-hidden">
         {/* Top Header */}
         <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur-xl">
           <div className="px-4 md:px-6">
@@ -317,7 +317,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         )}
 
         {/* Main Content */}
-        <main className="p-4 md:p-6">
+        <main className="p-4 md:p-6 w-full min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>
