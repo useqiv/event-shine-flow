@@ -57,7 +57,7 @@ const About = () => {
                 From voting contests that power pageants and talent shows, to ticketed events for concerts and conferences, crowdfunding campaigns for creative projects, and form submissions for registrations and surveys—we provide an all-in-one platform that handles every aspect of event management with security, transparency, and ease of use at its core.
               </p>
               <p>
-                What sets USEQIV apart is our commitment to the African market. We support local payment gateways, multiple currencies including Naira, and we understand the cultural nuances that make events in Africa unique. Our anti-fraud voting system ensures fair competitions, while our QR-based ticketing provides seamless event check-ins.
+                What sets USEQIV apart is our commitment to the African market.
               </p>
               <p>
                 We believe that every organizer, whether running a small community event or a large-scale national competition, deserves access to professional-grade tools. That's why we've made our platform accessible, affordable, and incredibly easy to use—no technical expertise required.
