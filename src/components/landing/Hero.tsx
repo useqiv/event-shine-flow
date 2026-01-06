@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, Ticket, TrendingUp, Sparkles } from "lucide-react";
+import { ArrowRight, Play, Shield, Zap, Users, Star, CheckCircle, Vote, TrendingUp, Sparkles } from "lucide-react";
 const Hero = () => {
   const stats = [{
     value: "1M+",
@@ -28,15 +28,6 @@ const Hero = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-32 left-[5%] hidden 2xl:flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-2xl shadow-lg animate-fade-in z-20">
-        <div className="h-8 w-8 rounded-lg bg-accent/20 flex items-center justify-center">
-          <Ticket className="h-4 w-4 text-accent" />
-        </div>
-        <div>
-          <div className="text-xs font-semibold text-foreground">Tickets Sold</div>
-          <div className="text-xs text-muted-foreground">+523 this hour</div>
-        </div>
-      </div>
 
       <div className="w-full px-4 md:px-6 lg:px-8 relative z-10">
         <div className="max-w-[1400px] mx-auto">
