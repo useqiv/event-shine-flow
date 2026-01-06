@@ -17,29 +17,58 @@ interface WelcomeEmailRequest {
 }
 
 async function sendZeptoEmail(to: string, toName: string, subject: string, html: string) {
-  const response = await fetch("https://api.zeptomail.com/v1.1/email", {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json",
-      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
-    },
-    body: JSON.stringify({
-      from: { address: "noreply@useqiv.com", name: "Useqiv" },
-      to: [{ email_address: { address: to, name: toName } }],
-      subject,
-      htmlbody: html,
-    }),
-  });
-
-  const data = await response.json();
+  console.log("=== ZeptoMail Email Send ===");
+  console.log("To:", to);
+  console.log("API Key present:", !!ZEPTOMAIL_API_KEY);
+  console.log("API Key first 10 chars:", ZEPTOMAIL_API_KEY?.substring(0, 10));
   
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
-  }
+  const payload = {
+    from: { address: "noreply@useqiv.com", name: "Useqiv" },
+    to: [{ email_address: { address: to, name: toName } }],
+    subject,
+    htmlbody: html,
+  };
+  
+  try {
+    const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  return data;
+    console.log("Response status:", response.status, response.statusText);
+    
+    const responseText = await response.text();
+    console.log("Response body:", responseText || "(empty)");
+    
+    // Handle empty responses
+    if (!responseText || responseText.trim() === "") {
+      if (response.ok) {
+        console.log("Success with empty response");
+        return { success: true };
+      } else {
+        throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
+      }
+    }
+    
+    const data = JSON.parse(responseText);
+    
+    if (!response.ok) {
+      console.error("ZeptoMail API error:", JSON.stringify(data));
+      const errorMsg = data.message || data.error?.message || data.error?.details || JSON.stringify(data);
+      throw new Error(errorMsg);
+    }
+
+    console.log("Email sent successfully");
+    return data;
+  } catch (error: any) {
+    console.error("ZeptoMail fetch error:", error.message);
+    throw error;
+  }
 }
 
 function buildWelcomeEmailHtml(userName: string, referralCode: string): string {
