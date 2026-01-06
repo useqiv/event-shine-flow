@@ -5,7 +5,7 @@ const Hero = () => {
   const stats = [
     { value: "1M+", label: "Votes Cast" },
     { value: "500+", label: "Organizers" },
-    { value: "50K+", label: "Users" },
+    { value: "3K+", label: "Users" },
   ];
 
   const trustedBy = ["Miss Ghana", "Ghana Music Awards", "African Fashion Week", "Tech Summit Africa"];
