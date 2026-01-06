@@ -38,41 +38,30 @@ const About = () => {
       {/* Mission Section */}
       <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Our Mission</span>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Empowering Event Organizers Across Africa
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                USEQIV was founded with a simple yet powerful vision: to provide African event organizers with world-class tools to create, manage, and grow their events.
-              </p>
-              <p className="text-muted-foreground">
-                From voting contests to ticketed events, crowdfunding campaigns to form submissions, we provide an all-in-one platform that handles every aspect of event management with security, transparency, and ease of use at its core.
-              </p>
+          <div className="max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-6">
+              <Target className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">Our Mission</span>
             </div>
-            <div className="bg-muted rounded-3xl p-8 border border-border">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="text-center p-4">
-                  <div className="text-4xl font-bold text-primary mb-2">1M+</div>
-                  <div className="text-sm text-muted-foreground">Votes Cast</div>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-4xl font-bold text-primary mb-2">500+</div>
-                  <div className="text-sm text-muted-foreground">Organizers</div>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-4xl font-bold text-primary mb-2">25+</div>
-                  <div className="text-sm text-muted-foreground">Countries</div>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-4xl font-bold text-primary mb-2">₦50M+</div>
-                  <div className="text-sm text-muted-foreground">Processed</div>
-                </div>
-              </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+              Empowering Event Organizers Across Africa
+            </h2>
+            <div className="space-y-6 text-muted-foreground">
+              <p>
+                USEQIV was founded with a simple yet powerful vision: to provide African event organizers with world-class tools to create, manage, and grow their events. We understand the unique challenges faced by organizers in our region—from payment processing complexities to audience engagement—and we've built a platform that addresses each one.
+              </p>
+              <p>
+                Our journey began when we noticed a gap in the market for a comprehensive, Africa-focused event management solution. Traditional platforms didn't cater to local payment methods, currencies, or the specific needs of African audiences. We set out to change that.
+              </p>
+              <p>
+                From voting contests that power pageants and talent shows, to ticketed events for concerts and conferences, crowdfunding campaigns for creative projects, and form submissions for registrations and surveys—we provide an all-in-one platform that handles every aspect of event management with security, transparency, and ease of use at its core.
+              </p>
+              <p>
+                What sets USEQIV apart is our commitment to the African market. We support local payment gateways, multiple currencies including Naira, and we understand the cultural nuances that make events in Africa unique. Our anti-fraud voting system ensures fair competitions, while our QR-based ticketing provides seamless event check-ins.
+              </p>
+              <p>
+                We believe that every organizer, whether running a small community event or a large-scale national competition, deserves access to professional-grade tools. That's why we've made our platform accessible, affordable, and incredibly easy to use—no technical expertise required.
+              </p>
             </div>
           </div>
         </div>
