@@ -239,11 +239,24 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     if (!ZEPTOMAIL_API_KEY) {
+      console.error("ZEPTOMAIL_API_KEY is not configured");
       throw new Error("ZEPTOMAIL_API_KEY is not configured");
     }
 
     const data: ReceiptRequest = await req.json();
-    console.log("Receipt data:", JSON.stringify(data));
+    console.log("Receipt request received - Type:", data.type, "Email:", data.user_email, "Name:", data.user_name);
+    console.log("Full receipt data:", JSON.stringify(data));
+
+    // Validate required fields
+    if (!data.user_email) {
+      console.error("Missing user_email in receipt request");
+      throw new Error("user_email is required");
+    }
+
+    if (!data.type) {
+      console.error("Missing type in receipt request");
+      throw new Error("type is required");
+    }
 
     const html = data.type === 'vote' 
       ? generateVoteReceiptHtml(data)
@@ -253,6 +266,8 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Vote Receipt - ${data.contest_title}`
       : `Ticket Receipt - ${data.event_title}`;
 
+    console.log("Sending email via ZeptoMail - To:", data.user_email, "Subject:", subject);
+
     const emailResponse = await sendZeptoEmail(
       data.user_email,
       data.user_name,
@@ -260,14 +275,14 @@ const handler = async (req: Request): Promise<Response> => {
       html
     );
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("ZeptoMail API response:", JSON.stringify(emailResponse));
 
     return new Response(
       JSON.stringify({ success: true, ...emailResponse }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error sending receipt:", error);
+    console.error("Error sending receipt:", error.message, error.stack);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
