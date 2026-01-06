@@ -1,4 +1,4 @@
-import { TrendingUp, Vote, Ticket, Users, Clock } from "lucide-react";
+import { TrendingUp, Vote, Users, Clock } from "lucide-react";
 
 const Stats = () => {
   const stats = [
@@ -17,10 +17,10 @@ const Stats = () => {
       growth: "+85% YoY"
     },
     {
-      icon: Ticket,
-      value: "50K+",
-      label: "Tickets Sold",
-      description: "QR-verified entries",
+      icon: Users,
+      value: "3K+",
+      label: "Users",
+      description: "Active platform users",
       growth: "+200% YoY"
     },
     {
