@@ -1,4 +1,5 @@
 import { Vote, Ticket, Heart, FileText, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Categories = () => {
   const categories = [
@@ -16,9 +17,9 @@ const Categories = () => {
           {/* Section Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl lg:text-2xl font-bold text-foreground">What You Can Create</h2>
-            <button className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+            <Link to="/auth" className="text-sm font-medium text-primary hover:text-primary/80 transition-colors">
               Get Started
-            </button>
+            </Link>
           </div>
           
           {/* Categories Grid */}
