@@ -1,4 +1,4 @@
-import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2 } from "lucide-react";
+import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Showcase = () => {
@@ -53,13 +53,13 @@ const Showcase = () => {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: "🛡️", text: "Anti-fraud protection" },
-                    { icon: "📊", text: "Live leaderboards" },
-                    { icon: "🔗", text: "Shareable vote links" },
-                    { icon: "💰", text: "Monetized voting" },
+                    { Icon: Shield, text: "Anti-fraud protection" },
+                    { Icon: BarChart3, text: "Live leaderboards" },
+                    { Icon: Share2, text: "Shareable vote links" },
+                    { Icon: DollarSign, text: "Monetized voting" },
                   ].map((feature, i) => (
                     <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
-                      <span className="text-lg">{feature.icon}</span>
+                      <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
                     </div>
                   ))}
@@ -131,13 +131,13 @@ const Showcase = () => {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: "📱", text: "QR code tickets" },
-                    { icon: "⚡", text: "Instant check-in" },
-                    { icon: "🎫", text: "Tiered pricing" },
-                    { icon: "📈", text: "Sales analytics" },
+                    { Icon: Smartphone, text: "QR code tickets" },
+                    { Icon: Zap, text: "Instant check-in" },
+                    { Icon: Ticket, text: "Tiered pricing" },
+                    { Icon: TrendingUp, text: "Sales analytics" },
                   ].map((feature, i) => (
                     <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
-                      <span className="text-lg">{feature.icon}</span>
+                      <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
                     </div>
                   ))}
@@ -192,13 +192,13 @@ const Showcase = () => {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: "🎯", text: "Goal tracking" },
-                    { icon: "💳", text: "Secure payments" },
-                    { icon: "📢", text: "Campaign updates" },
-                    { icon: "🏆", text: "Donor leaderboard" },
+                    { Icon: Target, text: "Goal tracking" },
+                    { Icon: CreditCard, text: "Secure payments" },
+                    { Icon: Megaphone, text: "Campaign updates" },
+                    { Icon: Trophy, text: "Donor leaderboard" },
                   ].map((feature, i) => (
                     <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
-                      <span className="text-lg">{feature.icon}</span>
+                      <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
                     </div>
                   ))}
@@ -248,13 +248,13 @@ const Showcase = () => {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: "📝", text: "Drag & drop builder" },
-                    { icon: "💵", text: "Payment forms" },
-                    { icon: "🔀", text: "Conditional logic" },
-                    { icon: "📊", text: "Response analytics" },
+                    { Icon: PenTool, text: "Drag & drop builder" },
+                    { Icon: DollarSign, text: "Payment forms" },
+                    { Icon: GitBranch, text: "Conditional logic" },
+                    { Icon: BarChart3, text: "Response analytics" },
                   ].map((feature, i) => (
                     <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
-                      <span className="text-lg">{feature.icon}</span>
+                      <feature.Icon className="h-5 w-5 text-primary" />
                       <span className="text-sm text-foreground font-medium">{feature.text}</span>
                     </div>
                   ))}
@@ -316,13 +316,13 @@ const Showcase = () => {
                   {/* Features Grid */}
                   <div className="grid grid-cols-2 gap-3 mb-6">
                     {[
-                      { icon: "🔗", text: "Unique referral links" },
-                      { icon: "💸", text: "Auto commissions" },
-                      { icon: "📊", text: "Performance dashboard" },
-                      { icon: "💰", text: "Easy payouts" },
+                      { Icon: Link2, text: "Unique referral links" },
+                      { Icon: Wallet, text: "Auto commissions" },
+                      { Icon: BarChart3, text: "Performance dashboard" },
+                      { Icon: DollarSign, text: "Easy payouts" },
                     ].map((feature, i) => (
                       <div key={i} className="flex items-center gap-2.5 p-3 bg-card/50 rounded-xl border border-border/50">
-                        <span className="text-lg">{feature.icon}</span>
+                        <feature.Icon className="h-5 w-5 text-primary" />
                         <span className="text-sm text-foreground font-medium">{feature.text}</span>
                       </div>
                     ))}
