@@ -10,12 +10,6 @@ const About = () => {
     { icon: Globe, title: "Accessibility", description: "Making event management accessible to organizers of all sizes across Africa." },
   ];
 
-  const team = [
-    { name: "Team Member 1", role: "CEO & Founder", image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop" },
-    { name: "Team Member 2", role: "CTO", image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop" },
-    { name: "Team Member 3", role: "Head of Operations", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop" },
-    { name: "Team Member 4", role: "Head of Marketing", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop" },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,30 +84,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="py-16 lg:py-24">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Meet Our Team</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              The passionate people behind USEQIV working to transform the event industry.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member, index) => (
-              <div key={index} className="bg-card border border-border rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-                />
-                <h3 className="text-lg font-semibold text-foreground mb-1">{member.name}</h3>
-                <p className="text-sm text-muted-foreground">{member.role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>
