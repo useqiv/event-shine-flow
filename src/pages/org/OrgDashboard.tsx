@@ -227,7 +227,7 @@ const OrgDashboard = () => {
 
   return (
     <OrganizationLayout>
-      <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
         {/* Welcome Section */}
         <div className="flex flex-col gap-3 sm:gap-4">
           <div>
@@ -286,7 +286,7 @@ const OrgDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 w-full min-w-0">
           {/* Total Revenue */}
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
@@ -396,7 +396,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full min-w-0">
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
@@ -457,7 +457,7 @@ const OrgDashboard = () => {
           <EventCountdownWidget events={events} />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
           {/* Recent Contests */}
           <Card>
             <CardHeader className="pb-3">
