@@ -18,12 +18,17 @@ interface TeamInviteRequest {
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
   console.log("Sending email via ZeptoMail to:", to);
   
+  // Handle API key that may already contain the prefix
+  const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
+    ? ZEPTOMAIL_API_KEY 
+    : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
+  
   const response = await fetch("https://api.zeptomail.com/v1.1/email", {
     method: "POST",
     headers: {
       "Accept": "application/json",
       "Content-Type": "application/json",
-      "Authorization": `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`,
+      "Authorization": apiKey,
     },
     body: JSON.stringify({
       from: { address: "noreply@useqiv.com", name: "Useqiv" },
@@ -35,15 +40,13 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
 
   const responseText = await response.text();
   console.log("ZeptoMail response status:", response.status);
-  console.log("ZeptoMail response:", responseText);
   
-  let data;
-  try {
-    data = responseText ? JSON.parse(responseText) : {};
-  } catch (e) {
-    console.error("Failed to parse ZeptoMail response:", responseText);
-    data = { raw: responseText };
+  if (!responseText || responseText.trim() === "") {
+    if (response.ok) return { success: true };
+    throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
+  
+  const data = JSON.parse(responseText);
   
   if (!response.ok) {
     console.error("ZeptoMail API error:", data);
