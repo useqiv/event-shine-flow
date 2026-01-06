@@ -87,8 +87,8 @@ const Search = () => {
   return (
     <>
       <Helmet>
-        <title>{query ? `Search: ${query}` : "Search"} | VotePass</title>
-        <meta name="description" content={`Search results for "${query}" on VotePass`} />
+        <title>{query ? `Search: ${query}` : "Search"} | Useqiv</title>
+        <meta name="description" content={`Search results for "${query}" on Useqiv`} />
       </Helmet>
 
       <Navbar />

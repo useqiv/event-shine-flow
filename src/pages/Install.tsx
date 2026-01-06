@@ -72,7 +72,7 @@ const Install = () => {
             </div>
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            Install VotePass
+            Install Useqiv
           </h1>
           <p className="text-lg text-muted-foreground">
             Get quick access to voting contests and events right from your home screen
@@ -85,7 +85,7 @@ const Install = () => {
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-foreground mb-2">Already Installed!</h2>
               <p className="text-muted-foreground">
-                VotePass is already installed on your device. Look for it on your home screen.
+                Useqiv is already installed on your device. Look for it on your home screen.
               </p>
             </CardContent>
           </Card>
@@ -98,7 +98,7 @@ const Install = () => {
                   Install on Mobile
                 </CardTitle>
                 <CardDescription>
-                  Add VotePass to your phone's home screen
+                  Add Useqiv to your phone's home screen
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -140,7 +140,7 @@ const Install = () => {
                   Why Install?
                 </CardTitle>
                 <CardDescription>
-                  Benefits of installing VotePass
+                  Benefits of installing Useqiv
                 </CardDescription>
               </CardHeader>
               <CardContent>

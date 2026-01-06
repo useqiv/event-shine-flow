@@ -61,9 +61,9 @@ export const EventCalendar = () => {
     
     return `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//VotePass//Event Calendar//EN
+PRODID:-//Useqiv//Event Calendar//EN
 BEGIN:VEVENT
-UID:${event.id}@votepass.app
+UID:${event.id}@useqiv.com
 DTSTART:${formatICSDate(startDate)}
 DTEND:${formatICSDate(endDate)}
 SUMMARY:${event.title}

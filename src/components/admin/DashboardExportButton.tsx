@@ -68,7 +68,7 @@ const DashboardExportButton: React.FC<DashboardExportButtonProps> = ({ stats }) 
       // Title
       doc.setFontSize(20);
       doc.setTextColor(40, 40, 40);
-      doc.text('VotePass Admin Dashboard Report', 14, 22);
+      doc.text('Useqiv Admin Dashboard Report', 14, 22);
       
       // Subtitle with date
       doc.setFontSize(10);
@@ -148,14 +148,14 @@ const DashboardExportButton: React.FC<DashboardExportButtonProps> = ({ stats }) 
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.text(
-          `VotePass Admin Report - Page ${i} of ${pageCount}`,
+          `Useqiv Admin Report - Page ${i} of ${pageCount}`,
           doc.internal.pageSize.width / 2,
           doc.internal.pageSize.height - 10,
           { align: 'center' }
         );
       }
 
-      doc.save(`votepass-dashboard-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      doc.save(`useqiv-dashboard-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
       toast.success('PDF report downloaded successfully');
     } catch (error) {
       console.error('PDF export error:', error);
@@ -174,7 +174,7 @@ const DashboardExportButton: React.FC<DashboardExportButtonProps> = ({ stats }) 
       // Create CSV content
       const headers = ['Category', 'Metric', 'Value'];
       const csvContent = [
-        `VotePass Admin Dashboard Report`,
+        `Useqiv Admin Dashboard Report`,
         `Generated: ${exportDate}`,
         '',
         headers.join(','),
@@ -186,7 +186,7 @@ const DashboardExportButton: React.FC<DashboardExportButtonProps> = ({ stats }) 
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `votepass-dashboard-report-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.setAttribute('download', `useqiv-dashboard-report-${format(new Date(), 'yyyy-MM-dd')}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();

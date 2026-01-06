@@ -121,7 +121,7 @@ export const VoteReceipt: React.FC<VoteReceiptProps> = ({ vote, children }) => {
           </div>
           <div class="footer">
             <p class="transaction-id">Transaction ID: ${vote.id.slice(0, 16).toUpperCase()}</p>
-            <p style="margin-top: 8px;">VotePass - Powered by your votes</p>
+            <p style="margin-top: 8px;">Useqiv - Powered by your votes</p>
           </div>
         </div>
         <script>
@@ -151,7 +151,7 @@ Time: ${format(new Date(vote.created_at), 'h:mm a')}
 Transaction ID: ${vote.id}
 
 Thank you for voting!
-VotePass
+Useqiv
     `.trim();
 
     const blob = new Blob([content], { type: 'text/plain' });

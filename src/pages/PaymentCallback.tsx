@@ -249,7 +249,7 @@ const PaymentCallback = () => {
               </div>
               <div class="footer-row">
                 <span>Ref: ${txRef}</span>
-                <span>VotePass</span>
+                <span>Useqiv</span>
               </div>
             </div>
           </div>

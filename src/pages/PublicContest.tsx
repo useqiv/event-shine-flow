@@ -119,7 +119,7 @@ const PublicContest = () => {
   return (
     <>
       <Helmet>
-        <title>{contest.title} | VotePass</title>
+        <title>{contest.title} | Useqiv</title>
         <meta name="description" content={contest.description || `Vote now in ${contest.title}`} />
         <meta property="og:title" content={contest.title} />
         <meta property="og:description" content={contest.description || `Vote now in ${contest.title}`} />
@@ -143,7 +143,7 @@ const PublicContest = () => {
             ) : (
               <div className="flex items-center gap-2 text-white">
                 <Trophy className="h-6 w-6" />
-                <span className="font-bold text-lg">VotePass</span>
+                <span className="font-bold text-lg">Useqiv</span>
               </div>
             )}
             {user ? (
@@ -325,7 +325,7 @@ const PublicContest = () => {
         {/* Footer */}
         <footer className="py-6 px-4 border-t border-border mt-8">
           <div className="container mx-auto text-center text-sm text-muted-foreground">
-            Powered by <Link to="/" className="font-semibold hover:underline" style={{ color: primaryColor }}>VotePass</Link>
+            Powered by <Link to="/" className="font-semibold hover:underline" style={{ color: primaryColor }}>Useqiv</Link>
           </div>
         </footer>
       </div>

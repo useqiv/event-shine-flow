@@ -170,7 +170,7 @@ const EmbedLeaderboard = () => {
           className="text-sm font-medium hover:underline"
           style={{ color: primaryColor }}
         >
-          Vote Now on VotePass →
+          Vote Now on Useqiv →
         </a>
       </div>
     </div>
