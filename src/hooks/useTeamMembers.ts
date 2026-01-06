@@ -67,44 +67,53 @@ export const useInviteTeamMember = () => {
       organizationName?: string;
       inviterName?: string;
     }) => {
-      // First check if user with this email exists - they must sign up first
-      const { data: existingUser, error: lookupError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('email', memberData.email)
-        .single();
-
-      if (lookupError || !existingUser) {
-        throw new Error('USER_NOT_FOUND');
-      }
-
-      // Get the team member record to get its ID for the notification
+      // Create the team member record (status will be 'pending' by default)
       const { data: teamMember, error } = await supabase
         .from('team_members')
         .insert([{
           organization_id: user!.id,
           email: memberData.email,
-          name: memberData.name || existingUser.full_name,
+          name: memberData.name || null,
           role: memberData.role,
           permissions: JSON.parse(JSON.stringify(memberData.permissions)),
+          status: 'pending',
         }])
         .select('id')
         .single();
       
       if (error) throw error;
 
-      // Send in-app notification using the database function (bypasses RLS)
-      const { error: notifError } = await supabase.rpc('send_notification', {
-        p_user_id: existingUser.id,
-        p_title: 'Team Invitation',
-        p_message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}. Click to accept or decline.`,
-        p_type: 'team_invite',
-        p_reference_id: teamMember.id,
+      // Send email invitation
+      const { error: emailError } = await supabase.functions.invoke('send-team-invite', {
+        body: {
+          email: memberData.email,
+          name: memberData.name,
+          role: memberData.role,
+          organizationName: memberData.organizationName || 'an organization',
+          inviterName: memberData.inviterName || 'Someone',
+        },
       });
-      
-      if (notifError) {
-        console.error('Failed to send notification:', notifError);
-        // Don't throw - team member was created, just notification failed
+
+      if (emailError) {
+        console.error('Failed to send invite email:', emailError);
+        // Don't throw - team member was created, just email failed
+      }
+
+      // Also send in-app notification if user already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', memberData.email)
+        .single();
+
+      if (existingUser) {
+        await supabase.rpc('send_notification', {
+          p_user_id: existingUser.id,
+          p_title: 'Team Invitation',
+          p_message: `${memberData.inviterName || 'Someone'} has invited you to join ${memberData.organizationName || 'their organization'} as a ${memberData.role}. Click to accept or decline.`,
+          p_type: 'team_invite',
+          p_reference_id: teamMember.id,
+        });
       }
     },
     onSuccess: () => {
@@ -112,9 +121,7 @@ export const useInviteTeamMember = () => {
       toast.success('Invitation sent! They will receive a notification to accept or decline.');
     },
     onError: (error: any) => {
-      if (error.message === 'USER_NOT_FOUND') {
-        toast.error('This user must sign up first before they can be invited');
-      } else if (error.code === '23505') {
+      if (error.code === '23505') {
         toast.error('This email has already been invited');
       } else {
         toast.error('Failed to invite team member');
