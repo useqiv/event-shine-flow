@@ -35,6 +35,7 @@ const contestSchema = z.object({
   is_active: z.boolean(),
   is_live_voting: z.boolean(),
   custom_slug: z.string().max(50).optional(),
+  commission_rate: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
 type ContestFormData = z.infer<typeof contestSchema>;
@@ -53,6 +54,7 @@ interface EditContestDialogProps {
     is_active: boolean;
     is_live_voting: boolean;
     custom_slug: string | null;
+    commission_rate: number | null;
   };
 }
 
@@ -76,6 +78,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
       is_active: contest.is_active,
       is_live_voting: contest.is_live_voting,
       custom_slug: contest.custom_slug || '',
+      commission_rate: contest.commission_rate,
     },
   });
 
@@ -91,6 +94,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
         is_active: contest.is_active,
         is_live_voting: contest.is_live_voting,
         custom_slug: contest.custom_slug || '',
+        commission_rate: contest.commission_rate,
       });
     }
   }, [open, contest, form]);
@@ -110,6 +114,7 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
           is_active: data.is_active,
           is_live_voting: data.is_live_voting,
           custom_slug: data.custom_slug || null,
+          commission_rate: data.commission_rate || null,
         })
         .eq('id', contest.id);
 
@@ -219,6 +224,31 @@ const EditContestDialog: React.FC<EditContestDialogProps> = ({
                   <FormControl>
                     <Input {...field} placeholder="my-contest" />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="commission_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Commission Rate Override (%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      min="0" 
+                      max="100"
+                      placeholder="Leave empty for default"
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Override the platform/organization commission. Leave empty to use default.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

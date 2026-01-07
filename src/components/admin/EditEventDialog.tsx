@@ -44,6 +44,7 @@ const eventSchema = z.object({
   currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
   is_active: z.boolean(),
+  commission_rate: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -62,6 +63,7 @@ interface EditEventDialogProps {
     currency: string;
     is_featured: boolean;
     is_active: boolean;
+    commission_rate: number | null;
   };
 }
 
@@ -90,6 +92,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       currency: event.currency || 'NGN',
       is_featured: event.is_featured,
       is_active: event.is_active,
+      commission_rate: event.commission_rate,
     },
   });
 
@@ -105,6 +108,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
         currency: event.currency || 'NGN',
         is_featured: event.is_featured,
         is_active: event.is_active,
+        commission_rate: event.commission_rate,
       });
     }
   }, [open, event, form]);
@@ -124,6 +128,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           currency: data.currency,
           is_featured: data.is_featured,
           is_active: data.is_active,
+          commission_rate: data.commission_rate || null,
         })
         .eq('id', event.id);
 
@@ -255,6 +260,31 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="commission_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Commission Rate Override (%)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      min="0" 
+                      max="100"
+                      placeholder="Leave empty for default"
+                      {...field}
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Override the platform/organization commission. Leave empty to use default.
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

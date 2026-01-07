@@ -28,7 +28,8 @@ import {
   Play,
   Users,
   QrCode,
-  Pencil
+  Pencil,
+  Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -329,6 +330,16 @@ const AdminEventDetail: React.FC = () => {
                   <span className="text-muted-foreground">Event Date</span>
                   <span className="font-medium">
                     {format(new Date(event.event_date), 'MMMM d, yyyy h:mm a')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Commission Rate</span>
+                  <span className="font-medium">
+                    {event.commission_rate !== null ? (
+                      <Badge className="bg-primary">{event.commission_rate}% (Custom)</Badge>
+                    ) : (
+                      <Badge variant="secondary">Default</Badge>
+                    )}
                   </span>
                 </div>
                 <div className="flex justify-between">
