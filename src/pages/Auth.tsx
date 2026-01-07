@@ -268,7 +268,7 @@ const Auth = () => {
             <span>Back to Home</span>
           </Link>
           <Link to="/" className="flex items-center justify-center">
-            <img src="/favicon.png" alt="USEQIV" className="h-12 w-auto" />
+            <img src="/logo.png" alt="USEQIV" className="h-12 w-auto" />
           </Link>
         </div>
 
