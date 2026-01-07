@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
+import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -67,6 +68,7 @@ const ContestDetail = () => {
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Handle vote updates with pulse animation and confetti
   const handleVoteUpdate = useCallback((contestantId: string, newVoteCount: number, previousVoteCount: number) => {
@@ -153,6 +155,21 @@ const ContestDetail = () => {
   const selectedCategoryContestants = selectedCategoryId 
     ? (contestantsByCategory[selectedCategoryId] || [])
     : [];
+
+  // Filter contestants based on search
+  const filteredContestants = useMemo(() => {
+    return filterContestants(contestants || [], searchTerm);
+  }, [contestants, searchTerm]);
+
+  // Filter contestants in selected category
+  const filteredCategoryContestants = useMemo(() => {
+    return filterContestants(selectedCategoryContestants, searchTerm);
+  }, [selectedCategoryContestants, searchTerm]);
+
+  // Filter uncategorized contestants
+  const filteredUncategorized = useMemo(() => {
+    return filterContestants(contestantsByCategory.uncategorized || [], searchTerm);
+  }, [contestantsByCategory.uncategorized, searchTerm]);
 
   // Handle auto-scroll and highlight when vote parameter is present
   useEffect(() => {
@@ -358,18 +375,19 @@ const ContestDetail = () => {
             hasCategories ? (
               // Category-based drill-down navigation
               selectedCategoryId ? (
-                // Show contestants in selected category
-                <div>
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setSelectedCategoryId(null)} 
-                    className="mb-4"
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Categories
-                  </Button>
-                  
-                  <div className="mb-6">
+              // Show contestants in selected category
+              <div>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedCategoryId(null)} 
+                  className="mb-4"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Categories
+                </Button>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                  <div>
                     <h2 className="text-xl font-bold" style={{ color: primaryColor }}>
                       {selectedCategory?.name}
                     </h2>
@@ -377,12 +395,19 @@ const ContestDetail = () => {
                       <p className="text-muted-foreground mt-1">{selectedCategory.description}</p>
                     )}
                     <p className="text-sm text-muted-foreground mt-2">
-                      {selectedCategoryContestants.length} contestant{selectedCategoryContestants.length !== 1 ? 's' : ''}
+                      {filteredCategoryContestants.length} contestant{filteredCategoryContestants.length !== 1 ? 's' : ''}
+                      {searchTerm && ` matching "${searchTerm}"`}
                     </p>
                   </div>
+                  <ContestantFilter
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                  />
+                </div>
 
+                {filteredCategoryContestants.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {selectedCategoryContestants.map((contestant: any, index: number) => (
+                    {filteredCategoryContestants.map((contestant: any, index: number) => (
                       <Card 
                         key={contestant.id} 
                         ref={(el) => { contestantRefs.current[contestant.id] = el; }}
@@ -436,7 +461,16 @@ const ContestDetail = () => {
                       </Card>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No contestants match your search</p>
+                    <Button variant="outline" className="mt-3" onClick={() => setSearchTerm('')}>
+                      Clear Search
+                    </Button>
+                  </Card>
+                )}
+              </div>
               ) : (
                 // Show categories list
                 <div>
@@ -542,62 +576,85 @@ const ContestDetail = () => {
             ) : (
               // No categories - show all contestants directly
               <div>
-                <h2 className="text-xl font-bold mb-4">Contestants</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {contestants.map((contestant, index) => (
-                    <Card 
-                      key={contestant.id} 
-                      ref={(el) => { contestantRefs.current[contestant.id] = el; }}
-                      className={`overflow-hidden transition-all duration-500 ${highlightedContestant === contestant.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]' : ''} ${pulsingContestants.has(contestant.id) ? 'animate-pulse ring-2 ring-green-500 ring-offset-2 ring-offset-background' : ''}`}
-                    >
-                      <div className="relative h-48 bg-secondary">
-                        {contestant.photo_url ? (
-                          <img src={contestant.photo_url} alt={contestant.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center">
-                            <User className="h-16 w-16 text-muted-foreground" />
-                          </div>
-                        )}
-                        {index < 3 && (
-                          <div className="absolute top-2 left-2">
-                            <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
-                              #{index + 1}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-lg">{contestant.name}</h3>
-                          <div className="flex items-center gap-1">
-                            <FavoriteButton contestantId={contestant.id} />
-                            <ContestantShareButton 
-                              contestId={id || ''} 
-                              contestantId={contestant.id} 
-                              contestantName={contestant.name} 
-                              contestTitle={contest?.title || ''} 
-                            />
-                          </div>
-                        </div>
-                        {contestant.bio && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
-                        )}
-                        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                          <Vote className="h-4 w-4" />
-                          <span>{contestant.is_public_votes ? `${contestant.vote_count.toLocaleString()} votes` : 'Votes hidden'}</span>
-                        </div>
-                        <Button 
-                          className="w-full mt-4" 
-                          onClick={() => handleVoteClick(contestant)} 
-                          disabled={isEnded} 
-                          style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
-                        >
-                          {isEnded ? 'Voting Ended' : 'Vote Now'}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                  <h2 className="text-xl font-bold">Contestants</h2>
+                  {contestants && contestants.length > 0 && (
+                    <ContestantFilter
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                    />
+                  )}
                 </div>
+                {filteredContestants.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredContestants.map((contestant, index) => (
+                      <Card 
+                        key={contestant.id} 
+                        ref={(el) => { contestantRefs.current[contestant.id] = el; }}
+                        className={`overflow-hidden transition-all duration-500 ${highlightedContestant === contestant.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]' : ''} ${pulsingContestants.has(contestant.id) ? 'animate-pulse ring-2 ring-green-500 ring-offset-2 ring-offset-background' : ''}`}
+                      >
+                        <div className="relative h-48 bg-secondary">
+                          {contestant.photo_url ? (
+                            <img src={contestant.photo_url} alt={contestant.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <User className="h-16 w-16 text-muted-foreground" />
+                            </div>
+                          )}
+                          {index < 3 && (
+                            <div className="absolute top-2 left-2">
+                              <Badge className={index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-600'}>
+                                #{index + 1}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-semibold text-lg">{contestant.name}</h3>
+                            <div className="flex items-center gap-1">
+                              <FavoriteButton contestantId={contestant.id} />
+                              <ContestantShareButton 
+                                contestId={id || ''} 
+                                contestantId={contestant.id} 
+                                contestantName={contestant.name} 
+                                contestTitle={contest?.title || ''} 
+                              />
+                            </div>
+                          </div>
+                          {contestant.bio && (
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+                            <Vote className="h-4 w-4" />
+                            <span>{contestant.is_public_votes ? `${contestant.vote_count.toLocaleString()} votes` : 'Votes hidden'}</span>
+                          </div>
+                          <Button 
+                            className="w-full mt-4" 
+                            onClick={() => handleVoteClick(contestant)} 
+                            disabled={isEnded} 
+                            style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
+                          >
+                            {isEnded ? 'Voting Ended' : 'Vote Now'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : contestants && contestants.length > 0 ? (
+                  <Card className="p-8 text-center">
+                    <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No contestants match your search</p>
+                    <Button variant="outline" className="mt-3" onClick={() => setSearchTerm('')}>
+                      Clear Search
+                    </Button>
+                  </Card>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">No contestants yet</p>
+                  </Card>
+                )}
               </div>
             )
           ) : (

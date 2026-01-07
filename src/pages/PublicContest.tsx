@@ -14,6 +14,7 @@ import PaymentModal from '@/components/PaymentModal';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink } from 'lucide-react';
+import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -26,6 +27,7 @@ const PublicContest = () => {
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -73,6 +75,11 @@ const PublicContest = () => {
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const contestUrl = `${window.location.origin}/c/${slug}`;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+
+  // Filter contestants based on search term
+  const filteredContestants = useMemo(() => {
+    return filterContestants(contestants || [], searchTerm);
+  }, [contestants, searchTerm]);
 
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
@@ -232,16 +239,24 @@ const PublicContest = () => {
 
           {/* Contestants */}
           <div>
-            <h2 className="text-xl font-bold mb-4">Contestants</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <h2 className="text-xl font-bold">Contestants</h2>
+              {contestants && contestants.length > 0 && (
+                <ContestantFilter
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                />
+              )}
+            </div>
             {contestantsLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-64 w-full" />
                 ))}
               </div>
-            ) : contestants && contestants.length > 0 ? (
+            ) : filteredContestants && filteredContestants.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {contestants.map((contestant, index) => (
+                {filteredContestants.map((contestant, index) => (
                   <Card 
                     key={contestant.id} 
                     className="overflow-hidden hover:shadow-lg transition-shadow"
@@ -295,6 +310,14 @@ const PublicContest = () => {
                   </Card>
                 ))}
               </div>
+            ) : contestants && contestants.length > 0 ? (
+              <Card className="p-8 text-center">
+                <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No contestants match your search</p>
+                <Button variant="outline" className="mt-3" onClick={() => setSearchTerm('')}>
+                  Clear Search
+                </Button>
+              </Card>
             ) : (
               <Card className="p-8 text-center">
                 <User className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
