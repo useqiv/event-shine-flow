@@ -473,6 +473,7 @@ export type Database = {
           brand_primary_color: string | null
           brand_secondary_color: string | null
           category: string
+          commission_rate: number | null
           contest_type: string
           created_at: string
           custom_slug: string | null
@@ -498,6 +499,7 @@ export type Database = {
           brand_primary_color?: string | null
           brand_secondary_color?: string | null
           category: string
+          commission_rate?: number | null
           contest_type?: string
           created_at?: string
           custom_slug?: string | null
@@ -523,6 +525,7 @@ export type Database = {
           brand_primary_color?: string | null
           brand_secondary_color?: string | null
           category?: string
+          commission_rate?: number | null
           contest_type?: string
           created_at?: string
           custom_slug?: string | null
@@ -709,6 +712,7 @@ export type Database = {
         Row: {
           address: string | null
           category: string
+          commission_rate: number | null
           created_at: string
           currency: string
           custom_slug: string | null
@@ -729,6 +733,7 @@ export type Database = {
         Insert: {
           address?: string | null
           category: string
+          commission_rate?: number | null
           created_at?: string
           currency?: string
           custom_slug?: string | null
@@ -749,6 +754,7 @@ export type Database = {
         Update: {
           address?: string | null
           category?: string
+          commission_rate?: number | null
           created_at?: string
           currency?: string
           custom_slug?: string | null

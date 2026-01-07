@@ -27,7 +27,8 @@ import {
   Eye,
   Pause,
   Play,
-  Pencil
+  Pencil,
+  Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -301,6 +302,16 @@ const AdminContestDetail: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Vote Price</span>
                   <span className="font-medium">{formatCurrency(contest.vote_price, contest.vote_currency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Commission Rate</span>
+                  <span className="font-medium">
+                    {contest.commission_rate !== null ? (
+                      <Badge className="bg-primary">{contest.commission_rate}% (Custom)</Badge>
+                    ) : (
+                      <Badge variant="secondary">Default</Badge>
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Featured</span>
