@@ -406,6 +406,7 @@ export type Database = {
           bio: string | null
           category_id: string | null
           contest_id: string
+          country: string | null
           created_at: string
           display_order: number | null
           id: string
@@ -413,6 +414,7 @@ export type Database = {
           name: string
           performance: string | null
           photo_url: string | null
+          state: string | null
           updated_at: string
           vote_count: number
         }
@@ -420,6 +422,7 @@ export type Database = {
           bio?: string | null
           category_id?: string | null
           contest_id: string
+          country?: string | null
           created_at?: string
           display_order?: number | null
           id?: string
@@ -427,6 +430,7 @@ export type Database = {
           name: string
           performance?: string | null
           photo_url?: string | null
+          state?: string | null
           updated_at?: string
           vote_count?: number
         }
@@ -434,6 +438,7 @@ export type Database = {
           bio?: string | null
           category_id?: string | null
           contest_id?: string
+          country?: string | null
           created_at?: string
           display_order?: number | null
           id?: string
@@ -441,6 +446,7 @@ export type Database = {
           name?: string
           performance?: string | null
           photo_url?: string | null
+          state?: string | null
           updated_at?: string
           vote_count?: number
         }

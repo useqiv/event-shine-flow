@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, User, Vote } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trophy, User, Vote, Search } from 'lucide-react';
+import { filterContestants } from '@/components/ContestantFilter';
 
 const EmbedLeaderboard = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -45,6 +47,12 @@ const EmbedLeaderboard = () => {
 
   const primaryColor = contest?.brand_primary_color || '#7c3aed';
   const secondaryColor = contest?.brand_secondary_color || '#f97316';
+
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const filteredContestants = useMemo(() => {
+    return filterContestants(contestants || [], searchTerm);
+  }, [contestants, searchTerm]);
 
   if (contestLoading || contestantsLoading) {
     return (
@@ -88,10 +96,24 @@ const EmbedLeaderboard = () => {
         <p className="text-sm opacity-90">Live Leaderboard</p>
       </div>
 
+      {/* Search */}
+      {contestants && contestants.length > 3 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by name, state, country..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-9 text-sm"
+          />
+        </div>
+      )}
+
       {/* Leaderboard */}
       <div className="space-y-2">
-        {contestants && contestants.length > 0 ? (
-          contestants.map((contestant, index) => {
+        {filteredContestants && filteredContestants.length > 0 ? (
+          filteredContestants.map((contestant, index) => {
             const percentage = (contestant.vote_count / maxVotes) * 100;
             const isTop3 = index < 3;
             
@@ -153,6 +175,11 @@ const EmbedLeaderboard = () => {
               </div>
             );
           })
+        ) : contestants && contestants.length > 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <User className="h-10 w-10 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No contestants match "{searchTerm}"</p>
+          </div>
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <User className="h-10 w-10 mx-auto mb-2 opacity-50" />
