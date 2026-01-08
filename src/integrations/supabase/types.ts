@@ -1360,6 +1360,30 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string
+          id: string
+          ip_hash: string | null
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          email: string
+          id?: string
+          ip_hash?: string | null
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          email?: string
+          id?: string
+          ip_hash?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       nomination_categories: {
         Row: {
           created_at: string
@@ -2869,6 +2893,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_login_rate_limit: {
+        Args: { p_email: string; p_ip_hash?: string }
+        Returns: Json
+      }
+      clear_login_attempts: { Args: { p_email: string }; Returns: undefined }
       get_admin_statistics: { Args: never; Returns: Json }
       get_referral_leaderboard: {
         Args: { limit_count?: number }
@@ -2886,6 +2915,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      record_login_attempt: {
+        Args: { p_email: string; p_ip_hash?: string; p_success: boolean }
+        Returns: undefined
       }
       send_notification: {
         Args: {
