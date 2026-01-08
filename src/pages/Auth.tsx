@@ -33,6 +33,7 @@ const Auth = () => {
     isLocked,
     remainingAttempts,
     formattedRemainingTime,
+    checkRateLimit,
     recordFailedAttempt,
     resetAttempts
   } = useLoginRateLimit();
@@ -62,7 +63,10 @@ const Auth = () => {
   }, [searchParams]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLocked) {
+    
+    // Check server-side rate limit first
+    const rateLimitStatus = await checkRateLimit(loginEmail);
+    if (rateLimitStatus.isLocked) {
       toast({
         title: 'Account Temporarily Locked',
         description: `Too many failed attempts. Please try again in ${formattedRemainingTime}.`,
@@ -70,6 +74,7 @@ const Auth = () => {
       });
       return;
     }
+    
     try {
       emailSchema.parse(loginEmail);
       passwordSchema.parse(loginPassword);
@@ -90,11 +95,12 @@ const Auth = () => {
     } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
     if (error) {
-      const attemptData = recordFailedAttempt();
-      const attemptsLeft = Math.max(0, 5 - attemptData.count);
+      const attemptData = await recordFailedAttempt(loginEmail);
       toast({
         title: 'Login Failed',
-        description: attemptData.lockedUntil ? 'Too many failed attempts. Your account is temporarily locked for 15 minutes.' : `${error.message}${attemptsLeft > 0 ? ` (${attemptsLeft} attempts remaining)` : ''}`,
+        description: attemptData.isLocked 
+          ? 'Too many failed attempts. Your account is temporarily locked for 15 minutes.' 
+          : `${error.message}${attemptData.remainingAttempts > 0 ? ` (${attemptData.remainingAttempts} attempts remaining)` : ''}`,
         variant: 'destructive'
       });
     } else if (mfaRequired) {
@@ -104,7 +110,7 @@ const Auth = () => {
         description: 'Please enter your 2FA code to continue.'
       });
     } else {
-      resetAttempts();
+      await resetAttempts(loginEmail);
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.'
@@ -127,7 +133,7 @@ const Auth = () => {
         variant: 'destructive'
       });
     } else {
-      resetAttempts();
+      await resetAttempts(loginEmail);
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.'

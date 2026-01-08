@@ -1,92 +1,107 @@
 import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
-const STORAGE_KEY = 'login_attempts';
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-
-interface AttemptData {
-  count: number;
-  firstAttemptTime: number;
-  lockedUntil: number | null;
+interface RateLimitState {
+  isLocked: boolean;
+  attempts: number;
+  maxAttempts: number;
+  remainingAttempts: number;
+  lockoutUntil: string | null;
 }
 
-const getStoredData = (): AttemptData => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    // Invalid data, reset
-  }
-  return { count: 0, firstAttemptTime: 0, lockedUntil: null };
-};
-
-const setStoredData = (data: AttemptData) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+const DEFAULT_STATE: RateLimitState = {
+  isLocked: false,
+  attempts: 0,
+  maxAttempts: 5,
+  remainingAttempts: 5,
+  lockoutUntil: null,
 };
 
 export const useLoginRateLimit = () => {
-  const [attemptData, setAttemptData] = useState<AttemptData>(getStoredData);
+  const [state, setState] = useState<RateLimitState>(DEFAULT_STATE);
   const [remainingTime, setRemainingTime] = useState<number>(0);
-
-  // Check if currently locked
-  const isLocked = attemptData.lockedUntil !== null && Date.now() < attemptData.lockedUntil;
-  const remainingAttempts = Math.max(0, MAX_ATTEMPTS - attemptData.count);
 
   // Update remaining time countdown
   useEffect(() => {
-    if (!isLocked) {
+    if (!state.isLocked || !state.lockoutUntil) {
       setRemainingTime(0);
       return;
     }
 
     const updateTime = () => {
-      const remaining = Math.max(0, (attemptData.lockedUntil || 0) - Date.now());
+      const lockoutTime = new Date(state.lockoutUntil!).getTime();
+      const remaining = Math.max(0, lockoutTime - Date.now());
       setRemainingTime(remaining);
       
       // Auto-unlock when time expires
       if (remaining === 0) {
-        const newData: AttemptData = { count: 0, firstAttemptTime: 0, lockedUntil: null };
-        setAttemptData(newData);
-        setStoredData(newData);
+        setState(DEFAULT_STATE);
       }
     };
 
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, [isLocked, attemptData.lockedUntil]);
+  }, [state.isLocked, state.lockoutUntil]);
 
-  // Record a failed attempt
-  const recordFailedAttempt = useCallback(() => {
-    const now = Date.now();
-    const currentData = getStoredData();
-    
-    // Reset if first attempt was more than lockout duration ago
-    const shouldReset = currentData.firstAttemptTime && 
-      (now - currentData.firstAttemptTime) > LOCKOUT_DURATION_MS;
-    
-    const newCount = shouldReset ? 1 : currentData.count + 1;
-    const newFirstAttemptTime = shouldReset ? now : (currentData.firstAttemptTime || now);
-    
-    const newData: AttemptData = {
-      count: newCount,
-      firstAttemptTime: newFirstAttemptTime,
-      lockedUntil: newCount >= MAX_ATTEMPTS ? now + LOCKOUT_DURATION_MS : null,
-    };
-    
-    setAttemptData(newData);
-    setStoredData(newData);
-    
-    return newData;
+  // Check rate limit status from server
+  const checkRateLimit = useCallback(async (email: string) => {
+    try {
+      const { data, error } = await supabase.rpc('check_login_rate_limit', {
+        p_email: email,
+        p_ip_hash: null, // Could hash IP client-side if needed
+      });
+
+      if (error) {
+        console.error('Rate limit check error:', error);
+        return DEFAULT_STATE;
+      }
+
+      // Type guard for the response
+      const jsonData = data as Record<string, unknown>;
+      const result: RateLimitState = {
+        isLocked: Boolean(jsonData?.is_locked),
+        attempts: Number(jsonData?.attempts) || 0,
+        maxAttempts: Number(jsonData?.max_attempts) || 5,
+        remainingAttempts: Number(jsonData?.remaining_attempts) || 5,
+        lockoutUntil: jsonData?.lockout_until as string | null,
+      };
+
+      setState(result);
+      return result;
+    } catch (err) {
+      console.error('Rate limit check failed:', err);
+      return DEFAULT_STATE;
+    }
   }, []);
 
-  // Reset on successful login
-  const resetAttempts = useCallback(() => {
-    const newData: AttemptData = { count: 0, firstAttemptTime: 0, lockedUntil: null };
-    setAttemptData(newData);
-    setStoredData(newData);
+  // Record a failed attempt (server-side)
+  const recordFailedAttempt = useCallback(async (email: string) => {
+    try {
+      await supabase.rpc('record_login_attempt', {
+        p_email: email,
+        p_success: false,
+        p_ip_hash: null,
+      });
+
+      // Re-check the rate limit status
+      return await checkRateLimit(email);
+    } catch (err) {
+      console.error('Failed to record attempt:', err);
+      return state;
+    }
+  }, [checkRateLimit, state]);
+
+  // Record successful login and clear attempts
+  const resetAttempts = useCallback(async (email: string) => {
+    try {
+      await supabase.rpc('clear_login_attempts', {
+        p_email: email,
+      });
+      setState(DEFAULT_STATE);
+    } catch (err) {
+      console.error('Failed to clear attempts:', err);
+    }
   }, []);
 
   // Format remaining time for display
@@ -97,12 +112,13 @@ export const useLoginRateLimit = () => {
   }, []);
 
   return {
-    isLocked,
-    remainingAttempts,
+    isLocked: state.isLocked,
+    remainingAttempts: state.remainingAttempts,
     remainingTime,
     formattedRemainingTime: formatRemainingTime(remainingTime),
+    checkRateLimit,
     recordFailedAttempt,
     resetAttempts,
-    maxAttempts: MAX_ATTEMPTS,
+    maxAttempts: state.maxAttempts,
   };
 };
