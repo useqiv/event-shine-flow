@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAdminStatistics } from '@/hooks/useAdminData';
 import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import { useMultiCurrencyRevenue } from '@/hooks/useMultiCurrencyRevenue';
+import { usePendingPayoutsByCurrency } from '@/hooks/usePendingPayoutsByCurrency';
 import PaymentStatsWidget from '@/components/admin/PaymentStatsWidget';
 import MultiCurrencyRevenueWidget from '@/components/admin/MultiCurrencyRevenueWidget';
 import DashboardComparisonWidget from '@/components/admin/DashboardComparisonWidget';
@@ -116,6 +117,7 @@ const AlertCard = ({
 const AdminDashboard: React.FC = () => {
   const { data: stats, isLoading } = useAdminStatistics();
   const { data: currencyData } = useMultiCurrencyRevenue();
+  const { data: pendingPayoutsData } = usePendingPayoutsByCurrency();
   
   // Enable real-time payment notifications
   useRealtimePayments();
@@ -288,13 +290,27 @@ const AdminDashboard: React.FC = () => {
 
         {/* Other Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            title="Pending Payouts"
-            value={formatCurrency(stats?.pending_payouts || 0, 'NGN')}
-            icon={Wallet}
-            description="Awaiting approval"
-            href="/admin/payouts"
-          />
+          {/* Pending Payouts - Show per currency if there are multiple */}
+          {pendingPayoutsData && pendingPayoutsData.length > 0 ? (
+            pendingPayoutsData.map((item) => (
+              <StatCard
+                key={item.currency}
+                title={`Pending Payouts (${item.currency})`}
+                value={formatCurrency(item.totalAmount, item.currency)}
+                icon={Wallet}
+                description={`${item.count} request${item.count !== 1 ? 's' : ''} awaiting approval`}
+                href="/admin/payouts"
+              />
+            ))
+          ) : (
+            <StatCard
+              title="Pending Payouts"
+              value={formatCurrency(0, 'NGN')}
+              icon={Wallet}
+              description="No pending requests"
+              href="/admin/payouts"
+            />
+          )}
           <StatCard
             title="Total Votes"
             value={stats?.total_votes?.toLocaleString() || 0}
