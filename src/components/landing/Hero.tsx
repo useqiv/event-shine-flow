@@ -47,7 +47,7 @@ const Hero = () => {
               {/* Headline */}
               <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-foreground leading-[1.1] mb-6">
                 The Complete{" "}
-                <span className="text-primary relative">
+              <span className="text-primary relative whitespace-nowrap">
                   Event Platform
                   <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
                     <path d="M0 6 Q50 0, 100 6 T200 6" stroke="currentColor" strokeWidth="4" fill="none" />
