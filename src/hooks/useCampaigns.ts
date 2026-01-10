@@ -134,8 +134,9 @@ export const useCampaignDonations = (campaignId: string) => {
   return useQuery({
     queryKey: ['campaign-donations', campaignId],
     queryFn: async () => {
+      // Use donations_safe view to protect anonymous donor identities
       const { data, error } = await supabase
-        .from('donations')
+        .from('donations_safe')
         .select('*')
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false });
