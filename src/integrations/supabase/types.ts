@@ -2890,7 +2890,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      donations_safe: {
+        Row: {
+          amount: number | null
+          campaign_id: string | null
+          created_at: string | null
+          currency: string | null
+          donor_id: string | null
+          donor_message: string | null
+          id: string | null
+          is_anonymous: boolean | null
+          payment_method: string | null
+          status: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          campaign_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          donor_id?: never
+          donor_message?: never
+          id?: string | null
+          is_anonymous?: boolean | null
+          payment_method?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          campaign_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          donor_id?: never
+          donor_message?: never
+          id?: string | null
+          is_anonymous?: boolean | null
+          payment_method?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_login_rate_limit: {
