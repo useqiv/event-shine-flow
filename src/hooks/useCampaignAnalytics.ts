@@ -97,8 +97,9 @@ export const useCampaignDonorStats = (campaignId: string) => {
   return useQuery({
     queryKey: ['campaign-donor-stats', campaignId],
     queryFn: async () => {
+      // Use donations_safe view to protect anonymous donor identities
       const { data: donations, error } = await supabase
-        .from('donations')
+        .from('donations_safe')
         .select('donor_id, amount, is_anonymous, created_at')
         .eq('campaign_id', campaignId)
         .eq('status', 'completed');

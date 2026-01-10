@@ -157,9 +157,9 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         
         return { transactions: enrichedData || [] };
       } else {
-        // Campaign donations
+        // Campaign donations - use donations_safe view to protect anonymous donor identities
         let query = supabase
-          .from('donations')
+          .from('donations_safe')
           .select(`
             id,
             amount,
