@@ -1,16 +1,13 @@
 /**
- * Compresses an image file to a target size using canvas API
+ * Compresses an image file to a target size while maintaining visual quality
+ * Uses smart resizing first, then quality adjustment as last resort
  * @param file - The image file to compress
- * @param targetSizeKB - Target file size in KB (default 200KB)
- * @param maxWidth - Maximum width (default 1920px)
- * @param maxHeight - Maximum height (default 1920px)
+ * @param targetSizeKB - Target file size in KB (default 50KB)
  * @returns Compressed file as Blob
  */
 export async function compressImage(
   file: File,
-  targetSizeKB: number = 200,
-  maxWidth: number = 1920,
-  maxHeight: number = 1920
+  targetSizeKB: number = 50
 ): Promise<Blob> {
   // If file is already small enough, return as-is
   if (file.size <= targetSizeKB * 1024) {
@@ -22,7 +19,7 @@ export async function compressImage(
 
     img.onload = async () => {
       try {
-        const result = await compressToTargetSize(img, file, targetSizeKB, maxWidth, maxHeight);
+        const result = await compressToTargetSize(img, file, targetSizeKB);
         resolve(result);
       } catch (error) {
         reject(error);
@@ -43,9 +40,7 @@ export async function compressImage(
 async function compressToTargetSize(
   img: HTMLImageElement,
   originalFile: File,
-  targetSizeKB: number,
-  maxWidth: number,
-  maxHeight: number
+  targetSizeKB: number
 ): Promise<Blob> {
   const targetBytes = targetSizeKB * 1024;
   const canvas = document.createElement('canvas');
@@ -55,48 +50,52 @@ async function compressToTargetSize(
     throw new Error('Could not get canvas context');
   }
 
-  // Calculate initial dimensions
-  let { width, height } = img;
+  const originalWidth = img.width;
+  const originalHeight = img.height;
   
-  // First pass: resize to max dimensions
-  if (width > maxWidth) {
-    height = (height * maxWidth) / width;
-    width = maxWidth;
-  }
-  if (height > maxHeight) {
-    width = (width * maxHeight) / height;
-    height = maxHeight;
+  // Calculate optimal dimensions based on file size ratio
+  // This estimates how much we need to scale down
+  const sizeRatio = targetBytes / originalFile.size;
+  
+  // For images, file size roughly scales with pixel count
+  // So we scale dimensions by sqrt of the size ratio
+  let scaleFactor = Math.sqrt(sizeRatio) * 1.5; // 1.5x buffer for quality
+  scaleFactor = Math.min(1, scaleFactor); // Never upscale
+  
+  let width = Math.round(originalWidth * scaleFactor);
+  let height = Math.round(originalHeight * scaleFactor);
+  
+  // Ensure minimum dimensions for quality
+  const minDimension = 200;
+  if (width < minDimension && height < minDimension) {
+    if (originalWidth > originalHeight) {
+      width = minDimension;
+      height = Math.round((minDimension / originalWidth) * originalHeight);
+    } else {
+      height = minDimension;
+      width = Math.round((minDimension / originalHeight) * originalWidth);
+    }
   }
 
-  // Determine if we need to preserve transparency
-  const isPng = originalFile.type === 'image/png';
-  
-  // For very large files, start with more aggressive resize
-  const fileSizeMB = originalFile.size / (1024 * 1024);
-  if (fileSizeMB > 5) {
-    const scaleFactor = Math.min(1, Math.sqrt(targetBytes / originalFile.size) * 2);
-    width = Math.round(width * scaleFactor);
-    height = Math.round(height * scaleFactor);
-  }
-
-  // Iteratively compress until we hit target size
-  let quality = 0.9;
+  // Keep quality high - WebP handles compression well
+  let quality = 0.85;
   let blob: Blob | null = null;
   let attempts = 0;
-  const maxAttempts = 10;
+  const maxAttempts = 8;
 
   while (attempts < maxAttempts) {
     canvas.width = width;
     canvas.height = height;
 
-    // Clear canvas and draw image
+    // Use high-quality image smoothing
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0, width, height);
 
-    // Try WebP first (best compression), fallback to JPEG
-    const mimeType = isPng ? 'image/png' : 'image/webp';
-    
-    blob = await canvasToBlob(canvas, mimeType, quality);
+    // Use WebP for best quality-to-size ratio
+    blob = await canvasToBlob(canvas, 'image/webp', quality);
     
     if (!blob) {
       throw new Error('Failed to compress image');
@@ -107,31 +106,22 @@ async function compressToTargetSize(
       break;
     }
 
-    // Reduce quality or dimensions for next attempt
-    if (quality > 0.3) {
+    // Strategy: Reduce dimensions first (maintains visual quality better)
+    // Only reduce quality as last resort
+    if (width > minDimension && height > minDimension) {
+      // Scale down by 15% each iteration
+      width = Math.round(width * 0.85);
+      height = Math.round(height * 0.85);
+    } else if (quality > 0.5) {
+      // Only reduce quality when dimensions are at minimum
       quality -= 0.1;
     } else {
-      // If quality is already low, reduce dimensions
+      // Final resort: more aggressive dimension reduction
       width = Math.round(width * 0.8);
       height = Math.round(height * 0.8);
-      quality = 0.7; // Reset quality for new size
     }
 
     attempts++;
-  }
-
-  // If still too large after all attempts, do one final aggressive compression
-  if (blob && blob.size > targetBytes) {
-    const scale = Math.sqrt(targetBytes / blob.size);
-    width = Math.max(100, Math.round(width * scale));
-    height = Math.max(100, Math.round(height * scale));
-    
-    canvas.width = width;
-    canvas.height = height;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, width, height);
-    
-    blob = await canvasToBlob(canvas, 'image/webp', 0.6);
   }
 
   return blob || originalFile;
