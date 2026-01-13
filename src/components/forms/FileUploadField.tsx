@@ -3,6 +3,7 @@ import { Upload, X, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { compressImage, getCompressedExtension } from '@/lib/imageCompression';
 
 interface FileUploadFieldProps {
   fieldId: string;
@@ -38,14 +39,26 @@ export const FileUploadField = ({
 
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      let uploadFile: Blob = file;
+      let fileName: string;
+
+      // Compress images before upload
+      if (file.type.startsWith('image/')) {
+        const compressedBlob = await compressImage(file);
+        const extension = getCompressedExtension(file, compressedBlob);
+        fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+        uploadFile = compressedBlob;
+      } else {
+        const fileExt = file.name.split('.').pop();
+        fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      }
 
       const { data, error: uploadError } = await supabase.storage
         .from('form-uploads')
-        .upload(fileName, file, { 
+        .upload(fileName, uploadFile, { 
           cacheControl: '3600',
-          upsert: true 
+          upsert: true,
+          contentType: uploadFile.type,
         });
 
       if (uploadError) {

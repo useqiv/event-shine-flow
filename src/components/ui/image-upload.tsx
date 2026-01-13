@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { compressImage, getCompressedExtension } from '@/lib/imageCompression';
 
 interface ImageUploadProps {
   bucket: 'contest-images' | 'event-images' | 'contestant-images' | 'campaign-images' | 'avatars';
@@ -35,23 +36,26 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
+    // Validate file size (max 10MB before compression)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      // Compress image before upload
+      const compressedBlob = await compressImage(file);
+      const extension = getCompressedExtension(file, compressedBlob);
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(fileName, file, {
+        .upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false,
+          contentType: compressedBlob.type,
         });
 
       if (uploadError) throw uploadError;
@@ -61,7 +65,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         .getPublicUrl(fileName);
 
       onChange(publicUrl);
-      toast.success('Image uploaded successfully');
+      
+      // Show compression savings
+      const savedPercent = Math.round((1 - compressedBlob.size / file.size) * 100);
+      if (savedPercent > 0) {
+        toast.success(`Image uploaded (${savedPercent}% smaller)`);
+      } else {
+        toast.success('Image uploaded successfully');
+      }
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Failed to upload image');
