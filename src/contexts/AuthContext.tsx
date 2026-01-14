@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     // Use production URL for email redirects, fallback to current origin for local dev
-    const productionUrl = 'https://event-shine-flow.lovable.app';
+    const productionUrl = 'https://www.useqiv.com';
     const redirectUrl = import.meta.env.PROD 
       ? `${productionUrl}/account-setup`
       : `${window.location.origin}/account-setup`;
