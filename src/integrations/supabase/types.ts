@@ -2986,6 +2986,13 @@ export type Database = {
         }
         Returns: string
       }
+      set_account_type: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       track_campaign_view: {
         Args: { p_campaign_id: string; p_source?: string }
         Returns: undefined
