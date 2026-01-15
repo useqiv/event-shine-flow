@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,12 @@ const extractTwitchChannel = (url: string): string | null => {
   return match ? match[1] : null;
 };
 
+const detectPlatform = (url: string): StreamPlatform => {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (url.includes('twitch.tv')) return 'twitch';
+  return 'custom';
+};
+
 export const LiveStreamEmbed: React.FC<LiveStreamEmbedProps> = ({
   streamUrl,
   platform = 'youtube',
@@ -44,15 +50,22 @@ export const LiveStreamEmbed: React.FC<LiveStreamEmbedProps> = ({
   const [inputUrl, setInputUrl] = useState(streamUrl || '');
   const [selectedPlatform, setSelectedPlatform] = useState<StreamPlatform>(platform);
 
+  // Sync internal state when props change (e.g., after saving to DB and refetching)
+  useEffect(() => {
+    setInputUrl(streamUrl || '');
+    setSelectedPlatform(platform);
+  }, [streamUrl, platform]);
+
+  // Reset input state when entering edit mode to show current saved values
+  const handleStartEditing = () => {
+    setInputUrl(streamUrl || '');
+    setSelectedPlatform(platform);
+    setIsEditing(true);
+  };
+
   const handleSave = () => {
     onStreamChange?.(inputUrl, selectedPlatform);
     setIsEditing(false);
-  };
-
-  const detectPlatform = (url: string): StreamPlatform => {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-    if (url.includes('twitch.tv')) return 'twitch';
-    return 'custom';
   };
 
   const handleUrlChange = (url: string) => {
@@ -179,7 +192,7 @@ export const LiveStreamEmbed: React.FC<LiveStreamEmbedProps> = ({
             }
           </p>
           {isEditable && (
-            <Button onClick={() => setIsEditing(true)}>
+            <Button onClick={handleStartEditing}>
               <Video className="mr-2 h-4 w-4" />
               Add Live Stream
             </Button>
@@ -205,7 +218,7 @@ export const LiveStreamEmbed: React.FC<LiveStreamEmbedProps> = ({
               LIVE
             </Badge>
             {isEditable && (
-              <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+              <Button variant="ghost" size="icon" onClick={handleStartEditing}>
                 <Settings className="h-4 w-4" />
               </Button>
             )}
