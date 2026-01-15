@@ -32,27 +32,14 @@ const AccountTypeSelection = () => {
 
     setIsLoading(true);
     try {
-      // Delete any existing roles first, then insert the new one
-      const { error: deleteRoleError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", user.id);
+      // Use secure RPC function to set account type
+      // This bypasses RLS safely and only works during initial setup
+      const { error: rpcError } = await supabase.rpc('set_account_type', {
+        p_user_id: user.id,
+        p_role: selectedType
+      });
 
-      if (deleteRoleError) throw deleteRoleError;
-
-      const { error: insertRoleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: user.id, role: selectedType });
-
-      if (insertRoleError) throw insertRoleError;
-
-      // Mark that user has completed account setup
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ account_type_selected: true } as any)
-        .eq("id", user.id);
-
-      if (profileError) throw profileError;
+      if (rpcError) throw rpcError;
 
       // Apply referral bonus if there's a pending referral (only for regular users)
       if (pendingReferral && selectedType === "user") {
