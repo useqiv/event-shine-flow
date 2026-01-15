@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/useContests';
 import { useContestCategories, ContestCategory } from '@/hooks/useContestCategories';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
+import { LiveContestView } from '@/components/live/LiveContestView';
 
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +35,8 @@ import {
   Clock,
   ChevronRight,
   Users,
+  Radio,
+  LayoutGrid,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
@@ -69,6 +73,9 @@ const ContestDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // View mode for live voting contests
+  const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
 
   // Handle vote updates with pulse animation and confetti
   const handleVoteUpdate = useCallback((contestantId: string, newVoteCount: number, previousVoteCount: number) => {
@@ -362,8 +369,45 @@ const ContestDetail = () => {
           </CardContent>
         </Card>
 
+        {/* Live Voting Mode Toggle - Only show when contest has live voting enabled */}
+        {(contest as any).is_live_voting && !contestantsLoading && contestants && contestants.length > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Radio className="h-5 w-5 text-red-500" />
+              <span className="font-medium">This contest has live voting enabled</span>
+            </div>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'live' | 'standard')}>
+              <TabsList>
+                <TabsTrigger value="live" className="flex items-center gap-1">
+                  <Radio className="h-3 w-3" />
+                  Live View
+                </TabsTrigger>
+                <TabsTrigger value="standard" className="flex items-center gap-1">
+                  <LayoutGrid className="h-3 w-3" />
+                  Standard
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
 
-        {/* Contestants / Categories */}
+        {/* Live Contest View - When live voting is enabled and in live view mode */}
+        {(contest as any).is_live_voting && viewMode === 'live' && !contestantsLoading && contestants && contestants.length > 0 ? (
+          <LiveContestView
+            contestId={contest.id}
+            contestTitle={contest.title}
+            streamUrl={(contest as any).stream_url}
+            streamPlatform={(contest as any).stream_platform}
+            contestants={contestants}
+            totalVotes={contest.total_votes}
+            votePrice={Number(contest.vote_price)}
+            voteCurrency={contest.vote_currency || 'NGN'}
+            isEnded={isEnded || false}
+            primaryColor={primaryColor}
+            onVoteClick={handleVoteClick}
+          />
+        ) : (
+        /* Contestants / Categories - Standard View */
         <div>
           {contestantsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -664,6 +708,7 @@ const ContestDetail = () => {
             </Card>
           )}
         </div>
+        )}
 
         {/* Voting History - Only show for logged in users */}
         {user && (

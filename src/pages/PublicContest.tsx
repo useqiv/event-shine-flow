@@ -7,13 +7,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { ShareButtons } from '@/components/ui/share-buttons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { LiveContestView } from '@/components/live/LiveContestView';
 import PaymentModal from '@/components/PaymentModal';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { useAuth } from '@/contexts/AuthContext';
-import { Trophy, User, Vote, ExternalLink } from 'lucide-react';
+import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
@@ -28,6 +30,7 @@ const PublicContest = () => {
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -237,7 +240,45 @@ const PublicContest = () => {
             </CardContent>
           </Card>
 
-          {/* Contestants */}
+          {/* Live Voting Mode Toggle */}
+          {contest.is_live_voting && !contestantsLoading && contestants && contestants.length > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Radio className="h-5 w-5 text-red-500" />
+                <span className="font-medium">Live Voting</span>
+              </div>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'live' | 'standard')}>
+                <TabsList>
+                  <TabsTrigger value="live" className="flex items-center gap-1">
+                    <Radio className="h-3 w-3" />
+                    Live
+                  </TabsTrigger>
+                  <TabsTrigger value="standard" className="flex items-center gap-1">
+                    <LayoutGrid className="h-3 w-3" />
+                    Grid
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Live Contest View */}
+          {contest.is_live_voting && viewMode === 'live' && !contestantsLoading && contestants && contestants.length > 0 ? (
+            <LiveContestView
+              contestId={contest.id}
+              contestTitle={contest.title}
+              streamUrl={contest.stream_url}
+              streamPlatform={contest.stream_platform as any}
+              contestants={contestants}
+              totalVotes={contest.total_votes}
+              votePrice={Number(contest.vote_price)}
+              voteCurrency={contest.vote_currency || 'NGN'}
+              isEnded={isEnded || false}
+              primaryColor={primaryColor}
+              onVoteClick={handleVoteClick}
+            />
+          ) : (
+          /* Contestants - Standard View */
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
               <h2 className="text-xl font-bold">Contestants</h2>
@@ -325,6 +366,7 @@ const PublicContest = () => {
               </Card>
             )}
           </div>
+          )}
 
           {/* Call to Action - only show for non-authenticated users */}
           {!user && (
