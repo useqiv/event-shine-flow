@@ -547,6 +547,7 @@ async function processSuccessfulPayment(paymentData: any) {
       contestant_id,
       quantity: toPositiveInt(vote_quantity, 1),
       amount_paid: paymentData.amount,
+      currency: paymentData.currency || "NGN",
       payment_method,
       transaction_id: db_transaction_id,
     });

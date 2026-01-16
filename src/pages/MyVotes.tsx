@@ -48,7 +48,10 @@ const MyVotes = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">₦{vote.amount_paid.toLocaleString()}</p>
+                      <p className="font-medium">
+                        {vote.currency || vote.contest?.vote_currency || 'NGN'}{' '}
+                        {Number(vote.amount_paid).toLocaleString()}
+                      </p>
                       <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
                     </div>
                   </div>

@@ -188,12 +188,14 @@ export const useVote = () => {
       contestId,
       quantity,
       amountPaid,
+      currency,
       paymentMethod
     }: {
       contestantId: string;
       contestId: string;
       quantity: number;
       amountPaid: number;
+      currency?: string;
       paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt';
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
@@ -239,6 +241,7 @@ export const useVote = () => {
           contest_id: contestId,
           quantity,
           amount_paid: amountPaid,
+          currency: currency || 'NGN',
           payment_method: paymentMethod
         })
         .select()

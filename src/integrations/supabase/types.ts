@@ -2644,6 +2644,7 @@ export type Database = {
           contest_id: string
           contestant_id: string
           created_at: string
+          currency: string | null
           id: string
           payment_method: string
           quantity: number
@@ -2655,6 +2656,7 @@ export type Database = {
           contest_id: string
           contestant_id: string
           created_at?: string
+          currency?: string | null
           id?: string
           payment_method: string
           quantity?: number
@@ -2666,6 +2668,7 @@ export type Database = {
           contest_id?: string
           contestant_id?: string
           created_at?: string
+          currency?: string | null
           id?: string
           payment_method?: string
           quantity?: number
