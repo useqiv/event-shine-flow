@@ -10,7 +10,7 @@ import { QuickRevote } from '@/components/dashboard/QuickRevote';
 import { VotingAnalytics } from '@/components/dashboard/VotingAnalytics';
 import { Vote, Trophy, RotateCcw, Receipt } from 'lucide-react';
 import { format, isAfter } from 'date-fns';
-
+import { formatCurrency } from '@/components/ui/currency-selector';
 const MyVotes = () => {
   const { data: votes, isLoading } = useMyVotes();
 
@@ -49,8 +49,7 @@ const MyVotes = () => {
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        {vote.currency || vote.contest?.vote_currency || 'NGN'}{' '}
-                        {Number(vote.amount_paid).toLocaleString()}
+                        {formatCurrency(Number(vote.amount_paid), vote.currency || vote.contest?.vote_currency || 'NGN')}
                       </p>
                       <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
                     </div>
