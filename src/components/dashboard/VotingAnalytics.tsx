@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { TrendingUp, Vote, Calendar, Trophy } from 'lucide-react';
 import { format, startOfMonth, subMonths } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 export const VotingAnalytics = () => {
   const { data: votes, isLoading } = useMyVotes();
 
@@ -45,9 +45,15 @@ export const VotingAnalytics = () => {
 
   // Calculate analytics
   const totalVotes = votes.reduce((sum: number, v: any) => sum + v.quantity, 0);
-  const totalSpent = votes.reduce((sum: number, v: any) => sum + Number(v.amount_paid), 0);
   const uniqueContests = new Set(votes.map((v: any) => v.contest_id)).size;
   const uniqueContestants = new Set(votes.map((v: any) => v.contestant_id)).size;
+
+  // Group spending by currency
+  const spentByCurrency = votes.reduce((acc: Record<string, number>, v: any) => {
+    const currency = v.currency || v.contest?.vote_currency || 'NGN';
+    acc[currency] = (acc[currency] || 0) + Number(v.amount_paid);
+    return acc;
+  }, {});
 
   // Votes by contest category
   const categoryData = votes.reduce((acc: any, vote: any) => {
@@ -93,7 +99,16 @@ export const VotingAnalytics = () => {
           </div>
           <div className="bg-secondary/50 rounded-lg p-4 text-center">
             <Calendar className="h-5 w-5 mx-auto text-accent mb-2" />
-            <p className="text-2xl font-bold">₦{totalSpent.toLocaleString()}</p>
+            <div className="space-y-1">
+              {Object.entries(spentByCurrency).map(([currency, amount]) => (
+                <p key={currency} className="text-lg font-bold">
+                  {formatCurrency(amount as number, currency)}
+                </p>
+              ))}
+              {Object.keys(spentByCurrency).length === 0 && (
+                <p className="text-2xl font-bold">0</p>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">Total Spent</p>
           </div>
           <div className="bg-secondary/50 rounded-lg p-4 text-center">
@@ -146,7 +161,7 @@ export const VotingAnalytics = () => {
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip 
                     formatter={(value: number, name: string) => [
-                      name === 'votes' ? value : `₦${value.toLocaleString()}`,
+                      value.toLocaleString(),
                       name === 'votes' ? 'Votes' : 'Spent'
                     ]}
                   />
