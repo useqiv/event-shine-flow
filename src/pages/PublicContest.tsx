@@ -25,7 +25,7 @@ const voteOptions = [1, 5, 10, 25, 50, 100];
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
-  const { convert, isLive, rates } = useConversionDisplay();
+  const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
   
   // Voting state
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
@@ -439,7 +439,7 @@ const PublicContest = () => {
                   <ArrowRightLeft className="h-4 w-4" />
                   Pay in different currency
                 </label>
-                <LiveRatesIndicator isLive={isLive} />
+                <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
               </div>
               <CurrencySelector
                 value={effectivePaymentCurrency}
@@ -469,7 +469,7 @@ const PublicContest = () => {
               </div>
               {effectivePaymentCurrency !== contestCurrency && (
                 <p className="text-xs text-muted-foreground text-right">
-                  Rate: 1 {contestCurrency} ≈ {(convertedAmount / totalAmount).toFixed(4)} {effectivePaymentCurrency}
+                  Converted rate (includes fees)
                 </p>
               )}
             </div>

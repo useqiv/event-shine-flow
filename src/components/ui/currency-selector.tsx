@@ -30,12 +30,21 @@ export const formatCurrency = (amount: number, currencyCode: string): string => 
   return `${symbol}${amount.toLocaleString()}`;
 };
 
+// Fixed markup to add to all currency conversions (applied after conversion)
+const CURRENCY_MARKUP = 30;
+
 // Convert amount from one currency to another using provided rates
+// Applies +30 markup to all conversions (not percentage, fixed amount in target currency)
 export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string, rates: Record<string, number>): number => {
+  if (fromCurrency === toCurrency) return amount; // No conversion needed
+  
   const fromRate = rates[fromCurrency] || 1;
   const toRate = rates[toCurrency] || 1;
   const amountInUSD = amount / fromRate;
-  return amountInUSD * toRate;
+  const convertedAmount = amountInUSD * toRate;
+  
+  // Apply fixed +30 markup to the converted amount and round to whole number
+  return Math.round(convertedAmount + CURRENCY_MARKUP);
 };
 
 // Format amount with conversion display using provided rates
@@ -95,7 +104,7 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({
       <SelectTrigger className={className}>
         <SelectValue placeholder="Select currency" />
       </SelectTrigger>
-      <SelectContent className="bg-popover">
+      <SelectContent className="bg-popover border border-border shadow-lg z-[100]">
         {currencies.map((currency) => (
           <SelectItem key={currency.code} value={currency.code}>
             {currency.symbol} - {currency.name}
