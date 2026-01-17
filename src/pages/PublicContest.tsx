@@ -14,8 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { LiveContestView } from '@/components/live/LiveContestView';
 import PaymentModal from '@/components/PaymentModal';
 import CurrencyDisplay from '@/components/ui/currency-display';
+import CurrencySelector, { currencies, useConversionDisplay, formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
+import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { useAuth } from '@/contexts/AuthContext';
-import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid } from 'lucide-react';
+import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
@@ -23,6 +25,7 @@ const voteOptions = [1, 5, 10, 25, 50, 100];
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const { convert, isLive, rates } = useConversionDisplay();
   
   // Voting state
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
@@ -31,6 +34,7 @@ const PublicContest = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
+  const [paymentCurrency, setPaymentCurrency] = useState<string>('');
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -77,7 +81,15 @@ const PublicContest = () => {
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const contestUrl = `${window.location.origin}/c/${slug}`;
+  const contestCurrency = contest?.vote_currency || 'NGN';
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+  
+  // Calculate converted amount for payment
+  const effectivePaymentCurrency = paymentCurrency || contestCurrency;
+  const convertedAmount = useMemo(() => {
+    if (effectivePaymentCurrency === contestCurrency) return totalAmount;
+    return convert(totalAmount, contestCurrency, effectivePaymentCurrency);
+  }, [totalAmount, contestCurrency, effectivePaymentCurrency, rates]);
 
   // Filter contestants based on search term
   const filteredContestants = useMemo(() => {
@@ -87,6 +99,7 @@ const PublicContest = () => {
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
     setVoteQuantity(1);
+    setPaymentCurrency(''); // Reset to contest currency
     setIsVoteSelectionOpen(true);
   };
 
@@ -419,16 +432,46 @@ const PublicContest = () => {
               ))}
             </div>
             
-            <div className="p-4 bg-muted rounded-lg">
+            {/* Currency Selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <ArrowRightLeft className="h-4 w-4" />
+                  Pay in different currency
+                </label>
+                <LiveRatesIndicator isLive={isLive} />
+              </div>
+              <CurrencySelector
+                value={effectivePaymentCurrency}
+                onValueChange={(value) => setPaymentCurrency(value)}
+              />
+              {effectivePaymentCurrency !== contestCurrency && (
+                <p className="text-xs text-muted-foreground">
+                  Original price: {formatCurrency(totalAmount, contestCurrency)}
+                </p>
+              )}
+            </div>
+            
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              {effectivePaymentCurrency !== contestCurrency && (
+                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                  <span>Original ({contestCurrency})</span>
+                  <span>{formatCurrency(totalAmount, contestCurrency)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Total Amount</span>
+                <span className="text-muted-foreground">
+                  {effectivePaymentCurrency !== contestCurrency ? 'You Pay' : 'Total Amount'}
+                </span>
                 <span className="text-xl font-bold">
-                  <CurrencyDisplay 
-                    amount={totalAmount} 
-                    currency={contest?.vote_currency || 'NGN'} 
-                  />
+                  {formatCurrency(Math.ceil(convertedAmount * 100) / 100, effectivePaymentCurrency)}
                 </span>
               </div>
+              {effectivePaymentCurrency !== contestCurrency && (
+                <p className="text-xs text-muted-foreground text-right">
+                  Rate: 1 {contestCurrency} ≈ {(convertedAmount / totalAmount).toFixed(4)} {effectivePaymentCurrency}
+                </p>
+              )}
             </div>
 
             {!user && (
@@ -454,8 +497,8 @@ const PublicContest = () => {
           open={isPaymentModalOpen}
           onOpenChange={setIsPaymentModalOpen}
           type="vote"
-          amount={totalAmount}
-          currency={contest.vote_currency || 'NGN'}
+          amount={Math.ceil(convertedAmount * 100) / 100}
+          currency={effectivePaymentCurrency}
           itemDetails={{
             contest_id: contest.id,
             contestant_id: selectedContestant.id,
