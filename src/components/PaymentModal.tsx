@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,9 @@ import { useFlutterwavePayment, useCryptoPayment, useVerifyCryptoPayment } from 
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { usePromoCodeValidation } from '@/hooks/usePromoCode';
-import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X } from 'lucide-react';
+import CurrencySelector, { useConversionDisplay, formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
+import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
+import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const REFERRAL_LINK_ID_KEY = 'influencer_link_id';
@@ -21,6 +23,7 @@ interface PaymentModalProps {
   type: 'vote' | 'ticket';
   amount: number;
   currency: string;
+  originalCurrency?: string; // The original currency of the contest/event
   itemDetails: {
     contest_id?: string;
     contestant_id?: string;
@@ -37,11 +40,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   onOpenChange,
   type,
   amount,
-  currency,
+  currency: initialCurrency,
+  originalCurrency,
   itemDetails,
 }) => {
   const { user } = useAuth();
   const { data: profile } = useProfile();
+  const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
+  
   const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
   const [cryptoCurrency, setCryptoCurrency] = useState<'USDT' | 'USDC'>('USDT');
   const [network, setNetwork] = useState<'ethereum' | 'bsc' | 'polygon' | 'tron'>('bsc');
@@ -51,7 +57,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [guestEmail, setGuestEmail] = useState('');
   const [guestName, setGuestName] = useState('');
   const [promoCodeInput, setPromoCodeInput] = useState('');
-
+  const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency);
+  
+  // Determine the base currency (original contest/event currency)
+  const baseCurrency = originalCurrency || initialCurrency;
+  
+  // Calculate converted amount when currency changes
+  const convertedAmount = useMemo(() => {
+    if (selectedCurrency === baseCurrency) return amount;
+    return convert(amount, baseCurrency, selectedCurrency);
+  }, [amount, baseCurrency, selectedCurrency, rates]);
   const flutterwavePayment = useFlutterwavePayment();
   const { 
     isValidating: isValidatingPromo, 
@@ -62,8 +77,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     clearAppliedPromo 
   } = usePromoCodeValidation();
 
-  // Calculate final amount after discount
-  const finalAmount = Math.max(0, amount - discountAmount);
+  // Calculate final amount after discount (using converted amount)
+  const finalAmount = Math.max(0, convertedAmount - discountAmount);
+  const effectiveCurrency = selectedCurrency;
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
 
@@ -83,7 +99,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     );
 
     if (result.isValid) {
-      toast.success(`Promo code applied! You save ${currency} ${result.discountAmount.toLocaleString()}`);
+      toast.success(`Promo code applied! You save ${effectiveCurrency} ${result.discountAmount.toLocaleString()}`);
     } else {
       toast.error(result.errorMessage || 'Invalid promo code');
     }
@@ -133,7 +149,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     flutterwavePayment.mutate({
       type,
       amount: finalAmount,
-      currency,
+      currency: effectiveCurrency,
       email,
       name,
       user_id: userId,
@@ -152,7 +168,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     }
 
     // Convert NGN to USD (simplified - in production use real rates)
-    const amountUsd = currency === 'NGN' ? amount / 1500 : amount;
+    const amountUsd = effectiveCurrency === 'NGN' ? finalAmount / 1500 : finalAmount;
 
     cryptoPayment.mutate(
       {
@@ -207,11 +223,32 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         </DialogHeader>
 
         <div className="py-4">
+          {/* Currency Selection */}
+          <div className="mb-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4" />
+                Pay in different currency
+              </label>
+              <LiveRatesIndicator isLive={isLive} lastUpdated={lastUpdated} />
+            </div>
+            <CurrencySelector
+              value={effectiveCurrency}
+              onValueChange={(value) => setSelectedCurrency(value)}
+            />
+          </div>
+
           {/* Price Summary */}
           <div className="mb-4 p-4 bg-muted rounded-lg space-y-2">
+            {selectedCurrency !== baseCurrency && (
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Original ({baseCurrency})</span>
+                <span>{formatCurrency(amount, baseCurrency)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>{currency} {amount.toLocaleString()}</span>
+              <span>{formatCurrency(convertedAmount, effectiveCurrency)}</span>
             </div>
             {appliedPromo && (
               <div className="flex justify-between text-sm text-green-600">
@@ -219,13 +256,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <Tag className="h-3 w-3" />
                   Discount ({appliedPromo.code})
                 </span>
-                <span>-{currency} {discountAmount.toLocaleString()}</span>
+                <span>-{formatCurrency(discountAmount, effectiveCurrency)}</span>
               </div>
             )}
             <div className="flex justify-between pt-2 border-t">
-              <span className="font-medium">Total</span>
-              <span className="text-xl font-bold">{currency} {finalAmount.toLocaleString()}</span>
+              <span className="font-medium">You Pay</span>
+              <span className="text-xl font-bold">{formatCurrency(finalAmount, effectiveCurrency)}</span>
             </div>
+            {selectedCurrency !== baseCurrency && (
+              <p className="text-xs text-muted-foreground text-right">
+                Converted rate (includes fees)
+              </p>
+            )}
           </div>
 
           {/* Promo Code Input */}
@@ -258,7 +300,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   <span className="text-sm text-green-700 dark:text-green-300">
                     {appliedPromo.discount_type === 'percentage' 
                       ? `${appliedPromo.discount_value}% off` 
-                      : `${currency} ${appliedPromo.discount_value} off`}
+                      : `${effectiveCurrency} ${appliedPromo.discount_value} off`}
                   </span>
                 </div>
                 <Button variant="ghost" size="sm" onClick={handleRemovePromoCode}>

@@ -497,8 +497,9 @@ const PublicContest = () => {
           open={isPaymentModalOpen}
           onOpenChange={setIsPaymentModalOpen}
           type="vote"
-          amount={Math.ceil(convertedAmount * 100) / 100}
-          currency={effectivePaymentCurrency}
+          amount={totalAmount}
+          currency={contestCurrency}
+          originalCurrency={contestCurrency}
           itemDetails={{
             contest_id: contest.id,
             contestant_id: selectedContestant.id,
