@@ -31,7 +31,7 @@ export const formatCurrency = (amount: number, currencyCode: string): string => 
 };
 
 // Fixed markup to add to all currency conversions (applied after conversion)
-const CURRENCY_MARKUP = 30;
+const CURRENCY_MARKUP = 2;
 
 // Convert amount from one currency to another using provided rates
 // Applies +30 markup to all conversions (not percentage, fixed amount in target currency)
