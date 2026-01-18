@@ -30,11 +30,11 @@ export const formatCurrency = (amount: number, currencyCode: string): string => 
   return `${symbol}${amount.toLocaleString()}`;
 };
 
-// Fixed markup to add to all currency conversions (applied after conversion)
-const CURRENCY_MARKUP = 2;
+// Percentage markup to apply to all currency conversions (e.g., 0.30 = 30%)
+const CURRENCY_MARKUP_PERCENT = 0.30;
 
 // Convert amount from one currency to another using provided rates
-// Applies +30 markup to all conversions (not percentage, fixed amount in target currency)
+// Applies 30% markup to all conversions
 export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string, rates: Record<string, number>): number => {
   if (fromCurrency === toCurrency) return amount; // No conversion needed
   
@@ -43,8 +43,9 @@ export const convertCurrency = (amount: number, fromCurrency: string, toCurrency
   const amountInUSD = amount / fromRate;
   const convertedAmount = amountInUSD * toRate;
   
-  // Apply fixed +30 markup to the converted amount and round to whole number
-  return Math.round(convertedAmount + CURRENCY_MARKUP);
+  // Apply percentage markup to the converted amount and round to 2 decimal places
+  const withMarkup = convertedAmount * (1 + CURRENCY_MARKUP_PERCENT);
+  return Math.round(withMarkup * 100) / 100;
 };
 
 // Format amount with conversion display using provided rates
