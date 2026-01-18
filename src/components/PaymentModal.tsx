@@ -71,11 +71,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { 
     isValidating: isValidatingPromo, 
     appliedPromo, 
-    discountAmount, 
+    discountAmount: baseDiscountAmount, 
     validatePromoCode, 
     recordPromoCodeUsage,
     clearAppliedPromo 
   } = usePromoCodeValidation();
+
+  // Convert discount amount to selected currency (if currency changed)
+  const discountAmount = useMemo(() => {
+    if (selectedCurrency === baseCurrency) return baseDiscountAmount;
+    if (baseDiscountAmount === 0) return 0;
+    return convert(baseDiscountAmount, baseCurrency, selectedCurrency);
+  }, [baseDiscountAmount, baseCurrency, selectedCurrency, rates]);
 
   // Calculate final amount after discount (using converted amount)
   const finalAmount = Math.max(0, convertedAmount - discountAmount);
