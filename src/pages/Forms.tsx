@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Plus, FileText, MoreVertical, Trash2, Copy, ExternalLink, Settings, LayoutTemplate, ArrowLeft } from 'lucide-react';
+import { Plus, FileText, MoreVertical, Trash2, Copy, ExternalLink, Settings, LayoutTemplate } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserForms, useCreateForm, useDeleteForm, useDuplicateForm } from '@/hooks/useForms';
 import FormTemplateSelector from '@/components/forms/FormTemplateSelector';
-import ProductTypeSelector from '@/components/forms/ProductTypeSelector';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-
-type CreateStep = 'product-type' | 'form-details';
 
 const Forms = () => {
   const navigate = useNavigate();
@@ -30,24 +27,9 @@ const Forms = () => {
   const duplicateForm = useDuplicateForm();
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [createStep, setCreateStep] = useState<CreateStep>('product-type');
-  const [selectedProductType, setSelectedProductType] = useState<'digital' | 'physical' | null>(null);
   const [createTab, setCreateTab] = useState<'blank' | 'template'>('blank');
   const [newFormTitle, setNewFormTitle] = useState('');
   const [newFormDescription, setNewFormDescription] = useState('');
-
-  const handleProductTypeSelect = (type: 'digital' | 'physical') => {
-    setSelectedProductType(type);
-    setCreateStep('form-details');
-  };
-
-  const resetCreateDialog = () => {
-    setCreateStep('product-type');
-    setSelectedProductType(null);
-    setCreateTab('blank');
-    setNewFormTitle('');
-    setNewFormDescription('');
-  };
 
   const handleCreateForm = async () => {
     if (!newFormTitle.trim()) return;
@@ -58,7 +40,8 @@ const Forms = () => {
     });
 
     setIsCreateDialogOpen(false);
-    resetCreateDialog();
+    setNewFormTitle('');
+    setNewFormDescription('');
     navigate(`/forms/${form.id}/edit`);
   };
 
@@ -92,10 +75,7 @@ const Forms = () => {
             <p className="text-muted-foreground">Create and manage your forms</p>
           </div>
 
-          <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-            setIsCreateDialogOpen(open);
-            if (!open) resetCreateDialog();
-          }}>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
@@ -103,92 +83,58 @@ const Forms = () => {
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
-              {createStep === 'product-type' ? (
-                <>
-                  <DialogHeader>
-                    <DialogTitle>Choose Product Type</DialogTitle>
-                    <DialogDescription>
-                      Select the type of product you want to sell with this form.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <ProductTypeSelector onSelect={handleProductTypeSelect} />
-                </>
-              ) : (
-                <>
-                  <DialogHeader>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setCreateStep('product-type')}
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
-                      <div>
-                        <DialogTitle>Create {selectedProductType === 'digital' ? 'Digital' : 'Physical'} Product Form</DialogTitle>
-                        <DialogDescription>
-                          Start from scratch or choose a template.
-                        </DialogDescription>
-                      </div>
-                    </div>
-                  </DialogHeader>
-                  
-                  <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as 'blank' | 'template')}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="blank">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Blank Form
-                      </TabsTrigger>
-                      <TabsTrigger value="template">
-                        <LayoutTemplate className="h-4 w-4 mr-2" />
-                        Use Template
-                      </TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="blank" className="space-y-4 mt-4">
-                      <Badge variant="outline" className="mb-2">
-                        {selectedProductType === 'digital' ? '📄 Digital Product' : '📦 Physical Product'}
-                      </Badge>
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Form Title</Label>
-                        <Input
-                          id="title"
-                          placeholder={selectedProductType === 'digital' 
-                            ? "e.g., E-book Purchase Form" 
-                            : "e.g., T-Shirt Order Form"}
-                          value={newFormTitle}
-                          onChange={(e) => setNewFormTitle(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description (optional)</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="Briefly describe your product..."
-                          value={newFormDescription}
-                          onChange={(e) => setNewFormDescription(e.target.value)}
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateForm} disabled={!newFormTitle.trim() || createForm.isPending}>
-                          {createForm.isPending ? 'Creating...' : 'Create Form'}
-                        </Button>
-                      </DialogFooter>
-                    </TabsContent>
-                    
-                    <TabsContent value="template" className="mt-4">
-                      <FormTemplateSelector onClose={() => {
-                        setIsCreateDialogOpen(false);
-                        resetCreateDialog();
-                      }} />
-                    </TabsContent>
-                  </Tabs>
-                </>
-              )}
+              <DialogHeader>
+                <DialogTitle>Create New Form</DialogTitle>
+                <DialogDescription>
+                  Start from scratch or choose a template.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Tabs value={createTab} onValueChange={(v) => setCreateTab(v as 'blank' | 'template')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="blank">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Blank Form
+                  </TabsTrigger>
+                  <TabsTrigger value="template">
+                    <LayoutTemplate className="h-4 w-4 mr-2" />
+                    Use Template
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="blank" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Form Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., Customer Feedback Survey"
+                      value={newFormTitle}
+                      onChange={(e) => setNewFormTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (optional)</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Briefly describe your form..."
+                      value={newFormDescription}
+                      onChange={(e) => setNewFormDescription(e.target.value)}
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateForm} disabled={!newFormTitle.trim() || createForm.isPending}>
+                      {createForm.isPending ? 'Creating...' : 'Create Form'}
+                    </Button>
+                  </DialogFooter>
+                </TabsContent>
+                
+                <TabsContent value="template" className="mt-4">
+                  <FormTemplateSelector onClose={() => setIsCreateDialogOpen(false)} />
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
