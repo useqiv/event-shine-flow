@@ -67,7 +67,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       { path: '/org/contests/create', label: 'Create Contest', icon: Trophy, permission: 'can_edit_contests' as const },
       { path: '/org/events/create', label: 'Create Event', icon: Calendar, permission: 'can_edit_events' as const },
       { path: '/campaigns/create', label: 'Create Campaign', icon: HandHeart, permission: 'can_edit_campaigns' as const },
-      { path: '/forms/create', label: 'Create Form', icon: ClipboardList, permission: 'can_edit_campaigns' as const },
+      { path: '/forms', label: 'Create Form', icon: ClipboardList, permission: 'can_edit_campaigns' as const },
     ];
     
     if (isOwner) return items;
