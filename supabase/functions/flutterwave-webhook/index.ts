@@ -455,6 +455,44 @@ async function processSuccessfulPayment(paymentData: any) {
   console.log("Payment meta:", JSON.stringify(meta));
   console.log("Flutterwave transaction id:", flw_transaction_id);
 
+  // Fetch platform commission settings
+  const { data: commissionSettings, error: commissionError } = await supabase
+    .from("platform_settings")
+    .select("setting_key, setting_value")
+    .in("setting_key", [
+      "vote_commission_percentage",
+      "ticket_commission_percentage",
+      "campaign_commission_percentage",
+      "influencer_commission_percentage"
+    ]);
+
+  if (commissionError) {
+    console.error("Failed to fetch commission settings:", commissionError.message);
+  }
+
+  // Parse commission rates (default to 10% if not set)
+  const getCommissionRate = (key: string): number => {
+    const setting = commissionSettings?.find(s => s.setting_key === key);
+    if (setting?.setting_value) {
+      const rate = parseFloat(setting.setting_value);
+      return isNaN(rate) ? 10 : rate;
+    }
+    return 10; // Default 10%
+  };
+
+  const voteCommissionRate = getCommissionRate("vote_commission_percentage");
+  const ticketCommissionRate = getCommissionRate("ticket_commission_percentage");
+  const campaignCommissionRate = getCommissionRate("campaign_commission_percentage");
+
+  console.log("Commission rates - Vote:", voteCommissionRate, "Ticket:", ticketCommissionRate, "Campaign:", campaignCommissionRate);
+
+  // Helper to calculate commission and net amount
+  const calculateCommission = (amount: number, rate: number): { commission: number; netAmount: number } => {
+    const commission = Math.round((amount * rate / 100) * 100) / 100; // Round to 2 decimal places
+    const netAmount = Math.round((amount - commission) * 100) / 100;
+    return { commission, netAmount };
+  };
+
   const resolvePaymentMethod = (pd: any): "wallet" | "card" | "bank_transfer" | "usdt" => {
     const allowed = new Set(["wallet", "card", "bank_transfer", "usdt"]);
 
@@ -540,6 +578,10 @@ async function processSuccessfulPayment(paymentData: any) {
       }
     }
 
+    // Calculate commission for vote purchase
+    const voteCommission = calculateCommission(paymentData.amount, voteCommissionRate);
+    console.log("Vote commission calculated:", voteCommission.commission, "Net amount:", voteCommission.netAmount);
+
     // Record vote – use wallet_transactions.id for idempotency/FK
     const { error: voteError } = await supabase.from("votes").insert({
       user_id,
@@ -550,6 +592,8 @@ async function processSuccessfulPayment(paymentData: any) {
       currency: paymentData.currency || "NGN",
       payment_method,
       transaction_id: db_transaction_id,
+      platform_commission: voteCommission.commission,
+      net_amount: voteCommission.netAmount,
     });
 
     if (voteError) {
@@ -659,6 +703,10 @@ async function processSuccessfulPayment(paymentData: any) {
     }
 
     // Record ticket purchase – store holder name for both guest and authenticated users
+    // Calculate commission for ticket purchase
+    const ticketCommission = calculateCommission(paymentData.amount, ticketCommissionRate);
+    console.log("Ticket commission calculated:", ticketCommission.commission, "Net amount:", ticketCommission.netAmount);
+
     const { error: ticketError } = await supabase.from("tickets").insert({
       user_id: actualUserId,
       event_id,
@@ -672,6 +720,8 @@ async function processSuccessfulPayment(paymentData: any) {
       payment_reference_id: paymentData.tx_ref,
       guest_email: ticketHolderEmail,
       guest_name: ticketHolderName,
+      platform_commission: ticketCommission.commission,
+      net_amount: ticketCommission.netAmount,
     });
 
     if (ticketError) {
@@ -864,6 +914,10 @@ async function processSuccessfulPayment(paymentData: any) {
       }
     }
 
+    // Calculate commission for donation
+    const donationCommission = calculateCommission(paymentData.amount, campaignCommissionRate);
+    console.log("Donation commission calculated:", donationCommission.commission, "Net amount:", donationCommission.netAmount);
+
     // Record donation
     const { data: donationData, error: donationError } = await supabase.from("donations").insert({
       campaign_id,
@@ -875,6 +929,8 @@ async function processSuccessfulPayment(paymentData: any) {
       donor_message: donor_message || null,
       status: "completed",
       transaction_id: db_transaction_id,
+      platform_commission: donationCommission.commission,
+      net_amount: donationCommission.netAmount,
     }).select().single();
 
     if (donationError) {
