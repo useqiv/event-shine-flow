@@ -30,8 +30,8 @@ export const formatCurrency = (amount: number, currencyCode: string): string => 
   return `${symbol}${amount.toLocaleString()}`;
 };
 
-// Percentage markup to apply to all currency conversions (e.g., 0.30 = 30%)
-const CURRENCY_MARKUP_PERCENT = 0.30;
+// Percentage markup to apply to all currency conversions (e.g., 0.10 = 10%)
+const CURRENCY_MARKUP_PERCENT = 0.10;
 
 // Convert amount from one currency to another using provided rates
 // Applies 30% markup to all conversions
