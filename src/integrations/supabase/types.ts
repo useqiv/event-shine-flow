@@ -566,7 +566,9 @@ export type Database = {
           donor_message: string | null
           id: string
           is_anonymous: boolean
+          net_amount: number | null
           payment_method: string
+          platform_commission: number | null
           status: string
           transaction_id: string | null
         }
@@ -579,7 +581,9 @@ export type Database = {
           donor_message?: string | null
           id?: string
           is_anonymous?: boolean
+          net_amount?: number | null
           payment_method: string
+          platform_commission?: number | null
           status?: string
           transaction_id?: string | null
         }
@@ -592,7 +596,9 @@ export type Database = {
           donor_message?: string | null
           id?: string
           is_anonymous?: boolean
+          net_amount?: number | null
           payment_method?: string
+          platform_commission?: number | null
           status?: string
           transaction_id?: string | null
         }
@@ -2519,8 +2525,10 @@ export type Database = {
           guest_email: string | null
           guest_name: string | null
           id: string
+          net_amount: number | null
           payment_method: string
           payment_reference_id: string | null
+          platform_commission: number | null
           qr_code: string
           quantity: number
           status: string
@@ -2535,8 +2543,10 @@ export type Database = {
           guest_email?: string | null
           guest_name?: string | null
           id?: string
+          net_amount?: number | null
           payment_method: string
           payment_reference_id?: string | null
+          platform_commission?: number | null
           qr_code: string
           quantity?: number
           status?: string
@@ -2551,8 +2561,10 @@ export type Database = {
           guest_email?: string | null
           guest_name?: string | null
           id?: string
+          net_amount?: number | null
           payment_method?: string
           payment_reference_id?: string | null
+          platform_commission?: number | null
           qr_code?: string
           quantity?: number
           status?: string
@@ -2646,7 +2658,9 @@ export type Database = {
           created_at: string
           currency: string | null
           id: string
+          net_amount: number | null
           payment_method: string
+          platform_commission: number | null
           quantity: number
           transaction_id: string | null
           user_id: string
@@ -2658,7 +2672,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          net_amount?: number | null
           payment_method: string
+          platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
           user_id: string
@@ -2670,7 +2686,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           id?: string
+          net_amount?: number | null
           payment_method?: string
+          platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
           user_id?: string
