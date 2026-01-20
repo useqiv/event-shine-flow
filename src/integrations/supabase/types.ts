@@ -562,8 +562,10 @@ export type Database = {
           campaign_id: string
           created_at: string
           currency: string
-          donor_id: string
+          donor_id: string | null
           donor_message: string | null
+          guest_email: string | null
+          guest_name: string | null
           id: string
           is_anonymous: boolean
           net_amount: number | null
@@ -577,8 +579,10 @@ export type Database = {
           campaign_id: string
           created_at?: string
           currency?: string
-          donor_id: string
+          donor_id?: string | null
           donor_message?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_anonymous?: boolean
           net_amount?: number | null
@@ -592,8 +596,10 @@ export type Database = {
           campaign_id?: string
           created_at?: string
           currency?: string
-          donor_id?: string
+          donor_id?: string | null
           donor_message?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           is_anonymous?: boolean
           net_amount?: number | null
@@ -2657,13 +2663,15 @@ export type Database = {
           contestant_id: string
           created_at: string
           currency: string | null
+          guest_email: string | null
+          guest_name: string | null
           id: string
           net_amount: number | null
           payment_method: string
           platform_commission: number | null
           quantity: number
           transaction_id: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount_paid: number
@@ -2671,13 +2679,15 @@ export type Database = {
           contestant_id: string
           created_at?: string
           currency?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           net_amount?: number | null
           payment_method: string
           platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           amount_paid?: number
@@ -2685,13 +2695,15 @@ export type Database = {
           contestant_id?: string
           created_at?: string
           currency?: string | null
+          guest_email?: string | null
+          guest_name?: string | null
           id?: string
           net_amount?: number | null
           payment_method?: string
           platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
