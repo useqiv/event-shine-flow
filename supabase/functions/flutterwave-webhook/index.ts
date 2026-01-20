@@ -582,9 +582,21 @@ async function processSuccessfulPayment(paymentData: any) {
     const voteCommission = calculateCommission(paymentData.amount, voteCommissionRate);
     console.log("Vote commission calculated:", voteCommission.commission, "Net amount:", voteCommission.netAmount);
 
+    // Check if this is a guest purchase (user_id starts with "guest_" or is not a valid UUID)
+    const isGuestVotePurchase = !user_id || String(user_id).startsWith("guest_");
+    const actualVoteUserId = isGuestVotePurchase ? null : user_id;
+
+    // Get guest info from meta if guest purchase
+    const voteMetaPurchaserName = typeof meta.purchaser_name === "string" ? meta.purchaser_name.trim() : "";
+    const voteMetaPurchaserEmail = typeof meta.purchaser_email === "string" ? meta.purchaser_email.trim().toLowerCase() : "";
+    const voteGuestName = voteMetaPurchaserName || customer.name || null;
+    const voteGuestEmail = voteMetaPurchaserEmail || customer.email || null;
+
+    console.log("Is guest vote purchase:", isGuestVotePurchase, "User ID:", actualVoteUserId);
+
     // Record vote – use wallet_transactions.id for idempotency/FK
     const { error: voteError } = await supabase.from("votes").insert({
-      user_id,
+      user_id: actualVoteUserId,
       contest_id,
       contestant_id,
       quantity: toPositiveInt(vote_quantity, 1),
@@ -594,6 +606,8 @@ async function processSuccessfulPayment(paymentData: any) {
       transaction_id: db_transaction_id,
       platform_commission: voteCommission.commission,
       net_amount: voteCommission.netAmount,
+      guest_email: voteGuestEmail,
+      guest_name: voteGuestName,
     });
 
     if (voteError) {
@@ -614,20 +628,22 @@ async function processSuccessfulPayment(paymentData: any) {
         await recordInfluencerConversion(supabase, influencer_link_id, paymentData.amount);
       }
 
-      // Create notification
-      await supabase.from("notifications").insert({
-        user_id,
-        title: "Vote Successful",
-        message: `Your ${vote_quantity || 1} vote(s) have been recorded successfully.`,
-        type: "vote",
-        reference_id: contest_id,
-      });
+      // Create notification - only for logged in users
+      if (actualVoteUserId) {
+        await supabase.from("notifications").insert({
+          user_id: actualVoteUserId,
+          title: "Vote Successful",
+          message: `Your ${vote_quantity || 1} vote(s) have been recorded successfully.`,
+          type: "vote",
+          reference_id: contest_id,
+        });
+      }
 
       // Send email receipt - pass user_id and supabase for email fallback
       await sendReceipt({
         type: "vote",
-        user_email: customer.email,
-        user_name: customer.name || "Valued Customer",
+        user_email: voteGuestEmail || customer.email,
+        user_name: voteGuestName || customer.name || "Valued Customer",
         amount: paymentData.amount,
         currency: paymentData.currency || "NGN",
         quantity: vote_quantity || 1,
@@ -635,7 +651,7 @@ async function processSuccessfulPayment(paymentData: any) {
         transaction_ref: paymentData.tx_ref,
         contest_title: contest?.title || "Contest",
         contestant_name: contestant?.name || "Contestant",
-      }, user_id, supabase);
+      }, actualVoteUserId, supabase);
     }
   } else if (type === "ticket" && event_id && ticket_type_id) {
     console.log("Recording ticket purchase...");
@@ -918,10 +934,22 @@ async function processSuccessfulPayment(paymentData: any) {
     const donationCommission = calculateCommission(paymentData.amount, campaignCommissionRate);
     console.log("Donation commission calculated:", donationCommission.commission, "Net amount:", donationCommission.netAmount);
 
+    // Check if this is a guest donation (user_id starts with "guest_" or is not a valid UUID)
+    const isGuestDonation = !user_id || String(user_id).startsWith("guest_");
+    const actualDonorId = isGuestDonation ? null : user_id;
+
+    // Get guest info from meta if guest donation
+    const donationMetaPurchaserName = typeof meta.purchaser_name === "string" ? meta.purchaser_name.trim() : "";
+    const donationMetaPurchaserEmail = typeof meta.purchaser_email === "string" ? meta.purchaser_email.trim().toLowerCase() : "";
+    const donorGuestName = donationMetaPurchaserName || customer.name || null;
+    const donorGuestEmail = donationMetaPurchaserEmail || customer.email || null;
+
+    console.log("Is guest donation:", isGuestDonation, "Donor ID:", actualDonorId);
+
     // Record donation
     const { data: donationData, error: donationError } = await supabase.from("donations").insert({
       campaign_id,
-      donor_id: user_id,
+      donor_id: actualDonorId,
       amount: paymentData.amount,
       currency: paymentData.currency || campaign.currency || "NGN",
       payment_method: payment_method,
@@ -931,6 +959,8 @@ async function processSuccessfulPayment(paymentData: any) {
       transaction_id: db_transaction_id,
       platform_commission: donationCommission.commission,
       net_amount: donationCommission.netAmount,
+      guest_email: donorGuestEmail,
+      guest_name: donorGuestName,
     }).select().single();
 
     if (donationError) {
@@ -962,14 +992,16 @@ async function processSuccessfulPayment(paymentData: any) {
         console.log("Campaign updated - new amount:", newAmount, "donors:", newDonorCount);
       }
 
-      // Create notification
-      await supabase.from("notifications").insert({
-        user_id,
-        title: "Donation Successful",
-        message: `Thank you! Your donation of ${paymentData.currency || "NGN"} ${paymentData.amount.toLocaleString()} to "${campaign.title}" was successful.`,
-        type: "system",
-        reference_id: campaign_id,
-      });
+      // Create notification - only for logged in users
+      if (actualDonorId) {
+        await supabase.from("notifications").insert({
+          user_id: actualDonorId,
+          title: "Donation Successful",
+          message: `Thank you! Your donation of ${paymentData.currency || "NGN"} ${paymentData.amount.toLocaleString()} to "${campaign.title}" was successful.`,
+          type: "system",
+          reference_id: campaign_id,
+        });
+      }
 
       // Send donation receipt email
       try {
@@ -982,8 +1014,8 @@ async function processSuccessfulPayment(paymentData: any) {
           },
           body: JSON.stringify({
             donationId: donationData.id,
-            donorEmail: customer.email,
-            donorName: customer.name || "Supporter",
+            donorEmail: donorGuestEmail || customer.email,
+            donorName: donorGuestName || customer.name || "Supporter",
             campaignTitle: campaign.title,
             amount: paymentData.amount,
             currency: paymentData.currency || campaign.currency || "NGN",
