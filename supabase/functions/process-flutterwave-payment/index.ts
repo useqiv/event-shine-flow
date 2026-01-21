@@ -266,36 +266,58 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Store pending transaction in database
-    const { data: wallet, error: walletError } = await supabase
-      .from("wallets")
-      .select("id")
-      .eq("user_id", payload.user_id)
-      .single();
+    // Check if this is a guest user
+    const isGuestUser = String(payload.user_id).startsWith("guest_");
+    
+    let walletId: string | null = null;
+    
+    if (!isGuestUser) {
+      // Only look up wallet for authenticated users
+      const { data: wallet, error: walletError } = await supabase
+        .from("wallets")
+        .select("id")
+        .eq("user_id", payload.user_id)
+        .single();
 
-    if (walletError) {
-      console.log("Wallet lookup error (non-critical):", walletError.message);
+      if (walletError) {
+        console.log("Wallet lookup error (non-critical):", walletError.message);
+      }
+      
+      walletId = wallet?.id || null;
     }
 
-    if (wallet) {
-      // Map wallet funding to 'deposit' type for DB constraint
-      const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
-      const transactionCurrency = payload.currency || defaultCurrency;
-      const { error: txError } = await supabase.from("wallet_transactions").insert({
-        user_id: payload.user_id,
-        wallet_id: wallet.id,
-        amount: payload.amount,
-        type: transactionType,
-        status: "pending",
-        reference_id: tx_ref,
-        currency: transactionCurrency,
-        description: payload.type === "wallet" 
-          ? `Wallet funding via Flutterwave (${transactionCurrency})`
-          : `Pending ${payload.type} payment via Flutterwave`,
-      });
-
-      if (txError) {
-        console.log("Transaction insert error (non-critical):", txError.message);
+    // Always create a wallet transaction record for tracking (even for guests)
+    // Map wallet funding to 'deposit' type for DB constraint
+    const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
+    const transactionCurrency = payload.currency || defaultCurrency;
+    
+    // For guests, we use null user_id since it's a UUID column
+    // The transaction is still tracked via reference_id (tx_ref)
+    const txInsertData: Record<string, any> = {
+      amount: payload.amount,
+      type: transactionType,
+      status: "pending",
+      reference_id: tx_ref,
+      currency: transactionCurrency,
+      description: payload.type === "wallet" 
+        ? `Wallet funding via Flutterwave (${transactionCurrency})`
+        : `Pending ${payload.type} payment via Flutterwave${isGuestUser ? ' (guest)' : ''}`,
+    };
+    
+    // Only set user_id and wallet_id for authenticated users
+    if (!isGuestUser) {
+      txInsertData.user_id = payload.user_id;
+      if (walletId) {
+        txInsertData.wallet_id = walletId;
       }
+    }
+    
+    const { error: txError } = await supabase.from("wallet_transactions").insert(txInsertData);
+
+    if (txError) {
+      console.log("Transaction insert error (non-critical):", txError.message);
+    } else {
+      console.log("Pending transaction recorded for tx_ref:", tx_ref, isGuestUser ? "(guest)" : "(authenticated)");
     }
 
     console.log("Payment initialized successfully, returning link:", data.data.link);
