@@ -60,6 +60,9 @@ const AdminPaymentHistory = () => {
           amount_paid,
           payment_method,
           created_at,
+          user_id,
+          guest_email,
+          guest_name,
           contest:contests(id, title, vote_currency),
           contestant:contestants(name)
         `)
@@ -83,6 +86,9 @@ const AdminPaymentHistory = () => {
           payment_method,
           status,
           created_at,
+          user_id,
+          holder_name,
+          holder_email,
           event:events(id, title),
           ticket_type:ticket_types(name, currency)
         `)
@@ -106,6 +112,10 @@ const AdminPaymentHistory = () => {
           payment_method,
           status,
           created_at,
+          donor_id,
+          guest_email,
+          guest_name,
+          is_anonymous,
           campaign:campaigns(id, title, currency)
         `)
         .order('created_at', { ascending: false });
@@ -163,6 +173,8 @@ const AdminPaymentHistory = () => {
 
     // Add votes - get currency from contest.vote_currency
     votes?.forEach((vote: any) => {
+      // Use guest info if user_id is null (guest vote)
+      const isGuest = !vote.user_id;
       transactions.push({
         id: vote.id,
         type: 'vote',
@@ -171,8 +183,8 @@ const AdminPaymentHistory = () => {
         status: 'completed',
         payment_method: vote.payment_method,
         created_at: vote.created_at,
-        user_name: null,
-        user_email: null,
+        user_name: isGuest ? (vote.guest_name || 'Guest') : null,
+        user_email: isGuest ? vote.guest_email : null,
         contest_title: vote.contest?.title,
         quantity: vote.quantity,
       });
@@ -180,6 +192,8 @@ const AdminPaymentHistory = () => {
 
     // Add tickets - get currency from ticket_type.currency
     tickets?.forEach((ticket: any) => {
+      // Use holder info for guest tickets
+      const isGuest = !ticket.user_id;
       transactions.push({
         id: ticket.id,
         type: 'ticket',
@@ -188,8 +202,8 @@ const AdminPaymentHistory = () => {
         status: ticket.status,
         payment_method: ticket.payment_method,
         created_at: ticket.created_at,
-        user_name: null,
-        user_email: null,
+        user_name: isGuest ? (ticket.holder_name || 'Guest') : null,
+        user_email: isGuest ? ticket.holder_email : null,
         event_title: ticket.event?.title,
         quantity: ticket.quantity,
       });
@@ -197,6 +211,9 @@ const AdminPaymentHistory = () => {
 
     // Add donations
     donations?.forEach((donation: any) => {
+      // Use guest info for guest donations
+      const isGuest = !donation.donor_id;
+      const isAnonymous = donation.is_anonymous;
       transactions.push({
         id: donation.id,
         type: 'donation',
@@ -205,8 +222,8 @@ const AdminPaymentHistory = () => {
         status: donation.status,
         payment_method: donation.payment_method,
         created_at: donation.created_at,
-        user_name: null,
-        user_email: null,
+        user_name: isAnonymous ? 'Anonymous' : (isGuest ? (donation.guest_name || 'Guest') : null),
+        user_email: isAnonymous ? null : (isGuest ? donation.guest_email : null),
         campaign_title: donation.campaign?.title,
         quantity: 1,
       });

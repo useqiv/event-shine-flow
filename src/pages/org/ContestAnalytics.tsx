@@ -73,10 +73,10 @@ const ContestAnalytics = () => {
         
         if (contestData) setContest(contestData);
 
-        // Fetch all votes for this contest
+        // Fetch all votes for this contest (including guest votes)
         const { data: votes } = await supabase
           .from('votes')
-          .select('id, user_id, quantity, amount_paid, payment_method, created_at, contestant_id')
+          .select('id, user_id, guest_email, guest_name, quantity, amount_paid, payment_method, created_at, contestant_id')
           .eq('contest_id', id);
 
         // Fetch contestants
@@ -89,7 +89,8 @@ const ContestAnalytics = () => {
         // Calculate analytics
         const totalRevenue = votes?.reduce((sum, v) => sum + Number(v.amount_paid), 0) || 0;
         const totalVotes = votes?.reduce((sum, v) => sum + v.quantity, 0) || 0;
-        const uniqueVoters = new Set(votes?.map(v => v.user_id)).size;
+        // Count unique voters: use user_id for authenticated users, guest_email for guests
+        const uniqueVoters = new Set(votes?.map(v => v.user_id || v.guest_email || v.id)).size;
         const averageVotesPerVoter = uniqueVoters > 0 ? totalVotes / uniqueVoters : 0;
 
         // Peak voting hours
