@@ -11,7 +11,11 @@ import {
   Wallet, 
   CreditCard,
   BarChart3,
-  PieChart
+  PieChart,
+  Percent,
+  Vote,
+  Ticket,
+  Users
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -146,14 +150,18 @@ const AdminFinance: React.FC = () => {
     { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
   ];
 
-  // Fetch actual commission rate from platform settings
+  // Fetch actual commission rates from platform settings
   const { data: platformSettings } = usePlatformSettings();
   const voteCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'vote_commission_percentage')?.setting_value || '10');
   const ticketCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'ticket_commission_percentage')?.setting_value || '10');
-  // Use vote commission rate for display
-  const commissionRate = voteCommission;
+  const campaignCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'campaign_commission_percentage')?.setting_value || '10');
+  const influencerCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'influencer_commission_percentage')?.setting_value || '5');
+  
+  // Calculate platform earnings using actual commission rates per revenue type
+  const votesRevenue = currencyStats?.votesTotal || 0;
+  const ticketsRevenue = currencyStats?.ticketsTotal || 0;
   const totalRevenue = currencyStats?.total || 0;
-  const platformEarnings = totalRevenue * (commissionRate / 100);
+  const platformEarnings = (votesRevenue * (voteCommission / 100)) + (ticketsRevenue * (ticketCommission / 100));
   const pendingPayouts = currencyStats?.pendingPayouts || 0;
   const completedPayouts = currencyStats?.completedPayouts || 0;
   // Net profit = Platform earnings (commission) - nothing (platform keeps all commission)
@@ -235,7 +243,7 @@ const AdminFinance: React.FC = () => {
                 <CurrencyDisplay amount={platformEarnings} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {commissionRate}% commission
+                Based on configured rates
               </p>
             </CardContent>
           </Card>
@@ -248,7 +256,7 @@ const AdminFinance: React.FC = () => {
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-yellow-500">
+              <div className="text-2xl font-bold text-warning">
                 <CurrencyDisplay amount={pendingPayouts} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -265,7 +273,7 @@ const AdminFinance: React.FC = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${availableForPayout >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`text-2xl font-bold ${availableForPayout >= 0 ? 'text-success' : 'text-destructive'}`}>
                 <CurrencyDisplay amount={availableForPayout} currency={selectedCurrency} size="lg" />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -359,7 +367,47 @@ const AdminFinance: React.FC = () => {
         </div>
 
         {/* Additional Stats */}
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Percent className="h-5 w-5" />
+                Commission Rates
+              </CardTitle>
+              <CardDescription>Platform commission breakdown by type</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Vote className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Vote Purchases</span>
+                </div>
+                <span className="font-bold text-lg">{voteCommission}%</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Ticket className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Ticket Sales</span>
+                </div>
+                <span className="font-bold text-lg">{ticketCommission}%</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Campaigns</span>
+                </div>
+                <span className="font-bold text-lg">{campaignCommission}%</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Influencer Referrals</span>
+                </div>
+                <span className="font-bold text-lg">{influencerCommission}%</span>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Revenue Sources</CardTitle>
@@ -402,10 +450,6 @@ const AdminFinance: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Active Events</span>
                 <span className="font-medium">{stats?.active_events || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Commission Rate</span>
-                <span className="font-medium">{commissionRate}%</span>
               </div>
             </CardContent>
           </Card>
