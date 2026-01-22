@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAdminStatistics } from '@/hooks/useAdminData';
+import { useAdminStatistics, usePlatformSettings } from '@/hooks/useAdminData';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencySelector from '@/components/ui/currency-selector';
@@ -146,7 +146,12 @@ const AdminFinance: React.FC = () => {
     { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
   ];
 
-  const commissionRate = 10; // Default commission rate
+  // Fetch actual commission rate from platform settings
+  const { data: platformSettings } = usePlatformSettings();
+  const voteCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'vote_commission_rate')?.setting_value || '10');
+  const ticketCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'ticket_commission_rate')?.setting_value || '10');
+  // Use average commission rate for display (or vote commission as default)
+  const commissionRate = voteCommission;
   const totalRevenue = currencyStats?.total || 0;
   const platformEarnings = totalRevenue * (commissionRate / 100);
   const pendingPayouts = currencyStats?.pendingPayouts || 0;
