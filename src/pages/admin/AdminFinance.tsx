@@ -148,9 +148,9 @@ const AdminFinance: React.FC = () => {
 
   // Fetch actual commission rate from platform settings
   const { data: platformSettings } = usePlatformSettings();
-  const voteCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'vote_commission_rate')?.setting_value || '10');
-  const ticketCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'ticket_commission_rate')?.setting_value || '10');
-  // Use average commission rate for display (or vote commission as default)
+  const voteCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'vote_commission_percentage')?.setting_value || '10');
+  const ticketCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'ticket_commission_percentage')?.setting_value || '10');
+  // Use vote commission rate for display
   const commissionRate = voteCommission;
   const totalRevenue = currencyStats?.total || 0;
   const platformEarnings = totalRevenue * (commissionRate / 100);
