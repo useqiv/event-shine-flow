@@ -121,6 +121,13 @@ const EventDetail = () => {
         paymentMethod: 'wallet',
         guestEmail: isGuest ? guestEmail : undefined,
         guestName: isGuest ? guestName : undefined,
+        eventDetails: {
+          eventTitle: event.title,
+          eventDate: format(new Date(event.event_date), 'EEEE, MMMM d, yyyy h:mm a'),
+          eventVenue: event.venue,
+          ticketTypeName: selectedTicketType.name,
+          currency: selectedTicketType.currency || 'NGN'
+        }
       });
 
       toast({
