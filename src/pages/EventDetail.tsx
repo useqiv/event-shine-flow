@@ -44,6 +44,7 @@ const EventDetail = () => {
 
   const isPast = event && new Date(event.event_date) < new Date();
   const totalAmount = selectedTicketType ? quantity * Number(selectedTicketType.price) : 0;
+  const isFreeTicket = selectedTicketType && Number(selectedTicketType.price) === 0;
 
   const availableTickets = selectedTicketType 
     ? selectedTicketType.quantity_available - selectedTicketType.quantity_sold 
@@ -78,6 +79,34 @@ const EventDetail = () => {
       toast({
         title: 'Purchase Failed',
         description: error.message || 'An error occurred while purchasing.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleFreeTicket = async () => {
+    if (!selectedTicketType || !event) return;
+
+    try {
+      await purchaseTicket.mutateAsync({
+        eventId: event.id,
+        ticketTypeId: selectedTicketType.id,
+        quantity,
+        amountPaid: 0,
+        paymentMethod: 'wallet', // No payment needed, just record the ticket
+      });
+
+      toast({
+        title: 'Ticket Claimed!',
+        description: `You have successfully claimed ${quantity} free ticket(s). Check your email for the QR code.`,
+      });
+
+      setIsPurchaseModalOpen(false);
+      setQuantity(1);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to Claim Ticket',
+        description: error.message || 'An error occurred.',
         variant: 'destructive',
       });
     }
@@ -241,7 +270,11 @@ const EventDetail = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold">
-                              <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" showBadge showToggle />
+                              {Number(ticketType.price) === 0 ? (
+                                <Badge variant="secondary" className="text-sm">Free</Badge>
+                              ) : (
+                                <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" showBadge showToggle />
+                              )}
                             </p>
                           </div>
                         </div>
@@ -254,7 +287,7 @@ const EventDetail = () => {
                             onClick={() => handleBuyClick(ticketType)}
                             disabled={isPast || isSoldOut}
                           >
-                            {isSoldOut ? 'Sold Out' : isPast ? 'Event Passed' : 'Buy'}
+                            {isSoldOut ? 'Sold Out' : isPast ? 'Event Passed' : Number(ticketType.price) === 0 ? 'Get Free Ticket' : 'Buy'}
                           </Button>
                         </div>
                       </CardContent>
@@ -277,7 +310,7 @@ const EventDetail = () => {
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
             <Card className="w-full max-w-md">
               <CardHeader>
-                <CardTitle>Purchase {selectedTicketType.name}</CardTitle>
+                <CardTitle>{isFreeTicket ? 'Get Free Ticket' : 'Purchase'} {selectedTicketType.name}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Quantity */}
@@ -304,20 +337,35 @@ const EventDetail = () => {
                   </div>
                 </div>
 
-                {/* Total */}
-                <div className="p-4 rounded-lg bg-secondary">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Total Amount</span>
-                    <div className="text-right">
-                      <span className="text-xl font-bold">
-                        <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" showBadge showToggle />
-                      </span>
+                {/* Total - only show for paid tickets */}
+                {!isFreeTicket && (
+                  <div className="p-4 rounded-lg bg-secondary">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Total Amount</span>
+                      <div className="text-right">
+                        <span className="text-xl font-bold">
+                          <CurrencyDisplay amount={totalAmount} currency={selectedTicketType?.currency || 'NGN'} size="lg" showBadge showToggle />
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Wallet Balance - Only show for logged in users */}
-                {user && (() => {
+                {/* Free ticket notice */}
+                {isFreeTicket && (
+                  <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                    <div className="flex items-center gap-2 text-success">
+                      <Ticket className="h-5 w-5" />
+                      <span className="font-medium">This is a free ticket!</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Claim your ticket and receive a QR code via email.
+                    </p>
+                  </div>
+                )}
+
+                {/* Wallet Balance - Only show for logged in users with paid tickets */}
+                {user && !isFreeTicket && (() => {
                   const ticketCurrency = selectedTicketType?.currency || 'NGN';
                   const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
                   return (
@@ -333,31 +381,46 @@ const EventDetail = () => {
 
                 {/* Actions */}
                 <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
-                      Cancel
-                    </Button>
-                    {user && wallet && (() => {
-                      const ticketCurrency = selectedTicketType?.currency || 'NGN';
-                      const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
-                      return currencyBalance >= totalAmount;
-                    })() && (
-                      <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
-                        {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+                  {isFreeTicket ? (
+                    /* Free ticket - just show Get Ticket and Cancel buttons */
+                    <div className="flex gap-3">
+                      <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
+                        Cancel
                       </Button>
-                    )}
-                  </div>
-                  <Button 
-                    variant={user && wallet && (() => {
-                      const ticketCurrency = selectedTicketType?.currency || 'NGN';
-                      const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
-                      return currencyBalance >= totalAmount;
-                    })() ? 'outline' : 'default'} 
-                    onClick={handleProceedToPayment}
-                    className="w-full"
-                  >
-                    Pay with Card/Bank/Crypto
-                  </Button>
+                      <Button onClick={handleFreeTicket} disabled={purchaseTicket.isPending} className="flex-1">
+                        {purchaseTicket.isPending ? 'Processing...' : 'Get Free Ticket'}
+                      </Button>
+                    </div>
+                  ) : (
+                    /* Paid ticket - show wallet and other payment options */
+                    <>
+                      <div className="flex gap-3">
+                        <Button variant="outline" onClick={() => setIsPurchaseModalOpen(false)} className="flex-1">
+                          Cancel
+                        </Button>
+                        {user && wallet && (() => {
+                          const ticketCurrency = selectedTicketType?.currency || 'NGN';
+                          const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
+                          return currencyBalance >= totalAmount;
+                        })() && (
+                          <Button onClick={handleWalletPurchase} disabled={purchaseTicket.isPending} className="flex-1">
+                            {purchaseTicket.isPending ? 'Processing...' : 'Pay with Wallet'}
+                          </Button>
+                        )}
+                      </div>
+                      <Button 
+                        variant={user && wallet && (() => {
+                          const ticketCurrency = selectedTicketType?.currency || 'NGN';
+                          const currencyBalance = currencyBalances?.find(b => b.currency === ticketCurrency)?.balance || 0;
+                          return currencyBalance >= totalAmount;
+                        })() ? 'outline' : 'default'} 
+                        onClick={handleProceedToPayment}
+                        className="w-full"
+                      >
+                        Pay with Card/Bank/Crypto
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
