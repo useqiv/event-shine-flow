@@ -161,21 +161,36 @@ export const usePurchaseTicket = () => {
       ticketTypeId,
       quantity,
       amountPaid,
-      paymentMethod
+      paymentMethod,
+      guestEmail,
+      guestName
     }: {
       eventId: string;
       ticketTypeId: string;
       quantity: number;
       amountPaid: number;
       paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt';
+      guestEmail?: string;
+      guestName?: string;
     }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      const isGuest = !user?.id;
+      const isFreeTicket = amountPaid === 0;
+
+      // For paid tickets, require authentication
+      if (!isFreeTicket && isGuest) {
+        throw new Error('Please login to purchase paid tickets');
+      }
+
+      // For free tickets as guest, require email
+      if (isFreeTicket && isGuest && !guestEmail) {
+        throw new Error('Email is required for free ticket delivery');
+      }
 
       // Generate unique QR code
       const qrCode = `TICKET-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
-      // If paying with wallet, deduct balance
-      if (paymentMethod === 'wallet') {
+      // If paying with wallet (only for authenticated users with paid tickets)
+      if (paymentMethod === 'wallet' && !isFreeTicket && user?.id) {
         const { data: wallet, error: walletError } = await supabase
           .from('wallets')
           .select('*')
@@ -206,33 +221,44 @@ export const usePurchaseTicket = () => {
           .eq('id', wallet.id);
       }
 
-      // Create ticket record
+      // Create ticket record - supports both authenticated and guest users
+      const ticketData: any = {
+        event_id: eventId,
+        ticket_type_id: ticketTypeId,
+        quantity,
+        qr_code: qrCode,
+        amount_paid: amountPaid,
+        payment_method: isFreeTicket ? 'free' : paymentMethod,
+        status: 'active'
+      };
+
+      // Add user or guest info
+      if (user?.id) {
+        ticketData.user_id = user.id;
+      } else {
+        ticketData.guest_email = guestEmail;
+        ticketData.guest_name = guestName || null;
+      }
+
       const { data, error } = await supabase
         .from('tickets')
-        .insert({
-          user_id: user.id,
-          event_id: eventId,
-          ticket_type_id: ticketTypeId,
-          quantity,
-          qr_code: qrCode,
-          amount_paid: amountPaid,
-          payment_method: paymentMethod,
-          status: 'active'
-        })
+        .insert(ticketData)
         .select()
         .single();
 
       if (error) throw error;
 
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          title: 'Ticket Purchased!',
-          message: `Your ticket has been purchased. QR Code: ${qrCode}`,
-          type: 'ticket'
-        });
+      // Create notification only for authenticated users
+      if (user?.id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            title: isFreeTicket ? 'Free Ticket Claimed!' : 'Ticket Purchased!',
+            message: `Your ticket has been ${isFreeTicket ? 'claimed' : 'purchased'}. QR Code: ${qrCode}`,
+            type: 'ticket'
+          });
+      }
 
       return data;
     },

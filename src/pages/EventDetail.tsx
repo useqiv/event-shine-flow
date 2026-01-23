@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useEvent, useTicketTypes, usePurchaseTicket } from '@/hooks/useEvents';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,10 +43,13 @@ const EventDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
 
   const isPast = event && new Date(event.event_date) < new Date();
   const totalAmount = selectedTicketType ? quantity * Number(selectedTicketType.price) : 0;
   const isFreeTicket = selectedTicketType ? Number(selectedTicketType.price) === 0 : false;
+  const isGuest = !user;
 
   const availableTickets = selectedTicketType 
     ? selectedTicketType.quantity_available - selectedTicketType.quantity_sold 
@@ -87,22 +92,46 @@ const EventDetail = () => {
   const handleFreeTicket = async () => {
     if (!selectedTicketType || !event) return;
 
+    // For guests, validate email
+    if (isGuest && !guestEmail) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email to receive the ticket.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Basic email validation for guests
+    if (isGuest && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await purchaseTicket.mutateAsync({
         eventId: event.id,
         ticketTypeId: selectedTicketType.id,
         quantity,
         amountPaid: 0,
-        paymentMethod: 'wallet', // No payment needed, just record the ticket
+        paymentMethod: 'wallet',
+        guestEmail: isGuest ? guestEmail : undefined,
+        guestName: isGuest ? guestName : undefined,
       });
 
       toast({
         title: 'Ticket Claimed!',
-        description: `You have successfully claimed ${quantity} free ticket(s). Check your email for the QR code.`,
+        description: `You have successfully claimed ${quantity} free ticket(s). ${isGuest ? `Check ${guestEmail} for your QR code.` : 'Check your email for the QR code.'}`,
       });
 
       setIsPurchaseModalOpen(false);
       setQuantity(1);
+      setGuestEmail('');
+      setGuestName('');
     } catch (error: any) {
       toast({
         title: 'Failed to Claim Ticket',
@@ -361,6 +390,34 @@ const EventDetail = () => {
                     <p className="text-sm text-muted-foreground mt-1">
                       Claim your ticket and receive a QR code via email.
                     </p>
+                  </div>
+                )}
+
+                {/* Guest email/name fields for free tickets */}
+                {isFreeTicket && isGuest && (
+                  <div className="space-y-4 p-4 rounded-lg border bg-muted/50">
+                    <p className="text-sm font-medium">Enter your details to receive the ticket:</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="guest-email">Email *</Label>
+                      <Input
+                        id="guest-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="guest-name">Name (optional)</Label>
+                      <Input
+                        id="guest-name"
+                        type="text"
+                        placeholder="Your name"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                      />
+                    </div>
                   </div>
                 )}
 
