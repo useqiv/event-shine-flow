@@ -44,7 +44,7 @@ const EventDetail = () => {
 
   const isPast = event && new Date(event.event_date) < new Date();
   const totalAmount = selectedTicketType ? quantity * Number(selectedTicketType.price) : 0;
-  const isFreeTicket = selectedTicketType && Number(selectedTicketType.price) === 0;
+  const isFreeTicket = selectedTicketType ? Number(selectedTicketType.price) === 0 : false;
 
   const availableTickets = selectedTicketType 
     ? selectedTicketType.quantity_available - selectedTicketType.quantity_sold 
