@@ -151,6 +151,9 @@ export const useMyTickets = () => {
   });
 };
 
+// Maximum free tickets per user/email per event
+const FREE_TICKET_LIMIT_PER_EVENT = 5;
+
 export const usePurchaseTicket = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -163,7 +166,8 @@ export const usePurchaseTicket = () => {
       amountPaid,
       paymentMethod,
       guestEmail,
-      guestName
+      guestName,
+      eventDetails
     }: {
       eventId: string;
       ticketTypeId: string;
@@ -172,6 +176,13 @@ export const usePurchaseTicket = () => {
       paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt';
       guestEmail?: string;
       guestName?: string;
+      eventDetails?: {
+        eventTitle: string;
+        eventDate: string;
+        eventVenue: string;
+        ticketTypeName: string;
+        currency: string;
+      };
     }) => {
       const isGuest = !user?.id;
       const isFreeTicket = amountPaid === 0;
@@ -184,6 +195,44 @@ export const usePurchaseTicket = () => {
       // For free tickets as guest, require email
       if (isFreeTicket && isGuest && !guestEmail) {
         throw new Error('Email is required for free ticket delivery');
+      }
+
+      // Check free ticket claim limit
+      if (isFreeTicket) {
+        let existingClaimCount = 0;
+
+        if (user?.id) {
+          // Check by user_id for authenticated users
+          const { data: userTickets, error: countError } = await supabase
+            .from('tickets')
+            .select('quantity')
+            .eq('event_id', eventId)
+            .eq('user_id', user.id)
+            .eq('amount_paid', 0);
+
+          if (countError) throw countError;
+          existingClaimCount = userTickets?.reduce((sum, t) => sum + t.quantity, 0) || 0;
+        } else if (guestEmail) {
+          // Check by email for guest users
+          const { data: guestTickets, error: countError } = await supabase
+            .from('tickets')
+            .select('quantity')
+            .eq('event_id', eventId)
+            .eq('guest_email', guestEmail.toLowerCase())
+            .eq('amount_paid', 0);
+
+          if (countError) throw countError;
+          existingClaimCount = guestTickets?.reduce((sum, t) => sum + t.quantity, 0) || 0;
+        }
+
+        const totalAfterClaim = existingClaimCount + quantity;
+        if (totalAfterClaim > FREE_TICKET_LIMIT_PER_EVENT) {
+          const remaining = FREE_TICKET_LIMIT_PER_EVENT - existingClaimCount;
+          if (remaining <= 0) {
+            throw new Error(`You have already claimed the maximum of ${FREE_TICKET_LIMIT_PER_EVENT} free tickets for this event.`);
+          }
+          throw new Error(`You can only claim ${remaining} more free ticket(s) for this event (limit: ${FREE_TICKET_LIMIT_PER_EVENT}).`);
+        }
       }
 
       // Generate unique QR code
@@ -236,7 +285,7 @@ export const usePurchaseTicket = () => {
       if (user?.id) {
         ticketData.user_id = user.id;
       } else {
-        ticketData.guest_email = guestEmail;
+        ticketData.guest_email = guestEmail?.toLowerCase();
         ticketData.guest_name = guestName || null;
       }
 
@@ -258,6 +307,52 @@ export const usePurchaseTicket = () => {
             message: `Your ticket has been ${isFreeTicket ? 'claimed' : 'purchased'}. QR Code: ${qrCode}`,
             type: 'ticket'
           });
+      }
+
+      // Send email with QR code for free tickets
+      if (isFreeTicket && eventDetails) {
+        const recipientEmail = isGuest ? guestEmail : null;
+        const recipientName = isGuest ? (guestName || 'Guest') : null;
+
+        // Get user email if authenticated
+        let userEmail = recipientEmail;
+        let userName = recipientName;
+        
+        if (user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', user.id)
+            .single();
+          
+          userEmail = profile?.email || user.email;
+          userName = profile?.full_name || 'User';
+        }
+
+        if (userEmail) {
+          try {
+            await supabase.functions.invoke('send-payment-receipt', {
+              body: {
+                type: 'ticket',
+                user_email: userEmail,
+                user_name: userName || 'Guest',
+                amount: 0,
+                currency: eventDetails.currency || 'NGN',
+                quantity,
+                payment_method: 'Free Ticket',
+                transaction_ref: qrCode,
+                event_title: eventDetails.eventTitle,
+                event_date: eventDetails.eventDate,
+                event_venue: eventDetails.eventVenue,
+                ticket_type: eventDetails.ticketTypeName,
+                qr_code: qrCode
+              }
+            });
+          } catch (emailError) {
+            console.error('Failed to send ticket email:', emailError);
+            // Don't throw - ticket was claimed successfully, email is secondary
+          }
+        }
       }
 
       return data;
