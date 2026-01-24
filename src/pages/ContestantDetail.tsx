@@ -29,6 +29,8 @@ import {
   Wallet,
   ExternalLink,
   Copy,
+  Download,
+  Share2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -264,20 +266,103 @@ const ContestantDetail = () => {
 
             {/* QR Code Section */}
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold mb-1">Share QR Code</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Scan to vote for {contestant.name}
-                    </p>
-                  </div>
-                  <div className="bg-white p-2 rounded-lg">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4 text-center">Share QR Code</h3>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="bg-white p-4 rounded-xl shadow-sm">
                     <QRCodeSVG 
+                      id="contestant-qr-code"
                       value={contestantUrl} 
-                      size={80}
+                      size={200}
                       level="H"
+                      includeMargin
                     />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Scan to vote for {contestant.name}
+                  </p>
+                  <div className="flex gap-2 w-full">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => {
+                        const svg = document.getElementById('contestant-qr-code');
+                        if (!svg) return;
+                        
+                        const svgData = new XMLSerializer().serializeToString(svg);
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const img = new Image();
+                        
+                        img.onload = () => {
+                          canvas.width = 380;
+                          canvas.height = 380;
+                          ctx?.drawImage(img, 0, 0, 380, 380);
+                          
+                          const link = document.createElement('a');
+                          link.download = `vote-${createContestantSlug(contestant.name)}-qr.png`;
+                          link.href = canvas.toDataURL('image/png');
+                          link.click();
+                        };
+                        
+                        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Save QR
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={async () => {
+                        const svg = document.getElementById('contestant-qr-code');
+                        if (!svg) return;
+                        
+                        const svgData = new XMLSerializer().serializeToString(svg);
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const img = new Image();
+                        
+                        img.onload = async () => {
+                          canvas.width = 380;
+                          canvas.height = 380;
+                          ctx?.drawImage(img, 0, 0, 380, 380);
+                          
+                          canvas.toBlob(async (blob) => {
+                            if (!blob) return;
+                            
+                            if (navigator.share && navigator.canShare) {
+                              const file = new File([blob], `vote-${contestant.name}-qr.png`, { type: 'image/png' });
+                              try {
+                                await navigator.share({
+                                  title: `Vote for ${contestant.name}`,
+                                  text: `Scan this QR code to vote for ${contestant.name} in ${contest.title}!`,
+                                  files: [file]
+                                });
+                              } catch (e) {
+                                // Fallback to copying link
+                                navigator.clipboard.writeText(contestantUrl);
+                                toast({
+                                  title: "Link Copied!",
+                                  description: "QR code link copied to clipboard."
+                                });
+                              }
+                            } else {
+                              navigator.clipboard.writeText(contestantUrl);
+                              toast({
+                                title: "Link Copied!",
+                                description: "QR code link copied to clipboard."
+                              });
+                            }
+                          }, 'image/png');
+                        };
+                        
+                        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share QR
+                    </Button>
                   </div>
                 </div>
               </CardContent>
