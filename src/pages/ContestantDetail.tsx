@@ -203,9 +203,20 @@ const ContestantDetail = () => {
       <Helmet>
         <title>{contestant.name} - Vote in {contest.title}</title>
         <meta name="description" content={`Vote for ${contestant.name} in ${contest.title}. ${contestant.bio || ''}`} />
-        <meta property="og:title" content={`Vote for ${contestant.name}`} />
-        <meta property="og:description" content={`Support ${contestant.name} in ${contest.title}. Cast your votes now!`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={contestantUrl} />
+        <meta property="og:title" content={`Vote for ${contestant.name} in ${contest.title}`} />
+        <meta property="og:description" content={contestant.bio || `Support ${contestant.name} by voting! Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`} />
         {contestant.photo_url && <meta property="og:image" content={contestant.photo_url} />}
+        <meta property="og:site_name" content="EventShine" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`Vote for ${contestant.name}`} />
+        <meta name="twitter:description" content={contestant.bio || `Support ${contestant.name} in ${contest.title}. Cast your votes now!`} />
+        {contestant.photo_url && <meta name="twitter:image" content={contestant.photo_url} />}
       </Helmet>
 
       <Navbar />
