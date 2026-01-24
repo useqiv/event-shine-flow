@@ -929,6 +929,35 @@ export type Database = {
           },
         ]
       }
+      form_submission_rate_limits: {
+        Row: {
+          form_id: string
+          id: string
+          ip_hash: string
+          submitted_at: string
+        }
+        Insert: {
+          form_id: string
+          id?: string
+          ip_hash: string
+          submitted_at?: string
+        }
+        Update: {
+          form_id?: string
+          id?: string
+          ip_hash?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submission_rate_limits_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_templates: {
         Row: {
           category: string
@@ -2937,6 +2966,59 @@ export type Database = {
       }
     }
     Views: {
+      donations_public: {
+        Row: {
+          amount: number | null
+          campaign_id: string | null
+          created_at: string | null
+          currency: string | null
+          donor_id: string | null
+          donor_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          id: string | null
+          is_anonymous: boolean | null
+          payment_method: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          campaign_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          donor_id?: string | null
+          donor_message?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          is_anonymous?: boolean | null
+          payment_method?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          campaign_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          donor_id?: string | null
+          donor_message?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          is_anonymous?: boolean | null
+          payment_method?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donations_safe: {
         Row: {
           amount: number | null
@@ -3067,6 +3149,211 @@ export type Database = {
           },
         ]
       }
+      influencer_payouts_safe: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          amount: number | null
+          bank_name: string | null
+          created_at: string | null
+          currency: string | null
+          id: string | null
+          influencer_user_id: string | null
+          payment_method: string | null
+          processed_at: string | null
+          processed_by: string | null
+          rejection_reason: string | null
+          status: string | null
+          updated_at: string | null
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: never
+          account_number?: never
+          amount?: number | null
+          bank_name?: never
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          influencer_user_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Update: {
+          account_name?: never
+          account_number?: never
+          amount?: number | null
+          bank_name?: never
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          influencer_user_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Relationships: []
+      }
+      influencer_profiles_safe: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          paid_earnings: number | null
+          payment_method: string | null
+          pending_earnings: number | null
+          total_earnings: number | null
+          updated_at: string | null
+          usdt_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_name?: never
+          account_number?: never
+          bank_name?: never
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          paid_earnings?: number | null
+          payment_method?: string | null
+          pending_earnings?: number | null
+          total_earnings?: number | null
+          updated_at?: string | null
+          usdt_address?: never
+          user_id?: string | null
+        }
+        Update: {
+          account_name?: never
+          account_number?: never
+          bank_name?: never
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          paid_earnings?: number | null
+          payment_method?: string | null
+          pending_earnings?: number | null
+          total_earnings?: number | null
+          updated_at?: string | null
+          usdt_address?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      organization_settings_safe: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          company_address: string | null
+          company_email: string | null
+          company_name: string | null
+          company_phone: string | null
+          created_at: string | null
+          default_currency: string | null
+          id: string | null
+          organization_id: string | null
+          preferred_payout_method: string | null
+          updated_at: string | null
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: never
+          account_number?: never
+          bank_name?: never
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          preferred_payout_method?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Update: {
+          account_name?: never
+          account_number?: never
+          bank_name?: never
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          preferred_payout_method?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_social_accounts_safe: {
+        Row: {
+          account_name: string | null
+          created_at: string | null
+          id: string | null
+          is_connected: boolean | null
+          organization_id: string | null
+          platform: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          organization_id?: string | null
+          platform?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          organization_id?: string | null
+          platform?: string | null
+          token_expires_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_social_accounts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_webhooks_safe: {
         Row: {
           created_at: string | null
@@ -3114,6 +3401,65 @@ export type Database = {
           },
         ]
       }
+      payouts_safe: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          amount: number | null
+          bank_name: string | null
+          created_at: string | null
+          currency: string | null
+          id: string | null
+          organization_id: string | null
+          payment_method: string | null
+          processed_at: string | null
+          reference_id: string | null
+          status: string | null
+          updated_at: string | null
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: never
+          account_number?: never
+          amount?: number | null
+          bank_name?: never
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Update: {
+          account_name?: never
+          account_number?: never
+          amount?: number | null
+          bank_name?: never
+          created_at?: string | null
+          currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_login_rate_limit: {
@@ -3142,6 +3488,10 @@ export type Database = {
       record_login_attempt: {
         Args: { p_email: string; p_ip_hash?: string; p_success: boolean }
         Returns: undefined
+      }
+      redeem_voucher_safely: {
+        Args: { p_user_id: string; p_voucher_id: string }
+        Returns: boolean
       }
       send_notification: {
         Args: {
