@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
+import { getContestUrl, getContestantUrl } from '@/lib/urlHelpers';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
@@ -360,7 +361,7 @@ const ContestDetail = () => {
               <ShareButtons 
                 title={contest.title} 
                 description={contest.description || `Vote now in ${contest.title}`}
-                url={`${window.location.origin}/contests/${id}`}
+                url={getContestUrl(id!, (contest as any).custom_slug)}
               />
             </div>
           {contest.description && (
@@ -396,6 +397,7 @@ const ContestDetail = () => {
           <LiveContestView
             contestId={contest.id}
             contestTitle={contest.title}
+            contestCustomSlug={(contest as any).custom_slug}
             streamUrl={(contest as any).stream_url}
             streamPlatform={(contest as any).stream_platform}
             contestants={contestants}
@@ -483,6 +485,7 @@ const ContestDetail = () => {
                                 contestantId={contestant.id} 
                                 contestantName={contestant.name} 
                                 contestTitle={contest?.title || ''} 
+                                contestCustomSlug={(contest as any)?.custom_slug}
                               />
                             </div>
                           </div>
@@ -591,6 +594,7 @@ const ContestDetail = () => {
                                     contestantId={contestant.id} 
                                     contestantName={contestant.name} 
                                     contestTitle={contest?.title || ''} 
+                                    contestCustomSlug={(contest as any)?.custom_slug}
                                   />
                                 </div>
                               </div>
@@ -663,6 +667,7 @@ const ContestDetail = () => {
                                 contestantId={contestant.id} 
                                 contestantName={contestant.name} 
                                 contestTitle={contest?.title || ''} 
+                                contestCustomSlug={(contest as any)?.custom_slug}
                               />
                             </div>
                           </div>

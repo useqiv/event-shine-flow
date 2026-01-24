@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Share2, Facebook, Twitter, MessageCircle, Link, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { getContestantUrl, createContestantSlug } from '@/lib/urlHelpers';
 
 interface ShareButtonsProps {
   title: string;
@@ -88,25 +89,23 @@ export const ShareButtons = ({ title, description, url }: ShareButtonsProps) => 
   );
 };
 
-// Helper function to create URL-friendly slug from contestant name
-const createContestantSlug = (name: string): string => {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-};
+// Note: createContestantSlug is now imported from @/lib/urlHelpers
 
 interface ContestantShareButtonProps {
   contestId: string;
   contestantId: string;
   contestantName: string;
   contestTitle: string;
+  contestCustomSlug?: string | null;
 }
 
 export const ContestantShareButton = ({
   contestId,
   contestantName,
   contestTitle,
+  contestCustomSlug,
 }: ContestantShareButtonProps) => {
-  const contestantSlug = createContestantSlug(contestantName);
-  const url = `${window.location.origin}/contests/${contestId}/contestant/${contestantSlug}`;
+  const url = getContestantUrl(contestId, contestantName, contestCustomSlug);
   const title = `Vote for ${contestantName} in ${contestTitle}`;
   const description = `Support ${contestantName} by casting your vote now!`;
 

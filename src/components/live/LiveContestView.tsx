@@ -23,6 +23,7 @@ interface Contestant {
 interface LiveContestViewProps {
   contestId: string;
   contestTitle: string;
+  contestCustomSlug?: string | null;
   streamUrl?: string;
   streamPlatform?: 'youtube' | 'twitch' | 'custom';
   contestants: Contestant[];
@@ -37,6 +38,7 @@ interface LiveContestViewProps {
 export const LiveContestView: React.FC<LiveContestViewProps> = ({
   contestId,
   contestTitle,
+  contestCustomSlug,
   streamUrl,
   streamPlatform = 'custom',
   contestants,
@@ -183,6 +185,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                             contestantId={contestant.id}
                             contestantName={contestant.name}
                             contestTitle={contestTitle}
+                            contestCustomSlug={contestCustomSlug}
                           />
                           <Button
                             size="sm"

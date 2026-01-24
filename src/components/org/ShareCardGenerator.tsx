@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Download, Share2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getContestantUrl } from '@/lib/urlHelpers';
 
 interface ShareCardGeneratorProps {
   open: boolean;
@@ -24,6 +25,7 @@ interface ShareCardGeneratorProps {
     title: string;
     brand_primary_color?: string;
     brand_logo_url?: string;
+    custom_slug?: string | null;
   };
 }
 
@@ -38,7 +40,7 @@ export const ShareCardGenerator: React.FC<ShareCardGeneratorProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const primaryColor = contest.brand_primary_color || '#7c3aed';
-  const votingUrl = `${window.location.origin}/contests/${contest.id}?vote=${contestant.id}`;
+  const votingUrl = getContestantUrl(contest.id, contestant.name, contest.custom_slug);
 
   const generateCard = async () => {
     setIsGenerating(true);
