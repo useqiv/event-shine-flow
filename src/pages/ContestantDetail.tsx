@@ -7,7 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
@@ -31,6 +33,11 @@ import {
   Copy,
   Download,
   Share2,
+  QrCode,
+  ChevronDown,
+  TrendingUp,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -55,6 +62,8 @@ const ContestantDetail = () => {
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [isQROpen, setIsQROpen] = useState(false);
+  const [showVotePulse, setShowVotePulse] = useState(false);
 
   // Find contestant by slug
   const contestant = useMemo(() => {
@@ -63,7 +72,11 @@ const ContestantDetail = () => {
   }, [contestants, contestantSlug]);
 
   // Enable real-time updates
-  const { initializeVoteCounts } = useRealtimeContestants(contestId || '', () => {});
+  const { initializeVoteCounts } = useRealtimeContestants(contestId || '', () => {
+    // Trigger pulse animation on vote update
+    setShowVotePulse(true);
+    setTimeout(() => setShowVotePulse(false), 1000);
+  });
   useRealtimeContest(contestId || '');
 
   useEffect(() => {
@@ -72,11 +85,14 @@ const ContestantDetail = () => {
     }
   }, [contestants, initializeVoteCounts]);
 
-  // Get contestant rank
-  const contestantRank = useMemo(() => {
-    if (!contestants || !contestant) return 0;
+  // Get contestant rank and leader stats
+  const { contestantRank, leaderVotes, voteProgress } = useMemo(() => {
+    if (!contestants || !contestant) return { contestantRank: 0, leaderVotes: 0, voteProgress: 0 };
     const sorted = [...contestants].sort((a: any, b: any) => b.vote_count - a.vote_count);
-    return sorted.findIndex((c: any) => c.id === contestant.id) + 1;
+    const rank = sorted.findIndex((c: any) => c.id === contestant.id) + 1;
+    const leader = sorted[0]?.vote_count || 0;
+    const progress = leader > 0 ? (contestant.vote_count / leader) * 100 : 0;
+    return { contestantRank: rank, leaderVotes: leader, voteProgress: progress };
   }, [contestants, contestant]);
 
   // Brand colors
@@ -161,19 +177,89 @@ const ContestantDetail = () => {
     }
   };
 
+  const handleDownloadQR = () => {
+    const svg = document.getElementById('contestant-qr-code');
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = 380;
+      canvas.height = 380;
+      ctx?.drawImage(img, 0, 0, 380, 380);
+      
+      const link = document.createElement('a');
+      link.download = `vote-${createContestantSlug(contestant?.name || '')}-qr.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handleShareQR = async () => {
+    const svg = document.getElementById('contestant-qr-code');
+    if (!svg || !contestant || !contest) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = async () => {
+      canvas.width = 380;
+      canvas.height = 380;
+      ctx?.drawImage(img, 0, 0, 380, 380);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], `vote-${contestant.name}-qr.png`, { type: 'image/png' });
+          try {
+            await navigator.share({
+              title: `Vote for ${contestant.name}`,
+              text: `Scan this QR code to vote for ${contestant.name} in ${contest.title}!`,
+              files: [file]
+            });
+          } catch (e) {
+            navigator.clipboard.writeText(contestantUrl);
+            toast({
+              title: "Link Copied!",
+              description: "QR code link copied to clipboard."
+            });
+          }
+        } else {
+          navigator.clipboard.writeText(contestantUrl);
+          toast({
+            title: "Link Copied!",
+            description: "QR code link copied to clipboard."
+          });
+        }
+      }, 'image/png');
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
   if (contestLoading || contestantsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid lg:grid-cols-2 gap-8">
-            <Skeleton className="h-96 rounded-lg" />
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-12 w-32" />
+          <div className="grid lg:grid-cols-5 gap-8">
+            <div className="lg:col-span-2">
+              <Skeleton className="aspect-[3/4] rounded-2xl" />
+            </div>
+            <div className="lg:col-span-3 space-y-4">
+              <Skeleton className="h-12 w-64" />
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
           </div>
         </div>
@@ -201,7 +287,7 @@ const ContestantDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background" style={brandStyles}>
+    <div className="min-h-screen bg-background pb-24 lg:pb-0" style={brandStyles}>
       <Helmet>
         <title>{contestant.name} - Vote in {contest.title}</title>
         <meta name="description" content={`Vote for ${contestant.name} in ${contest.title}. ${contestant.bio || ''}`} />
@@ -223,260 +309,281 @@ const ContestantDetail = () => {
 
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 lg:py-8">
         {/* Back Link */}
         <Link 
           to={`/contests/${contestId}`} 
-          className="inline-flex items-center text-muted-foreground hover:text-foreground mb-6"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="h-4 w-4 mr-1" />
           Back to {contest.title}
         </Link>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Contestant Photo */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-secondary">
-              {contestant.photo_url ? (
-                <img 
-                  src={contestant.photo_url} 
-                  alt={contestant.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Users className="h-24 w-24 text-muted-foreground" />
-                </div>
-              )}
-              
-              {/* Rank Badge */}
-              {contestantRank <= 3 && (
-                <Badge 
-                  className="absolute top-4 left-4 text-lg px-3 py-1"
-                  style={{ 
-                    backgroundColor: contestantRank === 1 ? '#FFD700' : contestantRank === 2 ? '#C0C0C0' : '#CD7F32',
-                    color: 'black'
-                  }}
-                >
-                  <Trophy className="h-4 w-4 mr-1" />
-                  #{contestantRank}
-                </Badge>
-              )}
-            </div>
+        <div className="grid lg:grid-cols-5 gap-6 lg:gap-10">
+          {/* Left Column - Photo */}
+          <div className="lg:col-span-2">
+            <div className="sticky top-4 space-y-4">
+              {/* Main Photo */}
+              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-secondary shadow-xl">
+                {contestant.photo_url ? (
+                  <img 
+                    src={contestant.photo_url} 
+                    alt={contestant.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary to-muted">
+                    <Users className="h-24 w-24 text-muted-foreground" />
+                  </div>
+                )}
+                
+                {/* Rank Badge Overlay */}
+                {contestantRank <= 3 && (
+                  <div 
+                    className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-full text-sm font-bold shadow-lg"
+                    style={{ 
+                      backgroundColor: contestantRank === 1 ? '#FFD700' : contestantRank === 2 ? '#C0C0C0' : '#CD7F32',
+                      color: '#1a1a1a'
+                    }}
+                  >
+                    <Trophy className="h-4 w-4" />
+                    #{contestantRank} Place
+                  </div>
+                )}
 
-            {/* QR Code Section */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 text-center">Share QR Code</h3>
-                <div className="flex flex-col items-center gap-4">
-                  <div className="bg-white p-4 rounded-xl shadow-sm">
-                    <QRCodeSVG 
-                      id="contestant-qr-code"
-                      value={contestantUrl} 
-                      size={200}
-                      level="H"
-                      includeMargin
-                    />
+                {/* Favorite Button */}
+                {user && (
+                  <div className="absolute top-4 right-4">
+                    <FavoriteButton contestantId={contestant.id} />
                   </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Scan to vote for {contestant.name}
-                  </p>
-                  <div className="flex gap-2 w-full">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => {
-                        const svg = document.getElementById('contestant-qr-code');
-                        if (!svg) return;
-                        
-                        const svgData = new XMLSerializer().serializeToString(svg);
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const img = new Image();
-                        
-                        img.onload = () => {
-                          canvas.width = 380;
-                          canvas.height = 380;
-                          ctx?.drawImage(img, 0, 0, 380, 380);
-                          
-                          const link = document.createElement('a');
-                          link.download = `vote-${createContestantSlug(contestant.name)}-qr.png`;
-                          link.href = canvas.toDataURL('image/png');
-                          link.click();
-                        };
-                        
-                        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-                      }}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Save QR
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={async () => {
-                        const svg = document.getElementById('contestant-qr-code');
-                        if (!svg) return;
-                        
-                        const svgData = new XMLSerializer().serializeToString(svg);
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        const img = new Image();
-                        
-                        img.onload = async () => {
-                          canvas.width = 380;
-                          canvas.height = 380;
-                          ctx?.drawImage(img, 0, 0, 380, 380);
-                          
-                          canvas.toBlob(async (blob) => {
-                            if (!blob) return;
-                            
-                            if (navigator.share && navigator.canShare) {
-                              const file = new File([blob], `vote-${contestant.name}-qr.png`, { type: 'image/png' });
-                              try {
-                                await navigator.share({
-                                  title: `Vote for ${contestant.name}`,
-                                  text: `Scan this QR code to vote for ${contestant.name} in ${contest.title}!`,
-                                  files: [file]
-                                });
-                              } catch (e) {
-                                // Fallback to copying link
-                                navigator.clipboard.writeText(contestantUrl);
-                                toast({
-                                  title: "Link Copied!",
-                                  description: "QR code link copied to clipboard."
-                                });
-                              }
-                            } else {
-                              navigator.clipboard.writeText(contestantUrl);
-                              toast({
-                                title: "Link Copied!",
-                                description: "QR code link copied to clipboard."
-                              });
-                            }
-                          }, 'image/png');
-                        };
-                        
-                        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
-                      }}
-                    >
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Share QR
-                    </Button>
+                )}
+
+                {/* Gradient Overlay at Bottom */}
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
+                
+                {/* Live Vote Badge - Shows on real-time update */}
+                {showVotePulse && (
+                  <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center">
+                    <Badge className="bg-primary text-primary-foreground animate-fade-in px-4 py-2">
+                      <Sparkles className="h-4 w-4 mr-2 animate-pulse" />
+                      New vote received!
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
+
+              {/* QR Code Section - Collapsible on Desktop, Hidden on Mobile */}
+              <div className="hidden lg:block">
+                <Collapsible open={isQROpen} onOpenChange={setIsQROpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <span className="flex items-center">
+                        <QrCode className="h-4 w-4 mr-2" />
+                        Share QR Code
+                      </span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isQROpen ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-3">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="bg-white p-3 rounded-xl">
+                            <QRCodeSVG 
+                              id="contestant-qr-code"
+                              value={contestantUrl} 
+                              size={160}
+                              level="H"
+                              includeMargin
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">
+                            Scan to vote for {contestant.name}
+                          </p>
+                          <div className="flex gap-2 w-full">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={handleDownloadQR}
+                            >
+                              <Download className="mr-1 h-3 w-3" />
+                              Save
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={handleShareQR}
+                            >
+                              <Share2 className="mr-1 h-3 w-3" />
+                              Share
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </div>
           </div>
 
-          {/* Contestant Info */}
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                {user && (
-                  <FavoriteButton contestantId={contestant.id} />
-                )}
-                <h1 className="text-3xl font-bold">{contestant.name}</h1>
+          {/* Right Column - Info */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Hero Section - Name & Contest */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Link 
+                  to={`/contests/${contestId}`}
+                  className="hover:text-primary transition-colors flex items-center"
+                >
+                  {contest.title}
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </Link>
+                <span>•</span>
+                <span className="capitalize">{contest.category}</span>
               </div>
               
-              <Link 
-                to={`/contests/${contestId}`}
-                className="inline-flex items-center text-muted-foreground hover:text-primary"
-              >
-                {contest.title}
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Link>
+              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight capitalize">
+                {contestant.name}
+              </h1>
+              
+              {((contestant as any).state || (contestant as any).country) && (
+                <p className="text-lg text-muted-foreground">
+                  {[(contestant as any).state, (contestant as any).country].filter(Boolean).join(', ')}
+                </p>
+              )}
             </div>
 
-            {/* Vote Count */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div 
-                    className="p-4 rounded-full"
-                    style={{ backgroundColor: `${primaryColor}20` }}
+            {/* Vote Stats Card - Primary Focus */}
+            <Card className="border-2 overflow-hidden" style={{ borderColor: `${primaryColor}30` }}>
+              <CardContent className="p-0">
+                {/* Vote Count Header */}
+                <div 
+                  className="p-6 text-center"
+                  style={{ backgroundColor: `${primaryColor}10` }}
+                >
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Votes</p>
+                  <p 
+                    className={`text-5xl lg:text-6xl font-bold tracking-tight ${showVotePulse ? 'animate-scale-in' : ''}`}
+                    style={{ color: primaryColor }}
                   >
-                    <Vote className="h-8 w-8" style={{ color: primaryColor }} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Votes</p>
-                    <p className="text-3xl font-bold" style={{ color: primaryColor }}>
-                      {contestant.vote_count.toLocaleString()}
-                    </p>
-                  </div>
+                    {contestant.vote_count.toLocaleString()}
+                  </p>
                   {contestantRank > 0 && (
-                    <Badge variant="secondary" className="ml-auto text-lg">
-                      Rank #{contestantRank}
+                    <Badge 
+                      variant="secondary" 
+                      className="mt-3 text-base px-4 py-1"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      Rank #{contestantRank} of {contestants?.length || 0}
                     </Badge>
                   )}
                 </div>
+                
+                {/* Progress to Leader */}
+                {contestantRank > 1 && leaderVotes > 0 && (
+                  <div className="px-6 py-4 border-t border-border/50">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Progress to #1</span>
+                      <span className="font-medium">{Math.round(voteProgress)}%</span>
+                    </div>
+                    <Progress value={voteProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(leaderVotes - contestant.vote_count).toLocaleString()} votes behind leader
+                    </p>
+                  </div>
+                )}
+
+                {/* Vote Price & Action */}
+                <div className="p-6 border-t border-border/50 bg-background">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vote Price</p>
+                      <CurrencyDisplay 
+                        amount={Number(contest.vote_price)} 
+                        currency={contestCurrency}
+                        className="text-2xl font-bold"
+                      />
+                    </div>
+                    {!isEnded && (
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground flex items-center justify-end">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Ends in
+                        </p>
+                        <CountdownTimer endDate={contest.end_date} className="text-sm" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Desktop Vote Button */}
+                  <Button 
+                    size="lg" 
+                    className="w-full text-lg h-14 font-semibold hidden lg:flex"
+                    onClick={handleVoteClick}
+                    disabled={isEnded}
+                    style={{ 
+                      backgroundColor: isEnded ? undefined : primaryColor,
+                      color: isEnded ? undefined : 'white'
+                    }}
+                  >
+                    <Vote className="mr-2 h-5 w-5" />
+                    {isEnded ? 'Contest Ended' : 'Vote Now'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Bio */}
+            {/* Bio & Details - Consolidated */}
             {contestant.bio && (
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold mb-2">About</h3>
-                  <p className="text-muted-foreground">{contestant.bio}</p>
+                  <h3 className="font-semibold text-lg mb-3">About {contestant.name}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{contestant.bio}</p>
                 </CardContent>
               </Card>
             )}
 
-            {/* Contest Info */}
+            {/* Contest Period */}
             <Card>
-              <CardContent className="p-6 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div 
+                    className="p-3 rounded-xl"
+                    style={{ backgroundColor: `${primaryColor}15` }}
+                  >
+                    <Calendar className="h-5 w-5" style={{ color: primaryColor }} />
+                  </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Contest Period</p>
-                    <p className="font-medium">
-                      {format(new Date(contest.start_date), 'MMM d')} - {format(new Date(contest.end_date), 'MMM d, yyyy')}
+                    <h3 className="font-semibold mb-1">Contest Period</h3>
+                    <p className="text-muted-foreground">
+                      {format(new Date(contest.start_date), 'MMM d, yyyy')} — {format(new Date(contest.end_date), 'MMM d, yyyy')}
                     </p>
                   </div>
-                </div>
-                
-                {!isEnded && (
-                  <div className="pt-3 border-t">
-                    <p className="text-sm text-muted-foreground mb-2">Time Remaining</p>
-                    <CountdownTimer endDate={contest.end_date} />
-                  </div>
-                )}
-
-                <div className="pt-3 border-t">
-                  <p className="text-sm text-muted-foreground">Vote Price</p>
-                  <CurrencyDisplay 
-                    amount={Number(contest.vote_price)} 
-                    currency={contestCurrency}
-                    className="text-lg font-semibold"
-                  />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button 
-                size="lg" 
-                className="flex-1"
-                onClick={handleVoteClick}
-                disabled={isEnded}
-                style={{ 
-                  backgroundColor: primaryColor,
-                  color: 'white'
-                }}
+            {/* Share Actions */}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCopyLink}
+                className="flex-1 sm:flex-none"
               >
-                <Vote className="mr-2 h-5 w-5" />
-                {isEnded ? 'Contest Ended' : 'Vote Now'}
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Link
               </Button>
               
               <Button
-                size="lg"
                 variant="outline"
-                onClick={handleCopyLink}
-                title="Copy Link"
+                onClick={() => setIsQROpen(true)}
+                className="lg:hidden flex-1 sm:flex-none"
               >
-                <Copy className="h-5 w-5" />
+                <QrCode className="mr-2 h-4 w-4" />
+                QR Code
               </Button>
               
               <ShareButtons 
@@ -491,9 +598,9 @@ const ContestantDetail = () => {
 
         {/* Other Contestants */}
         {contestants && contestants.length > 1 && (
-          <div className="mt-12">
+          <div className="mt-16">
             <h2 className="text-2xl font-bold mb-6">Other Contestants</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {contestants
                 .filter((c: any) => c.id !== contestant.id)
                 .slice(0, 6)
@@ -503,13 +610,13 @@ const ContestantDetail = () => {
                     to={`/contests/${contestId}/contestant/${createContestantSlug(c.name)}`}
                     className="group"
                   >
-                    <Card className="overflow-hidden hover:ring-2 hover:ring-primary transition-all">
-                      <div className="aspect-square bg-secondary">
+                    <Card className="overflow-hidden hover:ring-2 hover:ring-primary/50 hover:shadow-lg transition-all duration-200">
+                      <div className="aspect-square bg-secondary relative overflow-hidden">
                         {c.photo_url ? (
                           <img 
                             src={c.photo_url} 
                             alt={c.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
@@ -518,7 +625,7 @@ const ContestantDetail = () => {
                         )}
                       </div>
                       <CardContent className="p-3">
-                        <p className="font-medium text-sm truncate">{c.name}</p>
+                        <p className="font-medium text-sm truncate capitalize">{c.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {c.vote_count.toLocaleString()} votes
                         </p>
@@ -528,8 +635,8 @@ const ContestantDetail = () => {
                 ))}
             </div>
             
-            <div className="text-center mt-6">
-              <Button variant="outline" asChild>
+            <div className="text-center mt-8">
+              <Button variant="outline" size="lg" asChild>
                 <Link to={`/contests/${contestId}`}>
                   View All Contestants
                 </Link>
@@ -541,13 +648,40 @@ const ContestantDetail = () => {
 
       <Footer />
 
+      {/* Sticky Mobile Vote CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t lg:hidden z-50">
+        <div className="container mx-auto flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Vote Price</p>
+            <CurrencyDisplay 
+              amount={Number(contest.vote_price)} 
+              currency={contestCurrency}
+              className="font-bold"
+            />
+          </div>
+          <Button 
+            size="lg" 
+            className="px-8 font-semibold"
+            onClick={handleVoteClick}
+            disabled={isEnded}
+            style={{ 
+              backgroundColor: isEnded ? undefined : primaryColor,
+              color: isEnded ? undefined : 'white'
+            }}
+          >
+            <Vote className="mr-2 h-5 w-5" />
+            {isEnded ? 'Ended' : 'Vote Now'}
+          </Button>
+        </div>
+      </div>
+
       {/* Vote Selection Dialog */}
       <Dialog open={isVoteSelectionOpen} onOpenChange={setIsVoteSelectionOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Vote for {contestant.name}</DialogTitle>
+            <DialogTitle className="capitalize">Vote for {contestant.name}</DialogTitle>
             <DialogDescription>
-              Select the number of votes
+              Select the number of votes you want to cast
             </DialogDescription>
           </DialogHeader>
           
@@ -557,7 +691,8 @@ const ContestantDetail = () => {
                 key={option}
                 variant={voteQuantity === option ? "default" : "outline"}
                 onClick={() => setVoteQuantity(option)}
-                className="h-16 text-lg"
+                className="h-16 text-lg font-semibold"
+                style={voteQuantity === option ? { backgroundColor: primaryColor } : undefined}
               >
                 {option}
               </Button>
@@ -570,7 +705,7 @@ const ContestantDetail = () => {
               <CurrencyDisplay 
                 amount={totalAmount} 
                 currency={contestCurrency}
-                className="text-xl font-bold"
+                className="text-2xl font-bold"
               />
             </div>
             
@@ -589,9 +724,52 @@ const ContestantDetail = () => {
               <Button 
                 onClick={handleProceedToPayment} 
                 className="flex-1"
-                style={{ backgroundColor: primaryColor }}
+                style={{ backgroundColor: primaryColor, color: 'white' }}
               >
                 {user ? 'Pay with Card' : 'Proceed to Pay'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile QR Code Dialog */}
+      <Dialog open={isQROpen} onOpenChange={setIsQROpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Share QR Code</DialogTitle>
+            <DialogDescription>
+              Scan to vote for {contestant.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <QRCodeSVG 
+                id="contestant-qr-code"
+                value={contestantUrl} 
+                size={200}
+                level="H"
+                includeMargin
+              />
+            </div>
+            
+            <div className="flex gap-2 w-full">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={handleDownloadQR}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Save QR
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={handleShareQR}
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Share QR
               </Button>
             </div>
           </div>
