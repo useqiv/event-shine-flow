@@ -2200,6 +2200,13 @@ export type Database = {
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "qr_scan_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       refunds: {
@@ -2523,6 +2530,13 @@ export type Database = {
             columns: ["ticket_id"]
             isOneToOne: false
             referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_transfers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3610,6 +3624,158 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets_public: {
+        Row: {
+          amount_paid: number | null
+          created_at: string | null
+          event_id: string | null
+          guest_email: string | null
+          guest_name: string | null
+          id: string | null
+          net_amount: number | null
+          payment_method: string | null
+          payment_reference_id: string | null
+          platform_commission: number | null
+          qr_code: string | null
+          quantity: number | null
+          status: string | null
+          ticket_type_id: string | null
+          transaction_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          payment_reference_id?: string | null
+          platform_commission?: number | null
+          qr_code?: string | null
+          quantity?: number | null
+          status?: string | null
+          ticket_type_id?: string | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          payment_reference_id?: string | null
+          platform_commission?: number | null
+          qr_code?: string | null
+          quantity?: number | null
+          status?: string | null
+          ticket_type_id?: string | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_ticket_type_id_fkey"
+            columns: ["ticket_type_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes_public: {
+        Row: {
+          amount_paid: number | null
+          contest_id: string | null
+          contestant_id: string | null
+          created_at: string | null
+          currency: string | null
+          guest_email: string | null
+          guest_name: string | null
+          id: string | null
+          net_amount: number | null
+          payment_method: string | null
+          platform_commission: number | null
+          quantity: number | null
+          transaction_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          contest_id?: string | null
+          contestant_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          platform_commission?: number | null
+          quantity?: number | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          contest_id?: string | null
+          contestant_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          guest_email?: never
+          guest_name?: never
+          id?: string | null
+          net_amount?: number | null
+          payment_method?: string | null
+          platform_commission?: number | null
+          quantity?: number | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_contestant_id_fkey"
+            columns: ["contestant_id"]
+            isOneToOne: false
+            referencedRelation: "contestants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "wallet_transactions"
             referencedColumns: ["id"]
           },
         ]

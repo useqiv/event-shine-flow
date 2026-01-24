@@ -52,8 +52,9 @@ const AdminPaymentHistory = () => {
   const { data: votes, isLoading: votesLoading } = useQuery({
     queryKey: ['admin-votes'],
     queryFn: async () => {
+      // Use votes_public view for secure access (masks guest info for non-owners)
       const { data, error } = await supabase
-        .from('votes')
+        .from('votes_public')
         .select(`
           id,
           quantity,
@@ -63,13 +64,25 @@ const AdminPaymentHistory = () => {
           user_id,
           guest_email,
           guest_name,
-          contest:contests(id, title, vote_currency),
-          contestant:contestants(name)
+          contest_id
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Fetch contest info separately since view doesn't support joins
+      const contestIds = [...new Set(data?.map(v => v.contest_id).filter(Boolean))];
+      const { data: contests } = await supabase
+        .from('contests')
+        .select('id, title, vote_currency')
+        .in('id', contestIds);
+      
+      const contestsMap = new Map(contests?.map(c => [c.id, c]) || []);
+      
+      return data?.map(v => ({
+        ...v,
+        contest: contestsMap.get(v.contest_id),
+      }));
     },
   });
 
@@ -77,8 +90,9 @@ const AdminPaymentHistory = () => {
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
     queryKey: ['admin-tickets'],
     queryFn: async () => {
+      // Use tickets_public view for secure access (masks guest info for non-owners)
       const { data, error } = await supabase
-        .from('tickets')
+        .from('tickets_public')
         .select(`
           id,
           quantity,
@@ -87,15 +101,34 @@ const AdminPaymentHistory = () => {
           status,
           created_at,
           user_id,
-          holder_name,
-          holder_email,
-          event:events(id, title),
-          ticket_type:ticket_types(name, currency)
+          guest_name,
+          guest_email,
+          event_id,
+          ticket_type_id
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Fetch event and ticket type info separately
+      const eventIds = [...new Set(data?.map(t => t.event_id).filter(Boolean))];
+      const ticketTypeIds = [...new Set(data?.map(t => t.ticket_type_id).filter(Boolean))];
+      
+      const [eventsRes, ticketTypesRes] = await Promise.all([
+        supabase.from('events').select('id, title').in('id', eventIds),
+        supabase.from('ticket_types').select('id, name, currency').in('id', ticketTypeIds),
+      ]);
+      
+      const eventsMap = new Map(eventsRes.data?.map(e => [e.id, e]) || []);
+      const ticketTypesMap = new Map(ticketTypesRes.data?.map(t => [t.id, t]) || []);
+      
+      return data?.map(t => ({
+        ...t,
+        holder_name: t.guest_name,
+        holder_email: t.guest_email,
+        event: eventsMap.get(t.event_id),
+        ticket_type: ticketTypesMap.get(t.ticket_type_id),
+      }));
     },
   });
 
@@ -103,8 +136,9 @@ const AdminPaymentHistory = () => {
   const { data: donations, isLoading: donationsLoading } = useQuery({
     queryKey: ['admin-donations'],
     queryFn: async () => {
+      // Use donations_public view for secure access (masks guest info for non-owners/admins)
       const { data, error } = await supabase
-        .from('donations')
+        .from('donations_public')
         .select(`
           id,
           amount,
@@ -116,12 +150,25 @@ const AdminPaymentHistory = () => {
           guest_email,
           guest_name,
           is_anonymous,
-          campaign:campaigns(id, title, currency)
+          campaign_id
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      
+      // Fetch campaign info separately
+      const campaignIds = [...new Set(data?.map(d => d.campaign_id).filter(Boolean))];
+      const { data: campaigns } = await supabase
+        .from('campaigns')
+        .select('id, title, currency')
+        .in('id', campaignIds);
+      
+      const campaignsMap = new Map(campaigns?.map(c => [c.id, c]) || []);
+      
+      return data?.map(d => ({
+        ...d,
+        campaign: campaignsMap.get(d.campaign_id),
+      }));
     },
   });
 
