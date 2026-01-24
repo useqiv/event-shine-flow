@@ -17,6 +17,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Contests from "./pages/Contests";
 import ContestDetail from "./pages/ContestDetail";
+import ContestantDetail from "./pages/ContestantDetail";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import WalletPage from "./pages/Wallet";
@@ -203,6 +204,7 @@ const AppRoutes = () => (
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     <Route path="/contests" element={<Contests />} />
     <Route path="/contests/:id" element={<ContestDetail />} />
+    <Route path="/contests/:contestId/contestant/:contestantSlug" element={<ContestantDetail />} />
     <Route path="/events" element={<Events />} />
     <Route path="/events/:id" element={<EventDetail />} />
     <Route path="/wallet" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />

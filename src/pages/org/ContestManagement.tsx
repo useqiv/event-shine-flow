@@ -437,7 +437,8 @@ const ContestManagement = () => {
   };
 
   const handleCopyContestantLink = (contestantId: string, contestantName: string) => {
-    const url = `${window.location.origin}/contests/${id}?vote=${contestantId}`;
+    const contestantSlug = contestantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const url = `${window.location.origin}/contests/${id}/contestant/${contestantSlug}`;
     navigator.clipboard.writeText(url);
     toast.success(`Link for ${contestantName} copied!`);
   };

@@ -29,7 +29,9 @@ export const ContestantQRDialog: React.FC<ContestantQRDialogProps> = ({
   contestTitle,
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
-  const votingUrl = `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
+  // Create URL-friendly slug from contestant name
+  const contestantSlug = contestantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const votingUrl = `${window.location.origin}/contests/${contestId}/contestant/${contestantSlug}`;
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');
