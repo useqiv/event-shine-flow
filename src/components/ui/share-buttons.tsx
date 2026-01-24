@@ -88,6 +88,11 @@ export const ShareButtons = ({ title, description, url }: ShareButtonsProps) => 
   );
 };
 
+// Helper function to create URL-friendly slug from contestant name
+const createContestantSlug = (name: string): string => {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+};
+
 interface ContestantShareButtonProps {
   contestId: string;
   contestantId: string;
@@ -97,11 +102,11 @@ interface ContestantShareButtonProps {
 
 export const ContestantShareButton = ({
   contestId,
-  contestantId,
   contestantName,
   contestTitle,
 }: ContestantShareButtonProps) => {
-  const url = `${window.location.origin}/contests/${contestId}?vote=${contestantId}`;
+  const contestantSlug = createContestantSlug(contestantName);
+  const url = `${window.location.origin}/contests/${contestId}/contestant/${contestantSlug}`;
   const title = `Vote for ${contestantName} in ${contestTitle}`;
   const description = `Support ${contestantName} by casting your vote now!`;
 
