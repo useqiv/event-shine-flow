@@ -160,53 +160,45 @@ export const useRedeemVoucher = () => {
     mutationFn: async (voucherCode: string) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // Get voucher
+      // First, get the voucher ID by code
       const { data: voucher, error: voucherError } = await supabase
         .from('vouchers')
-        .select('*')
+        .select('id, code, amount')
         .eq('code', voucherCode.toUpperCase())
-        .eq('is_used', false)
         .maybeSingle();
 
       if (voucherError) throw voucherError;
-      if (!voucher) throw new Error('Invalid or expired voucher');
+      if (!voucher) throw new Error('Invalid voucher code');
 
-      // Get wallet
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (walletError) throw walletError;
-
-      // Mark voucher as used
-      const { error: updateVoucherError } = await supabase
-        .from('vouchers')
-        .update({ is_used: true, used_by: user.id })
-        .eq('id', voucher.id);
-
-      if (updateVoucherError) throw updateVoucherError;
-
-      // Create transaction
-      await supabase
-        .from('wallet_transactions')
-        .insert({
-          wallet_id: wallet.id,
-          user_id: user.id,
-          type: 'voucher',
-          amount: voucher.amount,
-          description: `Voucher redeemed: ${voucherCode}`,
-          status: 'completed'
+      // Use atomic RPC function to prevent double-redemption race conditions
+      // This uses SELECT FOR UPDATE SKIP LOCKED to ensure only one transaction
+      // can redeem a voucher at a time
+      const { data: result, error: rpcError } = await supabase
+        .rpc('redeem_voucher_safely', {
+          p_voucher_id: voucher.id,
+          p_user_id: user.id
         });
 
-      // Update wallet balance
-      await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) + Number(voucher.amount) })
-        .eq('id', wallet.id);
+      if (rpcError) throw rpcError;
 
-      return voucher;
+      // Parse the result - the function returns a JSONB object
+      const redemptionResult = result as { 
+        success: boolean; 
+        error?: string; 
+        amount?: number;
+        currency?: string;
+        code?: string;
+      };
+
+      if (!redemptionResult.success) {
+        throw new Error(redemptionResult.error || 'Failed to redeem voucher');
+      }
+
+      return {
+        ...voucher,
+        amount: redemptionResult.amount,
+        currency: redemptionResult.currency
+      };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
