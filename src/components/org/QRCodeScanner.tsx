@@ -215,97 +215,75 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     }
 
     try {
-      // Fetch ticket by QR code value directly
-      const { data: ticket, error: ticketError } = await supabase
-        .from('tickets')
-        .select(`
-          id,
-          event_id,
-          status,
-          qr_code,
-          ticket_type_id,
-          user_id
-        `)
-        .eq('qr_code', decodedText)
-        .maybeSingle();
-
-      if (ticketError || !ticket) {
-        provideFeedback('error');
-        const scanResult = {
-          status: 'error' as const,
-          message: 'Ticket not found in system',
-        };
-        setLastScan(scanResult);
-        addRecentCheckIn({ status: 'error', message: 'Ticket not found in system' });
-        // Log with placeholder ticket_id since we don't have one
-        try {
-          await supabase.from('qr_scan_logs').insert({
-            event_id: eventId,
-            ticket_id: '00000000-0000-0000-0000-000000000000', // Placeholder for invalid tickets
-            scan_result: 'invalid',
-            scanned_by: user?.id,
-          });
-        } catch (e) {
-          console.error('Failed to log invalid scan:', e);
-        }
-        setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
-        onScanComplete?.({ success: false, message: 'Ticket not found' });
-        resumeScanning();
-        return;
-      }
-
-      // Fetch ticket type name
-      const { data: ticketType } = await supabase
-        .from('ticket_types')
-        .select('name')
-        .eq('id', ticket.ticket_type_id)
-        .maybeSingle();
-
-      // Fetch user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', ticket.user_id)
-        .maybeSingle();
-
-      // Check if ticket belongs to this event
-      if (ticket.event_id !== eventId) {
-        provideFeedback('error');
-        setLastScan({
-          status: 'error',
-          message: 'This ticket is for a different event',
-        });
-        addRecentCheckIn({ status: 'error', message: 'Wrong event ticket' });
-        logScan(ticket.id, 'wrong_event');
-        setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
-        onScanComplete?.({ success: false, message: 'Wrong event' });
-        resumeScanning();
-        return;
-      }
-
-      // Check if ticket is already used
-      if (ticket.status === 'used') {
-        provideFeedback('warning');
-        setLastScan({
-          status: 'warning',
-          message: 'Ticket already checked in',
-          ticketInfo: {
-            holderName: profile?.full_name || undefined,
-            ticketType: ticketType?.name || undefined,
+      // Pre-validate ticket using the verification endpoint
+      const verifyResponse = await fetch(
+        'https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/verify-ticket-qr',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpcnFtcXpna3NjbHNqeGZpaGFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzgyMTksImV4cCI6MjA4MjE1NDIxOX0.Y96LDtj66PRezBMQgyiNZw7ppDZ1vkeMuu5qkrExuPY',
           },
-        });
+          body: JSON.stringify({
+            qr_code: decodedText,
+            event_id: eventId,
+          }),
+        }
+      );
+
+      const verification = await verifyResponse.json();
+
+      // Handle verification results
+      if (!verification.valid) {
+        const feedbackType = verification.status === 'used' ? 'warning' : 'error';
+        provideFeedback(feedbackType);
+        
+        const scanResult = {
+          status: feedbackType as 'warning' | 'error',
+          message: verification.message,
+          ticketInfo: verification.ticket ? {
+            holderName: verification.ticket.holder_name || undefined,
+            ticketType: verification.ticket.ticket_type?.name || undefined,
+          } : undefined,
+        };
+        
+        setLastScan(scanResult);
         addRecentCheckIn({
-          status: 'warning',
-          message: 'Already checked in',
-          holderName: profile?.full_name || undefined,
-          ticketType: ticketType?.name || undefined,
+          status: feedbackType,
+          message: verification.message,
+          holderName: verification.ticket?.holder_name || undefined,
+          ticketType: verification.ticket?.ticket_type?.name || undefined,
         });
-        logScan(ticket.id, 'already_used');
+
+        // Log the failed verification
+        if (verification.ticket?.id) {
+          logScan(verification.ticket.id, verification.status);
+        } else {
+          // Log with placeholder for unknown tickets
+          try {
+            await supabase.from('qr_scan_logs').insert({
+              event_id: eventId,
+              ticket_id: '00000000-0000-0000-0000-000000000000',
+              scan_result: verification.status || 'invalid',
+              scanned_by: user?.id,
+            });
+          } catch (e) {
+            console.error('Failed to log invalid scan:', e);
+          }
+        }
+
         setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
-        onScanComplete?.({ success: false, message: 'Already used', ticketId: ticket.id });
+        onScanComplete?.({ 
+          success: false, 
+          message: verification.message, 
+          ticketId: verification.ticket?.id 
+        });
         resumeScanning();
         return;
       }
+
+      // Ticket is valid - proceed with check-in
+      const ticket = verification.ticket;
 
       // Mark ticket as used
       const { error: updateError } = await supabase
@@ -325,15 +303,15 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         status: 'success',
         message: 'Check-in successful!',
         ticketInfo: {
-          holderName: profile?.full_name || undefined,
-          ticketType: ticketType?.name || undefined,
+          holderName: ticket.holder_name || undefined,
+          ticketType: ticket.ticket_type?.name || undefined,
         },
       });
       addRecentCheckIn({
         status: 'success',
         message: 'Check-in successful',
-        holderName: profile?.full_name || undefined,
-        ticketType: ticketType?.name || undefined,
+        holderName: ticket.holder_name || undefined,
+        ticketType: ticket.ticket_type?.name || undefined,
       });
       setScanStats(prev => ({ ...prev, total: prev.total + 1, successful: prev.successful + 1 }));
       onScanComplete?.({ success: true, message: 'Check-in successful', ticketId: ticket.id });
