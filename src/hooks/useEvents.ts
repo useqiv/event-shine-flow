@@ -285,6 +285,8 @@ export const usePurchaseTicket = () => {
       if (user?.id) {
         ticketData.user_id = user.id;
       } else {
+        // Explicitly set user_id to null for guest tickets (required by RLS policy)
+        ticketData.user_id = null;
         ticketData.guest_email = guestEmail?.toLowerCase();
         ticketData.guest_name = guestName || null;
       }
