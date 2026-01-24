@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -215,9 +216,41 @@ const EventDetail = () => {
     );
   }
 
+  const eventUrl = event?.custom_slug 
+    ? `${window.location.origin}/e/${event.custom_slug}` 
+    : `${window.location.origin}/events/${id}`;
+  const ogDescription = event?.description || `Join us at ${event?.title} on ${event ? format(new Date(event.event_date), 'MMMM d, yyyy') : ''} at ${event?.venue}`;
+  const ogImage = event?.image_url || `${window.location.origin}/og-image.png`;
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <>
+      <Helmet>
+        <title>{event.title} | USEQIV Events</title>
+        <meta name="description" content={ogDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={eventUrl} />
+        <meta property="og:title" content={event.title} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="USEQIV" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={eventUrl} />
+        <meta name="twitter:title" content={event.title} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={eventUrl} />
+      </Helmet>
+      
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
       <main className="flex-1 container mx-auto px-4 pt-24 pb-8">
         <div className="space-y-6">
           {/* Back Button */}
@@ -556,8 +589,9 @@ const EventDetail = () => {
           />
         )}
       </main>
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 };
 
