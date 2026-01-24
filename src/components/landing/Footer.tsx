@@ -34,29 +34,29 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
 
   return (
     <footer {...props} className="bg-card border-t border-border">
-      <div className="w-full px-4 md:px-6 lg:px-8 py-16 lg:py-20">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <div className="max-w-[1600px] mx-auto">
           {/* Newsletter Section */}
-          <div className="bg-muted border border-border rounded-3xl p-8 lg:p-10 mb-12 lg:mb-16">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="bg-muted border border-border rounded-2xl sm:rounded-3xl p-5 sm:p-6 lg:p-10 mb-8 sm:mb-10 lg:mb-16">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
               <div>
-                <h3 className="text-xl lg:text-2xl font-bold text-foreground mb-2">
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground mb-1 sm:mb-2">
                   Stay updated with USEQIV
                 </h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Get the latest news, updates, and tips delivered to your inbox.
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3 lg:min-w-[400px]">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 lg:min-w-[400px]">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                   <input
                     type="email"
                     placeholder="Enter your email"
-                    className="w-full pl-12 pr-4 py-3.5 bg-card border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-card border border-border rounded-full text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
-                <Button variant="default" className="rounded-full px-6">
+                <Button variant="default" className="rounded-full px-5 sm:px-6 h-11 sm:h-auto">
                   Subscribe
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -65,13 +65,13 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
           </div>
 
           {/* Main Footer Content */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-8 lg:gap-12 mb-12 lg:mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 sm:gap-8 lg:gap-12 mb-8 sm:mb-10 lg:mb-16">
             {/* Brand Column */}
-            <div className="col-span-2">
-              <a href="/" className="flex items-center gap-2.5 mb-5">
-                <img src={appLogo} alt="USEQIV" className="h-11" />
+            <div className="col-span-2 sm:col-span-3 md:col-span-2">
+              <a href="/" className="flex items-center gap-2.5 mb-4 sm:mb-5">
+                <img src={appLogo} alt="USEQIV" className="h-9 sm:h-11" />
               </a>
-              <p className="text-muted-foreground text-sm mb-6 leading-relaxed max-w-xs">
+              <p className="text-muted-foreground text-xs sm:text-sm mb-4 sm:mb-6 leading-relaxed max-w-xs">
                 The modern platform for secure contest voting and event ticketing. 
                 Trusted by organizers worldwide.
               </p>
@@ -82,7 +82,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
                     key={index}
                     href={social.href}
                     aria-label={social.label}
-                    className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-primary hover:border-primary hover:text-primary-foreground transition-all"
+                    className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-primary hover:border-primary hover:text-primary-foreground transition-all"
                   >
                     <social.icon className="h-4 w-4" />
                   </a>
@@ -92,11 +92,11 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
 
             {/* Product */}
             <div>
-              <h4 className="font-semibold text-foreground mb-5">Product</h4>
-              <ul className="space-y-3">
+              <h4 className="font-semibold text-foreground text-sm sm:text-base mb-3 sm:mb-5">Product</h4>
+              <ul className="space-y-2 sm:space-y-3">
                 {footerLinks.product.map((link, index) => (
                   <li key={index}>
-                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <a href={link.href} className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                       {link.name}
                     </a>
                   </li>
@@ -106,11 +106,11 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
 
             {/* Company */}
             <div>
-              <h4 className="font-semibold text-foreground mb-5">Company</h4>
-              <ul className="space-y-3">
+              <h4 className="font-semibold text-foreground text-sm sm:text-base mb-3 sm:mb-5">Company</h4>
+              <ul className="space-y-2 sm:space-y-3">
                 {footerLinks.company.map((link, index) => (
                   <li key={index}>
-                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <a href={link.href} className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                       {link.name}
                     </a>
                   </li>
@@ -120,11 +120,11 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-semibold text-foreground mb-5">Legal</h4>
-              <ul className="space-y-3">
+              <h4 className="font-semibold text-foreground text-sm sm:text-base mb-3 sm:mb-5">Legal</h4>
+              <ul className="space-y-2 sm:space-y-3">
                 {footerLinks.legal.map((link, index) => (
                   <li key={index}>
-                    <a href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <a href={link.href} className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
                       {link.name}
                     </a>
                   </li>
@@ -134,8 +134,8 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-border pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground text-center md:text-left">
+          <div className="border-t border-border pt-6 sm:pt-8 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+            <p className="text-xs sm:text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} USEQIV. All rights reserved.
             </p>
           </div>
