@@ -1851,11 +1851,10 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string | null
+          account_number_encrypted: string | null
           amount: number
-          bank_account_encrypted: string | null
           bank_name: string | null
           created_at: string
-          crypto_address_encrypted: string | null
           currency: string
           id: string
           organization_id: string
@@ -1865,15 +1864,15 @@ export type Database = {
           status: string
           updated_at: string
           usdt_address: string | null
+          usdt_address_encrypted: string | null
         }
         Insert: {
           account_name?: string | null
           account_number?: string | null
+          account_number_encrypted?: string | null
           amount: number
-          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string
-          crypto_address_encrypted?: string | null
           currency?: string
           id?: string
           organization_id: string
@@ -1883,15 +1882,15 @@ export type Database = {
           status?: string
           updated_at?: string
           usdt_address?: string | null
+          usdt_address_encrypted?: string | null
         }
         Update: {
           account_name?: string | null
           account_number?: string | null
+          account_number_encrypted?: string | null
           amount?: number
-          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string
-          crypto_address_encrypted?: string | null
           currency?: string
           id?: string
           organization_id?: string
@@ -1901,6 +1900,7 @@ export type Database = {
           status?: string
           updated_at?: string
           usdt_address?: string | null
+          usdt_address_encrypted?: string | null
         }
         Relationships: [
           {
@@ -3488,13 +3488,11 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string | null
+          account_number_decrypted: string | null
+          account_number_encrypted: string | null
           amount: number | null
-          bank_account_decrypted: string | null
-          bank_account_encrypted: string | null
           bank_name: string | null
           created_at: string | null
-          crypto_address_decrypted: string | null
-          crypto_address_encrypted: string | null
           currency: string | null
           id: string | null
           organization_id: string | null
@@ -3504,17 +3502,17 @@ export type Database = {
           status: string | null
           updated_at: string | null
           usdt_address: string | null
+          usdt_address_decrypted: string | null
+          usdt_address_encrypted: string | null
         }
         Insert: {
           account_name?: string | null
           account_number?: string | null
+          account_number_decrypted?: never
+          account_number_encrypted?: string | null
           amount?: number | null
-          bank_account_decrypted?: never
-          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string | null
-          crypto_address_decrypted?: never
-          crypto_address_encrypted?: string | null
           currency?: string | null
           id?: string | null
           organization_id?: string | null
@@ -3524,17 +3522,17 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           usdt_address?: string | null
+          usdt_address_decrypted?: never
+          usdt_address_encrypted?: string | null
         }
         Update: {
           account_name?: string | null
           account_number?: string | null
+          account_number_decrypted?: never
+          account_number_encrypted?: string | null
           amount?: number | null
-          bank_account_decrypted?: never
-          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string | null
-          crypto_address_decrypted?: never
-          crypto_address_encrypted?: string | null
           currency?: string | null
           id?: string | null
           organization_id?: string | null
@@ -3544,6 +3542,8 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           usdt_address?: string | null
+          usdt_address_decrypted?: never
+          usdt_address_encrypted?: string | null
         }
         Relationships: [
           {
