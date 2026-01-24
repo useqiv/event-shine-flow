@@ -103,8 +103,9 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         
         return { transactions: enrichedData || [] };
       } else if (entityType === 'event') {
+        // Use tickets_public view for secure access (org owners still see guest info)
         let query = supabase
-          .from('tickets')
+          .from('tickets_public')
           .select(`
             id,
             quantity,

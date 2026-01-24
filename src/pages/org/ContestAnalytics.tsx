@@ -73,9 +73,9 @@ const ContestAnalytics = () => {
         
         if (contestData) setContest(contestData);
 
-        // Fetch all votes for this contest (including guest votes)
+        // Use votes_public view for secure access (org owners still see guest info)
         const { data: votes } = await supabase
-          .from('votes')
+          .from('votes_public')
           .select('id, user_id, guest_email, guest_name, quantity, amount_paid, payment_method, created_at, contestant_id')
           .eq('contest_id', id);
 
