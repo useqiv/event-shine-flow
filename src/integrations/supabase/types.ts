@@ -1174,6 +1174,13 @@ export type Database = {
             referencedRelation: "influencer_links"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "influencer_clicks_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "influencer_links_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       influencer_links: {
@@ -2919,6 +2926,13 @@ export type Database = {
             referencedRelation: "organization_webhooks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "organization_webhooks_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -2976,6 +2990,126 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "wallet_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      influencer_links_public: {
+        Row: {
+          code: string | null
+          commission_currency: string | null
+          commission_type: string | null
+          commission_value: number | null
+          contest_id: string | null
+          created_at: string | null
+          discount_type: string | null
+          discount_value: number | null
+          event_id: string | null
+          id: string | null
+          is_active: boolean | null
+          organization_id: string | null
+          total_clicks: number | null
+          total_conversions: number | null
+        }
+        Insert: {
+          code?: string | null
+          commission_currency?: string | null
+          commission_type?: string | null
+          commission_value?: number | null
+          contest_id?: string | null
+          created_at?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          event_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          total_clicks?: number | null
+          total_conversions?: number | null
+        }
+        Update: {
+          code?: string | null
+          commission_currency?: string | null
+          commission_type?: string | null
+          commission_value?: number | null
+          contest_id?: string | null
+          created_at?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          event_id?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          organization_id?: string | null
+          total_clicks?: number | null
+          total_conversions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "influencer_links_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "influencer_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "influencer_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_webhooks_safe: {
+        Row: {
+          created_at: string | null
+          events: string[] | null
+          failure_count: number | null
+          id: string | null
+          is_active: boolean | null
+          last_triggered_at: string | null
+          name: string | null
+          organization_id: string | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          events?: string[] | null
+          failure_count?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          events?: string[] | null
+          failure_count?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
+          name?: string | null
+          organization_id?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_webhooks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
