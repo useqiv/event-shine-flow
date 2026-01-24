@@ -87,7 +87,7 @@ const ContestantDetail = () => {
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
-  const contestCurrency = (contest as any)?.currency || 'NGN';
+  const contestCurrency = contest?.vote_currency || 'NGN';
 
   // Generate contestant page URL
   const contestantUrl = contestant 
