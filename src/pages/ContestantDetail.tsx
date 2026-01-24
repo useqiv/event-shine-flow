@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { QRCodeSVG } from 'qrcode.react';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Trophy, 
   Calendar, 
@@ -45,15 +47,44 @@ const voteOptions = [1, 5, 10, 25, 50, 100];
 // Note: createContestantSlug is imported from @/lib/urlHelpers
 
 const ContestantDetail = () => {
-  const { contestId, contestantSlug } = useParams<{ contestId: string; contestantSlug: string }>();
+  // Support both route patterns: /contests/:contestId/contestant/:slug and /c/:slug/contestant/:contestantSlug
+  const params = useParams<{ contestId?: string; contestantSlug: string; slug?: string }>();
+  const contestIdFromParams = params.contestId;
+  const contestSlug = params.slug; // For /c/:slug/contestant/:contestantSlug route
+  const contestantSlug = params.contestantSlug;
+  
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { data: contest, isLoading: contestLoading } = useContest(contestId || '');
-  const { data: contestants, isLoading: contestantsLoading } = useContestants(contestId || '');
   const { data: wallet } = useWallet();
   const { data: currencyBalances } = useWalletCurrencyBalances();
   const vote = useVote();
+  
+  // If we have a contest slug (short URL), fetch contest by slug first
+  const { data: contestBySlug, isLoading: slugLoading } = useQuery({
+    queryKey: ['contest-by-slug', contestSlug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('custom_slug', contestSlug)
+        .eq('is_active', true)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!contestSlug && !contestIdFromParams,
+  });
+  
+  // Determine the actual contest ID to use
+  const contestId = contestIdFromParams || contestBySlug?.id;
+  
+  // Use the standard hook if we have a contestId from params, otherwise use the slug-fetched contest
+  const { data: contestFromHook, isLoading: contestHookLoading } = useContest(contestIdFromParams || '');
+  const contest = contestIdFromParams ? contestFromHook : contestBySlug;
+  const contestLoading = contestIdFromParams ? contestHookLoading : slugLoading;
+  
+  const { data: contestants, isLoading: contestantsLoading } = useContestants(contestId || '');
   
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -103,10 +134,14 @@ const ContestantDetail = () => {
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
-  // Generate contestant page URL - use custom_slug if available
+  // Generate URLs - use custom_slug if available
+  const contestUrl = contest ? getContestUrl(contest.id, (contest as any)?.custom_slug) : '';
   const contestantUrl = contestant 
     ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug)
     : '';
+  
+  // Back link path - use short URL if accessed via slug route
+  const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(contestantUrl);
@@ -308,7 +343,7 @@ const ContestantDetail = () => {
       <main className="container mx-auto px-4 pt-20 sm:pt-24 lg:pt-28 pb-4 sm:pb-6 lg:pb-8">
         {/* Back Link */}
         <Link 
-          to={`/contests/${contestId}`} 
+          to={backLinkPath} 
           className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-5 lg:mb-6 transition-colors"
         >
           <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
@@ -323,7 +358,7 @@ const ContestantDetail = () => {
             {/* Contest breadcrumb */}
             <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
               <Link 
-                to={`/contests/${contestId}`}
+                to={backLinkPath}
                 className="hover:text-primary transition-colors flex items-center truncate"
               >
                 <span className="truncate">{contest.title}</span>
@@ -452,7 +487,7 @@ const ContestantDetail = () => {
             <div className="hidden lg:block space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Link 
-                  to={`/contests/${contestId}`}
+                  to={backLinkPath}
                   className="hover:text-primary transition-colors flex items-center"
                 >
                   {contest.title}
@@ -691,7 +726,7 @@ const ContestantDetail = () => {
                 .map((c: any) => (
                   <Link 
                     key={c.id}
-                    to={`/contests/${contestId}/contestant/${createContestantSlug(c.name)}`}
+                    to={contestSlug ? `/c/${contestSlug}/contestant/${createContestantSlug(c.name)}` : `/contests/${contestId}/contestant/${createContestantSlug(c.name)}`}
                     className="group"
                   >
                     <Card className="overflow-hidden hover:ring-2 hover:ring-primary/50 hover:shadow-lg transition-all duration-200 active:scale-[0.98]">
@@ -722,7 +757,7 @@ const ContestantDetail = () => {
             
             <div className="text-center mt-6 sm:mt-8">
               <Button variant="outline" size="default" className="sm:h-11" asChild>
-                <Link to={`/contests/${contestId}`}>
+                <Link to={backLinkPath}>
                   View All Contestants
                 </Link>
               </Button>
