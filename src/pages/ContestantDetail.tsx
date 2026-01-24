@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useContest, useContestants, useVote } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
@@ -34,7 +33,6 @@ import {
   Download,
   Share2,
   QrCode,
-  ChevronDown,
   TrendingUp,
   Clock,
   Sparkles,
@@ -62,7 +60,6 @@ const ContestantDetail = () => {
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
-  const [isQROpen, setIsQROpen] = useState(false);
   const [showVotePulse, setShowVotePulse] = useState(false);
 
   // Find contestant by slug
@@ -372,60 +369,50 @@ const ContestantDetail = () => {
                 )}
               </div>
 
-              {/* QR Code Section - Collapsible on Desktop, Hidden on Mobile */}
-              <div className="hidden lg:block">
-                <Collapsible open={isQROpen} onOpenChange={setIsQROpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                      <span className="flex items-center">
-                        <QrCode className="h-4 w-4 mr-2" />
-                        Share QR Code
-                      </span>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${isQROpen ? 'rotate-180' : ''}`} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-3">
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="bg-white p-3 rounded-xl">
-                            <QRCodeSVG 
-                              id="contestant-qr-code"
-                              value={contestantUrl} 
-                              size={160}
-                              level="H"
-                              includeMargin
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground text-center">
-                            Scan to vote for {contestant.name}
-                          </p>
-                          <div className="flex gap-2 w-full">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex-1"
-                              onClick={handleDownloadQR}
-                            >
-                              <Download className="mr-1 h-3 w-3" />
-                              Save
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="flex-1"
-                              onClick={handleShareQR}
-                            >
-                              <Share2 className="mr-1 h-3 w-3" />
-                              Share
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
+              {/* QR Code Section - Always Visible */}
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2 text-center">
+                      <QrCode className="h-5 w-5 text-primary" />
+                      <h3 className="font-semibold text-lg">Share QR Code</h3>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-2xl shadow-sm border">
+                      <QRCodeSVG 
+                        id="contestant-qr-code"
+                        value={contestantUrl} 
+                        size={220}
+                        level="H"
+                        includeMargin
+                      />
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground text-center">
+                      Scan to vote for <span className="font-medium capitalize">{contestant.name}</span>
+                    </p>
+                    
+                    <div className="flex gap-3 w-full">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={handleDownloadQR}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Save QR
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={handleShareQR}
+                      >
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share QR
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
@@ -577,14 +564,6 @@ const ContestantDetail = () => {
                 Copy Link
               </Button>
               
-              <Button
-                variant="outline"
-                onClick={() => setIsQROpen(true)}
-                className="lg:hidden flex-1 sm:flex-none"
-              >
-                <QrCode className="mr-2 h-4 w-4" />
-                QR Code
-              </Button>
               
               <ShareButtons 
                 title={`Vote for ${contestant.name} in ${contest.title}`}
@@ -733,48 +712,6 @@ const ContestantDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Mobile QR Code Dialog */}
-      <Dialog open={isQROpen} onOpenChange={setIsQROpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Share QR Code</DialogTitle>
-            <DialogDescription>
-              Scan to vote for {contestant.name}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="bg-white p-4 rounded-xl shadow-sm">
-              <QRCodeSVG 
-                id="contestant-qr-code"
-                value={contestantUrl} 
-                size={200}
-                level="H"
-                includeMargin
-              />
-            </div>
-            
-            <div className="flex gap-2 w-full">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={handleDownloadQR}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Save QR
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={handleShareQR}
-              >
-                <Share2 className="mr-2 h-4 w-4" />
-                Share QR
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Payment Modal */}
       {contestant && contest && (
