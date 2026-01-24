@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import PaymentModal from '@/components/PaymentModal';
+import GuestTicketSuccess from '@/components/GuestTicketSuccess';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import { 
@@ -45,6 +46,17 @@ const EventDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [guestEmail, setGuestEmail] = useState('');
   const [guestName, setGuestName] = useState('');
+  const [showGuestTicketSuccess, setShowGuestTicketSuccess] = useState(false);
+  const [claimedTicketData, setClaimedTicketData] = useState<{
+    qrCode: string;
+    quantity: number;
+    guestEmail: string;
+    guestName?: string;
+    eventTitle: string;
+    eventDate: string;
+    eventVenue: string;
+    ticketTypeName: string;
+  } | null>(null);
 
   const isPast = event && new Date(event.event_date) < new Date();
   const totalAmount = selectedTicketType ? quantity * Number(selectedTicketType.price) : 0;
@@ -113,7 +125,7 @@ const EventDetail = () => {
     }
 
     try {
-      await purchaseTicket.mutateAsync({
+      const ticketResult = await purchaseTicket.mutateAsync({
         eventId: event.id,
         ticketTypeId: selectedTicketType.id,
         quantity,
@@ -130,12 +142,28 @@ const EventDetail = () => {
         }
       });
 
-      toast({
-        title: 'Ticket Claimed!',
-        description: `You have successfully claimed ${quantity} free ticket(s). ${isGuest ? `Check ${guestEmail} for your QR code.` : 'Check your email for the QR code.'}`,
-      });
-
       setIsPurchaseModalOpen(false);
+
+      // For guests, show the ticket success dialog with QR code
+      if (isGuest) {
+        setClaimedTicketData({
+          qrCode: ticketResult.qr_code,
+          quantity,
+          guestEmail,
+          guestName: guestName || undefined,
+          eventTitle: event.title,
+          eventDate: format(new Date(event.event_date), 'EEEE, MMMM d, yyyy h:mm a'),
+          eventVenue: event.venue,
+          ticketTypeName: selectedTicketType.name
+        });
+        setShowGuestTicketSuccess(true);
+      } else {
+        toast({
+          title: 'Ticket Claimed!',
+          description: `You have successfully claimed ${quantity} free ticket(s). Check your email for the QR code.`,
+        });
+      }
+
       setQuantity(1);
       setGuestEmail('');
       setGuestName('');
@@ -504,6 +532,26 @@ const EventDetail = () => {
               ticket_type_id: selectedTicketType.id,
               ticket_quantity: quantity,
               name: selectedTicketType.name,
+            }}
+          />
+        )}
+
+        {/* Guest Ticket Success Dialog */}
+        {claimedTicketData && (
+          <GuestTicketSuccess
+            open={showGuestTicketSuccess}
+            onOpenChange={setShowGuestTicketSuccess}
+            ticket={{
+              qrCode: claimedTicketData.qrCode,
+              quantity: claimedTicketData.quantity,
+              guestEmail: claimedTicketData.guestEmail,
+              guestName: claimedTicketData.guestName
+            }}
+            event={{
+              title: claimedTicketData.eventTitle,
+              date: claimedTicketData.eventDate,
+              venue: claimedTicketData.eventVenue,
+              ticketTypeName: claimedTicketData.ticketTypeName
             }}
           />
         )}
