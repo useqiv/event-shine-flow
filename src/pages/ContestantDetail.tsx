@@ -28,6 +28,7 @@ import {
   Users,
   Wallet,
   ExternalLink,
+  Copy,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -92,6 +93,14 @@ const ContestantDetail = () => {
   const contestantUrl = contestant 
     ? `${window.location.origin}/contests/${contestId}/contestant/${createContestantSlug(contestant.name)}`
     : '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(contestantUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Contestant page link copied to clipboard."
+    });
+  };
 
   const handleVoteClick = () => {
     if (isEnded) {
@@ -363,6 +372,15 @@ const ContestantDetail = () => {
               >
                 <Vote className="mr-2 h-5 w-5" />
                 {isEnded ? 'Contest Ended' : 'Vote Now'}
+              </Button>
+              
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleCopyLink}
+                title="Copy Link"
+              >
+                <Copy className="h-5 w-5" />
               </Button>
               
               <ShareButtons 
