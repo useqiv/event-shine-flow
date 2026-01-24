@@ -144,10 +144,26 @@ const PublicContest = () => {
       <Helmet>
         <title>{contest.title} | Useqiv</title>
         <meta name="description" content={contest.description || `Vote now in ${contest.title}`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={contestUrl} />
         <meta property="og:title" content={contest.title} />
         <meta property="og:description" content={contest.description || `Vote now in ${contest.title}`} />
         {contest.image_url && <meta property="og:image" content={contest.image_url} />}
-        <meta property="og:url" content={contestUrl} />
+        {contest.image_url && <meta property="og:image:width" content="1200" />}
+        {contest.image_url && <meta property="og:image:height" content="630" />}
+        <meta property="og:site_name" content="USEQIV" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={contestUrl} />
+        <meta name="twitter:title" content={contest.title} />
+        <meta name="twitter:description" content={contest.description || `Vote now in ${contest.title}`} />
+        {contest.image_url && <meta name="twitter:image" content={contest.image_url} />}
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={contestUrl} />
       </Helmet>
 
       <div className="min-h-screen bg-background" style={brandStyles}>
