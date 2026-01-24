@@ -61,6 +61,7 @@ const ContestantDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [showVotePulse, setShowVotePulse] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Find contestant by slug
   const contestant = useMemo(() => {
@@ -369,50 +370,16 @@ const ContestantDetail = () => {
                 )}
               </div>
 
-              {/* QR Code Section - Always Visible */}
-              <Card className="overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex items-center gap-2 text-center">
-                      <QrCode className="h-5 w-5 text-primary" />
-                      <h3 className="font-semibold text-lg">Share QR Code</h3>
-                    </div>
-                    
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border">
-                      <QRCodeSVG 
-                        id="contestant-qr-code"
-                        value={contestantUrl} 
-                        size={220}
-                        level="H"
-                        includeMargin
-                      />
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground text-center">
-                      Scan to vote for <span className="font-medium capitalize">{contestant.name}</span>
-                    </p>
-                    
-                    <div className="flex gap-3 w-full">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={handleDownloadQR}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Save QR
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={handleShareQR}
-                      >
-                        <Share2 className="mr-2 h-4 w-4" />
-                        Share QR
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Hidden QR for download/share functionality */}
+              <div className="hidden">
+                <QRCodeSVG 
+                  id="contestant-qr-code"
+                  value={contestantUrl} 
+                  size={380}
+                  level="H"
+                  includeMargin
+                />
+              </div>
             </div>
           </div>
 
@@ -432,9 +399,27 @@ const ContestantDetail = () => {
                 <span className="capitalize">{contest.category}</span>
               </div>
               
-              <h1 className="text-4xl lg:text-5xl font-bold tracking-tight capitalize">
-                {contestant.name}
-              </h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-4xl lg:text-5xl font-bold tracking-tight capitalize">
+                  {contestant.name}
+                </h1>
+                
+                {/* Small QR Thumbnail - Click to expand */}
+                <button
+                  onClick={() => setIsQRModalOpen(true)}
+                  className="group relative p-1 bg-white rounded-lg border border-border shadow-sm hover:shadow-md transition-all hover:scale-105 cursor-pointer"
+                  title="Click to expand QR code"
+                >
+                  <QRCodeSVG 
+                    value={contestantUrl} 
+                    size={48}
+                    level="L"
+                  />
+                  <div className="absolute inset-0 bg-primary/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <QrCode className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </div>
               
               {((contestant as any).state || (contestant as any).country) && (
                 <p className="text-lg text-muted-foreground">
@@ -442,6 +427,67 @@ const ContestantDetail = () => {
                 </p>
               )}
             </div>
+
+            {/* QR Code Modal */}
+            <Dialog open={isQRModalOpen} onOpenChange={setIsQRModalOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-primary" />
+                    Share QR Code
+                  </DialogTitle>
+                  <DialogDescription>
+                    Scan to vote for <span className="font-medium capitalize">{contestant.name}</span>
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex flex-col items-center gap-4 py-4">
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border">
+                    <QRCodeSVG 
+                      value={contestantUrl} 
+                      size={220}
+                      level="H"
+                      includeMargin
+                    />
+                  </div>
+                  
+                  <div className="flex gap-3 w-full">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => {
+                        handleDownloadQR();
+                        setIsQRModalOpen(false);
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Save QR
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => {
+                        handleShareQR();
+                        setIsQRModalOpen(false);
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share QR
+                    </Button>
+                  </div>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={handleCopyLink}
+                  >
+                    <Copy className="mr-2 h-3 w-3" />
+                    Copy link instead
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             {/* Vote Stats Card - Primary Focus */}
             <Card className="border-2 overflow-hidden" style={{ borderColor: `${primaryColor}30` }}>
