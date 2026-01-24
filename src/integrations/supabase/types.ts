@@ -1689,6 +1689,7 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string | null
+          account_number_encrypted: string | null
           bank_name: string | null
           company_address: string | null
           company_email: string | null
@@ -1701,10 +1702,12 @@ export type Database = {
           preferred_payout_method: string | null
           updated_at: string
           usdt_address: string | null
+          usdt_address_encrypted: string | null
         }
         Insert: {
           account_name?: string | null
           account_number?: string | null
+          account_number_encrypted?: string | null
           bank_name?: string | null
           company_address?: string | null
           company_email?: string | null
@@ -1717,10 +1720,12 @@ export type Database = {
           preferred_payout_method?: string | null
           updated_at?: string
           usdt_address?: string | null
+          usdt_address_encrypted?: string | null
         }
         Update: {
           account_name?: string | null
           account_number?: string | null
+          account_number_encrypted?: string | null
           bank_name?: string | null
           company_address?: string | null
           company_email?: string | null
@@ -1733,6 +1738,7 @@ export type Database = {
           preferred_payout_method?: string | null
           updated_at?: string
           usdt_address?: string | null
+          usdt_address_encrypted?: string | null
         }
         Relationships: [
           {
@@ -1846,8 +1852,10 @@ export type Database = {
           account_name: string | null
           account_number: string | null
           amount: number
+          bank_account_encrypted: string | null
           bank_name: string | null
           created_at: string
+          crypto_address_encrypted: string | null
           currency: string
           id: string
           organization_id: string
@@ -1862,8 +1870,10 @@ export type Database = {
           account_name?: string | null
           account_number?: string | null
           amount: number
+          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string
+          crypto_address_encrypted?: string | null
           currency?: string
           id?: string
           organization_id: string
@@ -1878,8 +1888,10 @@ export type Database = {
           account_name?: string | null
           account_number?: string | null
           amount?: number
+          bank_account_encrypted?: string | null
           bank_name?: string | null
           created_at?: string
+          crypto_address_encrypted?: string | null
           currency?: string
           id?: string
           organization_id?: string
@@ -3254,6 +3266,77 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_settings_admin: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          account_number_decrypted: string | null
+          account_number_encrypted: string | null
+          bank_name: string | null
+          company_address: string | null
+          company_email: string | null
+          company_name: string | null
+          company_phone: string | null
+          created_at: string | null
+          default_currency: string | null
+          id: string | null
+          organization_id: string | null
+          preferred_payout_method: string | null
+          updated_at: string | null
+          usdt_address: string | null
+          usdt_address_decrypted: string | null
+          usdt_address_encrypted: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          account_number_decrypted?: never
+          account_number_encrypted?: string | null
+          bank_name?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          preferred_payout_method?: string | null
+          updated_at?: string | null
+          usdt_address?: string | null
+          usdt_address_decrypted?: never
+          usdt_address_encrypted?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          account_number_decrypted?: never
+          account_number_encrypted?: string | null
+          bank_name?: string | null
+          company_address?: string | null
+          company_email?: string | null
+          company_name?: string | null
+          company_phone?: string | null
+          created_at?: string | null
+          default_currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          preferred_payout_method?: string | null
+          updated_at?: string | null
+          usdt_address?: string | null
+          usdt_address_decrypted?: never
+          usdt_address_encrypted?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_settings_safe: {
         Row: {
           account_name: string | null
@@ -3401,6 +3484,77 @@ export type Database = {
           },
         ]
       }
+      payouts_admin: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          amount: number | null
+          bank_account_decrypted: string | null
+          bank_account_encrypted: string | null
+          bank_name: string | null
+          created_at: string | null
+          crypto_address_decrypted: string | null
+          crypto_address_encrypted: string | null
+          currency: string | null
+          id: string | null
+          organization_id: string | null
+          payment_method: string | null
+          processed_at: string | null
+          reference_id: string | null
+          status: string | null
+          updated_at: string | null
+          usdt_address: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          amount?: number | null
+          bank_account_decrypted?: never
+          bank_account_encrypted?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          crypto_address_decrypted?: never
+          crypto_address_encrypted?: string | null
+          currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          amount?: number | null
+          bank_account_decrypted?: never
+          bank_account_encrypted?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          crypto_address_decrypted?: never
+          crypto_address_encrypted?: string | null
+          currency?: string | null
+          id?: string | null
+          organization_id?: string | null
+          payment_method?: string | null
+          processed_at?: string | null
+          reference_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usdt_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payouts_safe: {
         Row: {
           account_name: string | null
@@ -3467,6 +3621,11 @@ export type Database = {
         Returns: Json
       }
       clear_login_attempts: { Args: { p_email: string }; Returns: undefined }
+      decrypt_banking_data: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
+      encrypt_banking_data: { Args: { plain_text: string }; Returns: string }
       get_admin_statistics: { Args: never; Returns: Json }
       get_referral_leaderboard: {
         Args: { limit_count?: number }
@@ -3491,7 +3650,7 @@ export type Database = {
       }
       redeem_voucher_safely: {
         Args: { p_user_id: string; p_voucher_id: string }
-        Returns: boolean
+        Returns: Json
       }
       send_notification: {
         Args: {
