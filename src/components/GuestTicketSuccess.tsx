@@ -44,32 +44,129 @@ interface GuestTicketSuccessProps {
 const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSuccessProps) => {
   const { toast } = useToast();
   const qrRef = useRef<HTMLDivElement>(null);
+  const hiddenQrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [sendToEmail, setSendToEmail] = useState(ticket.guestEmail);
   const [showEmailForm, setShowEmailForm] = useState(false);
 
-  const downloadQRCode = () => {
-    const svg = qrRef.current?.querySelector('svg');
+  const downloadFullTicket = () => {
+    const svg = hiddenQrRef.current?.querySelector('svg');
     if (!svg) return;
 
     const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+    const qrImg = new Image();
 
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx?.drawImage(img, 0, 0);
+    qrImg.onload = () => {
+      // Create a high-resolution ticket canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Ticket dimensions (vertical layout)
+      const width = 600;
+      const height = 900;
+      canvas.width = width;
+      canvas.height = height;
+
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // Orange accent border at top
+      ctx.fillStyle = '#f05a28';
+      ctx.fillRect(0, 0, width, 8);
+
+      // Header section
+      ctx.fillStyle = '#f05a28';
+      ctx.fillRect(0, 8, width, 80);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎟️ EVENT TICKET', width / 2, 58);
+
+      // Event title
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = 'bold 24px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      const titleY = 130;
+      ctx.fillText(event.title.substring(0, 35), width / 2, titleY);
+
+      // Ticket type badge
+      ctx.fillStyle = '#f05a28';
+      ctx.font = '16px system-ui, sans-serif';
+      ctx.fillText(event.ticketTypeName, width / 2, titleY + 30);
+
+      // QR Code section with orange background
+      const qrSize = 380;
+      const qrX = (width - qrSize) / 2;
+      const qrY = 180;
+      
+      // Orange border around QR
+      ctx.fillStyle = '#f05a28';
+      ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 20);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(qrX, qrY, qrSize, qrSize);
+      
+      // Draw QR code
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+      // Ticket code below QR
+      ctx.fillStyle = '#666666';
+      ctx.font = '14px monospace';
+      ctx.fillText(ticket.qrCode, width / 2, qrY + qrSize + 30);
+
+      // Separator line
+      const sepY = qrY + qrSize + 50;
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, sepY);
+      ctx.lineTo(width - 40, sepY);
+      ctx.stroke();
+
+      // Event details
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = '18px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      const detailsX = 50;
+      let detailsY = sepY + 40;
+
+      ctx.fillText(`📅 ${event.date}`, detailsX, detailsY);
+      detailsY += 35;
+      ctx.fillText(`📍 ${event.venue.substring(0, 40)}`, detailsX, detailsY);
+      detailsY += 35;
+      ctx.fillText(`🎫 Quantity: ${ticket.quantity}`, detailsX, detailsY);
+
+      // Ticket holder section
+      detailsY += 50;
+      ctx.fillStyle = '#f5f5f5';
+      ctx.fillRect(40, detailsY - 25, width - 80, 70);
+      ctx.fillStyle = '#666666';
+      ctx.font = '14px system-ui, sans-serif';
+      ctx.fillText('TICKET HOLDER', detailsX, detailsY);
+      ctx.fillStyle = '#1a1a1a';
+      ctx.font = '16px system-ui, sans-serif';
+      const holderName = ticket.guestName ? `${ticket.guestName} (${ticket.guestEmail})` : ticket.guestEmail;
+      ctx.fillText(holderName.substring(0, 45), detailsX, detailsY + 25);
+
+      // Footer
+      ctx.fillStyle = '#999999';
+      ctx.font = '12px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Present this ticket at the venue for entry', width / 2, height - 30);
+
+      // Download the image
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
       downloadLink.download = `ticket-${ticket.qrCode}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
+
+      toast({ title: "Ticket saved!", description: "Your ticket has been downloaded" });
     };
 
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    qrImg.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const copyToClipboard = async () => {
@@ -207,13 +304,18 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
             </CardContent>
           </Card>
 
+          {/* Hidden high-res QR for download */}
+          <div className="hidden" ref={hiddenQrRef}>
+            <QRCodeSVG value={ticket.qrCode} size={380} level="H" />
+          </div>
+
           {/* Actions */}
           <div className="space-y-3">
             {/* Primary Actions */}
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={downloadQRCode} className="gap-2">
+              <Button variant="outline" onClick={downloadFullTicket} className="gap-2">
                 <Download className="h-4 w-4" />
-                Save QR
+                Save Ticket
               </Button>
               <Button variant="outline" onClick={shareTicket} className="gap-2">
                 <Share2 className="h-4 w-4" />
@@ -222,7 +324,7 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
             </div>
 
             {/* Copy Code */}
-            <Button 
+            <Button
               variant="outline" 
               onClick={copyToClipboard} 
               className="w-full gap-2"
