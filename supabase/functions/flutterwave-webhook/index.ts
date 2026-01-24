@@ -719,8 +719,10 @@ async function processSuccessfulPayment(paymentData: any) {
     }
     console.log("Ticket holder name:", ticketHolderName);
 
-    // Generate QR code
-    const qr_code = `TKT_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate cryptographically secure unique QR code
+    const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+    const randomHex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const qr_code = `TKT_${Date.now()}_${randomHex}`;
 
     // Idempotency: if we already inserted a ticket for this wallet transaction, do nothing
     if (db_transaction_id) {
