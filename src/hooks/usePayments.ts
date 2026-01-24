@@ -45,6 +45,29 @@ interface VerifyCryptoParams {
   user_id: string;
 }
 
+// Trusted domains for payment redirects (Open Redirect Protection)
+const TRUSTED_PAYMENT_DOMAINS = [
+  'flutterwave.com',
+  'rave.flutterwave.com',
+  'checkout.flutterwave.com',
+  'api.flutterwave.com',
+  'standard.paystack.co',
+];
+
+const isValidPaymentUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    // Must be HTTPS
+    if (parsed.protocol !== 'https:') return false;
+    // Must be from a trusted domain
+    return TRUSTED_PAYMENT_DOMAINS.some(domain => 
+      parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const useFlutterwavePayment = () => {
   return useMutation({
     mutationFn: async (params: FlutterwavePaymentParams) => {
@@ -80,6 +103,12 @@ export const useFlutterwavePayment = () => {
     },
     onSuccess: (data) => {
       if (data.payment_link) {
+        // Validate the payment URL before redirecting (Open Redirect Protection)
+        if (!isValidPaymentUrl(data.payment_link)) {
+          console.error('Blocked redirect to untrusted URL:', data.payment_link);
+          toast.error('Invalid payment link received. Please try again.');
+          return;
+        }
         window.location.href = data.payment_link;
       }
     },

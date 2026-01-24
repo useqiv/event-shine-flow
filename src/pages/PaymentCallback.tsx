@@ -85,6 +85,17 @@ const PaymentCallback = () => {
     }
   };
 
+  // HTML escape function to prevent XSS in print window
+  const escapeHtml = (str: string | null | undefined): string => {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   const downloadTicket = () => {
     if (!ticketData) return;
     
@@ -108,8 +119,8 @@ const PaymentCallback = () => {
 
     // For guests: show "Name (email)". For logged-in users: email is more reliable.
     const ticketHolderDisplay = isGuest
-      ? `${ticketData.guest_name || 'Guest'}${ticketData.guest_email ? ` (${ticketData.guest_email})` : ''}`
-      : (ticketData.guest_email || ticketData.guest_name || 'Guest');
+      ? `${escapeHtml(ticketData.guest_name) || 'Guest'}${ticketData.guest_email ? ` (${escapeHtml(ticketData.guest_email)})` : ''}`
+      : (escapeHtml(ticketData.guest_email) || escapeHtml(ticketData.guest_name) || 'Guest');
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -227,8 +238,8 @@ const PaymentCallback = () => {
               <p class="qr-label">Scan for entry</p>
             </div>
             <div class="info-section">
-              <div class="event-title">${ticketData.event?.title}</div>
-              <div class="ticket-type">${ticketData.ticket_type?.name} × ${ticketData.quantity}</div>
+              <div class="event-title">${escapeHtml(ticketData.event?.title)}</div>
+              <div class="ticket-type">${escapeHtml(ticketData.ticket_type?.name)} × ${ticketData.quantity}</div>
               <div class="details-grid">
                 <div class="detail-item full-width">
                   <div class="detail-label">Ticket Holder</div>
@@ -236,19 +247,19 @@ const PaymentCallback = () => {
                 </div>
                 <div class="detail-item">
                   <div class="detail-label">Date</div>
-                  <div class="detail-value">${eventDate}</div>
+                  <div class="detail-value">${escapeHtml(eventDate)}</div>
                 </div>
                 <div class="detail-item">
                   <div class="detail-label">Time</div>
-                  <div class="detail-value">${eventTime}</div>
+                  <div class="detail-value">${escapeHtml(eventTime)}</div>
                 </div>
                 <div class="detail-item full-width">
                   <div class="detail-label">Venue</div>
-                  <div class="detail-value">${ticketData.event?.venue}</div>
+                  <div class="detail-value">${escapeHtml(ticketData.event?.venue)}</div>
                 </div>
               </div>
               <div class="footer-row">
-                <span>Ref: ${txRef}</span>
+                <span>Ref: ${escapeHtml(txRef)}</span>
                 <span>Useqiv</span>
               </div>
             </div>
