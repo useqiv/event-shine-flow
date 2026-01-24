@@ -15,7 +15,7 @@ export const exportToCsv = (data: Record<string, any>[], filename: string, heade
     ? headers.map(h => h.key) 
     : Object.keys(data[0]);
 
-  // Build CSV content
+  // Build CSV content with formula injection protection
   const csvRows = [
     csvHeaders.join(','), // Header row
     ...data.map(row => 
@@ -27,11 +27,21 @@ export const exportToCsv = (data: Record<string, any>[], filename: string, heade
           value = '';
         }
         
-        // Convert to string and escape quotes
-        value = String(value).replace(/"/g, '""');
+        // Convert to string
+        value = String(value);
+        
+        // CSV Formula Injection Protection: Prefix formula characters with single quote
+        // This prevents Excel/Sheets from interpreting values as formulas
+        // Characters that trigger formula execution: = + - @ TAB CR
+        if (/^[=+\-@\t\r]/.test(value)) {
+          value = `'${value}`;
+        }
+        
+        // Escape quotes
+        value = value.replace(/"/g, '""');
         
         // Wrap in quotes if contains comma, newline, or quotes
-        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+        if (value.includes(',') || value.includes('\n') || value.includes('"') || value.includes("'")) {
           value = `"${value}"`;
         }
         

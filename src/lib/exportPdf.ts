@@ -22,6 +22,22 @@ const getNestedValue = (obj: Record<string, any>, path: string): any => {
   }, obj);
 };
 
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ * This is critical for PDF exports where user-provided data is embedded in HTML
+ */
+const escapeHtml = (str: string): string => {
+  if (typeof str !== 'string') {
+    str = String(str ?? '');
+  }
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 export const exportToPdf = (
   data: Record<string, any>[],
   columns: PdfColumn[],
@@ -29,12 +45,12 @@ export const exportToPdf = (
 ) => {
   const { title, subtitle, filename, orientation = 'portrait' } = options;
   
-  // Generate table rows
+  // Generate table rows with HTML escaping for XSS protection
   const tableRows = data.map(row => 
     `<tr>${columns.map(col => {
       let value = getNestedValue(row, col.key);
       if (value === null || value === undefined) value = '';
-      return `<td style="padding: 8px; border: 1px solid #ddd;">${value}</td>`;
+      return `<td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(value))}</td>`;
     }).join('')}</tr>`
   ).join('');
 
@@ -102,8 +118,8 @@ export const exportToPdf = (
     </head>
     <body>
       <div class="header">
-        <h1>${title}</h1>
-        ${subtitle ? `<p>${subtitle}</p>` : ''}
+        <h1>${escapeHtml(title)}</h1>
+        ${subtitle ? `<p>${escapeHtml(subtitle)}</p>` : ''}
       </div>
       <div class="meta">
         <span>Generated: ${new Date().toLocaleString()}</span>
@@ -111,7 +127,7 @@ export const exportToPdf = (
       </div>
       <table>
         <thead>
-          <tr>${columns.map(col => `<th style="${col.width ? `width: ${col.width}` : ''}">${col.label}</th>`).join('')}</tr>
+          <tr>${columns.map(col => `<th style="${col.width ? `width: ${col.width}` : ''}">${escapeHtml(col.label)}</th>`).join('')}</tr>
         </thead>
         <tbody>
           ${tableRows}

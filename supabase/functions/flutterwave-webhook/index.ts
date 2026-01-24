@@ -152,21 +152,43 @@ const handler = async (req: Request): Promise<Response> => {
 
   // Handle webhook POST from Flutterwave (IPN)
   try {
-    // Verify webhook signature
+    // CRITICAL: Verify webhook signature - this is MANDATORY to prevent forged payments
     const flutterwaveSecretHash = Deno.env.get("FLUTTERWAVE_SECRET_HASH");
     const signature = req.headers.get("verif-hash");
     
+    // Signature verification is mandatory - reject if not configured
+    if (!flutterwaveSecretHash) {
+      console.error("CRITICAL: FLUTTERWAVE_SECRET_HASH not configured - webhook verification disabled");
+      // In production, we should reject unsigned webhooks
+      // Check if this appears to be a production environment
+      const isProduction = !Deno.env.get("SUPABASE_URL")?.includes("localhost");
+      if (isProduction) {
+        console.error("Rejecting webhook in production without signature verification");
+        return new Response(JSON.stringify({ 
+          error: "Webhook signature verification not configured. Please set FLUTTERWAVE_SECRET_HASH." 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+    
     if (flutterwaveSecretHash && signature) {
       if (signature !== flutterwaveSecretHash) {
-        console.error("Invalid webhook signature");
+        console.error("Invalid webhook signature - possible forgery attempt");
         return new Response(JSON.stringify({ error: "Invalid signature" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.log("Webhook signature verified");
-    } else {
-      console.log("Skipping signature verification (secret hash not configured)");
+      console.log("Webhook signature verified successfully");
+    } else if (flutterwaveSecretHash && !signature) {
+      // Secret is configured but no signature provided - reject
+      console.error("Webhook missing signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const webhookData: FlutterwaveWebhookData = await req.json();

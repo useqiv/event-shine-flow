@@ -6,6 +6,57 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// SSRF Protection: Block internal/private IP ranges and localhost
+const BLOCKED_URL_PATTERNS = [
+  // Localhost variations
+  /^https?:\/\/localhost(:\d+)?/i,
+  /^https?:\/\/127\.\d+\.\d+\.\d+/i,
+  /^https?:\/\/\[::1\]/i,
+  // Private IP ranges (RFC 1918)
+  /^https?:\/\/10\.\d+\.\d+\.\d+/i,
+  /^https?:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/i,
+  /^https?:\/\/192\.168\.\d+\.\d+/i,
+  // Link-local addresses
+  /^https?:\/\/169\.254\.\d+\.\d+/i,
+  // AWS/Cloud metadata endpoints
+  /^https?:\/\/169\.254\.169\.254/i,
+  /^https?:\/\/metadata\.google\.internal/i,
+  /^https?:\/\/100\.100\.100\.200/i, // Alibaba
+  // IPv6 private ranges
+  /^https?:\/\/\[fd[0-9a-f]{2}:/i,
+  /^https?:\/\/\[fe80:/i,
+];
+
+function isUrlBlocked(url: string): boolean {
+  return BLOCKED_URL_PATTERNS.some(pattern => pattern.test(url));
+}
+
+function validateWebhookUrl(url: string): { valid: boolean; error?: string } {
+  try {
+    const parsed = new URL(url);
+    
+    // Only allow HTTPS in production
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return { valid: false, error: 'Only HTTP/HTTPS URLs are allowed' };
+    }
+    
+    // Block internal URLs
+    if (isUrlBlocked(url)) {
+      return { valid: false, error: 'Internal/private URLs are not allowed for webhooks' };
+    }
+    
+    // Additional hostname checks
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname.endsWith('.local') || hostname.endsWith('.internal')) {
+      return { valid: false, error: 'Local/internal hostnames are not allowed' };
+    }
+    
+    return { valid: true };
+  } catch {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,6 +82,14 @@ serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
+      // Validate webhook URL before sending
+      const urlValidation = validateWebhookUrl(webhook.url);
+      if (!urlValidation.valid) {
+        console.error('Webhook URL blocked:', webhook.url, urlValidation.error);
+        return new Response(JSON.stringify({ error: urlValidation.error }), 
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
       const result = await sendWebhook(webhook, { event: 'test', timestamp: new Date().toISOString(), data: { message: 'Test webhook' } }, supabase);
       return new Response(JSON.stringify(result), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -48,8 +107,18 @@ serve(async (req) => {
       }
 
       const payload = { event: eventType, timestamp: new Date().toISOString(), data };
-      const results = await Promise.all(webhooks.map((w) => sendWebhook(w, payload, supabase)));
-      return new Response(JSON.stringify({ sent: results.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      
+      // Filter out webhooks with blocked URLs
+      const validWebhooks = webhooks.filter(w => {
+        const validation = validateWebhookUrl(w.url);
+        if (!validation.valid) {
+          console.warn('Skipping webhook with blocked URL:', w.id, w.url);
+        }
+        return validation.valid;
+      });
+      
+      const results = await Promise.all(validWebhooks.map((w) => sendWebhook(w, payload, supabase)));
+      return new Response(JSON.stringify({ sent: results.length, skipped: webhooks.length - validWebhooks.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ error: 'Invalid request' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -62,6 +131,20 @@ serve(async (req) => {
 // deno-lint-ignore no-explicit-any
 async function sendWebhook(webhook: any, payload: Record<string, unknown>, supabase: any) {
   try {
+    // Double-check URL validation before fetch
+    const urlValidation = validateWebhookUrl(webhook.url);
+    if (!urlValidation.valid) {
+      console.error('Webhook URL blocked in sendWebhook:', webhook.url);
+      await supabase.from('webhook_logs').insert({ 
+        webhook_id: webhook.id, 
+        event_type: payload.event, 
+        payload, 
+        success: false,
+        response_status: 0
+      });
+      return { success: false, error: urlValidation.error };
+    }
+
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     
     if (webhook.secret) {
