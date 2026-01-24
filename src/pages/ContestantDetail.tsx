@@ -307,7 +307,7 @@ const ContestantDetail = () => {
 
       <Navbar />
       
-      <main className="container mx-auto px-4 pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-6 lg:pb-8">
+      <main className="container mx-auto px-4 pt-20 sm:pt-24 lg:pt-28 pb-4 sm:pb-6 lg:pb-8">
         {/* Back Link */}
         <Link 
           to={`/contests/${contestId}`} 
