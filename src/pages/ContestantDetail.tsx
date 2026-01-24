@@ -38,13 +38,11 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getContestUrl, getContestantUrl, createContestantSlug } from '@/lib/urlHelpers';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
-// Helper to create URL-friendly slug from name
-export const createContestantSlug = (name: string) => {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-};
+// Note: createContestantSlug is imported from @/lib/urlHelpers
 
 const ContestantDetail = () => {
   const { contestId, contestantSlug } = useParams<{ contestId: string; contestantSlug: string }>();
@@ -105,9 +103,9 @@ const ContestantDetail = () => {
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
-  // Generate contestant page URL
+  // Generate contestant page URL - use custom_slug if available
   const contestantUrl = contestant 
-    ? `${window.location.origin}/contests/${contestId}/contestant/${createContestantSlug(contestant.name)}`
+    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug)
     : '';
 
   const handleCopyLink = () => {

@@ -280,6 +280,7 @@ const PublicContest = () => {
             <LiveContestView
               contestId={contest.id}
               contestTitle={contest.title}
+              contestCustomSlug={contest.custom_slug}
               streamUrl={contest.stream_url}
               streamPlatform={contest.stream_platform as any}
               contestants={contestants}
