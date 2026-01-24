@@ -18,7 +18,6 @@ import Dashboard from "./pages/Dashboard";
 import Contests from "./pages/Contests";
 import ContestDetail from "./pages/ContestDetail";
 import ContestantDetail from "./pages/ContestantDetail";
-import PublicContestant from "./pages/PublicContestant";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
 import WalletPage from "./pages/Wallet";
@@ -196,7 +195,7 @@ const AppRoutes = () => (
     <Route path="/terms" element={<TermsOfService />} />
     <Route path="/pitch-deck" element={<PitchDeck />} />
     <Route path="/c/:slug" element={<PublicContest />} />
-    <Route path="/c/:slug/contestant/:contestantSlug" element={<PublicContestant />} />
+    <Route path="/c/:slug/contestant/:contestantSlug" element={<ContestantDetail />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
