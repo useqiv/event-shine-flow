@@ -307,11 +307,11 @@ const ContestantDetail = () => {
 
       <Navbar />
       
-      <main className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+      <main className="container mx-auto px-4 pt-6 sm:pt-8 lg:pt-10 pb-4 sm:pb-6 lg:pb-8">
         {/* Back Link */}
         <Link 
           to={`/contests/${contestId}`} 
-          className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-3 sm:mb-4 transition-colors"
+          className="inline-flex items-center text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-5 lg:mb-6 transition-colors"
         >
           <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
           <span className="truncate max-w-[200px] sm:max-w-none">Back to {contest.title}</span>
