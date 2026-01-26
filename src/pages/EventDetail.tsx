@@ -356,35 +356,47 @@ const EventDetail = () => {
                   const isSoldOut = available <= 0;
 
                   return (
-                    <Card key={ticketType.id}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{ticketType.name}</h3>
-                            {ticketType.description && (
-                              <p className="text-sm text-muted-foreground mt-1">{ticketType.description}</p>
+                    <Card key={ticketType.id} className="overflow-hidden">
+                      <CardContent className="p-0">
+                        {/* Header with name and price */}
+                        <div className="flex justify-between items-center p-4 bg-muted/30 border-b">
+                          <h3 className="font-semibold text-lg">{ticketType.name}</h3>
+                          <div className="text-right">
+                            {Number(ticketType.price) === 0 ? (
+                              <Badge variant="secondary" className="text-sm px-3 py-1">Free</Badge>
+                            ) : (
+                              <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" showBadge showToggle />
                             )}
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold">
-                              {Number(ticketType.price) === 0 ? (
-                                <Badge variant="secondary" className="text-sm">Free</Badge>
-                              ) : (
-                                <CurrencyDisplay amount={Number(ticketType.price)} currency={ticketType.currency || 'NGN'} size="md" showBadge showToggle />
-                              )}
+                        </div>
+                        
+                        {/* Description/Perks section */}
+                        {ticketType.description && (
+                          <div className="p-4 border-b">
+                            <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                              {ticketType.description}
                             </p>
                           </div>
-                        </div>
-                        <div className="flex justify-between items-center mt-4">
+                        )}
+                        
+                        {/* Footer with availability and action */}
+                        <div className="flex justify-between items-center p-4">
                           <span className="text-sm text-muted-foreground">
-                            {isSoldOut ? 'Sold Out' : `${available} available`}
+                            {isSoldOut ? (
+                              <Badge variant="destructive" className="text-xs">Sold Out</Badge>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+                                {available} available
+                              </span>
+                            )}
                           </span>
                           <Button 
                             size="sm" 
                             onClick={() => handleBuyClick(ticketType)}
                             disabled={isPast || isSoldOut}
                           >
-                            {isSoldOut ? 'Sold Out' : isPast ? 'Event Passed' : Number(ticketType.price) === 0 ? 'Get Free Ticket' : 'Buy'}
+                            {isSoldOut ? 'Sold Out' : isPast ? 'Event Passed' : Number(ticketType.price) === 0 ? 'Get Free Ticket' : 'Buy Ticket'}
                           </Button>
                         </div>
                       </CardContent>
