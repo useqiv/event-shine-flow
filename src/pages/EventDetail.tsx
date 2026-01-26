@@ -348,7 +348,7 @@ const EventDetail = () => {
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="font-semibold mb-3">Share this event</h3>
                   <SocialShareButtons
-                    url={`${window.location.origin}/events/${id}`}
+                    url={eventUrl}
                     title={event.title}
                     description={`Join me at ${event.title} on ${format(new Date(event.event_date), 'MMMM d, yyyy')} at ${event.venue}`}
                   />
