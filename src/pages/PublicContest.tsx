@@ -80,8 +80,12 @@ const PublicContest = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
-  const contestUrl = `${window.location.origin}/c/${slug}`;
+  const contestUrl = `https://www.useqiv.com/c/${slug}`;
   const contestCurrency = contest?.vote_currency || 'NGN';
+  // Ensure absolute URL for OG image
+  const ogImage = contest?.image_url 
+    ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
+    : 'https://www.useqiv.com/og-image.png';
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   
   // Calculate converted amount for payment
@@ -145,14 +149,13 @@ const PublicContest = () => {
         <title>{contest.title} | Useqiv</title>
         <meta name="description" content={contest.description || `Vote now in ${contest.title}`} />
         
-        {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content={contestUrl} />
         <meta property="og:title" content={contest.title} />
         <meta property="og:description" content={contest.description || `Vote now in ${contest.title}`} />
-        {contest.image_url && <meta property="og:image" content={contest.image_url} />}
-        {contest.image_url && <meta property="og:image:width" content="1200" />}
-        {contest.image_url && <meta property="og:image:height" content="630" />}
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="USEQIV" />
         
         {/* Twitter Card */}
@@ -160,7 +163,7 @@ const PublicContest = () => {
         <meta name="twitter:url" content={contestUrl} />
         <meta name="twitter:title" content={contest.title} />
         <meta name="twitter:description" content={contest.description || `Vote now in ${contest.title}`} />
-        {contest.image_url && <meta name="twitter:image" content={contest.image_url} />}
+        <meta name="twitter:image" content={ogImage} />
         
         {/* Canonical URL */}
         <link rel="canonical" href={contestUrl} />
