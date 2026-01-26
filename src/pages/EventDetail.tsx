@@ -266,12 +266,26 @@ const EventDetail = () => {
           <div className="lg:col-span-2 space-y-6">
             <Card className="overflow-hidden">
               <div className="relative h-64 md:h-96 bg-secondary">
-                {event.image_url ? (
-                  <img 
-                    src={event.image_url} 
-                    alt={event.title} 
-                    className="h-full w-full object-cover" 
-                  />
+{event.image_url ? (
+                  <>
+                    <img 
+                      src={event.image_url} 
+                      alt={event.title} 
+                      className="h-full w-full object-cover"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      style={{ imageRendering: 'auto' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="h-full w-full hidden items-center justify-center absolute inset-0 bg-secondary">
+                      <Calendar className="h-24 w-24 text-muted-foreground" />
+                    </div>
+                  </>
                 ) : (
                   <div className="h-full w-full flex items-center justify-center">
                     <Calendar className="h-24 w-24 text-muted-foreground" />
