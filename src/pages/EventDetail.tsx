@@ -217,10 +217,13 @@ const EventDetail = () => {
   }
 
   const eventUrl = event?.custom_slug 
-    ? `${window.location.origin}/e/${event.custom_slug}` 
-    : `${window.location.origin}/events/${id}`;
+    ? `https://www.useqiv.com/e/${event.custom_slug}` 
+    : `https://www.useqiv.com/events/${id}`;
   const ogDescription = event?.description || `Join us at ${event?.title} on ${event ? format(new Date(event.event_date), 'MMMM d, yyyy') : ''} at ${event?.venue}`;
-  const ogImage = event?.image_url || `${window.location.origin}/og-image.png`;
+  // Ensure absolute URL for OG image - use the image directly if it's already absolute, otherwise construct one
+  const ogImage = event?.image_url 
+    ? (event.image_url.startsWith('http') ? event.image_url : `https://www.useqiv.com${event.image_url}`)
+    : 'https://www.useqiv.com/og-image.png';
 
   return (
     <>
