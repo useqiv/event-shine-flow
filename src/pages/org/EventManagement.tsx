@@ -136,6 +136,7 @@ const EventManagement = () => {
       await updateEvent.mutateAsync({
         id: event.id,
         ...editForm,
+        event_date: editForm.event_date ? new Date(editForm.event_date).toISOString() : event.event_date,
         custom_slug: editForm.custom_slug || null,
         stream_url: editForm.stream_url || null,
         stream_platform: editForm.stream_platform || 'youtube',
