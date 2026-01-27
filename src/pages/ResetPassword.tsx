@@ -134,11 +134,12 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-            <Vote className="h-6 w-6 text-primary-foreground" />
-          </div>
-          <span className="font-bold text-2xl text-foreground">VoteApp</span>
+        <Link to="/" className="flex items-center justify-center mb-8">
+          <img
+            alt="USEQIV"
+            className="h-12 w-auto"
+            src="/lovable-uploads/d7ec8140-f8f1-4a50-bfcc-d4de2001a79c.png"
+          />
         </Link>
 
         <Card className="border-border/50">
