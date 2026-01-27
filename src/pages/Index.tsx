@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import Categories from "@/components/landing/Categories";
-
+import EventsShowcase from "@/components/landing/EventsShowcase";
 import Showcase from "@/components/landing/Showcase";
 import Features from "@/components/landing/Features";
 import Stats from "@/components/landing/Stats";
@@ -38,7 +38,7 @@ const Index = () => {
         <main>
           <Hero />
           <Categories />
-          
+          <EventsShowcase />
           <Showcase />
           <Features />
           <Stats />
