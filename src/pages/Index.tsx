@@ -3,6 +3,7 @@ import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import Categories from "@/components/landing/Categories";
 import EventsShowcase from "@/components/landing/EventsShowcase";
+import ContestsShowcase from "@/components/landing/ContestsShowcase";
 import Showcase from "@/components/landing/Showcase";
 import Features from "@/components/landing/Features";
 import Stats from "@/components/landing/Stats";
@@ -39,6 +40,7 @@ const Index = () => {
           <Hero />
           <Categories />
           <EventsShowcase />
+          <ContestsShowcase />
           <Showcase />
           <Features />
           <Stats />
