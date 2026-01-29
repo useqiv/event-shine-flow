@@ -89,10 +89,10 @@ export const useEvent = (idOrSlug: string) => {
           .from('events')
           .select('*')
           .eq('id', idOrSlug)
-          .single();
+          .maybeSingle();
         
         if (error) throw error;
-        return data as Event;
+        return data as Event | null;
       }
       
       // Otherwise try by custom_slug
@@ -100,10 +100,10 @@ export const useEvent = (idOrSlug: string) => {
         .from('events')
         .select('*')
         .eq('custom_slug', idOrSlug)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as Event;
+      return data as Event | null;
     },
     enabled: !!idOrSlug,
   });

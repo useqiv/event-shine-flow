@@ -65,10 +65,10 @@ export function useNomination(nominationId: string) {
         .from('nominations')
         .select('*')
         .eq('id', nominationId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as Nomination;
+      return data as Nomination | null;
     },
     enabled: !!nominationId,
   });
@@ -367,10 +367,10 @@ export function usePublicNomination(idOrSlug: string) {
           .from('nominations')
           .select('*')
           .eq('id', idOrSlug)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        return data as Nomination;
+        return data as Nomination | null;
       }
       
       // Otherwise try by custom_slug
@@ -378,10 +378,10 @@ export function usePublicNomination(idOrSlug: string) {
         .from('nominations')
         .select('*')
         .eq('custom_slug', idOrSlug)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      return data as Nomination;
+      return data as Nomination | null;
     },
     enabled: !!idOrSlug,
   });
