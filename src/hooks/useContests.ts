@@ -85,10 +85,10 @@ export const useContest = (contestId: string) => {
         .from('contests')
         .select('*')
         .eq('id', contestId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as Contest;
+      return data as Contest | null;
     },
     enabled: !!contestId,
   });

@@ -96,15 +96,16 @@ export const useCampaign = (id: string) => {
         .from('campaigns')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
+      if (!data) return null;
       
       // Fetch creator profile
       const { data: creator } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
         .eq('id', data.creator_id)
-        .single();
+        .maybeSingle();
       
       return { ...data, creator } as Campaign;
     },

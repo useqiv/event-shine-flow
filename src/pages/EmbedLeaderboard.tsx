@@ -19,7 +19,7 @@ const EmbedLeaderboard = () => {
         .select('*')
         .eq('id', contestId)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
