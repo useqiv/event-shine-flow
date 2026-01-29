@@ -40,7 +40,7 @@ serve(async (req) => {
         .from("events")
         .select("id, title, description, image_url, custom_slug, venue, event_date")
         .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .single();
+        .maybeSingle();
 
       if (event) {
         title = `${event.title} | USEQIV Events`;
@@ -55,7 +55,7 @@ serve(async (req) => {
         .from("contests")
         .select("id, title, description, image_url, custom_slug")
         .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .single();
+        .maybeSingle();
 
       if (contest) {
         title = `${contest.title} | USEQIV`;
