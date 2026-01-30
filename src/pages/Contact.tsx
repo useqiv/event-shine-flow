@@ -4,11 +4,13 @@ import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Send, MessageSquare, Clock } from "lucide-react";
+import { Mail, Phone, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,21 +18,33 @@ const Contact = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message sent!",
-      description: "We'll get back to you as soon as possible.",
-    });
-    setFormData({ name: "", email: "", subject: "", message: "" });
-  };
+    setIsSubmitting(true);
 
-  const contactInfo = [
-    { icon: Mail, title: "Email", value: "support@useqiv.com", href: "mailto:support@useqiv.com" },
-    { icon: Phone, title: "Phone", value: "+234 800 123 4567", href: "tel:+2348001234567" },
-    { icon: MapPin, title: "Address", value: "Lagos, Nigeria", href: "#" },
-    { icon: Clock, title: "Hours", value: "Mon - Fri: 9AM - 6PM WAT", href: "#" },
-  ];
+    try {
+      const { data, error } = await supabase.functions.invoke("send-contact-form", {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you as soon as possible.",
+      });
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,11 +54,11 @@ const Contact = () => {
       <section className="pt-32 pb-16 bg-muted">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Get in <span className="text-primary">Touch</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+              Contact <span className="text-primary">Us</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
-              Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            <p className="text-lg text-muted-foreground">
+              Have questions? We'd love to hear from you.
             </p>
           </div>
         </div>
@@ -53,17 +67,40 @@ const Contact = () => {
       {/* Contact Section */}
       <section className="py-16 lg:py-24">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <div className="bg-card border border-border rounded-3xl p-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <MessageSquare className="h-5 w-5 text-primary" />
+          <div className="max-w-2xl mx-auto">
+            {/* Contact Info */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <a
+                href="mailto:info@useqiv.com"
+                className="flex items-center gap-3 p-4 bg-muted border border-border rounded-xl hover:bg-muted/80 transition-colors flex-1"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Mail className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground">Send us a message</h2>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-muted-foreground">Email</div>
+                  <div className="font-medium text-foreground">info@useqiv.com</div>
+                </div>
+              </a>
+              <a
+                href="tel:+2348001234567"
+                className="flex items-center gap-3 p-4 bg-muted border border-border rounded-xl hover:bg-muted/80 transition-colors flex-1"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Phone className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Phone</div>
+                  <div className="font-medium text-foreground">+234 800 123 4567</div>
+                </div>
+              </a>
+            </div>
+
+            {/* Contact Form */}
+            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+              <h2 className="text-xl font-semibold text-foreground mb-6">Send us a message</h2>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">Name</label>
                     <Input
@@ -71,6 +108,7 @@ const Contact = () => {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
+                      maxLength={100}
                     />
                   </div>
                   <div>
@@ -81,6 +119,7 @@ const Contact = () => {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
+                      maxLength={255}
                     />
                   </div>
                 </div>
@@ -91,59 +130,34 @@ const Contact = () => {
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     required
+                    maxLength={200}
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">Message</label>
                   <Textarea
-                    placeholder="Tell us more about your inquiry..."
+                    placeholder="Tell us more..."
                     rows={5}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required
+                    maxLength={2000}
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  <Send className="h-4 w-4 mr-2" />
-                  Send Message
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Message
+                    </>
+                  )}
                 </Button>
               </form>
-            </div>
-
-            {/* Contact Info */}
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-6">Contact Information</h2>
-              <p className="text-muted-foreground mb-8">
-                Reach out to us through any of these channels. Our team is always ready to assist you.
-              </p>
-              <div className="space-y-4">
-                {contactInfo.map((item, index) => (
-                  <a
-                    key={index}
-                    href={item.href}
-                    className="flex items-center gap-4 p-4 bg-muted border border-border rounded-2xl hover:bg-muted/80 transition-colors"
-                  >
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <item.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">{item.title}</div>
-                      <div className="font-medium text-foreground">{item.value}</div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-
-              {/* FAQ Prompt */}
-              <div className="mt-8 p-6 bg-primary/10 border border-primary/20 rounded-2xl">
-                <h3 className="font-semibold text-foreground mb-2">Looking for quick answers?</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Check out our Help Center for frequently asked questions and guides.
-                </p>
-                <Button variant="outline" asChild>
-                  <a href="/help">Visit Help Center</a>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
