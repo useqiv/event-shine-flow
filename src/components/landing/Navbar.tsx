@@ -85,24 +85,29 @@ const Navbar = () => {
   const productLinks = [
     { 
       name: "Events", 
-      href: "/events", 
+      href: "/products/events", 
       description: "Create events, sell tickets with QR codes, and manage check-ins seamlessly" 
     },
     { 
       name: "Contest Voting", 
-      href: "/contests", 
+      href: "/products/contests", 
       description: "Run secure paid voting competitions with real-time leaderboards and anti-fraud protection" 
     },
     { 
       name: "Crowdfunding", 
-      href: "/campaigns", 
+      href: "/products/crowdfunding", 
       description: "Launch fundraising campaigns, track donations, and reach your goals faster" 
     },
     { 
       name: "Smart Forms", 
-      href: "/forms", 
+      href: "/products/forms", 
       description: "Build custom forms with payments, conditional logic, and multi-page support" 
     },
+  ];
+
+  const companyLinks = [
+    { name: "About Us", href: "/about" },
+    { name: "Contact Us", href: "/contact" },
   ];
 
   const getInitials = () => {
@@ -241,18 +246,21 @@ const Navbar = () => {
                 </Link>
               ))}
             </div>
-            
-            {/* Other Nav Links */}
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.href}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.name}
-              </Link>
-            ))}
+
+            {/* Company Links */}
+            <div className="space-y-1 mb-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Company</p>
+              {companyLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="block hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium text-foreground"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
             <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
               {user ? (
                 <>
