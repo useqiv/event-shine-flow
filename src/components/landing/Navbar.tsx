@@ -82,6 +82,29 @@ const Navbar = () => {
     { name: "How It Works", href: "#how-it-works" },
   ];
 
+  const productLinks = [
+    { 
+      name: "Events", 
+      href: "/events", 
+      description: "Create events, sell tickets with QR codes, and manage check-ins seamlessly" 
+    },
+    { 
+      name: "Contest Voting", 
+      href: "/contests", 
+      description: "Run secure paid voting competitions with real-time leaderboards and anti-fraud protection" 
+    },
+    { 
+      name: "Crowdfunding", 
+      href: "/campaigns", 
+      description: "Launch fundraising campaigns, track donations, and reach your goals faster" 
+    },
+    { 
+      name: "Smart Forms", 
+      href: "/forms", 
+      description: "Build custom forms with payments, conditional logic, and multi-page support" 
+    },
+  ];
+
   const getInitials = () => {
     if (profile?.full_name) {
       return profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -203,61 +226,76 @@ const Navbar = () => {
                 <Search className="h-5 w-5 text-primary" />
               </button>
             </form>
-            <div className="flex flex-col gap-2">
-              {navLinks.map((link) => (
+            {/* Product Links with Descriptions */}
+            <div className="space-y-1 mb-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Our Products</p>
+              {productLinks.map((link) => (
                 <Link
                   key={link.name}
                   to={link.href}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium"
+                  className="block hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg"
                   onClick={() => setIsOpen(false)}
                 >
-                  {link.name}
+                  <span className="font-medium text-foreground">{link.name}</span>
+                  <p className="text-sm text-muted-foreground mt-0.5">{link.description}</p>
                 </Link>
               ))}
-              <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
-                {user ? (
-                  <>
-                    <div className="flex items-center gap-3 px-4 py-2">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
-                        <AvatarFallback>{getInitials()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        {profile?.full_name && (
-                          <p className="font-medium text-sm">{profile.full_name}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </div>
+            </div>
+            
+            {/* Other Nav Links */}
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.href}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
+            <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 px-4 py-2">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
+                      <AvatarFallback>{getInitials()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      {profile?.full_name && (
+                        <p className="font-medium text-sm">{profile.full_name}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
-                    </Link>
-                    <Link to="/profile" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-destructive" 
-                      onClick={() => { handleLogout(); setIsOpen(false); }}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
+                  </div>
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                  </Link>
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
                     </Button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-center">Sign In</Button>
-                    </Link>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <Button variant="default" className="w-full justify-center">Get Started Free</Button>
-                    </Link>
-                  </>
-                )}
-              </div>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-destructive" 
+                    onClick={() => { handleLogout(); setIsOpen(false); }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-center">Sign In</Button>
+                  </Link>
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
