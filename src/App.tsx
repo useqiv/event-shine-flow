@@ -59,6 +59,12 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import PitchDeck from "./pages/PitchDeck";
 
+// Product Pages
+import EventTicketing from "./pages/products/EventTicketing";
+import ContestVoting from "./pages/products/ContestVoting";
+import Crowdfunding from "./pages/products/Crowdfunding";
+import SmartForms from "./pages/products/SmartForms";
+
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
 import CreateContest from "./pages/org/CreateContest";
@@ -194,6 +200,13 @@ const AppRoutes = () => (
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/terms" element={<TermsOfService />} />
     <Route path="/pitch-deck" element={<PitchDeck />} />
+    
+    {/* Product Feature Pages */}
+    <Route path="/products/events" element={<EventTicketing />} />
+    <Route path="/products/contests" element={<ContestVoting />} />
+    <Route path="/products/crowdfunding" element={<Crowdfunding />} />
+    <Route path="/products/forms" element={<SmartForms />} />
+    
     <Route path="/c/:slug" element={<PublicContest />} />
     <Route path="/c/:slug/contestant/:contestantSlug" element={<ContestantDetail />} />
     <Route path="/e/:slug" element={<EventDetail />} />
