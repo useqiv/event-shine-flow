@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, User, LogOut } from "lucide-react";
+import { Menu, Search, User, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import appLogo from "@/assets/logo.png";
 const Navbar = () => {
@@ -201,112 +208,113 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            {isOpen ? (
-              <X className="h-6 w-6 text-foreground" />
-            ) : (
-              <Menu className="h-6 w-6 text-foreground" />
-            )}
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden py-4 border-t border-border bg-card/95 backdrop-blur-md animate-fade-in">
-            {/* Mobile Search */}
-            <form onSubmit={handleSearch} className="relative mb-4">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search organizers, events..."
-                className="w-full pl-12 pr-12 py-3 bg-background border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5">
-                <Search className="h-5 w-5 text-primary" />
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild className="md:hidden">
+              <button
+                className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="h-6 w-6 text-foreground" />
               </button>
-            </form>
-            {/* Product Links with Descriptions */}
-            <div className="space-y-1 mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Our Products</p>
-              {productLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="block hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="font-medium text-foreground">{link.name}</span>
-                  <p className="text-sm text-muted-foreground mt-0.5">{link.description}</p>
-                </Link>
-              ))}
-            </div>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[350px] overflow-y-auto">
+              <SheetHeader className="text-left pb-4">
+                <SheetTitle>
+                  <img src={appLogo} alt="USEQIV" className="h-8" />
+                </SheetTitle>
+              </SheetHeader>
 
-            {/* Company Links */}
-            <div className="space-y-1 mb-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Company</p>
-              {companyLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="block hover:bg-muted/50 transition-colors py-3 px-4 rounded-lg font-medium text-foreground"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-            <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border">
-              {user ? (
-                <>
-                  <div className="flex items-center gap-3 px-4 py-2">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
-                      <AvatarFallback>{getInitials()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      {profile?.full_name && (
-                        <p className="font-medium text-sm">{profile.full_name}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-                  </div>
-                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
-                  </Link>
-                  <Link to="/profile" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Button>
-                  </Link>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-destructive" 
-                    onClick={() => { handleLogout(); setIsOpen(false); }}
+              {/* Mobile Search */}
+              <form onSubmit={handleSearch} className="relative mb-6">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search organizers, events..."
+                  className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </form>
+
+              {/* Product Links with Descriptions */}
+              <div className="space-y-1 mb-6">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Products</p>
+                {productLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="block hover:bg-muted/50 transition-colors py-3 px-3 rounded-lg -mx-3"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-center">Sign In</Button>
+                    <span className="font-medium text-foreground">{link.name}</span>
+                    <p className="text-sm text-muted-foreground mt-0.5">{link.description}</p>
                   </Link>
-                  <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                ))}
+              </div>
+
+              {/* Company Links */}
+              <div className="space-y-1 mb-6">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Company</p>
+                {companyLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="block hover:bg-muted/50 transition-colors py-3 px-3 rounded-lg -mx-3 font-medium text-foreground"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.name}
                   </Link>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                ))}
+              </div>
+
+              {/* User Section */}
+              <div className="pt-4 border-t border-border">
+                {user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 py-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
+                        <AvatarFallback>{getInitials()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0">
+                        {profile?.full_name && (
+                          <p className="font-medium text-sm truncate">{profile.full_name}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                    </div>
+                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                    </Link>
+                    <Link to="/profile" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-destructive" 
+                      onClick={() => { handleLogout(); setIsOpen(false); }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-center">Sign In</Button>
+                    </Link>
+                    <Link to="/auth" onClick={() => setIsOpen(false)}>
+                      <Button variant="default" className="w-full justify-center">Get Started Free</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </nav>
   );
