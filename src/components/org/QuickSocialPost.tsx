@@ -87,7 +87,11 @@ export const QuickSocialPost: React.FC = () => {
   };
 
   const getEventUrl = (eventId: string) => {
-    return `${window.location.origin}/events/${eventId}`;
+    const event = events?.find(e => e.id === eventId);
+    if (!event) return `${window.location.origin}/events/${eventId}`;
+    return event.custom_slug 
+      ? `${window.location.origin}/e/${event.custom_slug}`
+      : `${window.location.origin}/events/${eventId}`;
   };
 
   const handleGenerateAI = async () => {

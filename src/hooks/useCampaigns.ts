@@ -88,15 +88,35 @@ export const useCampaigns = (filters?: { category?: string; status?: string; fea
   });
 };
 
-export const useCampaign = (id: string) => {
+export const useCampaign = (idOrSlug: string) => {
   return useQuery({
-    queryKey: ['campaign', id],
+    queryKey: ['campaign', idOrSlug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      // Check if it's a UUID or a custom slug
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+      
+      let data;
+      let error;
+      
+      if (isUUID) {
+        const result = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('id', idOrSlug)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      } else {
+        // Try by custom_slug
+        const result = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('custom_slug', idOrSlug)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
+      
       if (error) throw error;
       if (!data) return null;
       
@@ -109,7 +129,7 @@ export const useCampaign = (id: string) => {
       
       return { ...data, creator } as Campaign;
     },
-    enabled: !!id,
+    enabled: !!idOrSlug,
   });
 };
 
