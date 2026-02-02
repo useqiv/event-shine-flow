@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Users, Target, Clock, Search, Plus, TrendingUp, Filter, SlidersHorizontal } from 'lucide-react';
+import { Heart, Users, Target, Clock, Search, Plus, TrendingUp, SlidersHorizontal } from 'lucide-react';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { getBreadcrumbSchema } from '@/lib/structuredData';
 
 const CATEGORIES = [
   { value: 'all', label: 'All Categories' },
@@ -102,9 +104,35 @@ const Campaigns: React.FC = () => {
   const featuredCampaigns = campaigns?.filter(c => c.is_featured).slice(0, 3);
   const activeFiltersCount = (category !== 'all' ? 1 : 0) + (progressFilter !== 'all' ? 1 : 0) + (goalRange[0] > 0 || goalRange[1] < 10000000 ? 1 : 0);
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', url: 'https://www.useqiv.com' },
+    { name: 'Campaigns', url: 'https://www.useqiv.com/campaigns' },
+  ]);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <>
+      <Helmet>
+        <title>Crowdfunding Campaigns - Fund What Matters | USEQIV</title>
+        <meta name="description" content="Support causes you care about or start your own fundraising campaign. Crowdfunding for medical, education, community, creative projects and more." />
+        <meta name="keywords" content="crowdfunding, fundraising, donations, charity, medical fundraising, education funding, community projects" />
+        <link rel="canonical" href="https://www.useqiv.com/campaigns" />
+        
+        <meta property="og:title" content="Crowdfunding Campaigns - Fund What Matters | USEQIV" />
+        <meta property="og:description" content="Support causes you care about or start your own fundraising campaign on USEQIV." />
+        <meta property="og:url" content="https://www.useqiv.com/campaigns" />
+        <meta property="og:type" content="website" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Crowdfunding Campaigns | USEQIV" />
+        <meta name="twitter:description" content="Support causes you care about on USEQIV." />
+
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      </Helmet>
+
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
       
       <main className="flex-1">
         {/* Hero Section */}
@@ -363,7 +391,8 @@ const Campaigns: React.FC = () => {
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -1,6 +1,8 @@
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Users, Target, Award, Globe, Heart, Zap } from "lucide-react";
+import { getBreadcrumbSchema, getOrganizationSchema, combineSchemas } from '@/lib/structuredData';
 
 const About = () => {
   const values = [
@@ -10,10 +12,38 @@ const About = () => {
     { icon: Globe, title: "Accessibility", description: "Making event management accessible to organizers of all sizes across Africa." },
   ];
 
+  const structuredData = combineSchemas(
+    getOrganizationSchema(),
+    getBreadcrumbSchema([
+      { name: 'Home', url: 'https://www.useqiv.com' },
+      { name: 'About', url: 'https://www.useqiv.com/about' },
+    ])
+  );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <>
+      <Helmet>
+        <title>About USEQIV - Our Mission & Values</title>
+        <meta name="description" content="USEQIV empowers African event organizers with world-class tools for contests, events, crowdfunding, and forms. Learn about our mission to revolutionize event management." />
+        <meta name="keywords" content="about useqiv, event management platform, african events, contest voting, event ticketing company" />
+        <link rel="canonical" href="https://www.useqiv.com/about" />
+        
+        <meta property="og:title" content="About USEQIV - Our Mission & Values" />
+        <meta property="og:description" content="USEQIV empowers African event organizers with world-class tools for contests, events, and crowdfunding." />
+        <meta property="og:url" content="https://www.useqiv.com/about" />
+        <meta property="og:type" content="website" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="About USEQIV" />
+        <meta name="twitter:description" content="Learn about our mission to revolutionize event management in Africa." />
+
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
+
+      <div className="min-h-screen bg-background">
+        <Navbar />
       
       {/* Hero Section */}
       <section className="pt-32 pb-16 bg-muted">
@@ -86,7 +116,8 @@ const About = () => {
 
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 
