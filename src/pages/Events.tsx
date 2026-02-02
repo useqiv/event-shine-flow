@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import { Calendar, Search, Filter, MapPin, Clock, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsSaved, useToggleSave } from '@/hooks/useSavedItems';
 import { useAuth } from '@/contexts/AuthContext';
+import { getBreadcrumbSchema } from '@/lib/structuredData';
 
 const EventCard = ({ event }: { event: any }) => {
   const { user } = useAuth();
@@ -104,12 +106,38 @@ const Events = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', url: 'https://www.useqiv.com' },
+    { name: 'Events', url: 'https://www.useqiv.com/events' },
+  ]);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <main className="flex-1 container mx-auto px-4 pt-24 pb-8">
-        <div className="space-y-6">
-          {/* Header */}
+    <>
+      <Helmet>
+        <title>Discover Events & Buy Tickets | USEQIV</title>
+        <meta name="description" content="Find and book tickets for amazing events - concerts, conferences, parties, and more. Secure QR code tickets with instant delivery." />
+        <meta name="keywords" content="event tickets, concerts, conferences, parties, QR tickets, event booking, ticket sales" />
+        <link rel="canonical" href="https://www.useqiv.com/events" />
+        
+        <meta property="og:title" content="Discover Events & Buy Tickets | USEQIV" />
+        <meta property="og:description" content="Find and book tickets for amazing events. Secure QR code tickets with instant delivery." />
+        <meta property="og:url" content="https://www.useqiv.com/events" />
+        <meta property="og:type" content="website" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Discover Events & Buy Tickets | USEQIV" />
+        <meta name="twitter:description" content="Find and book tickets for amazing events on USEQIV." />
+
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      </Helmet>
+
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 pt-24 pb-8">
+          <div className="space-y-6">
+            {/* Header */}
           <div>
             <h1 className="text-2xl font-bold text-foreground">Events</h1>
             <p className="text-muted-foreground">Discover and book tickets for amazing events</p>
@@ -171,10 +199,11 @@ const Events = () => {
               </p>
             </Card>
           )}
-        </div>
-      </main>
-      <Footer />
-    </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 };
 

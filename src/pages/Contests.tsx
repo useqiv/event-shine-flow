@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import { Helmet } from 'react-helmet-async';
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContests } from '@/hooks/useContests';
-import { Trophy, Search, Filter, Calendar, Vote, Heart } from 'lucide-react';
+import { Trophy, Search, Filter, Calendar, Heart } from 'lucide-react';
 import { format } from 'date-fns';
 import { useIsSaved, useToggleSave } from '@/hooks/useSavedItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import { getBreadcrumbSchema } from '@/lib/structuredData';
 
 const ContestCard = ({ contest }: { contest: any }) => {
   const { user } = useAuth();
@@ -109,73 +112,104 @@ const Contests = () => {
     return matchesSearch && matchesCategory;
   });
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', url: 'https://www.useqiv.com' },
+    { name: 'Contests', url: 'https://www.useqiv.com/contests' },
+  ]);
+
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Contests</h1>
-          <p className="text-muted-foreground">Browse and vote for your favorite contestants</p>
-        </div>
+    <>
+      <Helmet>
+        <title>Browse Voting Contests | USEQIV</title>
+        <meta name="description" content="Discover and vote in exciting contests - pageants, music competitions, awards, and more. Support your favorite contestants with secure online voting." />
+        <meta name="keywords" content="voting contests, online voting, pageant voting, music competition, awards voting, contestant voting" />
+        <link rel="canonical" href="https://www.useqiv.com/contests" />
+        
+        <meta property="og:title" content="Browse Voting Contests | USEQIV" />
+        <meta property="og:description" content="Discover and vote in exciting contests - pageants, music competitions, awards, and more." />
+        <meta property="og:url" content="https://www.useqiv.com/contests" />
+        <meta property="og:type" content="website" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Browse Voting Contests | USEQIV" />
+        <meta name="twitter:description" content="Discover and vote in exciting contests on USEQIV." />
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search contests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      </Helmet>
 
-        {/* Contests Grid */}
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i}>
-                <Skeleton className="h-48 w-full" />
-                <CardContent className="p-4 space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
-                </CardContent>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 container mx-auto px-4 pt-24 pb-8">
+          <div className="space-y-6">
+            {/* Header */}
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Contests</h1>
+              <p className="text-muted-foreground">Browse and vote for your favorite contestants</p>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search contests..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Contests Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card key={i}>
+                    <Skeleton className="h-48 w-full" />
+                    <CardContent className="p-4 space-y-3">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredContests && filteredContests.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredContests.map((contest) => (
+                  <ContestCard key={contest.id} contest={contest} />
+                ))}
+              </div>
+            ) : (
+              <Card className="p-12 text-center">
+                <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold">No contests found</h3>
+                <p className="text-muted-foreground mt-1">
+                  {searchQuery || categoryFilter !== 'all' 
+                    ? 'Try adjusting your search or filters'
+                    : 'Check back later for new contests'}
+                </p>
               </Card>
-            ))}
+            )}
           </div>
-        ) : filteredContests && filteredContests.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredContests.map((contest) => (
-              <ContestCard key={contest.id} contest={contest} />
-            ))}
-          </div>
-        ) : (
-          <Card className="p-12 text-center">
-            <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold">No contests found</h3>
-            <p className="text-muted-foreground mt-1">
-              {searchQuery || categoryFilter !== 'all' 
-                ? 'Try adjusting your search or filters'
-                : 'Check back later for new contests'}
-            </p>
-          </Card>
-        )}
+        </main>
+        <Footer />
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

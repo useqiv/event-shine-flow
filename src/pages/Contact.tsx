@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from 'react-helmet-async';
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getBreadcrumbSchema } from '@/lib/structuredData';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -46,9 +48,35 @@ const Contact = () => {
     }
   };
 
+  const breadcrumbSchema = getBreadcrumbSchema([
+    { name: 'Home', url: 'https://www.useqiv.com' },
+    { name: 'Contact', url: 'https://www.useqiv.com/contact' },
+  ]);
+
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <>
+      <Helmet>
+        <title>Contact Us | USEQIV Support</title>
+        <meta name="description" content="Get in touch with USEQIV. We're here to help with your contests, events, crowdfunding, and form questions. Email us or send a message." />
+        <meta name="keywords" content="contact useqiv, support, help, customer service, event support" />
+        <link rel="canonical" href="https://www.useqiv.com/contact" />
+        
+        <meta property="og:title" content="Contact Us | USEQIV Support" />
+        <meta property="og:description" content="Get in touch with USEQIV. We're here to help with your questions." />
+        <meta property="og:url" content="https://www.useqiv.com/contact" />
+        <meta property="og:type" content="website" />
+        
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Contact USEQIV" />
+        <meta name="twitter:description" content="Get in touch with USEQIV support team." />
+
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      </Helmet>
+
+      <div className="min-h-screen bg-background">
+        <Navbar />
       
       {/* Hero Section */}
       <section className="pt-32 pb-16 bg-muted">
@@ -164,7 +192,8 @@ const Contact = () => {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 };
 
