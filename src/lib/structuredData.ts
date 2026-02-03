@@ -48,7 +48,7 @@ export const getWebSiteSchema = () => ({
   '@id': `${SITE_URL}/#website`,
   name: SITE_NAME,
   url: SITE_URL,
-  description: 'Vote, Win & Experience Events - The all-in-one platform for contests, events, and crowdfunding',
+  description: 'The Complete Platform for Contest Voting, Event Ticketing & Crowdfunding Success',
   publisher: {
     '@id': `${SITE_URL}/#organization`,
   },
