@@ -3,39 +3,40 @@
  * Following Schema.org specifications
  */
 
-const SITE_URL = 'https://www.useqiv.com';
-const SITE_NAME = 'USEQIV';
+const SITE_URL = "https://www.useqiv.com";
+const SITE_NAME = "USEQIV";
 const LOGO_URL = `${SITE_URL}/logo.png`;
 
 /**
  * Organization schema - represents the USEQIV brand
  */
 export const getOrganizationSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  '@id': `${SITE_URL}/#organization`,
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
   name: SITE_NAME,
   url: SITE_URL,
   logo: {
-    '@type': 'ImageObject',
+    "@type": "ImageObject",
     url: LOGO_URL,
     width: 512,
     height: 512,
   },
   image: LOGO_URL,
-  description: 'USEQIV is the ultimate platform for hosting voting contests, selling event tickets, crowdfunding campaigns, and custom forms.',
-  foundingDate: '2024',
+  description:
+    "USEQIV is the ultimate platform for hosting voting contests, selling event tickets, crowdfunding campaigns, Influencer Marketing and custom forms.",
+  foundingDate: "2024",
   sameAs: [
-    'https://twitter.com/useqiv',
-    'https://facebook.com/useqiv',
-    'https://instagram.com/useqiv',
-    'https://linkedin.com/company/useqiv',
+    "https://twitter.com/useqiv",
+    "https://facebook.com/useqiv",
+    "https://instagram.com/useqiv",
+    "https://linkedin.com/company/useqiv",
   ],
   contactPoint: {
-    '@type': 'ContactPoint',
-    contactType: 'customer service',
-    email: 'support@useqiv.com',
-    availableLanguage: ['English'],
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    email: "support@useqiv.com",
+    availableLanguage: ["English"],
   },
 });
 
@@ -43,24 +44,25 @@ export const getOrganizationSchema = () => ({
  * WebSite schema with search action for sitelinks searchbox
  */
 export const getWebSiteSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  '@id': `${SITE_URL}/#website`,
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
   name: SITE_NAME,
   url: SITE_URL,
-  description: 'The Complete Platform for Contest Voting, Event Ticketing & Crowdfunding Success',
+  description:
+    "The Complete Platform for Contest Voting, Event Ticketing, Influencer Marketing, Forms & Crowdfunding Success",
   publisher: {
-    '@id': `${SITE_URL}/#organization`,
+    "@id": `${SITE_URL}/#organization`,
   },
   potentialAction: {
-    '@type': 'SearchAction',
+    "@type": "SearchAction",
     target: {
-      '@type': 'EntryPoint',
+      "@type": "EntryPoint",
       urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
     },
-    'query-input': 'required name=search_term_string',
+    "query-input": "required name=search_term_string",
   },
-  inLanguage: 'en-US',
+  inLanguage: "en-US",
 });
 
 /**
@@ -74,27 +76,27 @@ export const getWebPageSchema = (props: {
   datePublished?: string;
   dateModified?: string;
 }) => ({
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  '@id': `${props.url}/#webpage`,
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "@id": `${props.url}/#webpage`,
   name: props.title,
   description: props.description,
   url: props.url,
   isPartOf: {
-    '@id': `${SITE_URL}/#website`,
+    "@id": `${SITE_URL}/#website`,
   },
   about: {
-    '@id': `${SITE_URL}/#organization`,
+    "@id": `${SITE_URL}/#organization`,
   },
   ...(props.image && {
     primaryImageOfPage: {
-      '@type': 'ImageObject',
+      "@type": "ImageObject",
       url: props.image,
     },
   }),
   ...(props.datePublished && { datePublished: props.datePublished }),
   ...(props.dateModified && { dateModified: props.dateModified }),
-  inLanguage: 'en-US',
+  inLanguage: "en-US",
 });
 
 /**
@@ -112,22 +114,22 @@ export const getEventSchema = (event: {
   organizerName?: string;
   price?: number;
   currency?: string;
-  availability?: 'InStock' | 'SoldOut' | 'PreOrder';
+  availability?: "InStock" | "SoldOut" | "PreOrder";
 }) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Event',
+  "@context": "https://schema.org",
+  "@type": "Event",
   name: event.name,
   description: event.description,
   startDate: event.startDate,
   ...(event.endDate && { endDate: event.endDate }),
-  eventStatus: 'https://schema.org/EventScheduled',
-  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  eventStatus: "https://schema.org/EventScheduled",
+  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
   location: {
-    '@type': 'Place',
+    "@type": "Place",
     name: event.location,
     ...(event.address && {
       address: {
-        '@type': 'PostalAddress',
+        "@type": "PostalAddress",
         streetAddress: event.address,
       },
     }),
@@ -137,16 +139,16 @@ export const getEventSchema = (event: {
   }),
   url: event.url,
   organizer: {
-    '@type': 'Organization',
+    "@type": "Organization",
     name: event.organizerName || SITE_NAME,
     url: SITE_URL,
   },
   ...(event.price !== undefined && {
     offers: {
-      '@type': 'Offer',
+      "@type": "Offer",
       price: event.price,
-      priceCurrency: event.currency || 'NGN',
-      availability: `https://schema.org/${event.availability || 'InStock'}`,
+      priceCurrency: event.currency || "NGN",
+      availability: `https://schema.org/${event.availability || "InStock"}`,
       url: event.url,
       validFrom: new Date().toISOString(),
     },
@@ -167,23 +169,23 @@ export const getContestSchema = (contest: {
   currency?: string;
   category?: string;
 }) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Product',
+  "@context": "https://schema.org",
+  "@type": "Product",
   name: contest.name,
   description: contest.description,
   ...(contest.image && { image: contest.image }),
   url: contest.url,
   brand: {
-    '@type': 'Brand',
+    "@type": "Brand",
     name: SITE_NAME,
   },
   ...(contest.category && { category: contest.category }),
   ...(contest.votePrice !== undefined && {
     offers: {
-      '@type': 'Offer',
+      "@type": "Offer",
       price: contest.votePrice,
-      priceCurrency: contest.currency || 'NGN',
-      availability: 'https://schema.org/InStock',
+      priceCurrency: contest.currency || "NGN",
+      availability: "https://schema.org/InStock",
       priceValidUntil: contest.endDate,
       url: contest.url,
     },
@@ -203,18 +205,18 @@ export const getCampaignSchema = (campaign: {
   currency: string;
   endDate?: string;
 }) => ({
-  '@context': 'https://schema.org',
-  '@type': 'DonateAction',
+  "@context": "https://schema.org",
+  "@type": "DonateAction",
   name: campaign.name,
   description: campaign.description,
   url: campaign.url,
   ...(campaign.image && { image: campaign.image }),
   recipient: {
-    '@type': 'Organization',
+    "@type": "Organization",
     name: SITE_NAME,
   },
   priceSpecification: {
-    '@type': 'PriceSpecification',
+    "@type": "PriceSpecification",
     price: campaign.goalAmount,
     priceCurrency: campaign.currency,
   },
@@ -224,10 +226,10 @@ export const getCampaignSchema = (campaign: {
  * BreadcrumbList schema for navigation
  */
 export const getBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
   itemListElement: items.map((item, index) => ({
-    '@type': 'ListItem',
+    "@type": "ListItem",
     position: index + 1,
     name: item.name,
     item: item.url,
@@ -238,13 +240,13 @@ export const getBreadcrumbSchema = (items: Array<{ name: string; url: string }>)
  * FAQ schema for help/FAQ pages
  */
 export const getFAQSchema = (faqs: Array<{ question: string; answer: string }>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
   mainEntity: faqs.map((faq) => ({
-    '@type': 'Question',
+    "@type": "Question",
     name: faq.question,
     acceptedAnswer: {
-      '@type': 'Answer',
+      "@type": "Answer",
       text: faq.answer,
     },
   })),
@@ -254,28 +256,29 @@ export const getFAQSchema = (faqs: Array<{ question: string; answer: string }>) 
  * SoftwareApplication schema for the platform
  */
 export const getSoftwareApplicationSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
   name: SITE_NAME,
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Web',
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
   offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
   },
   aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    ratingCount: '1250',
-    bestRating: '5',
-    worstRating: '1',
+    "@type": "AggregateRating",
+    ratingValue: "4.8",
+    ratingCount: "1250",
+    bestRating: "5",
+    worstRating: "1",
   },
-  description: 'USEQIV is a comprehensive platform for contest voting, event ticketing, crowdfunding, and custom forms.',
+  description:
+    "USEQIV is a comprehensive platform for contest voting, event ticketing, crowdfunding, and custom forms.",
   url: SITE_URL,
   image: LOGO_URL,
   author: {
-    '@id': `${SITE_URL}/#organization`,
+    "@id": `${SITE_URL}/#organization`,
   },
 });
 
@@ -283,10 +286,10 @@ export const getSoftwareApplicationSchema = () => ({
  * Combine multiple schemas into a graph
  */
 export const combineSchemas = (...schemas: object[]) => ({
-  '@context': 'https://schema.org',
-  '@graph': schemas.map((schema) => {
+  "@context": "https://schema.org",
+  "@graph": schemas.map((schema) => {
     // Remove @context from individual schemas when combining
-    const { '@context': _, ...rest } = schema as { '@context'?: string; [key: string]: any };
+    const { "@context": _, ...rest } = schema as { "@context"?: string; [key: string]: any };
     return rest;
   }),
 });
