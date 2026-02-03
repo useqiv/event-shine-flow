@@ -60,13 +60,13 @@ const Features = () => {
           <div className="text-center mb-6 sm:mb-8 lg:mb-10">
             <span className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 text-primary rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4">
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              AI-Powered Platform
+              Next-Generation Technology
             </span>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-3 sm:mb-4 px-2">
-              Intelligent Features That Work For You
+              Built for Modern Event Organizers
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto px-4">
-              Leverage cutting-edge AI to automate tasks, generate content, and get smart recommendations.
+              Harness AI-powered automation, real-time analytics, and intelligent tools to maximize engagement and revenue.
             </p>
           </div>
 
@@ -75,24 +75,24 @@ const Features = () => {
             {[
               { 
                 icon: Sparkles, 
-                title: "AI Chat Assistant", 
-                desc: "Get instant answers about contests, events, and recommendations with our intelligent QIV assistant.",
+                title: "AI-Powered Assistant", 
+                desc: "Get real-time insights, smart recommendations, and instant support from our intelligent platform.",
                 highlight: true
               },
               { 
                 icon: FileText, 
-                title: "AI Content Generation", 
-                desc: "Auto-generate compelling descriptions for events, contests, and campaigns in seconds."
+                title: "Auto Content Creation", 
+                desc: "Generate compelling event descriptions, marketing copy, and social posts with one click."
               },
               { 
                 icon: TrendingUp, 
-                title: "Smart Recommendations", 
-                desc: "Personalized suggestions based on your voting history and preferences."
+                title: "Predictive Analytics", 
+                desc: "Forecast trends, optimize pricing, and maximize revenue with data-driven insights."
               },
               { 
                 icon: Share2, 
-                title: "AI Social Posts", 
-                desc: "Generate engaging social media content tailored for each platform automatically."
+                title: "Smart Marketing", 
+                desc: "Automated social scheduling, influencer tracking, and performance optimization tools."
               },
             ].map((item, i) => (
               <div 
@@ -114,10 +114,10 @@ const Features = () => {
           <div className="bg-card border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {[
-                { icon: Lock, title: "Bank-Level Security", desc: "256-bit encryption" },
-                { icon: Globe, title: "Multi-Currency", desc: "50+ currencies supported" },
-                { icon: Smartphone, title: "Mobile-First", desc: "All devices optimized" },
-                { icon: CreditCard, title: "Fast Payouts", desc: "Quick settlements" },
+                { icon: Lock, title: "Enterprise Security", desc: "Bank-grade encryption" },
+                { icon: Globe, title: "Global Payments", desc: "50+ currencies & crypto" },
+                { icon: Smartphone, title: "Cross-Platform", desc: "Works everywhere" },
+                { icon: CreditCard, title: "Instant Payouts", desc: "Same-day settlements" },
               ].map((item, i) => (
                 <div key={i} className="text-center p-3 sm:p-4 lg:p-6 bg-muted rounded-xl sm:rounded-2xl hover:bg-primary/5 transition-colors group">
                   <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-2 sm:mb-3 lg:mb-4 group-hover:border-primary/50 transition-colors">

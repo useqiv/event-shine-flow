@@ -48,20 +48,20 @@ const Hero = () => {
 
               {/* Headline - Responsive sizing */}
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-[1.15] sm:leading-[1.1] mb-4 sm:mb-6">
-                The Complete{" "}
+                Launch, Manage &{" "}
                 <span className="text-primary relative whitespace-nowrap">
-                  Event Platform
+                  Scale Events
                   <svg className="absolute -bottom-1 sm:-bottom-2 left-0 w-full h-2 sm:h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
                     <path d="M0 6 Q50 0, 100 6 T200 6" stroke="currentColor" strokeWidth="4" fill="none" />
                   </svg>
                 </span>{" "}
-                for <span className="text-accent">Africa</span>
+                with <span className="text-accent">AI</span>
               </h1>
 
               {/* Subheadline - Better mobile spacing */}
               <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-xl mx-auto lg:mx-0 px-2 sm:px-0">
-                Voting. Ticketing. Crowdfunding. Forms. Influencer Marketing. One powerful platform to run contests,
-                events, campaigns and more.
+                The all-in-one AI-powered platform for contest voting, event ticketing, crowdfunding, and smart forms. 
+                Trusted by organizers across 25+ countries.
               </p>
 
               {/* AI Features Badges - Horizontal scroll on mobile */}
