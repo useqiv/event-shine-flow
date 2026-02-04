@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface Wallet {
   id: string;
@@ -47,7 +48,7 @@ export const useWallet = () => {
       
       const { data, error } = await supabase
         .from('wallets')
-        .select('*')
+        .select(selectColumns.walletEssential)
         .eq('user_id', user.id)
         .maybeSingle();
       
@@ -55,6 +56,7 @@ export const useWallet = () => {
       return data as Wallet | null;
     },
     enabled: !!user?.id,
+    ...queryCache.dynamic, // Wallet balance changes with transactions
   });
 };
 

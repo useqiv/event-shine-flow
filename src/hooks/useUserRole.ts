@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -12,7 +13,7 @@ export const useUserRole = () => {
       
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role')
+        .select(selectColumns.userRole)
         .eq('user_id', user.id);
       
       if (error) throw error;
@@ -27,6 +28,7 @@ export const useUserRole = () => {
       return 'user';
     },
     enabled: !!user?.id,
+    ...queryCache.static, // Role rarely changes
   });
 };
 

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface Event {
   id: string;
@@ -49,13 +50,14 @@ export const useEvents = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(selectColumns.eventCard)
         .eq('is_active', true)
         .order('event_date', { ascending: true });
       
       if (error) throw error;
       return data as Event[];
     },
+    ...queryCache.publicListing, // Public listing with moderate caching
   });
 };
 
@@ -65,7 +67,7 @@ export const useFeaturedEvents = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(selectColumns.eventCard)
         .eq('is_active', true)
         .eq('is_featured', true)
         .order('event_date', { ascending: true })
@@ -74,6 +76,7 @@ export const useFeaturedEvents = () => {
       if (error) throw error;
       return data as Event[];
     },
+    ...queryCache.publicListing,
   });
 };
 
@@ -87,7 +90,7 @@ export const useEvent = (idOrSlug: string) => {
       if (isUUID) {
         const { data, error } = await supabase
           .from('events')
-          .select('*')
+          .select(selectColumns.eventDetail)
           .eq('id', idOrSlug)
           .maybeSingle();
         
@@ -98,7 +101,7 @@ export const useEvent = (idOrSlug: string) => {
       // Otherwise try by custom_slug
       const { data, error } = await supabase
         .from('events')
-        .select('*')
+        .select(selectColumns.eventDetail)
         .eq('custom_slug', idOrSlug)
         .maybeSingle();
       
@@ -106,6 +109,7 @@ export const useEvent = (idOrSlug: string) => {
       return data as Event | null;
     },
     enabled: !!idOrSlug,
+    ...queryCache.moderate, // Individual event details
   });
 };
 
@@ -115,7 +119,7 @@ export const useTicketTypes = (eventId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ticket_types')
-        .select('*')
+        .select(selectColumns.ticketType)
         .eq('event_id', eventId)
         .order('price', { ascending: true });
       
@@ -123,6 +127,7 @@ export const useTicketTypes = (eventId: string) => {
       return data as TicketType[];
     },
     enabled: !!eventId,
+    ...queryCache.dynamic, // Ticket availability changes
   });
 };
 

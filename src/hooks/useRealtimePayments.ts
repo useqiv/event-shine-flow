@@ -2,14 +2,26 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useLocation } from 'react-router-dom';
 
+/**
+ * Optimized admin payment realtime hook
+ * Only subscribes when on admin payment pages
+ */
 export const useRealtimePayments = () => {
   const queryClient = useQueryClient();
+  const location = useLocation();
+
+  // Only enable on admin payment-related pages
+  const shouldSubscribe = location.pathname.startsWith('/admin/payment') || 
+                          location.pathname === '/admin/finance';
 
   useEffect(() => {
-    // Subscribe to new votes
-    const votesChannel = supabase
-      .channel('admin-votes-realtime')
+    if (!shouldSubscribe) return;
+
+    // Single consolidated channel for payment realtime
+    const paymentsChannel = supabase
+      .channel('admin-payments-realtime')
       .on(
         'postgres_changes',
         {
@@ -19,7 +31,6 @@ export const useRealtimePayments = () => {
         },
         (payload) => {
           console.log('New vote received:', payload);
-          // Invalidate queries to refetch data
           queryClient.invalidateQueries({ queryKey: ['admin-votes'] });
           queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
           
@@ -29,11 +40,6 @@ export const useRealtimePayments = () => {
           });
         }
       )
-      .subscribe();
-
-    // Subscribe to new tickets
-    const ticketsChannel = supabase
-      .channel('admin-tickets-realtime')
       .on(
         'postgres_changes',
         {
@@ -43,7 +49,6 @@ export const useRealtimePayments = () => {
         },
         (payload) => {
           console.log('New ticket received:', payload);
-          // Invalidate queries to refetch data
           queryClient.invalidateQueries({ queryKey: ['admin-tickets'] });
           queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
           
@@ -53,11 +58,6 @@ export const useRealtimePayments = () => {
           });
         }
       )
-      .subscribe();
-
-    // Subscribe to wallet transactions for pending payments
-    const walletChannel = supabase
-      .channel('admin-wallet-realtime')
       .on(
         'postgres_changes',
         {
@@ -83,11 +83,9 @@ export const useRealtimePayments = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(votesChannel);
-      supabase.removeChannel(ticketsChannel);
-      supabase.removeChannel(walletChannel);
+      supabase.removeChannel(paymentsChannel);
     };
-  }, [queryClient]);
+  }, [queryClient, shouldSubscribe]);
 };
 
 // Hook for user-facing real-time updates

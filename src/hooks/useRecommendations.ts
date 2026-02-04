@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache } from '@/lib/queryConfig';
 
 interface Contest {
   id: string;
@@ -44,7 +45,7 @@ export const useRecommendations = () => {
       return data as Recommendations;
     },
     enabled: !!user?.id && !!session?.access_token,
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    ...queryCache.semiStatic, // Recommendations don't need frequent updates
     refetchOnWindowFocus: false,
     retry: false, // Don't retry on auth errors
   });
