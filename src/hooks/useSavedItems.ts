@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface SavedItem {
   id: string;
@@ -20,7 +21,7 @@ export const useSavedItems = () => {
       
       const { data, error } = await supabase
         .from('saved_items')
-        .select('*')
+        .select('id, user_id, item_type, item_id, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
@@ -28,6 +29,7 @@ export const useSavedItems = () => {
       return data as SavedItem[];
     },
     enabled: !!user?.id,
+    ...queryCache.semiStatic,
   });
 };
 
@@ -52,13 +54,14 @@ export const useSavedContests = () => {
       
       const { data: contests, error: contestsError } = await supabase
         .from('contests')
-        .select('*')
+        .select(selectColumns.contestCard)
         .in('id', contestIds);
       
       if (contestsError) throw contestsError;
       return contests;
     },
     enabled: !!user?.id,
+    ...queryCache.semiStatic,
   });
 };
 
@@ -83,13 +86,14 @@ export const useSavedEvents = () => {
       
       const { data: events, error: eventsError } = await supabase
         .from('events')
-        .select('*')
+        .select(selectColumns.eventCard)
         .in('id', eventIds);
       
       if (eventsError) throw eventsError;
       return events;
     },
     enabled: !!user?.id,
+    ...queryCache.semiStatic,
   });
 };
 

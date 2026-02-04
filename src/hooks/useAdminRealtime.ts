@@ -4,18 +4,27 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useLocation } from 'react-router-dom';
 
+/**
+ * Optimized admin realtime hook
+ * Only subscribes when on admin pages to reduce egress
+ */
 export const useAdminRealtime = () => {
   const { user } = useAuth();
   const { data: role } = useUserRole();
   const queryClient = useQueryClient();
+  const location = useLocation();
+
+  // Only enable realtime on admin pages
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   useEffect(() => {
-    if (!user || role !== 'admin') return;
+    if (!user || role !== 'admin' || !isAdminPage) return;
 
-    // Listen for new payouts
-    const payoutsChannel = supabase
-      .channel('admin-payouts-realtime')
+    // Single consolidated channel for admin realtime
+    const adminChannel = supabase
+      .channel('admin-realtime')
       .on(
         'postgres_changes',
         {
@@ -42,11 +51,6 @@ export const useAdminRealtime = () => {
           queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
         }
       )
-      .subscribe();
-
-    // Listen for new fraud alerts
-    const fraudChannel = supabase
-      .channel('admin-fraud-realtime')
       .on(
         'postgres_changes',
         {
@@ -69,11 +73,6 @@ export const useAdminRealtime = () => {
           queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
         }
       )
-      .subscribe();
-
-    // Listen for new organization approvals
-    const orgApprovalsChannel = supabase
-      .channel('admin-org-approvals-realtime')
       .on(
         'postgres_changes',
         {
@@ -100,11 +99,6 @@ export const useAdminRealtime = () => {
           queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
         }
       )
-      .subscribe();
-
-    // Listen for new refund requests
-    const refundsChannel = supabase
-      .channel('admin-refunds-realtime')
       .on(
         'postgres_changes',
         {
@@ -126,10 +120,7 @@ export const useAdminRealtime = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(payoutsChannel);
-      supabase.removeChannel(fraudChannel);
-      supabase.removeChannel(orgApprovalsChannel);
-      supabase.removeChannel(refundsChannel);
+      supabase.removeChannel(adminChannel);
     };
-  }, [user, role, queryClient]);
+  }, [user, role, queryClient, isAdminPage]);
 };

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface Profile {
   id: string;
@@ -23,7 +24,7 @@ export const useProfile = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(selectColumns.profileDetail)
         .eq('id', user.id)
         .maybeSingle();
       
@@ -31,6 +32,7 @@ export const useProfile = () => {
       return data as Profile | null;
     },
     enabled: !!user?.id,
+    ...queryCache.semiStatic, // Profile changes infrequently
   });
 };
 

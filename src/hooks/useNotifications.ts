@@ -86,7 +86,7 @@ export const useNotifications = () => {
       
       const { data, error } = await supabase
         .from('notifications')
-        .select('*')
+        .select('id, title, message, type, is_read, reference_id, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -95,6 +95,8 @@ export const useNotifications = () => {
       return data as Notification[];
     },
     enabled: !!user?.id,
+    staleTime: 60 * 1000, // 1 minute - notifications are updated via realtime
+    gcTime: 5 * 60 * 1000,
   });
 };
 

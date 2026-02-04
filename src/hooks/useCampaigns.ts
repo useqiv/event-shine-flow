@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface Campaign {
   id: string;
@@ -49,7 +50,7 @@ export const useCampaigns = (filters?: { category?: string; status?: string; fea
     queryFn: async () => {
       let query = supabase
         .from('campaigns')
-        .select('*')
+        .select(selectColumns.campaignCard)
         .order('created_at', { ascending: false });
 
       if (filters?.category && filters.category !== 'all') {
@@ -65,14 +66,14 @@ export const useCampaigns = (filters?: { category?: string; status?: string; fea
       const { data, error } = await query;
       if (error) throw error;
       
-      // Fetch creator profiles separately
+      // Fetch creator profiles separately with minimal columns
       const campaigns = data || [];
       const creatorIds = [...new Set(campaigns.map(c => c.creator_id))];
       
       if (creatorIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url')
+          .select(selectColumns.profileEssential)
           .in('id', creatorIds);
         
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -85,6 +86,7 @@ export const useCampaigns = (filters?: { category?: string; status?: string; fea
       
       return campaigns as Campaign[];
     },
+    ...queryCache.publicListing,
   });
 };
 
@@ -101,7 +103,7 @@ export const useCampaign = (idOrSlug: string) => {
       if (isUUID) {
         const result = await supabase
           .from('campaigns')
-          .select('*')
+          .select(selectColumns.campaignDetail)
           .eq('id', idOrSlug)
           .maybeSingle();
         data = result.data;
@@ -110,7 +112,7 @@ export const useCampaign = (idOrSlug: string) => {
         // Try by custom_slug
         const result = await supabase
           .from('campaigns')
-          .select('*')
+          .select(selectColumns.campaignDetail)
           .eq('custom_slug', idOrSlug)
           .maybeSingle();
         data = result.data;
@@ -120,16 +122,17 @@ export const useCampaign = (idOrSlug: string) => {
       if (error) throw error;
       if (!data) return null;
       
-      // Fetch creator profile
+      // Fetch creator profile with minimal columns
       const { data: creator } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select(selectColumns.profileEssential)
         .eq('id', data.creator_id)
         .maybeSingle();
       
       return { ...data, creator } as Campaign;
     },
     enabled: !!idOrSlug,
+    ...queryCache.moderate,
   });
 };
 
@@ -142,12 +145,13 @@ export const useMyCampaigns = () => {
 
       const { data, error } = await supabase
         .from('campaigns')
-        .select('*')
+        .select(selectColumns.campaignCard)
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as Campaign[];
     },
+    ...queryCache.moderate,
   });
 };
 
@@ -155,21 +159,21 @@ export const useCampaignDonations = (campaignId: string) => {
   return useQuery({
     queryKey: ['campaign-donations', campaignId],
     queryFn: async () => {
-      // Use donations_safe view to protect anonymous donor identities
+      // Use donations_safe view with minimal columns
       const { data, error } = await supabase
         .from('donations_safe')
-        .select('*')
+        .select('id, campaign_id, donor_id, amount, currency, payment_method, is_anonymous, donor_message, status, created_at')
         .eq('campaign_id', campaignId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       
       const donations = data || [];
-      const donorIds = [...new Set(donations.map(d => d.donor_id))];
+      const donorIds = [...new Set(donations.map(d => d.donor_id).filter(Boolean))];
       
       if (donorIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url')
+          .select(selectColumns.profileEssential)
           .in('id', donorIds);
         
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
@@ -183,6 +187,7 @@ export const useCampaignDonations = (campaignId: string) => {
       return donations as Donation[];
     },
     enabled: !!campaignId,
+    ...queryCache.dynamic,
   });
 };
 

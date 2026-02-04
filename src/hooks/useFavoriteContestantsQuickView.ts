@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache } from '@/lib/queryConfig';
 
 interface FavoriteContestantWithRank {
   id: string;
@@ -30,7 +31,7 @@ export const useFavoriteContestantsQuickView = () => {
     queryFn: async (): Promise<FavoriteContestantWithRank[]> => {
       if (!user?.id) return [];
 
-      // Get user's favorite contestants with their details
+      // Get user's favorite contestants with minimal columns
       const { data: favorites, error } = await supabase
         .from('favorite_contestants')
         .select(`
@@ -63,7 +64,7 @@ export const useFavoriteContestantsQuickView = () => {
         const contestant = fav.contestants as any;
         if (!contestant || !contestant.contests) continue;
 
-        // Get all contestants in this contest to calculate rank
+        // Get all contestants in this contest to calculate rank - minimal columns
         const { data: allContestants } = await supabase
           .from('contestants')
           .select('id, vote_count')
@@ -103,6 +104,6 @@ export const useFavoriteContestantsQuickView = () => {
       });
     },
     enabled: !!user?.id,
-    refetchInterval: 30000, // Refresh every 30 seconds for live updates
+    ...queryCache.dynamic, // Vote counts change frequently
   });
 };

@@ -2,17 +2,26 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 
+/**
+ * Optimized organization realtime stats hook
+ * Only subscribes when on organization dashboard pages to reduce egress
+ */
 export const useOrgRealtimeStats = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const location = useLocation();
+
+  // Only enable realtime on org dashboard pages
+  const isOrgDashboard = location.pathname.startsWith('/org');
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isOrgDashboard) return;
 
-    // Subscribe to votes changes for organization's contests
-    const votesChannel = supabase
-      .channel('org-votes-realtime')
+    // Single consolidated channel for organization stats
+    const orgChannel = supabase
+      .channel('org-stats-realtime')
       .on(
         'postgres_changes',
         {
@@ -25,11 +34,6 @@ export const useOrgRealtimeStats = () => {
           queryClient.invalidateQueries({ queryKey: ['revenue-trends'] });
         }
       )
-      .subscribe();
-
-    // Subscribe to tickets changes for organization's events
-    const ticketsChannel = supabase
-      .channel('org-tickets-realtime')
       .on(
         'postgres_changes',
         {
@@ -42,11 +46,6 @@ export const useOrgRealtimeStats = () => {
           queryClient.invalidateQueries({ queryKey: ['revenue-trends'] });
         }
       )
-      .subscribe();
-
-    // Subscribe to payouts changes
-    const payoutsChannel = supabase
-      .channel('org-payouts-realtime')
       .on(
         'postgres_changes',
         {
@@ -59,11 +58,6 @@ export const useOrgRealtimeStats = () => {
           queryClient.invalidateQueries({ queryKey: ['organization-stats', user.id] });
         }
       )
-      .subscribe();
-
-    // Subscribe to contests changes
-    const contestsChannel = supabase
-      .channel('org-contests-realtime')
       .on(
         'postgres_changes',
         {
@@ -76,11 +70,6 @@ export const useOrgRealtimeStats = () => {
           queryClient.invalidateQueries({ queryKey: ['organization-stats', user.id] });
         }
       )
-      .subscribe();
-
-    // Subscribe to events changes
-    const eventsChannel = supabase
-      .channel('org-events-realtime')
       .on(
         'postgres_changes',
         {
@@ -96,11 +85,7 @@ export const useOrgRealtimeStats = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(votesChannel);
-      supabase.removeChannel(ticketsChannel);
-      supabase.removeChannel(payoutsChannel);
-      supabase.removeChannel(contestsChannel);
-      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(orgChannel);
     };
-  }, [user, queryClient]);
+  }, [user, queryClient, isOrgDashboard]);
 };

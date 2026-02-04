@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { queryCache, selectColumns } from '@/lib/queryConfig';
 
 export interface Contest {
   id: string;
@@ -49,13 +50,14 @@ export const useContests = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contests')
-        .select('*')
+        .select(selectColumns.contestCard)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Contest[];
     },
+    ...queryCache.publicListing,
   });
 };
 
@@ -65,7 +67,7 @@ export const useFeaturedContests = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contests')
-        .select('*')
+        .select(selectColumns.contestCard)
         .eq('is_active', true)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
@@ -74,6 +76,7 @@ export const useFeaturedContests = () => {
       if (error) throw error;
       return data as Contest[];
     },
+    ...queryCache.publicListing,
   });
 };
 
@@ -83,7 +86,7 @@ export const useContest = (contestId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contests')
-        .select('*')
+        .select(selectColumns.contestDetail)
         .eq('id', contestId)
         .maybeSingle();
       
@@ -91,6 +94,7 @@ export const useContest = (contestId: string) => {
       return data as Contest | null;
     },
     enabled: !!contestId,
+    ...queryCache.moderate,
   });
 };
 
@@ -100,7 +104,7 @@ export const useContestants = (contestId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contestants')
-        .select('*')
+        .select(selectColumns.contestantCard)
         .eq('contest_id', contestId)
         .order('vote_count', { ascending: false });
       
@@ -108,6 +112,7 @@ export const useContestants = (contestId: string) => {
       return data as Contestant[];
     },
     enabled: !!contestId,
+    ...queryCache.dynamic, // Vote counts change frequently
   });
 };
 
@@ -117,7 +122,7 @@ export const useContestant = (contestantId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contestants')
-        .select('*')
+        .select('id, name, bio, photo_url, vote_count, contest_id, is_public_votes, performance, created_at, updated_at')
         .eq('id', contestantId)
         .single();
       
@@ -125,6 +130,7 @@ export const useContestant = (contestantId: string) => {
       return data as Contestant;
     },
     enabled: !!contestantId,
+    ...queryCache.dynamic,
   });
 };
 
