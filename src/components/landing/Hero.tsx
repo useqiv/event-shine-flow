@@ -160,7 +160,7 @@ const Hero = () => {
                       change: "+5%"
                     }].map((contestant, i) => (
                       <div key={i} className="flex items-center gap-2 sm:gap-3">
-                        <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-9 lg:w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] sm:text-xs lg:text-sm font-bold text-primary-foreground shrink-0">
+                        <div className="h-6 w-6 sm:h-7 sm:w-7 lg:h-9 lg:w-9 rounded-full bg-primary flex items-center justify-center text-[10px] sm:text-xs lg:text-sm font-bold text-primary-foreground shrink-0">
                           {i + 1}
                         </div>
                         <div className="flex-1 min-w-0">
