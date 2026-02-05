@@ -44,11 +44,13 @@ import {
   Eye,
   Building2,
   Ban,
-  Percent
+  Percent,
+  Bell
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import OrganizationDetailsDialog from '@/components/admin/OrganizationDetailsDialog';
+import OrgNotificationSettingsDialog from '@/components/admin/OrgNotificationSettingsDialog';
 
 const AdminOrganizations: React.FC = () => {
   const { data: organizations, isLoading } = useAllOrganizations();
@@ -58,6 +60,7 @@ const AdminOrganizations: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -311,6 +314,15 @@ const AdminOrganizations: React.FC = () => {
                                   <Percent className="mr-2 h-4 w-4" />
                                   Edit Commission
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setSelectedOrg(org);
+                                    setNotificationDialogOpen(true);
+                                  }}
+                                >
+                                  <Bell className="mr-2 h-4 w-4" />
+                                  Notifications
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem 
                                   onClick={() => {
@@ -517,6 +529,13 @@ const AdminOrganizations: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Notification Settings Dialog */}
+        <OrgNotificationSettingsDialog
+          open={notificationDialogOpen}
+          onOpenChange={setNotificationDialogOpen}
+          organization={selectedOrg}
+        />
       </div>
     </AdminLayout>
   );

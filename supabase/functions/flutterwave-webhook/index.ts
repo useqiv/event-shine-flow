@@ -408,6 +408,44 @@ async function sendReceipt(receiptData: any, userId?: string, supabaseClient?: a
   }
 }
 
+async function sendOrgTransactionNotification(notificationData: {
+  type: 'vote' | 'ticket' | 'donation';
+  organization_id: string;
+  amount: number;
+  currency: string;
+  quantity?: number;
+  contest_title?: string;
+  contestant_name?: string;
+  voter_name?: string;
+  event_title?: string;
+  ticket_type?: string;
+  buyer_name?: string;
+  campaign_title?: string;
+  donor_name?: string;
+}) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-org-transaction-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify(notificationData),
+    });
+
+    const responseText = await response.text();
+    
+    if (response.ok) {
+      console.log("Org transaction notification sent successfully. Response:", responseText);
+    } else {
+      console.error("Failed to send org notification. Status:", response.status, "Response:", responseText);
+    }
+  } catch (error: any) {
+    console.error("Error sending org transaction notification:", error.message);
+  }
+}
+
 async function notifyAdminsOfFailure(
   supabase: any,
   errorType: "vote" | "ticket",
@@ -572,7 +610,7 @@ async function processSuccessfulPayment(paymentData: any) {
     // Get contest and contestant details
     const { data: contest } = await supabase
       .from("contests")
-      .select("title")
+      .select("title, organization_id")
       .eq("id", contest_id)
       .single();
 
@@ -674,6 +712,20 @@ async function processSuccessfulPayment(paymentData: any) {
         contest_title: contest?.title || "Contest",
         contestant_name: contestant?.name || "Contestant",
       }, actualVoteUserId, supabase);
+
+      // Send organization transaction notification
+      if (contest?.organization_id) {
+        await sendOrgTransactionNotification({
+          type: 'vote',
+          organization_id: contest.organization_id,
+          amount: paymentData.amount,
+          currency: paymentData.currency || "NGN",
+          quantity: vote_quantity || 1,
+          contest_title: contest?.title || "Contest",
+          contestant_name: contestant?.name || "Contestant",
+          voter_name: voteGuestName || customer.name || "Anonymous",
+        });
+      }
     }
   } else if (type === "ticket" && event_id && ticket_type_id) {
     console.log("Recording ticket purchase...");
@@ -687,7 +739,7 @@ async function processSuccessfulPayment(paymentData: any) {
     // Get event and ticket type details
     const { data: event } = await supabase
       .from("events")
-      .select("title, event_date, venue")
+      .select("title, event_date, venue, organization_id")
       .eq("id", event_id)
       .single();
 
@@ -818,6 +870,20 @@ async function processSuccessfulPayment(paymentData: any) {
         ticket_type: ticketType?.name || "General",
         qr_code,
       });
+
+      // Send organization transaction notification
+      if (event?.organization_id) {
+        await sendOrgTransactionNotification({
+          type: 'ticket',
+          organization_id: event.organization_id,
+          amount: paymentData.amount,
+          currency: paymentData.currency || "NGN",
+          quantity: ticket_quantity || 1,
+          event_title: event?.title || "Event",
+          ticket_type: ticketType?.name || "General",
+          buyer_name: ticketHolderName || customer.name || "Anonymous",
+        });
+      }
     }
   } else if (type === "wallet" && user_id) {
     console.log("Processing wallet funding...");
@@ -931,7 +997,7 @@ async function processSuccessfulPayment(paymentData: any) {
     // Get campaign details
     const { data: campaign } = await supabase
       .from("campaigns")
-      .select("id, title, current_amount, donor_count, currency")
+      .select("id, title, current_amount, donor_count, currency, creator_id")
       .eq("id", campaign_id)
       .single();
 
@@ -1050,6 +1116,18 @@ async function processSuccessfulPayment(paymentData: any) {
         console.log("Donation receipt email sent");
       } catch (emailError: any) {
         console.error("Failed to send donation receipt:", emailError.message);
+      }
+
+      // Send organization transaction notification
+      if (campaign?.creator_id) {
+        await sendOrgTransactionNotification({
+          type: 'donation',
+          organization_id: campaign.creator_id,
+          amount: paymentData.amount,
+          currency: paymentData.currency || campaign.currency || "NGN",
+          campaign_title: campaign.title,
+          donor_name: (is_anonymous ? "Anonymous" : (donorGuestName || customer.name || "Anonymous")),
+        });
       }
     }
   } else {
