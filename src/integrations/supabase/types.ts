@@ -1698,6 +1698,9 @@ export type Database = {
           created_at: string
           default_currency: string
           id: string
+          notify_on_donation: boolean
+          notify_on_ticket: boolean
+          notify_on_vote: boolean
           organization_id: string
           preferred_payout_method: string | null
           updated_at: string
@@ -1716,6 +1719,9 @@ export type Database = {
           created_at?: string
           default_currency?: string
           id?: string
+          notify_on_donation?: boolean
+          notify_on_ticket?: boolean
+          notify_on_vote?: boolean
           organization_id: string
           preferred_payout_method?: string | null
           updated_at?: string
@@ -1734,6 +1740,9 @@ export type Database = {
           created_at?: string
           default_currency?: string
           id?: string
+          notify_on_donation?: boolean
+          notify_on_ticket?: boolean
+          notify_on_vote?: boolean
           organization_id?: string
           preferred_payout_method?: string | null
           updated_at?: string
