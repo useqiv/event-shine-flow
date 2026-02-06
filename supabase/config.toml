@@ -77,3 +77,9 @@ verify_jwt = false
 
 [functions.verify-ticket-qr]
 verify_jwt = false
+
+[functions.send-org-transaction-notification]
+verify_jwt = false
+
+[functions.send-weekly-org-report]
+verify_jwt = false
