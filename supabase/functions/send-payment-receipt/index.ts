@@ -16,10 +16,8 @@ interface ReceiptRequest {
   quantity: number;
   payment_method: string;
   transaction_ref: string;
-  // Vote specific
   contest_title?: string;
   contestant_name?: string;
-  // Ticket specific
   event_title?: string;
   event_date?: string;
   event_venue?: string;
@@ -28,7 +26,6 @@ interface ReceiptRequest {
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
-  // Handle API key that may already contain the prefix
   const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
     ? ZEPTOMAIL_API_KEY 
     : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
@@ -65,170 +62,254 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
   return data;
 };
 
-const generateVoteReceiptHtml = (data: ReceiptRequest) => `
+const responsiveWrapper = (content: string, preheader: string = "") => `
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vote Receipt</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>Useqiv Receipt</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    * { box-sizing: border-box; }
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f5; }
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; }
+      .fluid-padding { padding: 24px 16px !important; }
+      .mobile-center { text-align: center !important; }
+      .mobile-full-width { width: 100% !important; display: block !important; }
+    }
+  </style>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <!-- Header -->
-    <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 32px; text-align: center;">
-      <h1 style="color: white; margin: 0; font-size: 28px;">🗳️ Vote Confirmed!</h1>
-      <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Thank you for your vote</p>
-    </div>
-    
-    <!-- Content -->
-    <div style="padding: 32px;">
-      <p style="color: #374151; font-size: 16px; margin: 0 0 24px;">Hi ${data.user_name},</p>
-      
-      <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px;">
-        Your vote has been successfully recorded. Here are your transaction details:
-      </p>
-      
-      <!-- Transaction Details -->
-      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Contest</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contest_title}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Contestant</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contestant_name}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Votes</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Payment Method</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
-          </tr>
-          <tr style="border-top: 1px solid #e5e7eb;">
-            <td style="padding: 16px 0 8px; color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
-            <td style="padding: 16px 0 8px; color: #7c3aed; font-size: 18px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-          </tr>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  ${preheader ? `<div style="display: none; max-height: 0; overflow: hidden;">${preheader}</div>` : ''}
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px;" class="email-container">
+          ${content}
         </table>
-      </div>
-      
-      <!-- Reference -->
-      <div style="text-align: center; padding: 16px; background-color: #faf5ff; border-radius: 8px; margin-bottom: 24px;">
-        <p style="color: #6b7280; font-size: 12px; margin: 0 0 4px;">Transaction Reference</p>
-        <p style="color: #7c3aed; font-size: 14px; font-family: monospace; margin: 0;">${data.transaction_ref}</p>
-      </div>
-      
-      <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center;">
-        Thank you for supporting your favorite contestant!
-      </p>
-    </div>
-    
-    <!-- Footer -->
-    <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        Useqiv - Your trusted voting platform<br>
-        Questions? Contact support@useqiv.com
-      </p>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `;
 
-const generateTicketReceiptHtml = (data: ReceiptRequest) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ticket Receipt</title>
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+const generateVoteReceiptHtml = (data: ReceiptRequest) => {
+  const content = `
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 32px; text-align: center;">
-      <h1 style="color: white; margin: 0; font-size: 28px;">🎫 Ticket Confirmed!</h1>
-      <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Your tickets are ready</p>
-    </div>
+    <tr>
+      <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; line-height: 1.3;">🗳️ Vote Confirmed!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 15px;">Thank you for your vote</p>
+      </td>
+    </tr>
     
     <!-- Content -->
-    <div style="padding: 32px;">
-      <p style="color: #374151; font-size: 16px; margin: 0 0 24px;">Hi ${data.user_name},</p>
-      
-      <p style="color: #6b7280; font-size: 14px; margin: 0 0 24px;">
-        Your ticket purchase was successful! Here are your ticket details:
-      </p>
-      
-      <!-- Event Card -->
-      <div style="background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: white;">
-        <h2 style="margin: 0 0 16px; font-size: 20px;">${data.event_title}</h2>
-        <p style="margin: 0 0 8px; font-size: 14px; opacity: 0.9;">📅 ${data.event_date}</p>
-        <p style="margin: 0 0 16px; font-size: 14px; opacity: 0.9;">📍 ${data.event_venue}</p>
-        <div style="border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 16px; display: flex; justify-content: space-between;">
-          <span style="font-size: 14px;">${data.ticket_type}</span>
-          <span style="font-size: 14px; font-weight: 600;">x${data.quantity}</span>
-        </div>
-      </div>
-      
-      <!-- QR Code -->
-      ${data.qr_code ? `
-      <div style="text-align: center; padding: 24px; background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
-        <p style="color: #374151; font-size: 14px; font-weight: 600; margin: 0 0 16px;">Your Ticket QR Code</p>
-        <div style="background: white; padding: 16px; display: inline-block; border-radius: 8px; border: 2px dashed #e5e7eb;">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.qr_code)}" alt="Ticket QR Code" style="display: block;"/>
-        </div>
-        <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0;">Show this QR code at the venue entrance</p>
-        <p style="color: #9ca3af; font-size: 11px; font-family: monospace; margin: 8px 0 0;">${data.qr_code}</p>
-      </div>
-      ` : ''}
-      
-      <!-- Transaction Details -->
-      <div style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-        <table style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="background-color: #ffffff; padding: 32px 24px;" class="fluid-padding">
+        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
+        
+        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
+          Your vote has been successfully recorded. Here are your transaction details:
+        </p>
+        
+        <!-- Transaction Details -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
           <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ticket Type</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Quantity</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Payment Method</td>
-            <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
-          </tr>
-          <tr style="border-top: 1px solid #e5e7eb;">
-            <td style="padding: 16px 0 8px; color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
-            <td style="padding: 16px 0 8px; color: #f97316; font-size: 18px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+            <td style="padding: 20px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Contest</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contest_title}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Contestant</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contestant_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Votes</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Payment Method</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 8px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
+                        <td style="color: #7c3aed; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
           </tr>
         </table>
-      </div>
-      
-      <!-- Reference -->
-      <div style="text-align: center; padding: 16px; background-color: #fff7ed; border-radius: 8px; margin-bottom: 24px;">
-        <p style="color: #6b7280; font-size: 12px; margin: 0 0 4px;">Transaction Reference</p>
-        <p style="color: #f97316; font-size: 14px; font-family: monospace; margin: 0;">${data.transaction_ref}</p>
-      </div>
-      
-      <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center;">
-        We look forward to seeing you at the event!
-      </p>
-    </div>
+        
+        <!-- Reference -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #faf5ff; border-radius: 8px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 16px; text-align: center;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
+              <p style="color: #7c3aed; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
+          Thank you for supporting your favorite contestant!
+        </p>
+      </td>
+    </tr>
     
     <!-- Footer -->
-    <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        Useqiv - Your trusted event platform<br>
-        Questions? Contact support@useqiv.com
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-`;
+    <tr>
+      <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
+          Useqiv - Your trusted voting platform<br>
+          Questions? <a href="mailto:support@useqiv.com" style="color: #7c3aed; text-decoration: none;">support@useqiv.com</a>
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveWrapper(content, `Vote confirmed for ${data.contestant_name}`);
+};
+
+const generateTicketReceiptHtml = (data: ReceiptRequest) => {
+  const content = `
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; line-height: 1.3;">🎫 Ticket Confirmed!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 15px;">Your tickets are ready</p>
+      </td>
+    </tr>
+    
+    <!-- Content -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 32px 24px;" class="fluid-padding">
+        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
+        
+        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
+          Your ticket purchase was successful! Here are your ticket details:
+        </p>
+        
+        <!-- Event Card -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 24px;">
+              <h2 style="color: #ffffff; margin: 0 0 16px; font-size: 20px; line-height: 1.3;">${data.event_title}</h2>
+              <p style="color: rgba(255,255,255,0.9); margin: 0 0 8px; font-size: 14px;">📅 ${data.event_date}</p>
+              <p style="color: rgba(255,255,255,0.9); margin: 0 0 16px; font-size: 14px;">📍 ${data.event_venue}</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 16px;">
+                <tr>
+                  <td style="color: #ffffff; font-size: 14px;">${data.ticket_type}</td>
+                  <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right;">×${data.quantity}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        ${data.qr_code ? `
+        <!-- QR Code -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 24px; text-align: center;">
+              <p style="color: #374151; font-size: 14px; font-weight: 600; margin: 0 0 16px;">Your Ticket QR Code</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="background: white; padding: 16px; border-radius: 8px; border: 2px dashed #e5e7eb;">
+                <tr>
+                  <td>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.qr_code)}" alt="Ticket QR Code" width="150" height="150" style="display: block;"/>
+                  </td>
+                </tr>
+              </table>
+              <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0; line-height: 1.5;">Show this QR code at the venue entrance</p>
+              <p style="color: #9ca3af; font-size: 11px; font-family: monospace; margin: 8px 0 0; word-break: break-all;">${data.qr_code}</p>
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        
+        <!-- Transaction Details -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 20px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Ticket Type</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Quantity</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Payment Method</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
+                        <td style="color: #f97316; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Reference -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #fff7ed; border-radius: 8px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 16px; text-align: center;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
+              <p style="color: #f97316; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
+          We look forward to seeing you at the event!
+        </p>
+      </td>
+    </tr>
+    
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
+          Useqiv - Your trusted event platform<br>
+          Questions? <a href="mailto:support@useqiv.com" style="color: #f97316; text-decoration: none;">support@useqiv.com</a>
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveWrapper(content, `Ticket confirmed for ${data.event_title}`);
+};
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Payment receipt function called");
@@ -244,10 +325,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const data: ReceiptRequest = await req.json();
-    console.log("Receipt request received - Type:", data.type, "Email:", data.user_email, "Name:", data.user_name);
-    console.log("Full receipt data:", JSON.stringify(data));
+    console.log("Receipt request received - Type:", data.type, "Email:", data.user_email);
 
-    // Validate required fields
     if (!data.user_email) {
       console.error("Missing user_email in receipt request");
       throw new Error("user_email is required");
@@ -266,14 +345,9 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Vote Receipt - ${data.contest_title}`
       : `Ticket Receipt - ${data.event_title}`;
 
-    console.log("Sending email via ZeptoMail - To:", data.user_email, "Subject:", subject);
+    console.log("Sending email via ZeptoMail - To:", data.user_email);
 
-    const emailResponse = await sendZeptoEmail(
-      data.user_email,
-      data.user_name,
-      subject,
-      html
-    );
+    const emailResponse = await sendZeptoEmail(data.user_email, data.user_name, subject, html);
 
     console.log("ZeptoMail API response:", JSON.stringify(emailResponse));
 

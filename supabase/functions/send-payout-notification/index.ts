@@ -19,7 +19,6 @@ interface PayoutNotificationRequest {
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
-  // Handle API key that may already contain the prefix
   const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
     ? ZEPTOMAIL_API_KEY 
     : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
@@ -57,43 +56,28 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-  const symbols: Record<string, string> = {
-    'NGN': '₦',
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-  };
-  const symbol = symbols[currency] || currency;
-  return `${symbol}${amount.toLocaleString()}`;
+  const symbols: Record<string, string> = { 'NGN': '₦', 'USD': '$', 'EUR': '€', 'GBP': '£' };
+  return `${symbols[currency] || currency}${amount.toLocaleString()}`;
 };
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'approved':
-    case 'processing':
-      return '#2563eb';
-    case 'completed':
-      return '#16a34a';
-    case 'rejected':
-      return '#dc2626';
-    default:
-      return '#6b7280';
-  }
+const getStatusConfig = (status: string) => {
+  const configs: Record<string, { color: string; bgColor: string; label: string; badgeBg: string; badgeColor: string }> = {
+    approved: { color: '#2563eb', bgColor: '#dbeafe', label: 'Approved', badgeBg: '#dbeafe', badgeColor: '#1d4ed8' },
+    processing: { color: '#2563eb', bgColor: '#dbeafe', label: 'Processing', badgeBg: '#dbeafe', badgeColor: '#1d4ed8' },
+    completed: { color: '#16a34a', bgColor: '#dcfce7', label: 'Completed', badgeBg: '#dcfce7', badgeColor: '#166534' },
+    rejected: { color: '#dc2626', bgColor: '#fee2e2', label: 'Rejected', badgeBg: '#fee2e2', badgeColor: '#991b1b' },
+  };
+  return configs[status] || { color: '#6b7280', bgColor: '#f3f4f6', label: status, badgeBg: '#f3f4f6', badgeColor: '#374151' };
 };
 
 const getStatusMessage = (status: string, amount: string, rejectionReason?: string) => {
-  switch (status) {
-    case 'approved':
-      return `Your payout request for ${amount} has been approved and is now in the queue for processing.`;
-    case 'processing':
-      return `Your payout of ${amount} is now being processed. This typically takes 1-3 business days.`;
-    case 'completed':
-      return `Great news! Your payout of ${amount} has been successfully sent to your account.`;
-    case 'rejected':
-      return `Unfortunately, your payout request for ${amount} has been rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please check your payout details and try again.'}`;
-    default:
-      return `Your payout status has been updated to: ${status}`;
-  }
+  const messages: Record<string, string> = {
+    approved: `Your payout request for ${amount} has been approved and is now in the queue for processing.`,
+    processing: `Your payout of ${amount} is now being processed. This typically takes 1-3 business days.`,
+    completed: `Great news! Your payout of ${amount} has been successfully sent to your account.`,
+    rejected: `Unfortunately, your payout request for ${amount} has been rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please check your payout details and try again.'}`,
+  };
+  return messages[status] || `Your payout status has been updated to: ${status}`;
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -120,121 +104,166 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending payout notification for payout ${payout_id} with status: ${status}`);
 
     const formattedAmount = formatCurrency(amount, currency);
-    const statusColor = getStatusColor(status);
+    const config = getStatusConfig(status);
     const statusMessage = getStatusMessage(status, formattedAmount, rejection_reason);
 
-    const statusBadge = {
-      approved: { label: 'Approved', bg: '#dbeafe', color: '#1d4ed8' },
-      processing: { label: 'Processing', bg: '#dbeafe', color: '#1d4ed8' },
-      completed: { label: 'Completed', bg: '#dcfce7', color: '#166534' },
-      rejected: { label: 'Rejected', bg: '#fee2e2', color: '#991b1b' },
-    }[status] || { label: status, bg: '#f3f4f6', color: '#374151' };
-
     const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      </head>
-      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f9fafb;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <!-- Header -->
-          <div style="text-align: center; margin-bottom: 30px;">
-            <div style="display: inline-block; background: #7c3aed; color: white; font-size: 24px; font-weight: bold; padding: 12px 24px; border-radius: 12px;">
-              Useqiv
-            </div>
-          </div>
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>Payout ${config.label}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f9fafb; }
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; }
+      .fluid-padding { padding: 24px 16px !important; }
+      .mobile-full-width { width: 100% !important; display: block !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <div style="display: none; max-height: 0; overflow: hidden;">Payout ${config.label}: ${formattedAmount}</div>
+  
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px;" class="email-container">
+          
+          <!-- Logo -->
+          <tr>
+            <td style="text-align: center; padding-bottom: 24px;">
+              <span style="display: inline-block; background: #7c3aed; color: white; font-size: 20px; font-weight: bold; padding: 12px 24px; border-radius: 10px;">Useqiv</span>
+            </td>
+          </tr>
           
           <!-- Main Card -->
-          <div style="background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); overflow: hidden;">
-            <!-- Status Banner -->
-            <div style="background: ${statusColor}; padding: 30px; text-align: center;">
-              <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 600;">
-                Payout ${status.charAt(0).toUpperCase() + status.slice(1)}
-              </h1>
-            </div>
-            
-            <!-- Content -->
-            <div style="padding: 30px;">
-              <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
-                Hi ${organization_name},
-              </p>
+          <tr>
+            <td style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
               
-              <p style="margin: 0 0 25px; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                ${statusMessage}
-              </p>
+              <!-- Status Banner -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="background: ${config.color}; padding: 28px 24px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; line-height: 1.3;">
+                      Payout ${config.label}
+                    </h1>
+                  </td>
+                </tr>
+              </table>
               
-              <!-- Payout Details Box -->
-              <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-                <h3 style="margin: 0 0 15px; font-size: 14px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Payout Details
-                </h3>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Amount</span>
-                  <span style="color: #111827; font-size: 18px; font-weight: 700;">${formattedAmount}</span>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <span style="color: #6b7280; font-size: 14px;">Status</span>
-                  <span style="display: inline-block; background: ${statusBadge.bg}; color: ${statusBadge.color}; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                    ${statusBadge.label}
-                  </span>
-                </div>
-                
-                ${payment_method ? `
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #6b7280; font-size: 14px;">Payment Method</span>
-                  <span style="color: #374151; font-size: 14px; font-weight: 500;">${payment_method.toUpperCase()}</span>
-                </div>
-                ` : ''}
-              </div>
-              
-              ${status === 'rejected' ? `
-              <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 25px;">
-                <p style="margin: 0; color: #991b1b; font-size: 14px;">
-                  <strong>Need help?</strong> Please review your payout details in settings or contact support if you believe this was an error.
-                </p>
-              </div>
-              ` : ''}
-              
-              ${status === 'completed' ? `
-              <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 25px;">
-                <p style="margin: 0; color: #166534; font-size: 14px;">
-                  The funds should appear in your account within 1-3 business days depending on your bank.
-                </p>
-              </div>
-              ` : ''}
-              
-              <!-- CTA Button -->
-              <div style="text-align: center; margin-top: 30px;">
-                <a href="${Deno.env.get('FRONTEND_URL') || 'https://useqiv.com'}/org/payouts"
-                   style="display: inline-block; background: #7c3aed; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">
-                  View Payout Details
-                </a>
-              </div>
-            </div>
-          </div>
+              <!-- Content -->
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 32px 24px;" class="fluid-padding">
+                    <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.5;">
+                      Hi ${organization_name},
+                    </p>
+                    
+                    <p style="margin: 0 0 28px; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                      ${statusMessage}
+                    </p>
+                    
+                    <!-- Payout Details Box -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f9fafb; border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 20px;">
+                          <p style="margin: 0 0 16px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">
+                            Payout Details
+                          </p>
+                          
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Amount</td>
+                              <td style="padding: 8px 0; color: #111827; font-size: 18px; font-weight: 700; text-align: right;">${formattedAmount}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Status</td>
+                              <td style="padding: 8px 0; text-align: right;">
+                                <span style="display: inline-block; background: ${config.badgeBg}; color: ${config.badgeColor}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+                                  ${config.label}
+                                </span>
+                              </td>
+                            </tr>
+                            ${payment_method ? `
+                            <tr>
+                              <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Payment Method</td>
+                              <td style="padding: 8px 0; color: #374151; font-size: 14px; font-weight: 500; text-align: right;">${payment_method.toUpperCase()}</td>
+                            </tr>
+                            ` : ''}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    ${status === 'rejected' ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 16px;">
+                          <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.5;">
+                            <strong>Need help?</strong> Please review your payout details in settings or contact support if you believe this was an error.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+                    
+                    ${status === 'completed' ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 16px;">
+                          <p style="margin: 0; color: #166534; font-size: 14px; line-height: 1.5;">
+                            The funds should appear in your account within 1-3 business days depending on your bank.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+                    
+                    <!-- CTA Button -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding: 16px 0;">
+                          <a href="https://useqiv.com/org/payouts" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 15px; min-width: 180px; text-align: center;">
+                            View Payout Details
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
           
           <!-- Footer -->
-          <div style="text-align: center; margin-top: 30px; color: #9ca3af; font-size: 13px;">
-            <p style="margin: 0 0 8px;">
-              This is an automated notification from Useqiv.
-            </p>
-            <p style="margin: 0;">
-              © ${new Date().getFullYear()} Useqiv. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
+          <tr>
+            <td style="text-align: center; padding: 28px 20px;">
+              <p style="margin: 0 0 8px; color: #9ca3af; font-size: 13px; line-height: 1.5;">
+                This is an automated notification from Useqiv.
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                © ${new Date().getFullYear()} Useqiv. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
 
     const emailResponse = await sendZeptoEmail(
       organization_email,
       organization_name,
-      `Payout ${status.charAt(0).toUpperCase() + status.slice(1)} - ${formattedAmount}`,
+      `Payout ${config.label} - ${formattedAmount}`,
       emailHtml
     );
 
@@ -248,10 +277,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-payout-notification function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
