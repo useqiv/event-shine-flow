@@ -16,15 +16,12 @@ interface TransactionNotificationRequest {
   amount: number;
   currency: string;
   quantity?: number;
-  // Vote specific
   contest_title?: string;
   contestant_name?: string;
   voter_name?: string;
-  // Ticket specific
   event_title?: string;
   ticket_type?: string;
   buyer_name?: string;
-  // Donation specific
   campaign_title?: string;
   donor_name?: string;
 }
@@ -66,116 +63,177 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
   return data;
 };
 
-const generateVoteNotificationHtml = (data: TransactionNotificationRequest) => `
+const responsiveEmailWrapper = (content: string, preheader: string = "") => `
 <!DOCTYPE html>
-<html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>Useqiv Notification</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    * { box-sizing: border-box; }
+    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f5; }
+    @media only screen and (max-width: 600px) {
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .fluid-padding { padding-left: 16px !important; padding-right: 16px !important; }
+      .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; }
+      .mobile-center { text-align: center !important; }
+      .mobile-padding { padding: 20px !important; }
+    }
+  </style>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-  <div style="max-width: 500px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 24px; text-align: center;">
-      <h1 style="color: white; margin: 0; font-size: 20px;">🗳️ New Vote Received!</h1>
-    </div>
-    <div style="padding: 24px;">
-      <p style="color: #374151; font-size: 15px; margin: 0 0 16px;">
-        <strong>${data.voter_name || 'Someone'}</strong> just voted for <strong>${data.contestant_name}</strong> in <strong>${data.contest_title}</strong>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Votes</td>
-            <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Amount</td>
-            <td style="padding: 6px 0; color: #7c3aed; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-          </tr>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  ${preheader ? `<div style="display: none; max-height: 0; overflow: hidden;">${preheader}</div>` : ''}
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+    <tr>
+      <td align="center" style="padding: 20px 10px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 500px;" class="email-container">
+          ${content}
         </table>
-      </div>
-      <p style="color: #9ca3af; font-size: 12px; margin: 0; text-align: center;">
-        You're receiving this because transaction notifications are enabled for your organization.
-      </p>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `;
 
-const generateTicketNotificationHtml = (data: TransactionNotificationRequest) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-  <div style="max-width: 500px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 24px; text-align: center;">
-      <h1 style="color: white; margin: 0; font-size: 20px;">🎫 New Ticket Sale!</h1>
-    </div>
-    <div style="padding: 24px;">
-      <p style="color: #374151; font-size: 15px; margin: 0 0 16px;">
-        <strong>${data.buyer_name || 'Someone'}</strong> just purchased ${data.quantity || 1} ticket(s) for <strong>${data.event_title}</strong>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <table style="width: 100%; border-collapse: collapse;">
+const generateVoteNotificationHtml = (data: TransactionNotificationRequest) => {
+  const content = `
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">🗳️ New Vote Received!</h1>
+      </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
+        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+          <strong>${data.voter_name || 'Someone'}</strong> just voted for <strong>${data.contestant_name}</strong> in <strong>${data.contest_title}</strong>
+        </p>
+        
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
           <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Ticket Type</td>
-            <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type || 'Standard'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Quantity</td>
-            <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Amount</td>
-            <td style="padding: 6px 0; color: #f97316; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+            <td style="padding: 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Votes</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
+                  <td style="padding: 8px 0; color: #7c3aed; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+                </tr>
+              </table>
+            </td>
           </tr>
         </table>
-      </div>
-      <p style="color: #9ca3af; font-size: 12px; margin: 0; text-align: center;">
-        You're receiving this because transaction notifications are enabled for your organization.
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-`;
+        
+        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
+          You're receiving this because transaction notifications are enabled for your organization.
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveEmailWrapper(content, `New vote for ${data.contestant_name}`);
+};
 
-const generateDonationNotificationHtml = (data: TransactionNotificationRequest) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-  <div style="max-width: 500px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <div style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); padding: 24px; text-align: center;">
-      <h1 style="color: white; margin: 0; font-size: 20px;">💚 New Donation!</h1>
-    </div>
-    <div style="padding: 24px;">
-      <p style="color: #374151; font-size: 15px; margin: 0 0 16px;">
-        <strong>${data.donor_name || 'Someone'}</strong> just donated to <strong>${data.campaign_title}</strong>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <table style="width: 100%; border-collapse: collapse;">
+const generateTicketNotificationHtml = (data: TransactionNotificationRequest) => {
+  const content = `
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">🎫 New Ticket Sale!</h1>
+      </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
+        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+          <strong>${data.buyer_name || 'Someone'}</strong> just purchased ${data.quantity || 1} ticket(s) for <strong>${data.event_title}</strong>
+        </p>
+        
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
           <tr>
-            <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Amount</td>
-            <td style="padding: 6px 0; color: #10b981; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+            <td style="padding: 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Ticket Type</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type || 'Standard'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Quantity</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
+                  <td style="padding: 8px 0; color: #f97316; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+                </tr>
+              </table>
+            </td>
           </tr>
         </table>
-      </div>
-      <p style="color: #9ca3af; font-size: 12px; margin: 0; text-align: center;">
-        You're receiving this because transaction notifications are enabled for your organization.
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-`;
+        
+        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
+          You're receiving this because transaction notifications are enabled for your organization.
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveEmailWrapper(content, `New ticket sale for ${data.event_title}`);
+};
+
+const generateDonationNotificationHtml = (data: TransactionNotificationRequest) => {
+  const content = `
+    <!-- Header -->
+    <tr>
+      <td style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">💚 New Donation!</h1>
+      </td>
+    </tr>
+    <!-- Body -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
+        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+          <strong>${data.donor_name || 'Someone'}</strong> just donated to <strong>${data.campaign_title}</strong>
+        </p>
+        
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
+          <tr>
+            <td style="padding: 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
+                  <td style="padding: 8px 0; color: #10b981; font-size: 18px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
+          You're receiving this because transaction notifications are enabled for your organization.
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveEmailWrapper(content, `New donation to ${data.campaign_title}`);
+};
 
 const handler = async (req: Request): Promise<Response> => {
   console.log("Org transaction notification function called");
@@ -194,7 +252,6 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log("Transaction notification request:", JSON.stringify(data));
 
-    // Get organization settings to check if notifications are enabled
     const { data: orgSettings, error: settingsError } = await supabase
       .from('organization_settings')
       .select('notify_on_vote, notify_on_ticket, notify_on_donation, company_email')
@@ -206,7 +263,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw settingsError;
     }
 
-    // Check if notifications are enabled for this type
     const notificationEnabled = 
       (data.type === 'vote' && orgSettings?.notify_on_vote) ||
       (data.type === 'ticket' && orgSettings?.notify_on_ticket) ||
@@ -220,7 +276,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get organization email (prefer company_email, fallback to profile email)
     let orgEmail = orgSettings?.company_email;
     let orgName = 'Organization';
 
@@ -243,7 +298,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate email based on type
     let html: string;
     let subject: string;
 
