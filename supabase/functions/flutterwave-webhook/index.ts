@@ -417,11 +417,14 @@ async function sendOrgTransactionNotification(notificationData: {
   contest_title?: string;
   contestant_name?: string;
   voter_name?: string;
+  voter_email?: string;
   event_title?: string;
   ticket_type?: string;
   buyer_name?: string;
+  buyer_email?: string;
   campaign_title?: string;
   donor_name?: string;
+  donor_email?: string;
 }) {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -724,6 +727,7 @@ async function processSuccessfulPayment(paymentData: any) {
           contest_title: contest?.title || "Contest",
           contestant_name: contestant?.name || "Contestant",
           voter_name: voteGuestName || customer.name || "Anonymous",
+          voter_email: voteGuestEmail || customer.email || "",
         });
       }
     }
@@ -882,6 +886,7 @@ async function processSuccessfulPayment(paymentData: any) {
           event_title: event?.title || "Event",
           ticket_type: ticketType?.name || "General",
           buyer_name: ticketHolderName || customer.name || "Anonymous",
+          buyer_email: ticketHolderEmail || customer.email || "",
         });
       }
     }
@@ -1127,6 +1132,7 @@ async function processSuccessfulPayment(paymentData: any) {
           currency: paymentData.currency || campaign.currency || "NGN",
           campaign_title: campaign.title,
           donor_name: (is_anonymous ? "Anonymous" : (donorGuestName || customer.name || "Anonymous")),
+          donor_email: is_anonymous ? "" : (donorGuestEmail || customer.email || ""),
         });
       }
     }

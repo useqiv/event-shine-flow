@@ -19,11 +19,14 @@ interface TransactionNotificationRequest {
   contest_title?: string;
   contestant_name?: string;
   voter_name?: string;
+  voter_email?: string;
   event_title?: string;
   ticket_type?: string;
   buyer_name?: string;
+  buyer_email?: string;
   campaign_title?: string;
   donor_name?: string;
+  donor_email?: string;
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
@@ -124,13 +127,21 @@ const generateVoteNotificationHtml = (data: TransactionNotificationRequest) => {
     <tr>
       <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
         <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          <strong>${data.voter_name || 'Someone'}</strong> just voted for <strong>${data.contestant_name}</strong> in <strong>${data.contest_title}</strong>
+          A new vote has been received for <strong>${data.contestant_name}</strong> in <strong>${data.contest_title}</strong>
         </p>
         
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
           <tr>
             <td style="padding: 16px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Voter Name</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.voter_name || 'Anonymous'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.voter_email || 'N/A'}</td>
+                </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Votes</td>
                   <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
@@ -165,13 +176,21 @@ const generateTicketNotificationHtml = (data: TransactionNotificationRequest) =>
     <tr>
       <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
         <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          <strong>${data.buyer_name || 'Someone'}</strong> just purchased ${data.quantity || 1} ticket(s) for <strong>${data.event_title}</strong>
+          A new ticket purchase has been made for <strong>${data.event_title}</strong>
         </p>
         
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
           <tr>
             <td style="padding: 16px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Buyer Name</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.buyer_name || 'Anonymous'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.buyer_email || 'N/A'}</td>
+                </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Ticket Type</td>
                   <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type || 'Standard'}</td>
@@ -210,13 +229,21 @@ const generateDonationNotificationHtml = (data: TransactionNotificationRequest) 
     <tr>
       <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
         <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          <strong>${data.donor_name || 'Someone'}</strong> just donated to <strong>${data.campaign_title}</strong>
+          A new donation has been received for <strong>${data.campaign_title}</strong>
         </p>
         
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
           <tr>
             <td style="padding: 16px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Donor Name</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.donor_name || 'Anonymous'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.donor_email || 'N/A'}</td>
+                </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
                   <td style="padding: 8px 0; color: #10b981; font-size: 18px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
