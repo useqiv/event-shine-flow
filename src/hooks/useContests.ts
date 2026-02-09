@@ -255,6 +255,45 @@ export const useVote = () => {
 
       if (error) throw error;
 
+      // Send organization transaction notification
+      try {
+        const { data: contest } = await supabase
+          .from('contests')
+          .select('organization_id, title')
+          .eq('id', contestId)
+          .single();
+
+        const { data: contestant } = await supabase
+          .from('contestants')
+          .select('name')
+          .eq('id', contestantId)
+          .single();
+
+        if (contest?.organization_id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, email')
+            .eq('id', user.id)
+            .single();
+
+          await supabase.functions.invoke('send-org-transaction-notification', {
+            body: {
+              type: 'vote',
+              organization_id: contest.organization_id,
+              amount: amountPaid,
+              currency: currency || 'NGN',
+              quantity,
+              contest_title: contest.title || 'Contest',
+              contestant_name: contestant?.name || 'Contestant',
+              voter_name: profile?.full_name || 'Anonymous',
+              voter_email: profile?.email || user.email || '',
+            }
+          });
+        }
+      } catch (notifError) {
+        console.error('Failed to send org transaction notification:', notifError);
+      }
+
       // Create notification
       await supabase
         .from('notifications')
