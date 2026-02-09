@@ -304,6 +304,59 @@ export const usePurchaseTicket = () => {
 
       if (error) throw error;
 
+      // Send organization transaction notification
+      try {
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('organization_id, title')
+          .eq('id', eventId)
+          .single();
+
+        if (eventData?.organization_id) {
+          const buyerName = guestName || (user?.id ? 'Authenticated User' : 'Guest');
+          const buyerEmail = guestEmail || user?.email || '';
+
+          // Get user profile info if authenticated
+          if (user?.id && (!guestName || buyerEmail === user?.email)) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', user.id)
+              .single();
+            
+            await supabase.functions.invoke('send-org-transaction-notification', {
+              body: {
+                type: 'ticket',
+                organization_id: eventData.organization_id,
+                amount: amountPaid,
+                currency: eventDetails?.currency || 'NGN',
+                quantity,
+                event_title: eventData.title || eventDetails?.eventTitle || 'Event',
+                ticket_type: eventDetails?.ticketTypeName || 'General',
+                buyer_name: profile?.full_name || buyerName,
+                buyer_email: profile?.email || buyerEmail,
+              }
+            });
+          } else {
+            await supabase.functions.invoke('send-org-transaction-notification', {
+              body: {
+                type: 'ticket',
+                organization_id: eventData.organization_id,
+                amount: amountPaid,
+                currency: eventDetails?.currency || 'NGN',
+                quantity,
+                event_title: eventData.title || eventDetails?.eventTitle || 'Event',
+                ticket_type: eventDetails?.ticketTypeName || 'General',
+                buyer_name: buyerName,
+                buyer_email: buyerEmail,
+              }
+            });
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to send org transaction notification:', notifError);
+      }
+
       // Create notification only for authenticated users
       if (user?.id) {
         await supabase
