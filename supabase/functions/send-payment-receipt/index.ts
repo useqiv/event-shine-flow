@@ -8,12 +8,12 @@ const corsHeaders = {
 };
 
 interface ReceiptRequest {
-  type: 'vote' | 'ticket';
+  type: 'vote' | 'ticket' | 'wallet';
   user_email: string;
   user_name: string;
   amount: number;
   currency: string;
-  quantity: number;
+  quantity?: number;
   payment_method: string;
   transaction_ref: string;
   contest_title?: string;
@@ -23,6 +23,11 @@ interface ReceiptRequest {
   event_venue?: string;
   ticket_type?: string;
   qr_code?: string;
+  // Wallet-specific
+  new_balance?: number;
+  wallet_currency?: string;
+  charge_amount?: number;
+  total_credited?: number;
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
@@ -311,6 +316,101 @@ const generateTicketReceiptHtml = (data: ReceiptRequest) => {
   return responsiveWrapper(content, `Ticket confirmed for ${data.event_title}`);
 };
 
+const generateWalletReceiptHtml = (data: ReceiptRequest) => {
+  const chargeAmount = data.charge_amount || 0;
+  const totalCredited = data.total_credited || data.amount;
+  const content = `
+    <!-- Header with Logo -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 32px 24px 16px; text-align: center; border-radius: 12px 12px 0 0;">
+        <img src="https://tirqmqzgksclsjxfiham.supabase.co/storage/v1/object/public/contest-images/useqiv-logo.png" alt="Useqiv" width="120" style="display: inline-block; margin-bottom: 16px;" />
+        <h1 style="color: #111827; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3;">Wallet Funded Successfully</h1>
+        <p style="color: #6b7280; margin: 10px 0 0; font-size: 15px;">Your wallet has been credited</p>
+      </td>
+    </tr>
+    
+    <!-- Content -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 0 24px 32px;" class="fluid-padding">
+        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
+        
+        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
+          Your wallet funding was successful. Here is your receipt:
+        </p>
+        
+        <!-- Transaction Details -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 20px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Amount Funded</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${data.currency} ${data.amount.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Extra 1% Charge</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">+ ${data.currency} ${chargeAmount.toLocaleString()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Payment Method</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${data.payment_method}</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="padding-top: 16px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Credited</td>
+                        <td style="color: #16a34a; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${totalCredited.toLocaleString()}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <!-- New Balance -->
+        ${data.new_balance !== undefined ? `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0fdf4; border-radius: 8px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 16px; text-align: center;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">New Wallet Balance</p>
+              <p style="color: #16a34a; font-size: 22px; font-weight: 700; margin: 0;">${data.wallet_currency || data.currency} ${data.new_balance.toLocaleString()}</p>
+            </td>
+          </tr>
+        </table>
+        ` : ''}
+        
+        <!-- Reference -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
+          <tr>
+            <td style="padding: 16px; text-align: center;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
+              <p style="color: #374151; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
+            </td>
+          </tr>
+        </table>
+        
+        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
+          Thank you for funding your wallet!
+        </p>
+      </td>
+    </tr>
+    
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #ffffff; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
+        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
+          Useqiv - Your trusted platform<br>
+          Questions? <a href="mailto:support@useqiv.com" style="color: #374151; text-decoration: none;">support@useqiv.com</a>
+        </p>
+      </td>
+    </tr>
+  `;
+  return responsiveWrapper(content, `Wallet funded with ${data.currency} ${totalCredited.toLocaleString()}`);
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Payment receipt function called");
 
@@ -337,13 +437,21 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("type is required");
     }
 
-    const html = data.type === 'vote' 
-      ? generateVoteReceiptHtml(data)
-      : generateTicketReceiptHtml(data);
+    let html: string;
+    let subject: string;
 
-    const subject = data.type === 'vote'
-      ? `Vote Receipt - ${data.contest_title}`
-      : `Ticket Receipt - ${data.event_title}`;
+    if (data.type === 'vote') {
+      html = generateVoteReceiptHtml(data);
+      subject = `Vote Receipt - ${data.contest_title}`;
+    } else if (data.type === 'ticket') {
+      html = generateTicketReceiptHtml(data);
+      subject = `Ticket Receipt - ${data.event_title}`;
+    } else if (data.type === 'wallet') {
+      html = generateWalletReceiptHtml(data);
+      subject = `Wallet Funding Receipt - ${data.currency} ${data.total_credited?.toLocaleString() || data.amount.toLocaleString()}`;
+    } else {
+      throw new Error("Invalid receipt type");
+    }
 
     console.log("Sending email via ZeptoMail - To:", data.user_email);
 

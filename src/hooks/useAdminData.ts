@@ -50,10 +50,48 @@ export const useAllUsers = () => {
         .from('user_roles')
         .select('user_id, role');
 
+      // Get wallet balances
+      const { data: wallets } = await supabase
+        .from('wallets')
+        .select('user_id, balance');
+
+      const { data: currencyBalances } = await supabase
+        .from('wallet_currency_balances')
+        .select('wallet_id, currency, balance');
+
+      // Map wallet_id to user_id for currency balances
+      const walletUserMap = new Map<string, string>();
+      wallets?.forEach(w => {
+        walletUserMap.set(w.user_id, w.user_id);
+      });
+
+      // Group currency balances by wallet user
+      const userCurrencyBalances = new Map<string, Array<{ currency: string; balance: number }>>();
+      if (wallets && currencyBalances) {
+        // Get wallet ids mapped to user ids
+        const { data: walletIds } = await supabase
+          .from('wallets')
+          .select('id, user_id');
+        
+        const walletIdToUser = new Map<string, string>();
+        walletIds?.forEach(w => walletIdToUser.set(w.id, w.user_id));
+        
+        currencyBalances.forEach(cb => {
+          const userId = walletIdToUser.get(cb.wallet_id);
+          if (userId) {
+            const existing = userCurrencyBalances.get(userId) || [];
+            existing.push({ currency: cb.currency, balance: Number(cb.balance) });
+            userCurrencyBalances.set(userId, existing);
+          }
+        });
+      }
+
       // Combine data
       return profiles.map(profile => ({
         ...profile,
-        role: roles?.find(r => r.user_id === profile.id)?.role || 'user'
+        role: roles?.find(r => r.user_id === profile.id)?.role || 'user',
+        wallet_balance: wallets?.find(w => w.user_id === profile.id)?.balance || 0,
+        currency_balances: userCurrencyBalances.get(profile.id) || [],
       }));
     },
     enabled: !!user,

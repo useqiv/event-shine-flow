@@ -495,6 +495,31 @@ const AdminUsers: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Wallet Balances */}
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    💰 Wallet Balances
+                  </h4>
+                  {selectedUser.currency_balances && selectedUser.currency_balances.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedUser.currency_balances.map((cb: { currency: string; balance: number }, idx: number) => (
+                        <div key={idx} className="flex justify-between items-center p-2 bg-background rounded border">
+                          <span className="text-sm font-medium">{cb.currency}</span>
+                          <span className="text-sm font-bold">{cb.balance.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No wallet balances</p>
+                  )}
+                  <div className="mt-2 pt-2 border-t">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Legacy Balance</span>
+                      <span className="text-sm font-medium">{Number(selectedUser.wallet_balance || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
                 {selectedUser.is_suspended && (
                   <div className="p-4 bg-destructive/10 rounded-lg">
                     <div className="flex items-center gap-2 text-destructive">
