@@ -906,7 +906,11 @@ async function processSuccessfulPayment(paymentData: any) {
     }
 
     const paymentCurrency = paymentData.currency || "NGN";
-    const amountToAdd = paymentData.amount;
+    const baseAmount = paymentData.amount;
+    // Add 1% bonus on every wallet funding
+    const bonusAmount = Math.round(baseAmount * 0.01 * 100) / 100;
+    const amountToAdd = Math.round((baseAmount + bonusAmount) * 100) / 100;
+    console.log(`Wallet funding: base=${baseAmount}, bonus(1%)=${bonusAmount}, total credited=${amountToAdd}`);
 
     // Check if a currency balance already exists for this currency
     const { data: existingBalance, error: balanceError } = await supabase
@@ -979,22 +983,24 @@ async function processSuccessfulPayment(paymentData: any) {
       await supabase.from("notifications").insert({
         user_id,
         title: "Wallet Funded Successfully",
-        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()}.`,
+        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()} (includes 1% bonus of ${paymentCurrency} ${bonusAmount.toLocaleString()}).`,
         type: "system",
       });
 
-      // Send email receipt
+      // Send wallet funding email receipt
       await sendReceipt({
         type: "wallet",
         user_email: customer.email,
         user_name: customer.name || "Valued Customer",
-        amount: paymentData.amount,
+        amount: baseAmount,
         currency: paymentCurrency,
         payment_method: `Flutterwave`,
         transaction_ref: paymentData.tx_ref,
         new_balance: newBalance,
         wallet_currency: paymentCurrency,
-      });
+        bonus_amount: bonusAmount,
+        total_credited: amountToAdd,
+      }, user_id, supabase);
     }
   } else if (type === "donation" && campaign_id && user_id) {
     console.log("Processing donation...");
