@@ -26,7 +26,8 @@ interface ReceiptRequest {
   // Wallet-specific
   new_balance?: number;
   wallet_currency?: string;
-  charge_amount?: number;
+  admin_fee?: number;
+  total_charged?: number;
   total_credited?: number;
 }
 
@@ -317,7 +318,8 @@ const generateTicketReceiptHtml = (data: ReceiptRequest) => {
 };
 
 const generateWalletReceiptHtml = (data: ReceiptRequest) => {
-  const chargeAmount = data.charge_amount || 0;
+  const adminFee = data.admin_fee || 0;
+  const totalCharged = data.total_charged || (data.amount + adminFee);
   const totalCredited = data.total_credited || data.amount;
   const content = `
     <!-- Header with Logo -->
@@ -344,12 +346,12 @@ const generateWalletReceiptHtml = (data: ReceiptRequest) => {
             <td style="padding: 20px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Amount Funded</td>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Wallet Credit</td>
                   <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${data.currency} ${data.amount.toLocaleString()}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Extra 1% Charge</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">+ ${data.currency} ${chargeAmount.toLocaleString()}</td>
+                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Admin Fee (3%)</td>
+                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">+ ${data.currency} ${adminFee.toLocaleString()}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Payment Method</td>
@@ -359,8 +361,12 @@ const generateWalletReceiptHtml = (data: ReceiptRequest) => {
                   <td colspan="2" style="padding-top: 16px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                       <tr>
-                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Credited</td>
-                        <td style="color: #16a34a; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${totalCredited.toLocaleString()}</td>
+                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Charged</td>
+                        <td style="color: #111827; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${totalCharged.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #6b7280; font-size: 14px; padding-top: 8px;">Credited to Wallet</td>
+                        <td style="color: #16a34a; font-size: 18px; text-align: right; font-weight: 700; padding-top: 8px;">${data.currency} ${totalCredited.toLocaleString()}</td>
                       </tr>
                     </table>
                   </td>
