@@ -247,7 +247,6 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     <span className="font-medium text-foreground">{link.name}</span>
-                    <p className="text-sm text-muted-foreground mt-0.5">{link.description}</p>
                   </Link>
                 ))}
               </div>
