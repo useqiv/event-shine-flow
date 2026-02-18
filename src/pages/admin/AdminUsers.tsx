@@ -258,6 +258,7 @@ const AdminUsers: React.FC = () => {
                     <TableHead className="hidden sm:table-cell">Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">Wallet</TableHead>
                     <TableHead className="hidden md:table-cell">Fraud Score</TableHead>
                     <TableHead className="hidden sm:table-cell">Joined</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -292,6 +293,20 @@ const AdminUsers: React.FC = () => {
                           <Badge variant="destructive">Suspended</Badge>
                         ) : (
                           <Badge variant="outline">Active</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {user.currency_balances && user.currency_balances.length > 0 ? (
+                          <div className="space-y-0.5">
+                            {user.currency_balances.map((cb: { currency: string; balance: number }, idx: number) => (
+                              <div key={idx} className="text-xs">
+                                <span className="font-medium">{cb.currency}</span>{' '}
+                                <span>{cb.balance.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
