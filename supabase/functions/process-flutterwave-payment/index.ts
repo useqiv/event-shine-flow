@@ -181,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
       meta.ticket_type_id = payload.ticket_type_id;
       meta.ticket_quantity = payload.ticket_quantity;
     } else if (payload.type === "wallet") {
-      meta.funding_amount = payload.amount;
+      meta.funding_amount = payload.amount; // The actual amount to credit to wallet
     } else if (payload.type === "donation") {
       meta.campaign_id = payload.campaign_id;
       meta.is_anonymous = payload.is_anonymous;
@@ -212,9 +212,18 @@ const handler = async (req: Request): Promise<Response> => {
       }
     };
 
+    // For wallet funding, add 3% admin fee on top of the deposit amount
+    const WALLET_ADMIN_FEE_RATE = 0.03;
+    let chargeAmount = payload.amount;
+    if (payload.type === "wallet") {
+      const adminFee = Math.round(payload.amount * WALLET_ADMIN_FEE_RATE * 100) / 100;
+      chargeAmount = Math.round((payload.amount + adminFee) * 100) / 100;
+      console.log(`Wallet funding: base=${payload.amount}, admin fee(3%)=${adminFee}, total charged=${chargeAmount}`);
+    }
+
     const flutterwavePayload = {
       tx_ref,
-      amount: payload.amount,
+      amount: chargeAmount,
       currency: payload.currency || defaultCurrency,
       redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
       customer: {

@@ -906,11 +906,13 @@ async function processSuccessfulPayment(paymentData: any) {
     }
 
     const paymentCurrency = paymentData.currency || "NGN";
-    const baseAmount = paymentData.amount;
-    // Add 1% extra charge on every wallet funding
-    const chargeAmount = Math.round(baseAmount * 0.01 * 100) / 100;
-    const amountToAdd = Math.round((baseAmount + chargeAmount) * 100) / 100;
-    console.log(`Wallet funding: base=${baseAmount}, charge(1%)=${chargeAmount}, total credited=${amountToAdd}`);
+    // The user paid amount + 3% admin fee. Only credit the base funding amount to their wallet.
+    // funding_amount holds the original deposit amount (before the 3% fee was added).
+    const baseAmount = Number(meta.funding_amount) || paymentData.amount;
+    const WALLET_ADMIN_FEE_RATE = 0.03;
+    const adminFee = Math.round(baseAmount * WALLET_ADMIN_FEE_RATE * 100) / 100;
+    const amountToAdd = baseAmount; // Only credit the base amount to wallet
+    console.log(`Wallet funding: base=${baseAmount}, admin fee(3%)=${adminFee}, credited to wallet=${amountToAdd}, total charged=${paymentData.amount}`);
 
     // Check if a currency balance already exists for this currency
     const { data: existingBalance, error: balanceError } = await supabase
@@ -983,7 +985,7 @@ async function processSuccessfulPayment(paymentData: any) {
       await supabase.from("notifications").insert({
         user_id,
         title: "Wallet Funded Successfully",
-        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()} (includes 1% extra of ${paymentCurrency} ${chargeAmount.toLocaleString()}).`,
+        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()}. A 3% admin fee of ${paymentCurrency} ${adminFee.toLocaleString()} was charged.`,
         type: "system",
       });
 
@@ -998,7 +1000,8 @@ async function processSuccessfulPayment(paymentData: any) {
         transaction_ref: paymentData.tx_ref,
         new_balance: newBalance,
         wallet_currency: paymentCurrency,
-        charge_amount: chargeAmount,
+        admin_fee: adminFee,
+        total_charged: paymentData.amount,
         total_credited: amountToAdd,
       }, user_id, supabase);
     }
