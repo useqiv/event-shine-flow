@@ -224,6 +224,28 @@ const Navbar = () => {
                 </SheetTitle>
               </SheetHeader>
 
+              {/* User Section - Prominent at top */}
+              {user ? (
+                <div className="flex items-center gap-3 py-3 px-1 mb-4 border-b border-border">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
+                    <AvatarFallback>{getInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    {profile?.full_name && (
+                      <p className="font-medium text-sm truncate">{profile.full_name}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4 pb-4 border-b border-border">
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full">Sign In</Button>
+                  </Link>
+                </div>
+              )}
+
               {/* Mobile Search */}
               <form onSubmit={handleSearch} className="relative mb-6">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -236,7 +258,22 @@ const Navbar = () => {
                 />
               </form>
 
-              {/* Product Links with Descriptions */}
+              {/* Quick Actions for logged-in users */}
+              {user && (
+                <div className="space-y-1 mb-6">
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
+                  </Link>
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Product Links */}
               <div className="space-y-1 mb-6">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Our Products</p>
                 {productLinks.map((link) => (
@@ -266,51 +303,19 @@ const Navbar = () => {
                 ))}
               </div>
 
-              {/* User Section */}
-              <div className="pt-4 border-t border-border">
-                {user ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 py-2">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
-                        <AvatarFallback>{getInitials()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0">
-                        {profile?.full_name && (
-                          <p className="font-medium text-sm truncate">{profile.full_name}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </div>
-                    </div>
-                    <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
-                    </Link>
-                    <Link to="/profile" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-destructive" 
-                      onClick={() => { handleLogout(); setIsOpen(false); }}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-center">Sign In</Button>
-                    </Link>
-                    <Link to="/auth" onClick={() => setIsOpen(false)}>
-                      <Button variant="default" className="w-full justify-center">Get Started Free</Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
+              {/* Logout at bottom for logged-in users */}
+              {user && (
+                <div className="pt-4 border-t border-border">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-destructive" 
+                    onClick={() => { handleLogout(); setIsOpen(false); }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
+                </div>
+              )}
             </SheetContent>
           </Sheet>
         </div>
