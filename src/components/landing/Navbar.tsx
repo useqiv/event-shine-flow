@@ -225,7 +225,7 @@ const Navbar = () => {
               </SheetHeader>
 
               {/* User Section - Prominent at top */}
-              {user ? (
+              {user && (
                 <div className="flex items-center gap-3 py-3 px-1 mb-4 border-b border-border">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={profile?.avatar_url} alt={profile?.full_name || 'User'} />
@@ -238,16 +238,10 @@ const Navbar = () => {
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="mb-4 pb-4 border-b border-border">
-                  <Link to="/auth" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full">Sign In</Button>
-                  </Link>
-                </div>
               )}
 
               {/* Mobile Search */}
-              <form onSubmit={handleSearch} className="relative mb-6">
+              <form onSubmit={handleSearch} className="relative mb-4">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
                   type="text"
@@ -257,6 +251,15 @@ const Navbar = () => {
                   className="w-full pl-12 pr-4 py-3 bg-muted border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </form>
+
+              {/* Sign In for unauthenticated users */}
+              {!user && (
+                <div className="mb-4 pb-4 border-b border-border">
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full">Sign In</Button>
+                  </Link>
+                </div>
+              )}
 
               {/* Quick Actions for logged-in users */}
               {user && (
