@@ -116,6 +116,10 @@ import InfluencerEarnings from "./pages/influencer/InfluencerEarnings";
 import InfluencerPayouts from "./pages/influencer/InfluencerPayouts";
 import InfluencerSettings from "./pages/influencer/InfluencerSettings";
 
+// Scanner Dashboard Pages
+import ScannerDashboard from "./pages/scanner/ScannerDashboard";
+import ScannerEventPage from "./pages/scanner/ScannerEventPage";
+
 import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -296,6 +300,10 @@ const AppRoutes = () => (
         <Route path="/influencer/earnings" element={<ProtectedRoute><InfluencerEarnings /></ProtectedRoute>} />
         <Route path="/influencer/payouts" element={<ProtectedRoute><InfluencerPayouts /></ProtectedRoute>} />
         <Route path="/influencer/settings" element={<ProtectedRoute><InfluencerSettings /></ProtectedRoute>} />
+        
+        {/* Scanner-Only Dashboard Routes */}
+        <Route path="/scanner" element={<ProtectedRoute><ScannerDashboard /></ProtectedRoute>} />
+        <Route path="/scanner/:id" element={<ProtectedRoute><ScannerEventPage /></ProtectedRoute>} />
         
         <Route path="*" element={<NotFound />} />
   </Routes>
