@@ -2,47 +2,47 @@ import { TrendingUp, Vote, Users, Clock } from "lucide-react";
 
 const Stats = () => {
   const stats = [
-    {
-      icon: Vote,
-      value: "1M+",
-      label: "Votes Processed",
-      description: "Secure & verified",
-      growth: "+127% YoY"
-    },
-    {
-      icon: Users,
-      value: "500+",
-      label: "Event Organizers",
-      description: "Globally trusted",
-      growth: "+85% YoY"
-    },
-    {
-      icon: Users,
-      value: "3K+",
-      label: "Users",
-      description: "Active platform users",
-      growth: "+200% YoY"
-    },
-    {
-      icon: Clock,
-      value: "99.9%",
-      label: "Uptime",
-      description: "Enterprise reliability",
-      growth: "SLA guaranteed"
-    }
-  ];
+  {
+    icon: Vote,
+    value: "1M+",
+    label: "Votes Processed",
+    description: "Secure & verified",
+    growth: "+127% YoY"
+  },
+  {
+    icon: Users,
+    value: "500+",
+    label: "Event Organizers",
+    description: "Globally trusted",
+    growth: "+85% YoY"
+  },
+  {
+    icon: Users,
+    value: "3K+",
+    label: "Users",
+    description: "Active platform users",
+    growth: "+200% YoY"
+  },
+  {
+    icon: Clock,
+    value: "99.9%",
+    label: "Uptime",
+    description: "Enterprise reliability",
+    growth: "SLA guaranteed"
+  }];
+
 
   return (
     <section className="py-10 sm:py-14 lg:py-20 bg-gradient-to-br from-primary via-primary to-accent relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.3' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.3' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E")`
         }} />
       </div>
 
       {/* Decorative Elements */}
-      <div className="absolute top-0 left-0 w-48 sm:w-72 h-48 sm:h-72 bg-primary-foreground/10 rounded-full blur-3xl" />
+      
       <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-accent/20 rounded-full blur-3xl" />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10">
@@ -59,8 +59,8 @@ const Stats = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {stats.map((stat, index) => (
-              <div key={index} className="group">
+            {stats.map((stat, index) =>
+            <div key={index} className="group">
                 <div className="bg-primary-foreground/10 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 hover:bg-primary-foreground/15 transition-all duration-300 border border-primary-foreground/10 h-full">
                   {/* Icon */}
                   <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary-foreground/20 flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
@@ -89,12 +89,12 @@ const Stats = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default Stats;
