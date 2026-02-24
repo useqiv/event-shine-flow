@@ -1,4 +1,4 @@
-import { Vote, Ticket, BarChart3, QrCode, Wallet, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, type LucideIcon } from "lucide-react";
+import { Vote, Ticket, BarChart3, QrCode, Wallet, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, Trophy, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const Showcase = () => {
   return <section className="py-14 lg:py-20 bg-card relative overflow-hidden">
