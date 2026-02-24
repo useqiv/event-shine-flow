@@ -1,4 +1,4 @@
-import { 
+import {
   Sparkles,
   MessageSquareText,
   Wand2,
@@ -8,42 +8,42 @@ import {
   Globe,
   Smartphone,
   Zap,
-  ArrowRight
-} from "lucide-react";
+  ArrowRight } from
+"lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const Features = () => {
   const aiFeatures = [
-    { 
-      icon: MessageSquareText, 
-      title: "Intelligent Chat Assistant", 
-      desc: "Ask anything about contests, events, or campaigns. Get instant, contextual answers powered by advanced AI.",
-      badge: "Most Popular"
-    },
-    { 
-      icon: Wand2, 
-      title: "One-Click Content Creation", 
-      desc: "Generate compelling event descriptions, campaign stories, and marketing copy in seconds—not hours."
-    },
-    { 
-      icon: Target, 
-      title: "Personalized Discovery", 
-      desc: "Smart algorithms learn your preferences to surface contests and events you'll actually love."
-    },
-    { 
-      icon: Share2, 
-      title: "Social Media Automation", 
-      desc: "Auto-generate platform-optimized posts for Instagram, Twitter, Facebook, and more."
-    },
-  ];
+  {
+    icon: MessageSquareText,
+    title: "Intelligent Chat Assistant",
+    desc: "Ask anything about contests, events, or campaigns. Get instant, contextual answers powered by advanced AI.",
+    badge: "Most Popular"
+  },
+  {
+    icon: Wand2,
+    title: "One-Click Content Creation",
+    desc: "Generate compelling event descriptions, campaign stories, and marketing copy in seconds—not hours."
+  },
+  {
+    icon: Target,
+    title: "Personalized Discovery",
+    desc: "Smart algorithms learn your preferences to surface contests and events you'll actually love."
+  },
+  {
+    icon: Share2,
+    title: "Social Media Automation",
+    desc: "Auto-generate platform-optimized posts for Instagram, Twitter, Facebook, and more."
+  }];
+
 
   const platformStats = [
-    { icon: Shield, value: "256-bit", label: "Bank-Grade Encryption", desc: "Your data is protected with military-grade security" },
-    { icon: Globe, value: "50+", label: "Currencies Supported", desc: "Accept payments from anywhere in the world" },
-    { icon: Smartphone, value: "100%", label: "Mobile Optimized", desc: "Seamless experience on any device" },
-    { icon: Zap, value: "24hr", label: "Fast Settlements", desc: "Quick payouts to your bank account" },
-  ];
+  { icon: Shield, value: "256-bit", label: "Bank-Grade Encryption", desc: "Your data is protected with military-grade security" },
+  { icon: Globe, value: "50+", label: "Currencies Supported", desc: "Accept payments from anywhere in the world" },
+  { icon: Smartphone, value: "100%", label: "Mobile Optimized", desc: "Seamless experience on any device" },
+  { icon: Zap, value: "24hr", label: "Fast Settlements", desc: "Quick payouts to your bank account" }];
+
 
   return (
     <section id="features" className="py-16 sm:py-20 lg:py-28 bg-background relative overflow-hidden">
@@ -76,101 +76,101 @@ const Features = () => {
 
           {/* AI Features - Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-16 sm:mb-20 lg:mb-28">
-            {aiFeatures.map((feature, i) => (
-              <div 
-                key={i} 
-                className={`group relative p-6 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 ${
-                  i === 0 
-                    ? 'bg-gradient-to-br from-primary/5 via-background to-background border-primary/20 md:col-span-2 md:flex md:items-center md:gap-8' 
-                    : 'bg-card border-border hover:border-primary/30'
-                }`}
-              >
+            {aiFeatures.map((feature, i) =>
+            <div
+              key={i}
+              className={`group relative p-6 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 ${
+              i === 0 ?
+              'bg-gradient-to-br from-primary/5 via-background to-background border-primary/20 md:col-span-2 md:flex md:items-center md:gap-8' :
+              'bg-card border-border hover:border-primary/30'}`
+              }>
+
                 {/* Badge for featured item */}
-                {feature.badge && (
-                  <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+                {feature.badge &&
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
                     <span className="px-3 py-1 text-xs font-semibold bg-primary text-primary-foreground rounded-full">
                       {feature.badge}
                     </span>
                   </div>
-                )}
+              }
                 
                 <div className={`${i === 0 ? 'md:flex-shrink-0' : ''}`}>
                   <div className={`inline-flex items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-5 group-hover:scale-110 group-hover:bg-primary/15 transition-all duration-300 ${
-                    i === 0 ? 'h-16 w-16 sm:h-20 sm:w-20' : 'h-12 w-12 sm:h-14 sm:w-14'
-                  }`}>
+                i === 0 ? 'h-16 w-16 sm:h-20 sm:w-20' : 'h-12 w-12 sm:h-14 sm:w-14'}`
+                }>
                     <feature.icon className={`text-primary ${i === 0 ? 'h-8 w-8 sm:h-10 sm:w-10' : 'h-6 w-6 sm:h-7 sm:w-7'}`} />
                   </div>
                 </div>
                 
                 <div className={`${i === 0 ? 'md:flex-1' : ''}`}>
                   <h3 className={`font-bold text-foreground mb-2 sm:mb-3 ${
-                    i === 0 ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-lg sm:text-xl'
-                  }`}>
+                i === 0 ? 'text-xl sm:text-2xl lg:text-3xl' : 'text-lg sm:text-xl'}`
+                }>
                     {feature.title}
                   </h3>
                   <p className={`text-muted-foreground leading-relaxed ${
-                    i === 0 ? 'text-base sm:text-lg max-w-xl' : 'text-sm sm:text-base'
-                  }`}>
+                i === 0 ? 'text-base sm:text-lg max-w-xl' : 'text-sm sm:text-base'}`
+                }>
                     {feature.desc}
                   </p>
                   
-                  {i === 0 && (
-                    <Button asChild variant="outline" className="mt-6 group/btn rounded-full">
+                  {i === 0 &&
+                <Button asChild variant="outline" className="mt-6 group/btn rounded-full">
                       <Link to="/auth" className="flex items-center gap-2">
                         Try It Free
                         <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
-                  )}
+                }
                 </div>
                 
                 {/* Hover gradient effect */}
                 <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </div>
-            ))}
+            )}
           </div>
 
           {/* Platform Stats - Modern Cards */}
-          <div className="relative">
-            <div className="text-center mb-10 sm:mb-12">
-              <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-                Enterprise-Grade Infrastructure
-              </h3>
-              <p className="text-muted-foreground max-w-lg mx-auto">
-                Built for scale, designed for trust. The foundation your events deserve.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {platformStats.map((stat, i) => (
-                <div 
-                  key={i} 
-                  className="group relative p-5 sm:p-6 lg:p-8 bg-muted/50 border border-border rounded-2xl sm:rounded-3xl hover:bg-card hover:border-primary/20 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="flex flex-col h-full">
-                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-background border border-border flex items-center justify-center mb-4 sm:mb-5 group-hover:border-primary/30 group-hover:bg-primary/5 transition-all">
-                      <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                    </div>
-                    
-                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-1">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm sm:text-base font-semibold text-foreground mb-2">
-                      {stat.label}
-                    </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-auto">
-                      {stat.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default Features;
