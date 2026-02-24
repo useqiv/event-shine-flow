@@ -158,6 +158,58 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // SERVER-SIDE PRICE VERIFICATION: Recalculate expected price from DB
+    let serverVerifiedAmount = payload.amount;
+    
+    if (payload.type === "vote" && payload.contest_id && payload.vote_quantity) {
+      const { data: contest, error: contestErr } = await supabase
+        .from("contests")
+        .select("vote_price, vote_currency")
+        .eq("id", payload.contest_id)
+        .single();
+      
+      if (contestErr || !contest) {
+        console.error("Contest not found for price verification:", contestErr?.message);
+        return new Response(
+          JSON.stringify({ error: "Contest not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      const expectedBaseAmount = contest.vote_price * payload.vote_quantity;
+      // Allow currency conversion tolerance (5%) for cross-currency payments
+      const tolerance = contest.vote_currency !== payload.currency ? 0.05 : 0.01;
+      if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && contest.vote_currency === payload.currency) {
+        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+        return new Response(
+          JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
+    if (payload.type === "ticket" && payload.event_id && payload.ticket_type_id && payload.ticket_quantity) {
+      const { data: ticketType, error: ticketErr } = await supabase
+        .from("ticket_types")
+        .select("price, currency")
+        .eq("id", payload.ticket_type_id)
+        .single();
+      
+      if (!ticketErr && ticketType) {
+        const expectedBaseAmount = ticketType.price * payload.ticket_quantity;
+        const tolerance = ticketType.currency !== payload.currency ? 0.05 : 0.01;
+        if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && ticketType.currency === payload.currency) {
+          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+          return new Response(
+            JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+    }
+    
+    console.log("Server-side price verification passed for amount:", payload.amount);
+
     // Guests must provide full name for ticket purchases
     if (payload.type === "ticket" && String(payload.user_id).startsWith("guest_") && !purchaserName) {
       return new Response(

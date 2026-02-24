@@ -58,7 +58,30 @@ const handler = async (req: Request): Promise<Response> => {
     const status = url.searchParams.get("status");
     const tx_ref = url.searchParams.get("tx_ref");
     const transaction_id = url.searchParams.get("transaction_id");
-    const redirectUrl = url.searchParams.get("redirect") || "https://preview--lovable-voting-platform.lovable.app";
+    const rawRedirect = url.searchParams.get("redirect") || "";
+
+    // SECURITY: Validate redirect URL to prevent open redirects
+    const ALLOWED_REDIRECT_ORIGINS = [
+      "https://event-shine-flow.lovable.app",
+      "https://id-preview--74593814-f7ac-474b-bfdc-a5df535f275e.lovable.app",
+    ];
+    
+    let redirectUrl = "https://event-shine-flow.lovable.app/payment-callback";
+    try {
+      const parsedRedirect = new URL(rawRedirect);
+      // Only allow HTTPS and whitelisted origins (or *.lovable.app)
+      if (
+        parsedRedirect.protocol === "https:" &&
+        (ALLOWED_REDIRECT_ORIGINS.includes(parsedRedirect.origin) ||
+         parsedRedirect.hostname.endsWith(".lovable.app"))
+      ) {
+        redirectUrl = rawRedirect;
+      } else {
+        console.warn("Blocked untrusted redirect origin:", parsedRedirect.origin);
+      }
+    } catch {
+      console.warn("Invalid redirect URL, using default:", rawRedirect);
+    }
 
     console.log("Redirect params:", { status, tx_ref, transaction_id });
 

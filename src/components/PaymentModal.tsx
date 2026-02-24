@@ -174,8 +174,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
-    // Convert NGN to USD (simplified - in production use real rates)
-    const amountUsd = effectiveCurrency === 'NGN' ? finalAmount / 1500 : finalAmount;
+    // Convert to USD using live exchange rates instead of hardcoded value
+    let amountUsd = finalAmount;
+    if (effectiveCurrency !== 'USD' && rates) {
+      const usdRate = rates['USD'] || 1;
+      const sourceRate = rates[effectiveCurrency] || 1;
+      amountUsd = (finalAmount * usdRate) / sourceRate;
+    }
+    amountUsd = Math.round(amountUsd * 100) / 100;
 
     cryptoPayment.mutate(
       {
