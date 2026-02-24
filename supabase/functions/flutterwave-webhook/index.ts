@@ -62,11 +62,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     // SECURITY: Validate redirect URL to prevent open redirects
     const ALLOWED_REDIRECT_ORIGINS = [
+      "https://www.useqiv.com",
+      "https://useqiv.com",
       "https://event-shine-flow.lovable.app",
       "https://id-preview--74593814-f7ac-474b-bfdc-a5df535f275e.lovable.app",
     ];
     
-    let redirectUrl = "https://event-shine-flow.lovable.app/payment-callback";
+    let redirectUrl = "https://www.useqiv.com/payment-callback";
     try {
       const parsedRedirect = new URL(rawRedirect);
       // Only allow HTTPS and whitelisted origins (or *.lovable.app)

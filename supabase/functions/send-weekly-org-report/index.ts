@@ -200,7 +200,7 @@ const generateReportEmail = (stats: OrgStats, weekStart: string, weekEnd: string
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="https://event-shine-flow.lovable.app/org/dashboard" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; min-width: 200px; text-align: center;">View Full Dashboard</a>
+                    <a href="https://www.useqiv.com/org/dashboard" style="display: inline-block; background: #7c3aed; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; min-width: 200px; text-align: center;">View Full Dashboard</a>
                   </td>
                 </tr>
               </table>
