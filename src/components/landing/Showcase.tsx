@@ -1,4 +1,4 @@
-import { Vote, Ticket, BarChart3, QrCode, Wallet, Trophy, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, type LucideIcon } from "lucide-react";
+import { Vote, Ticket, BarChart3, QrCode, Wallet, ArrowRight, Heart, FileText, Target, Users, Megaphone, TrendingUp, Link2, Shield, Share2, DollarSign, Smartphone, Zap, CreditCard, PenTool, GitBranch, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 const Showcase = () => {
   return <section className="py-14 lg:py-20 bg-card relative overflow-hidden">
@@ -14,7 +14,7 @@ const Showcase = () => {
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-6">
-              <Trophy className="h-4 w-4 text-primary" />
+              
               <span className="text-sm text-foreground font-medium">Complete Event Management Suite</span>
             </div>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
