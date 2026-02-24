@@ -81,8 +81,18 @@ const handler = async (req: Request): Promise<Response> => {
           console.error("Failed to fetch Flutterwave secret key from DB:", settingsError.message);
         }
 
-        const dbSecret = settings?.find((s) => s.setting_key === "flutterwave_secret_key")?.setting_value || "";
-        const flutterwaveSecretKey = dbSecret || Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
+        // Use secure RPC to decrypt the key
+        const { data: decryptedKey, error: decryptError } = await supabase
+          .rpc("get_decrypted_platform_setting", { p_key: "flutterwave_secret_key" });
+        
+        let flutterwaveSecretKey = "";
+        if (!decryptError && decryptedKey) {
+          flutterwaveSecretKey = decryptedKey;
+        } else {
+          // Fallback to plain value then env
+          const dbSecret = settings?.find((s) => s.setting_key === "flutterwave_secret_key")?.setting_value || "";
+          flutterwaveSecretKey = (dbSecret && !dbSecret.includes("****")) ? dbSecret : (Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "");
+        }
 
         console.log("Verifying transaction:", transaction_id);
 

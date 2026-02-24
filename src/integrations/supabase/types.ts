@@ -1926,6 +1926,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          encrypted_value: string | null
           id: string
           setting_key: string
           setting_type: string
@@ -1936,6 +1937,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          encrypted_value?: string | null
           id?: string
           setting_key: string
           setting_type?: string
@@ -1946,6 +1948,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          encrypted_value?: string | null
           id?: string
           setting_key?: string
           setting_type?: string
@@ -2284,6 +2287,24 @@ export type Database = {
           item_id?: string
           item_type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      secure_config: {
+        Row: {
+          created_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: string
         }
         Relationships: []
       }
@@ -3802,6 +3823,11 @@ export type Database = {
       }
       encrypt_banking_data: { Args: { plain_text: string }; Returns: string }
       get_admin_statistics: { Args: never; Returns: Json }
+      get_decrypted_platform_setting: {
+        Args: { p_key: string }
+        Returns: string
+      }
+      get_encryption_key: { Args: never; Returns: string }
       get_referral_leaderboard: {
         Args: { limit_count?: number }
         Returns: {

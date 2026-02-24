@@ -82,11 +82,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get secret key from platform settings first, fallback to env
-    let flutterwaveSecretKey = getSetting("flutterwave_secret_key");
-    console.log("Secret key from DB:", flutterwaveSecretKey ? "Found (length: " + flutterwaveSecretKey.length + ")" : "Not found");
+    // Get secret key: try decrypted RPC first, fallback to plain setting, then env
+    let flutterwaveSecretKey = "";
     
-    if (!flutterwaveSecretKey) {
+    // Use the secure RPC to decrypt the key from platform_settings
+    const { data: decryptedKey, error: decryptError } = await supabase
+      .rpc("get_decrypted_platform_setting", { p_key: "flutterwave_secret_key" });
+    
+    if (!decryptError && decryptedKey) {
+      flutterwaveSecretKey = decryptedKey;
+      console.log("Secret key from DB (decrypted): Found (length:", flutterwaveSecretKey.length, ")");
+    } else {
+      // Fallback to plain setting_value (for backward compat during migration)
+      flutterwaveSecretKey = getSetting("flutterwave_secret_key");
+      console.log("Secret key from DB (plain):", flutterwaveSecretKey ? "Found" : "Not found");
+    }
+    
+    if (!flutterwaveSecretKey || flutterwaveSecretKey.includes("****")) {
       flutterwaveSecretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
       console.log("Secret key from ENV:", flutterwaveSecretKey ? "Found (length: " + flutterwaveSecretKey.length + ")" : "Not found");
     }
