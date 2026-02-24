@@ -3042,7 +3042,7 @@ export type Database = {
           campaign_id?: string | null
           created_at?: string | null
           currency?: string | null
-          donor_id?: string | null
+          donor_id?: never
           donor_message?: string | null
           guest_email?: never
           guest_name?: never
@@ -3056,7 +3056,7 @@ export type Database = {
           campaign_id?: string | null
           created_at?: string | null
           currency?: string | null
-          donor_id?: string | null
+          donor_id?: never
           donor_message?: string | null
           guest_email?: never
           guest_name?: never
