@@ -254,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Use the redirect URL from the client request - this should be the origin where the payment was initiated
     // The client MUST pass the correct redirect_url based on their current location (production or preview)
-    const redirectUrl = payload.redirect_url || "https://event-shine-flow.lovable.app/payment-callback";
+    const redirectUrl = payload.redirect_url || "https://www.useqiv.com/payment-callback";
 
     const getPaymentTitle = () => {
       switch (payload.type) {
