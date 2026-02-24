@@ -42,11 +42,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     const getSetting = (key: string) => settings?.find(s => s.setting_key === key)?.setting_value || "";
 
-    // Get secret key from platform settings first, fallback to env
-    let secretKey = getSetting("flutterwave_secret_key");
-    console.log("Secret key from DB:", secretKey ? "Found (length: " + secretKey.length + ")" : "Not found");
+    // Get secret key: try secure RPC decryption first, then plain, then env
+    let secretKey = "";
+    const { data: decryptedKey, error: decryptError } = await supabase
+      .rpc("get_decrypted_platform_setting", { p_key: "flutterwave_secret_key" });
     
-    if (!secretKey) {
+    if (!decryptError && decryptedKey) {
+      secretKey = decryptedKey;
+      console.log("Secret key from DB (decrypted): Found (length:", secretKey.length, ")");
+    } else {
+      secretKey = getSetting("flutterwave_secret_key");
+      console.log("Secret key from DB (plain):", secretKey ? "Found" : "Not found");
+    }
+    
+    if (!secretKey || secretKey.includes("****")) {
       secretKey = Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "";
       console.log("Secret key from ENV:", secretKey ? "Found (length: " + secretKey.length + ")" : "Not found");
     }
