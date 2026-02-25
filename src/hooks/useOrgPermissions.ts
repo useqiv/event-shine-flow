@@ -102,17 +102,17 @@ export const useOrgPermissions = () => {
  * Check if user can scan tickets for a specific event
  */
 export const useCanScanEvent = (eventId: string) => {
-  const { data: permissions } = useOrgPermissions();
+  const { data: permissions, isLoading } = useOrgPermissions();
 
-  if (!permissions) return false;
-  if (!permissions.can_scan_tickets) return false;
+  if (isLoading || !permissions) return { canScan: false, isLoading: isLoading || !permissions };
+  if (!permissions.can_scan_tickets) return { canScan: false, isLoading: false };
   
   // Empty array means all events
   if (!permissions.scan_tickets_event_ids || permissions.scan_tickets_event_ids.length === 0) {
-    return true;
+    return { canScan: true, isLoading: false };
   }
 
-  return permissions.scan_tickets_event_ids.includes(eventId);
+  return { canScan: permissions.scan_tickets_event_ids.includes(eventId), isLoading: false };
 };
 
 /**

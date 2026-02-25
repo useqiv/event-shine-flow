@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 const EventScanner = () => {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading } = useEvent(id || '');
-  const canScanThisEvent = useCanScanEvent(id || '');
+  const { canScan: canScanThisEvent, isLoading: permLoading } = useCanScanEvent(id || '');
   const { data: ticketTypes } = useEventTicketTypes(id || '');
   const { data: scanLogs, refetch: refetchLogs } = useQRScanLogs(id);
 
@@ -32,7 +32,7 @@ const EventScanner = () => {
     refetchLogs();
   };
 
-  if (isLoading) {
+  if (isLoading || permLoading) {
     return (
       <OrganizationLayout>
         <div className="space-y-6">
