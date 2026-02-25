@@ -20,8 +20,7 @@ import {
   TeamMemberPermissions
 } from '@/hooks/useTeamMembers';
 import { useProfile } from '@/hooks/useProfile';
-import { useOrganizationSettings } from '@/hooks/useOrganization';
-import { useEvents } from '@/hooks/useEvents';
+import { useOrganizationSettings, useOrganizationEvents } from '@/hooks/useOrganization';
 import { UserPlus, Users, Mail, Trash2, Edit, Shield, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -48,7 +47,7 @@ interface ScanTicketsPermissionProps {
 
 const ScanTicketsPermission = forwardRef<HTMLDivElement, ScanTicketsPermissionProps>(
   ({ canScan, eventIds, onCanScanChange, onEventIdsChange }, ref) => {
-  const { data: events } = useEvents();
+  const { data: events } = useOrganizationEvents();
   const orgEvents = events || [];
 
   const toggleEvent = (eventId: string) => {
