@@ -80,6 +80,11 @@ const wrapReceipt = (label: string, greeting: string, rows: string, refId: strin
       <td align="center" style="padding: 40px 20px;" class="fluid-padding">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;" class="email-container">
           <tr>
+            <td style="padding-bottom: 20px;">
+              <img src="https://useqiv.com/logo.png" alt="Useqiv" height="32" style="height: 32px; width: auto;" />
+            </td>
+          </tr>
+          <tr>
             <td style="padding-bottom: 24px;">
               <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${label}</p>
             </td>
