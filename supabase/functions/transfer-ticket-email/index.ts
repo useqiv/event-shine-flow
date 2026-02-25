@@ -62,86 +62,101 @@ serve(async (req) => {
     }
 
     const {
-      recipientEmail,
-      recipientName,
-      senderName,
-      eventTitle,
-      eventDate,
-      eventTime,
-      venue,
-      ticketType,
-      quantity,
-      transferCode,
-      acceptUrl,
+      recipientEmail, recipientName, senderName, eventTitle,
+      eventDate, eventTime, venue, ticketType, quantity,
+      transferCode, acceptUrl,
     }: TransferEmailRequest = await req.json();
 
     console.log("Sending transfer email to:", recipientEmail);
 
     const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ticket Transfer</title>
-      </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
-        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 32px; text-align: center;">
-            <h1 style="margin: 0 0 8px 0; font-size: 24px;">🎟️ Ticket Transfer</h1>
-            <p style="margin: 0; opacity: 0.9;">You've received a ticket!</p>
-          </div>
-          
-          <div style="padding: 32px;">
-            <p style="font-size: 16px; color: #374151; margin: 0 0 24px 0;">
-              Hi${recipientName ? ` ${recipientName}` : ''},<br><br>
-              <strong>${senderName}</strong> wants to transfer a ticket to you!
-            </p>
-            
-            <div style="background: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #111827;">${eventTitle}</h2>
-              <table style="width: 100%; border-collapse: collapse;">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+
+          <tr>
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Ticket Transfer</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #111827; line-height: 1.5;">
+                Hi${recipientName ? ` ${recipientName}` : ''},
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; color: #374151; line-height: 1.6;">
+                <strong>${senderName}</strong> wants to transfer a ticket to you.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <p style="margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #111827;">${eventTitle}</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Ticket Type</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${ticketType} × ${quantity}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Ticket</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${ticketType} × ${quantity}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${eventDate}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Date</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${eventDate}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${eventTime}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Time</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${eventTime}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Venue</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${venue}</td>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Venue</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${venue}</td>
                 </tr>
               </table>
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 24px;">
-              <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">Your transfer code:</p>
-              <p style="font-size: 24px; font-weight: bold; color: #7c3aed; font-family: monospace; margin: 0; letter-spacing: 2px;">${transferCode}</p>
-            </div>
-            
-            <a href="${acceptUrl}" style="display: block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; text-align: center; font-weight: 600; font-size: 16px;">
-              Accept Ticket Transfer
-            </a>
-            
-            <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 24px 0 0 0;">
-              This transfer expires in 48 hours. If you don't have an account, you'll need to sign up first.
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 24px 0; text-align: center;">
+              <p style="margin: 0 0 6px; font-size: 13px; color: #6b7280;">Transfer code</p>
+              <p style="margin: 0; font-size: 22px; font-weight: 700; color: #111827; font-family: monospace; letter-spacing: 2px;">${transferCode}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-bottom: 24px;">
+              <a href="${acceptUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                Accept Transfer
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center; line-height: 1.5;">
+                This transfer expires in 48 hours. If you don't have an account, you'll need to sign up first.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
 
     const emailResponse = await sendZeptoEmail(
       recipientEmail,
       recipientName || "User",
-      `${senderName} wants to transfer a ticket to you! - ${eventTitle}`,
+      `${senderName} wants to transfer a ticket to you — ${eventTitle}`,
       emailHtml
     );
 
@@ -155,10 +170,7 @@ serve(async (req) => {
     console.error("Error sending transfer email:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });

@@ -50,63 +50,42 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
   });
 
   const responseText = await response.text();
-  
   if (!responseText || responseText.trim() === "") {
     if (response.ok) return { success: true };
     throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
-  
   const data = JSON.parse(responseText);
-  
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
-  }
-  
+  if (!response.ok) throw new Error(data.message || "Failed to send email");
   return data;
 };
 
-const responsiveEmailWrapper = (content: string, preheader: string = "") => `
+const buildRow = (label: string, value: string) =>
+  `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${label}</td><td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${value}</td></tr>`;
+
+const wrapNotification = (label: string, rows: string) => `
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-  <title>Useqiv Notification</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
-  <style>
-    * { box-sizing: border-box; }
-    body, table, td, p, a, li { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f5; }
-    @media only screen and (max-width: 600px) {
-      .email-container { width: 100% !important; max-width: 100% !important; }
-      .fluid-padding { padding-left: 16px !important; padding-right: 16px !important; }
-      .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; }
-      .mobile-center { text-align: center !important; }
-      .mobile-padding { padding: 20px !important; }
-    }
-  </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  ${preheader ? `<div style="display: none; max-height: 0; overflow: hidden;">${preheader}</div>` : ''}
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
     <tr>
-      <td align="center" style="padding: 20px 10px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 500px;" class="email-container">
-          ${content}
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+          <tr>
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${label}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top: 20px;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">Transaction notifications · Useqiv</p>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
@@ -115,156 +94,7 @@ const responsiveEmailWrapper = (content: string, preheader: string = "") => `
 </html>
 `;
 
-const generateVoteNotificationHtml = (data: TransactionNotificationRequest) => {
-  const content = `
-    <!-- Header -->
-    <tr>
-      <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">🗳️ New Vote Received!</h1>
-      </td>
-    </tr>
-    <!-- Body -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
-        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          A new vote has been received for <strong>${data.contestant_name}</strong> in <strong>${data.contest_title}</strong>
-        </p>
-        
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
-          <tr>
-            <td style="padding: 16px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Voter Name</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.voter_name || 'Anonymous'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.voter_email || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Votes</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
-                  <td style="padding: 8px 0; color: #7c3aed; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
-          You're receiving this because transaction notifications are enabled for your organization.
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveEmailWrapper(content, `New vote for ${data.contestant_name}`);
-};
-
-const generateTicketNotificationHtml = (data: TransactionNotificationRequest) => {
-  const content = `
-    <!-- Header -->
-    <tr>
-      <td style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">🎫 New Ticket Sale!</h1>
-      </td>
-    </tr>
-    <!-- Body -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
-        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          A new ticket purchase has been made for <strong>${data.event_title}</strong>
-        </p>
-        
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
-          <tr>
-            <td style="padding: 16px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Buyer Name</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.buyer_name || 'Anonymous'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.buyer_email || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Ticket Type</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type || 'Standard'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Quantity</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity || 1}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
-                  <td style="padding: 8px 0; color: #f97316; font-size: 16px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
-          You're receiving this because transaction notifications are enabled for your organization.
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveEmailWrapper(content, `New ticket sale for ${data.event_title}`);
-};
-
-const generateDonationNotificationHtml = (data: TransactionNotificationRequest) => {
-  const content = `
-    <!-- Header -->
-    <tr>
-      <td style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); padding: 28px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; line-height: 1.3;">💚 New Donation!</h1>
-      </td>
-    </tr>
-    <!-- Body -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 28px 24px; border-radius: 0 0 12px 12px;" class="mobile-padding">
-        <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-          A new donation has been received for <strong>${data.campaign_title}</strong>
-        </p>
-        
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px;">
-          <tr>
-            <td style="padding: 16px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Donor Name</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.donor_name || 'Anonymous'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Email</td>
-                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.donor_email || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Amount</td>
-                  <td style="padding: 8px 0; color: #10b981; font-size: 18px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #9ca3af; font-size: 12px; margin: 20px 0 0; text-align: center; line-height: 1.5;">
-          You're receiving this because transaction notifications are enabled for your organization.
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveEmailWrapper(content, `New donation to ${data.campaign_title}`);
-};
-
 const handler = async (req: Request): Promise<Response> => {
-  console.log("Org transaction notification function called");
-
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -276,19 +106,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const data: TransactionNotificationRequest = await req.json();
-    
-    console.log("Transaction notification request:", JSON.stringify(data));
 
-    const { data: orgSettings, error: settingsError } = await supabase
+    const { data: orgSettings } = await supabase
       .from('organization_settings')
       .select('notify_on_vote, notify_on_ticket, notify_on_donation, company_email')
       .eq('organization_id', data.organization_id)
       .maybeSingle();
-
-    if (settingsError) {
-      console.error("Error fetching org settings:", settingsError);
-      throw settingsError;
-    }
 
     const notificationEnabled = 
       (data.type === 'vote' && orgSettings?.notify_on_vote) ||
@@ -296,7 +119,6 @@ const handler = async (req: Request): Promise<Response> => {
       (data.type === 'donation' && orgSettings?.notify_on_donation);
 
     if (!notificationEnabled) {
-      console.log(`Notifications not enabled for ${data.type} for org ${data.organization_id}`);
       return new Response(
         JSON.stringify({ success: true, skipped: true, reason: 'Notifications not enabled' }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -308,17 +130,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!orgEmail) {
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('email, full_name')
-        .eq('id', data.organization_id)
-        .single();
-      
+        .from('profiles').select('email, full_name').eq('id', data.organization_id).single();
       orgEmail = profile?.email;
       orgName = profile?.full_name || 'Organization';
     }
 
     if (!orgEmail) {
-      console.log("No email found for organization");
       return new Response(
         JSON.stringify({ success: false, error: 'No organization email found' }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -330,33 +147,45 @@ const handler = async (req: Request): Promise<Response> => {
 
     switch (data.type) {
       case 'vote':
-        html = generateVoteNotificationHtml(data);
-        subject = `New Vote: ${data.contestant_name} - ${data.contest_title}`;
+        html = wrapNotification('New Vote',
+          buildRow('Contest', data.contest_title || '') +
+          buildRow('Contestant', data.contestant_name || '') +
+          buildRow('Voter', data.voter_name || 'Anonymous') +
+          buildRow('Votes', String(data.quantity || 1)) +
+          buildRow('Amount', `${data.currency} ${data.amount.toLocaleString()}`)
+        );
+        subject = `New Vote: ${data.contestant_name} — ${data.contest_title}`;
         break;
       case 'ticket':
-        html = generateTicketNotificationHtml(data);
+        html = wrapNotification('New Ticket Sale',
+          buildRow('Event', data.event_title || '') +
+          buildRow('Buyer', data.buyer_name || 'Anonymous') +
+          buildRow('Type', data.ticket_type || 'Standard') +
+          buildRow('Qty', String(data.quantity || 1)) +
+          buildRow('Amount', `${data.currency} ${data.amount.toLocaleString()}`)
+        );
         subject = `New Ticket Sale: ${data.event_title}`;
         break;
       case 'donation':
-        html = generateDonationNotificationHtml(data);
+        html = wrapNotification('New Donation',
+          buildRow('Campaign', data.campaign_title || '') +
+          buildRow('Donor', data.donor_name || 'Anonymous') +
+          buildRow('Amount', `${data.currency} ${data.amount.toLocaleString()}`)
+        );
         subject = `New Donation: ${data.campaign_title}`;
         break;
       default:
         throw new Error(`Unknown transaction type: ${data.type}`);
     }
 
-    console.log("Sending notification email to:", orgEmail);
-
     const emailResponse = await sendZeptoEmail(orgEmail, orgName, subject, html);
-
-    console.log("Email sent successfully:", JSON.stringify(emailResponse));
 
     return new Response(
       JSON.stringify({ success: true, ...emailResponse }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error sending notification:", error.message, error.stack);
+    console.error("Error sending notification:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

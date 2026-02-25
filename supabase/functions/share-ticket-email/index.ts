@@ -62,92 +62,93 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const {
-      recipientEmail,
-      recipientName,
-      senderName,
-      eventTitle,
-      eventDate,
-      eventTime,
-      venue,
-      ticketType,
-      quantity,
-      ticketCode,
-      ticketUrl,
+      recipientEmail, recipientName, senderName, eventTitle,
+      eventDate, eventTime, venue, ticketType, quantity,
+      ticketCode, ticketUrl,
     }: ShareTicketRequest = await req.json();
 
     const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ticket Shared</title>
-      </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 32px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">🎫 Ticket Shared!</h1>
-          </div>
-          
-          <!-- Content -->
-          <div style="padding: 32px;">
-            <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">
-              Hi ${recipientName || 'there'},<br><br>
-              <strong>${senderName}</strong> has shared an event ticket with you!
-            </p>
-            
-            <!-- Event Card -->
-            <div style="background-color: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <h2 style="color: #111827; margin: 0 0 16px 0; font-size: 20px;">${eventTitle}</h2>
-              
-              <div style="margin-bottom: 12px;">
-                <span style="color: #6b7280; font-size: 14px;">📅 Date:</span>
-                <span style="color: #111827; font-size: 14px; font-weight: 500; margin-left: 8px;">${eventDate}</span>
-              </div>
-              
-              <div style="margin-bottom: 12px;">
-                <span style="color: #6b7280; font-size: 14px;">🕐 Time:</span>
-                <span style="color: #111827; font-size: 14px; font-weight: 500; margin-left: 8px;">${eventTime}</span>
-              </div>
-              
-              <div style="margin-bottom: 12px;">
-                <span style="color: #6b7280; font-size: 14px;">📍 Venue:</span>
-                <span style="color: #111827; font-size: 14px; font-weight: 500; margin-left: 8px;">${venue}</span>
-              </div>
-              
-              <div style="margin-bottom: 12px;">
-                <span style="color: #6b7280; font-size: 14px;">🎟️ Ticket Type:</span>
-                <span style="color: #111827; font-size: 14px; font-weight: 500; margin-left: 8px;">${ticketType} × ${quantity}</span>
-              </div>
-              
-              <div style="border-top: 2px dashed #e5e7eb; margin-top: 16px; padding-top: 16px;">
-                <span style="color: #6b7280; font-size: 12px;">Ticket Code:</span>
-                <div style="font-family: monospace; color: #7c3aed; font-size: 14px; font-weight: 600; margin-top: 4px;">${ticketCode}</div>
-              </div>
-            </div>
-            
-            <!-- CTA Button -->
-            <div style="text-align: center;">
-              <a href="${ticketUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                View Ticket Details
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+
+          <tr>
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Ticket Shared</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #111827; line-height: 1.5;">
+                Hi ${recipientName || 'there'},
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; color: #374151; line-height: 1.6;">
+                <strong>${senderName}</strong> shared an event ticket with you.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <p style="margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #111827;">${eventTitle}</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Date</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${eventDate}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Time</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${eventTime}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Venue</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${venue}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Ticket</td>
+                  <td style="padding: 6px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${ticketType} × ${quantity}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 20px 0; text-align: center;">
+              <p style="margin: 0 0 4px; font-size: 12px; color: #6b7280;">Ticket code</p>
+              <p style="margin: 0; font-size: 14px; font-family: monospace; color: #111827; font-weight: 600;">${ticketCode}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-bottom: 24px;">
+              <a href="${ticketUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 15px;">
+                View Ticket
               </a>
-            </div>
-            
-            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 24px;">
-              Present this ticket (or the QR code) at the event entrance for admission.
-            </p>
-          </div>
-          
-          <!-- Footer -->
-          <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
-            <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-              Powered by Useqiv • Your voting and events platform
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                Present this ticket at the event entrance for admission.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
 
     const emailResponse = await sendZeptoEmail(
@@ -167,10 +168,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in share-ticket-email function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
