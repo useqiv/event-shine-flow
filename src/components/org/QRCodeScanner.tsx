@@ -174,9 +174,28 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     return /FBAN|FBAV|Instagram|Line|; wv\)|WebView|MiuiBrowser/i.test(userAgent);
   }, []);
 
+  const isPermissionDeniedError = useCallback((err: any) => {
+    const name = err?.name || '';
+    const message = String(err?.message || '').toLowerCase();
+
+    return (
+      name === 'NotAllowedError' ||
+      name === 'PermissionDeniedError' ||
+      (name === 'SecurityError' && message.includes('permission')) ||
+      message.includes('permission denied') ||
+      message.includes('denied by system') ||
+      message.includes('permission dismissed')
+    );
+  }, []);
+
   const requestCameraAccess = useCallback(async (): Promise<boolean> => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError('Camera is not supported on this browser/device.');
+      return false;
+    }
+
+    if (!window.isSecureContext) {
+      setCameraError('Camera requires a secure HTTPS connection. Please open this page with https and try again.');
       return false;
     }
 
@@ -184,10 +203,29 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     setCameraError(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' } },
-        audio: false,
-      });
+      const constraintsToTry: MediaStreamConstraints[] = [
+        { video: { facingMode: { ideal: 'environment' } }, audio: false },
+        { video: true, audio: false },
+      ];
+
+      let stream: MediaStream | null = null;
+      let lastConstraintError: any = null;
+
+      for (const constraints of constraintsToTry) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          break;
+        } catch (candidateError: any) {
+          lastConstraintError = candidateError;
+          if (isPermissionDeniedError(candidateError)) {
+            break;
+          }
+        }
+      }
+
+      if (!stream) {
+        throw lastConstraintError || new Error('Unable to initialize camera stream');
+      }
 
       stream.getTracks().forEach(track => track.stop());
       setCanUseConstraintFallback(true);
@@ -204,7 +242,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         console.warn('Camera enumeration failed, using constraint fallback:', enumerationError);
       }
 
-      // Some mobile browsers block device enumeration but still allow direct camera constraints
+      // Some browsers block device enumeration but still allow direct camera constraints
       setCameras([]);
       setSelectedCamera('');
       return true;
@@ -214,13 +252,13 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       const embedded = isEmbeddedContext();
       const inAppBrowser = isInAppBrowser();
 
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      if (isPermissionDeniedError(err)) {
         if (embedded) {
           setCameraError('Camera access is blocked inside embedded preview. Open this app in Safari or Chrome directly and try again.');
         } else if (inAppBrowser) {
           setCameraError('This in-app browser is blocking camera access. Open the link in Safari or Chrome and try again.');
         } else {
-          setCameraError('Camera permission was denied. Please allow camera access in your browser settings, then tap "Try Again".');
+          setCameraError('Camera permission was blocked by browser or OS settings. Please allow camera for this site and your browser app, then tap "Try Again".');
         }
       } else if (err.name === 'NotFoundError') {
         setCameraError('No camera found on this device.');
@@ -234,7 +272,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     } finally {
       setRequestingCamera(false);
     }
-  }, [isEmbeddedContext, isInAppBrowser]);
+  }, [isEmbeddedContext, isInAppBrowser, isPermissionDeniedError]);
 
   // Check permission state on mount - show dialog if not yet granted
   useEffect(() => {
@@ -276,31 +314,62 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
     try {
       scannerRef.current = new Html5Qrcode(scannerContainerId);
-      const cameraInput = selectedCamera || { facingMode: { ideal: 'environment' } };
 
-      await scannerRef.current.start(
-        cameraInput,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        onQRCodeScanned,
-        () => {
-          // Ignore scan errors (no QR found)
+      const cameraInputs: Array<string | MediaTrackConstraints> = [];
+      if (selectedCamera) {
+        cameraInputs.push(selectedCamera);
+      }
+      cameraInputs.push({ facingMode: { ideal: 'environment' } });
+      cameraInputs.push({ facingMode: { ideal: 'user' } });
+
+      let lastStartError: any = null;
+
+      for (const cameraInput of cameraInputs) {
+        try {
+          await scannerRef.current.start(
+            cameraInput,
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+            },
+            onQRCodeScanned,
+            () => {
+              // Ignore scan errors (no QR found)
+            }
+          );
+
+          setIsScanning(true);
+          setLastScan(null);
+          setCameraError(null);
+          setShowPermissionDialog(false);
+          return;
+        } catch (attemptError: any) {
+          lastStartError = attemptError;
+          console.warn('Camera start attempt failed:', attemptError);
         }
-      );
+      }
 
-      setIsScanning(true);
-      setLastScan(null);
-      setCameraError(null);
-      setShowPermissionDialog(false);
+      throw lastStartError || new Error('Failed to initialize camera');
     } catch (err: any) {
       console.error('Error starting scanner:', err);
-      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-        setCameraError('Camera could not be started in this browser context. Open the app directly in Safari or Chrome and try again.');
+      const embedded = isEmbeddedContext();
+      const inAppBrowser = isInAppBrowser();
+
+      if (isPermissionDeniedError(err)) {
+        if (embedded) {
+          setCameraError('Camera is blocked inside embedded preview. Open this app directly in Safari or Chrome.');
+        } else if (inAppBrowser) {
+          setCameraError('This in-app browser blocks camera access. Open the link in Safari or Chrome.');
+        } else {
+          setCameraError('Camera permission was blocked by browser or OS settings. Allow camera for this site and browser app, then tap "Try Again".');
+        }
+      } else if (err?.name === 'NotReadableError') {
+        setCameraError('Camera is currently in use by another app. Close other camera apps and try again.');
       } else {
-        toast.error('Failed to start camera. Please check permissions.');
+        setCameraError(err?.message ? `Failed to start camera: ${err.message}` : 'Failed to start camera. Please check permissions and try again.');
       }
+
+      toast.error('Failed to start camera. Please check permissions.');
     }
   };
 
@@ -541,7 +610,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
                       </p>
                     ) : (
                       <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
-                        On mobile: Go to browser settings → Site permissions → Camera → Allow. Then tap "Try Again".
+                        Check both browser site permission and device-level browser camera permission, then tap &quot;Try Again&quot;.
                       </p>
                     )}
                     <div className="flex flex-col gap-2">
