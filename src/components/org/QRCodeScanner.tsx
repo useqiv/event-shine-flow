@@ -10,6 +10,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface QRCodeScannerProps {
   eventId: string;
@@ -106,6 +114,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
   const [scanStats, setScanStats] = useState({ total: 0, successful: 0, failed: 0 });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [recentCheckIns, setRecentCheckIns] = useState<RecentCheckIn[]>([]);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
+  const [permissionChecked, setPermissionChecked] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-reader';
 
@@ -186,12 +196,36 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     }
   }, []);
 
+  // Check permission state on mount - show dialog if not yet granted
   useEffect(() => {
-    requestCameraAccess();
+    const checkPermission = async () => {
+      try {
+        // Check if permission is already granted
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          if (result.state === 'granted') {
+            setPermissionChecked(true);
+            requestCameraAccess();
+            return;
+          }
+        }
+      } catch {
+        // permissions.query not supported for camera in some browsers
+      }
+      // Show the permission dialog
+      setShowPermissionDialog(true);
+    };
+    checkPermission();
     return () => {
       stopScanning();
     };
   }, []);
+
+  const handlePermissionGrant = async () => {
+    setShowPermissionDialog(false);
+    setPermissionChecked(true);
+    await requestCameraAccess();
+  };
 
   const startScanning = async () => {
     if (!selectedCamera) {
@@ -391,6 +425,31 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* Camera Permission Dialog */}
+      <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Camera className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="text-center">Camera Access Required</DialogTitle>
+            <DialogDescription className="text-center">
+              To scan QR codes on tickets, this app needs access to your device&apos;s camera.
+              Please tap <strong>&quot;Allow&quot;</strong> when your browser asks for permission.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button onClick={handlePermissionGrant} size="lg" className="w-full h-12 text-base">
+              <Camera className="mr-2 h-5 w-5" />
+              Grant Camera Access
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Your camera is only used for scanning — no images are stored.
+            </p>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Scanner Stats - Compact on mobile */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
         <Card>
