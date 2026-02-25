@@ -120,21 +120,30 @@ const ManualTicketLookup: React.FC<ManualTicketLookupProps> = ({ eventId, onChec
     setIsCheckingIn(true);
 
     try {
-      // Update ticket status
-      const { error: updateError } = await supabase
-        .from('tickets')
-        .update({ status: 'used' })
-        .eq('id', selectedTicket.id);
+      // Use atomic check-in to prevent double-scanning
+      const { data: checkinResult, error: checkinError } = await supabase
+        .rpc('atomic_ticket_checkin', {
+          p_ticket_id: selectedTicket.id,
+          p_event_id: eventId,
+          p_scanned_by: user?.id,
+        });
 
-      if (updateError) throw updateError;
+      if (checkinError) throw checkinError;
 
-      // Log the scan
-      await supabase.from('qr_scan_logs').insert({
-        event_id: eventId,
-        ticket_id: selectedTicket.id,
-        scan_result: 'success',
-        scanned_by: user?.id,
-      });
+      const result = checkinResult as { success: boolean; reason: string; message: string };
+
+      if (!result.success) {
+        toast.error(result.message);
+        // Update local state to reflect current status
+        if (result.reason === 'already_used') {
+          setResults(prev => prev.map(t => 
+            t.id === selectedTicket.id ? { ...t, status: 'used' } : t
+          ));
+        }
+        setSelectedTicket(null);
+        setIsCheckingIn(false);
+        return;
+      }
 
       toast.success('Check-in successful!');
       

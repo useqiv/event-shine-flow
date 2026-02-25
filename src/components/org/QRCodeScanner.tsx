@@ -419,7 +419,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     }
 
     try {
-      // Pre-validate ticket using the verification endpoint
+      // Atomic verify + check-in using the edge function
       const verifyResponse = await fetch(
         'https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/verify-ticket-qr',
         {
@@ -431,15 +431,17 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           body: JSON.stringify({
             qr_code: decodedText,
             event_id: eventId,
+            check_in: true,
+            scanned_by: user?.id,
           }),
         }
       );
 
       const verification = await verifyResponse.json();
 
-      // Handle verification results
+      // Handle failed check-in (already used, cancelled, wrong event, etc.)
       if (!verification.valid) {
-        const feedbackType = verification.status === 'used' ? 'warning' : 'error';
+        const feedbackType = verification.status === 'used' || verification.status === 'processing' ? 'warning' : 'error';
         provideFeedback(feedbackType);
         
         const scanResult = {
@@ -459,11 +461,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           ticketType: verification.ticket?.ticket_type?.name || undefined,
         });
 
-        // Log the failed verification
-        if (verification.ticket?.id) {
-          logScan(verification.ticket.id, verification.status);
-        } else {
-          // Log with placeholder for unknown tickets
+        // Log the failed scan (only if we don't have atomic logging, i.e. ticket wasn't found)
+        if (!verification.ticket?.id) {
           try {
             await supabase.from('qr_scan_logs').insert({
               event_id: eventId,
@@ -474,6 +473,9 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           } catch (e) {
             console.error('Failed to log invalid scan:', e);
           }
+        } else if (verification.status !== 'checked_in') {
+          // Log failed verification for known tickets
+          logScan(verification.ticket.id, verification.status);
         }
 
         setScanStats(prev => ({ ...prev, total: prev.total + 1, failed: prev.failed + 1 }));
@@ -486,21 +488,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         return;
       }
 
-      // Ticket is valid - proceed with check-in
+      // Ticket was atomically checked in successfully
       const ticket = verification.ticket;
-
-      // Mark ticket as used
-      const { error: updateError } = await supabase
-        .from('tickets')
-        .update({ status: 'used' })
-        .eq('id', ticket.id);
-
-      if (updateError) {
-        throw new Error('Failed to update ticket status');
-      }
-
-      // Log successful scan
-      logScan(ticket.id, 'success');
 
       provideFeedback('success');
       setLastScan({

@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface VerificationResult {
   valid: boolean;
-  status: 'valid' | 'used' | 'cancelled' | 'not_found' | 'wrong_event' | 'expired';
+  status: 'valid' | 'used' | 'cancelled' | 'not_found' | 'wrong_event' | 'expired' | 'checked_in' | 'processing';
   message: string;
   ticket?: {
     id: string;
@@ -36,7 +36,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { qr_code, event_id } = await req.json();
+    const { qr_code, event_id, check_in, scanned_by } = await req.json();
 
     // Validate required parameters
     if (!qr_code || typeof qr_code !== 'string') {
@@ -170,7 +170,65 @@ serve(async (req) => {
       ticket_type: ticketType,
     };
 
-    // Check ticket status
+    // If check_in flag is set, use atomic check-in
+    if (check_in === true) {
+      const { data: checkinResult, error: checkinError } = await supabase
+        .rpc('atomic_ticket_checkin', {
+          p_ticket_id: ticket.id,
+          p_event_id: event_id,
+          p_scanned_by: scanned_by || null,
+        });
+
+      if (checkinError) {
+        console.error('Atomic check-in error:', checkinError);
+        return new Response(
+          JSON.stringify({
+            valid: false,
+            status: 'not_found',
+            message: 'Check-in failed due to a server error. Please try again.',
+            ticket: ticketResponse,
+          } as VerificationResult),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = checkinResult as { success: boolean; reason: string; message: string };
+
+      if (result.success) {
+        ticketResponse.status = 'used';
+        return new Response(
+          JSON.stringify({
+            valid: true,
+            status: 'checked_in',
+            message: result.message,
+            ticket: ticketResponse,
+          } as VerificationResult),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        // Map reason to status
+        const statusMap: Record<string, VerificationResult['status']> = {
+          'already_used': 'used',
+          'cancelled': 'cancelled',
+          'wrong_event': 'wrong_event',
+          'processing': 'processing',
+          'not_found': 'not_found',
+          'invalid_status': 'expired',
+        };
+
+        return new Response(
+          JSON.stringify({
+            valid: false,
+            status: statusMap[result.reason] || 'not_found',
+            message: result.message,
+            ticket: ticketResponse,
+          } as VerificationResult),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Verify-only mode (no check_in flag) - original behavior
     if (ticket.status === 'used') {
       return new Response(
         JSON.stringify({

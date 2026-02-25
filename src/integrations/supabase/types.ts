@@ -3812,6 +3812,10 @@ export type Database = {
       }
     }
     Functions: {
+      atomic_ticket_checkin: {
+        Args: { p_event_id: string; p_scanned_by: string; p_ticket_id: string }
+        Returns: Json
+      }
       check_and_accept_scanner_invite: {
         Args: { p_user_id: string }
         Returns: Json
