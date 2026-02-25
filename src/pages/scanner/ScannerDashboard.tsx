@@ -1,34 +1,50 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ScannerLayout from '@/components/layout/ScannerLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useOrganizationEvents } from '@/hooks/useOrganization';
 import { useOrgPermissions, useAllowedScanEventIds } from '@/hooks/useOrgPermissions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { QrCode, Calendar, MapPin, ShieldAlert } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
 const ScannerDashboard = () => {
-  const { data: events, isLoading } = useOrganizationEvents();
   const { data: permissions, isLoading: permissionsLoading } = useOrgPermissions();
   const allowedEventIds = useAllowedScanEventIds();
 
-  const filterByPermissions = (eventList: typeof events) => {
-    if (!eventList) return [];
-    if (!permissions?.can_scan_tickets) return [];
-    if (allowedEventIds === null) return eventList;
-    return eventList.filter(e => allowedEventIds.includes(e.id));
-  };
+  // Fetch events using the organization ID from permissions (works for both owners and team members)
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ['scanner-events', permissions?.organizationId],
+    queryFn: async () => {
+      if (!permissions?.organizationId) return [];
 
-  const allUpcoming = events?.filter(e => !isPast(new Date(e.event_date))) || [];
-  const allPast = events?.filter(e => isPast(new Date(e.event_date))) || [];
-  const upcomingEvents = filterByPermissions(allUpcoming);
-  const pastEvents = filterByPermissions(allPast);
+      let query = supabase
+        .from('events')
+        .select('*')
+        .eq('organization_id', permissions.organizationId)
+        .order('event_date', { ascending: false });
 
-  if (isLoading || permissionsLoading) {
+      // If user has specific event restrictions, only fetch those events
+      if (allowedEventIds && allowedEventIds.length > 0) {
+        query = query.in('id', allowedEventIds);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!permissions?.organizationId && !!permissions?.can_scan_tickets,
+  });
+
+  const isLoading = permissionsLoading || eventsLoading;
+
+  const upcomingEvents = events?.filter(e => !isPast(new Date(e.event_date))) || [];
+  const pastEvents = events?.filter(e => isPast(new Date(e.event_date))) || [];
+
+  if (isLoading) {
     return (
       <ScannerLayout>
         <div className="space-y-4">
@@ -133,7 +149,7 @@ const ScannerDashboard = () => {
           </div>
         )}
 
-        {events?.length === 0 && (
+        {(!events || events.length === 0) && (
           <Card>
             <CardContent className="py-12 text-center">
               <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
