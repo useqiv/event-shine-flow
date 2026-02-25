@@ -188,9 +188,33 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     );
   }, []);
 
+  const isCameraBlockedByDocumentPolicy = useCallback(() => {
+    const policyApi = (document as any).permissionsPolicy || (document as any).featurePolicy;
+    if (!policyApi || typeof policyApi.allowsFeature !== 'function') {
+      return false;
+    }
+
+    try {
+      return !policyApi.allowsFeature('camera');
+    } catch {
+      return false;
+    }
+  }, []);
+
   const requestCameraAccess = useCallback(async (): Promise<boolean> => {
     if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError('Camera is not supported on this browser/device.');
+      return false;
+    }
+
+    const embedded = isEmbeddedContext();
+
+    if (isCameraBlockedByDocumentPolicy()) {
+      if (embedded) {
+        setCameraError('Camera is blocked in embedded preview. Open this app directly in Safari or Chrome.');
+      } else {
+        setCameraError('Camera is blocked by this page policy (Permissions-Policy). If this is your custom domain, redeploy and clear CDN/browser cache.');
+      }
       return false;
     }
 
@@ -249,11 +273,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     } catch (err: any) {
       console.error('Camera access error:', err);
 
-      const embedded = isEmbeddedContext();
       const inAppBrowser = isInAppBrowser();
 
       if (isPermissionDeniedError(err)) {
-        if (embedded) {
+        if (isCameraBlockedByDocumentPolicy()) {
+          setCameraError('Camera is blocked by document Permissions-Policy for this page/context. Open directly in the main browser tab and try again.');
+        } else if (embedded) {
           setCameraError('Camera access is blocked inside embedded preview. Open this app in Safari or Chrome directly and try again.');
         } else if (inAppBrowser) {
           setCameraError('This in-app browser is blocking camera access. Open the link in Safari or Chrome and try again.');
@@ -272,7 +297,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     } finally {
       setRequestingCamera(false);
     }
-  }, [isEmbeddedContext, isInAppBrowser, isPermissionDeniedError]);
+  }, [isEmbeddedContext, isInAppBrowser, isPermissionDeniedError, isCameraBlockedByDocumentPolicy]);
 
   // Check permission state on mount - show dialog if not yet granted
   useEffect(() => {
@@ -356,7 +381,9 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       const inAppBrowser = isInAppBrowser();
 
       if (isPermissionDeniedError(err)) {
-        if (embedded) {
+        if (isCameraBlockedByDocumentPolicy()) {
+          setCameraError('Camera is blocked by document Permissions-Policy for this page/context. Open directly in a browser tab (not embedded) and try again.');
+        } else if (embedded) {
           setCameraError('Camera is blocked inside embedded preview. Open this app directly in Safari or Chrome.');
         } else if (inAppBrowser) {
           setCameraError('This in-app browser blocks camera access. Open the link in Safari or Chrome.');
@@ -604,7 +631,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
                   <>
                     <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-destructive mx-auto mb-3 sm:mb-4" />
                     <p className="text-sm sm:text-base text-destructive font-medium mb-2">{cameraError}</p>
-                    {cameraError.includes('embedded preview') || cameraError.includes('in-app browser') ? (
+                    {cameraError.includes('embedded preview') || cameraError.includes('in-app browser') || cameraError.includes('Permissions-Policy') ? (
                       <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
                         This browser context blocks camera APIs. Open the app link directly in Safari or Chrome.
                       </p>
