@@ -6,33 +6,43 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useOrganizationEvents } from '@/hooks/useOrganization';
 import { useOrgPermissions, useAllowedScanEventIds } from '@/hooks/useOrgPermissions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { QrCode, Calendar, MapPin, ArrowRight, ShieldAlert } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 
 const EventScannerList = () => {
-  const { data: events, isLoading } = useOrganizationEvents();
   const { data: permissions, isLoading: permissionsLoading } = useOrgPermissions();
   const allowedEventIds = useAllowedScanEventIds();
 
-  // Filter events based on scan permissions
-  const filterByPermissions = (eventList: typeof events) => {
-    if (!eventList) return [];
-    if (!permissions?.can_scan_tickets) return [];
-    
-    // null means all events allowed
-    if (allowedEventIds === null) return eventList;
-    
-    // Filter to only allowed events
-    return eventList.filter(e => allowedEventIds.includes(e.id));
-  };
+  // Fetch events using org ID from permissions (works for both owners and team members)
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ['scanner-events-org', permissions?.organizationId],
+    queryFn: async () => {
+      if (!permissions?.organizationId) return [];
 
-  const allUpcoming = events?.filter(e => !isPast(new Date(e.event_date))) || [];
-  const allPast = events?.filter(e => isPast(new Date(e.event_date))) || [];
-  
-  const upcomingEvents = filterByPermissions(allUpcoming);
-  const pastEvents = filterByPermissions(allPast);
+      let query = supabase
+        .from('events')
+        .select('*')
+        .eq('organization_id', permissions.organizationId)
+        .order('event_date', { ascending: false });
+
+      if (allowedEventIds && allowedEventIds.length > 0) {
+        query = query.in('id', allowedEventIds);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!permissions?.organizationId && !!permissions?.can_scan_tickets,
+  });
+
+  const isLoading = permissionsLoading || eventsLoading;
+
+  const upcomingEvents = events?.filter(e => !isPast(new Date(e.event_date))) || [];
+  const pastEvents = events?.filter(e => isPast(new Date(e.event_date))) || [];
 
   if (isLoading || permissionsLoading) {
     return (
