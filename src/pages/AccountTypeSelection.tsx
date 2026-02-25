@@ -12,6 +12,7 @@ import { useApplyReferral } from "@/hooks/useReferral";
 const AccountTypeSelection = () => {
   const [selectedType, setSelectedType] = useState<"user" | "organization" | "influencer" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingInvite, setCheckingInvite] = useState(true);
   const [pendingReferral, setPendingReferral] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -26,6 +27,94 @@ const AccountTypeSelection = () => {
       setPendingReferral(storedReferral);
     }
   }, []);
+
+  // Check for pending scanner-only team invite and auto-setup
+  useEffect(() => {
+    if (!user?.email) {
+      setCheckingInvite(false);
+      return;
+    }
+
+    const checkPendingScannerInvite = async () => {
+      try {
+        // Look for a pending team_members record matching this user's email
+        const { data: pendingInvite, error } = await supabase
+          .from('team_members')
+          .select('id, organization_id, permissions, role')
+          .eq('email', user.email!)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+        if (error || !pendingInvite) {
+          setCheckingInvite(false);
+          return;
+        }
+
+        // Check if this is a scanner-only invite
+        const permissions = pendingInvite.permissions as any;
+        const isScannerOnly = permissions?.can_scan_tickets === true &&
+          !permissions?.can_edit_contests &&
+          !permissions?.can_edit_events &&
+          !permissions?.can_edit_campaigns &&
+          !permissions?.can_manage_payouts &&
+          !permissions?.can_view_analytics;
+
+        if (!isScannerOnly) {
+          setCheckingInvite(false);
+          return;
+        }
+
+        // Auto-setup: set account type as "user"
+        const { error: rpcError } = await supabase.rpc('set_account_type', {
+          p_user_id: user.id,
+          p_role: 'user'
+        });
+
+        if (rpcError) {
+          console.error('Failed to set account type for scanner staff:', rpcError);
+          setCheckingInvite(false);
+          return;
+        }
+
+        // Accept the team invite
+        const { error: acceptError } = await supabase
+          .from('team_members')
+          .update({
+            status: 'accepted',
+            user_id: user.id,
+            accepted_at: new Date().toISOString(),
+          })
+          .eq('id', pendingInvite.id);
+
+        if (acceptError) {
+          console.error('Failed to accept team invite:', acceptError);
+          setCheckingInvite(false);
+          return;
+        }
+
+        // Update caches
+        queryClient.setQueryData(['profile', user.id], (prev: any) =>
+          prev ? { ...prev, account_type_selected: true } : prev
+        );
+        queryClient.setQueryData(['user-role', user.id], 'user');
+        queryClient.invalidateQueries({ queryKey: ['profile'] });
+        queryClient.invalidateQueries({ queryKey: ['user-role'] });
+        queryClient.invalidateQueries({ queryKey: ['org-permissions'] });
+
+        toast({
+          title: "Welcome, Scanner Staff!",
+          description: "You've been set up as a ticket scanner. Redirecting to your dashboard.",
+        });
+
+        navigate('/scanner', { replace: true });
+      } catch (err) {
+        console.error('Error checking scanner invite:', err);
+        setCheckingInvite(false);
+      }
+    };
+
+    checkPendingScannerInvite();
+  }, [user?.email, user?.id, navigate, queryClient, toast]);
 
   const handleContinue = async () => {
     if (!selectedType || !user) return;
@@ -112,6 +201,17 @@ const AccountTypeSelection = () => {
       features: ["Claim influencer codes", "Track clicks & conversions", "Earn commission on sales"],
     },
   ];
+
+  if (checkingInvite) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Setting up your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
