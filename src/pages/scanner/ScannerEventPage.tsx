@@ -21,7 +21,7 @@ import { format } from 'date-fns';
 const ScannerEventPage = () => {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading } = useEvent(id || '');
-  const canScanThisEvent = useCanScanEvent(id || '');
+  const { canScan: canScanThisEvent, isLoading: permLoading } = useCanScanEvent(id || '');
   const { data: ticketTypes } = useEventTicketTypes(id || '');
   const { data: scanLogs, refetch: refetchLogs } = useQRScanLogs(id);
 
@@ -34,7 +34,7 @@ const ScannerEventPage = () => {
     refetchLogs();
   };
 
-  if (isLoading) {
+  if (isLoading || permLoading) {
     return (
       <ScannerLayout>
         <div className="space-y-4">
