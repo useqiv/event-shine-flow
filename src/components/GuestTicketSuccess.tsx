@@ -58,6 +58,20 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
     const qrImg = new Image();
 
     qrImg.onload = () => {
+      // Load the Useqiv logo
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.onload = () => {
+        drawTicketCanvas(qrImg, logoImg);
+      };
+      logoImg.onerror = () => {
+        // Draw without logo if it fails to load
+        drawTicketCanvas(qrImg, null);
+      };
+      logoImg.src = '/logo.png';
+    };
+
+    const drawTicketCanvas = (qrImg: HTMLImageElement, logoImg: HTMLImageElement | null) => {
       // Create a high-resolution ticket canvas
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -65,7 +79,7 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
 
       // Ticket dimensions (vertical layout)
       const width = 600;
-      const height = 900;
+      const height = 940;
       canvas.width = width;
       canvas.height = height;
 
@@ -80,6 +94,14 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
       // Header section
       ctx.fillStyle = '#f05a28';
       ctx.fillRect(0, 8, width, 80);
+
+      // Draw logo in header if available
+      if (logoImg) {
+        const logoHeight = 40;
+        const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+        ctx.drawImage(logoImg, 20, 28, logoWidth, logoHeight);
+      }
+
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 28px system-ui, sans-serif';
       ctx.textAlign = 'center';
@@ -150,11 +172,14 @@ const GuestTicketSuccess = ({ open, onOpenChange, ticket, event }: GuestTicketSu
       const holderName = ticket.guestName ? `${ticket.guestName} (${ticket.guestEmail})` : ticket.guestEmail;
       ctx.fillText(holderName.substring(0, 45), detailsX, detailsY + 25);
 
-      // Footer
+      // Footer with Useqiv branding
       ctx.fillStyle = '#999999';
       ctx.font = '12px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Present this ticket at the venue for entry', width / 2, height - 30);
+      ctx.fillText('Present this ticket at the venue for entry', width / 2, height - 50);
+      ctx.font = 'bold 14px system-ui, sans-serif';
+      ctx.fillStyle = '#f05a28';
+      ctx.fillText('Powered by Useqiv', width / 2, height - 30);
 
       // Download the image
       const pngFile = canvas.toDataURL('image/png');

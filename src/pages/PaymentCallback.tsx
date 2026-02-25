@@ -232,6 +232,10 @@ const PaymentCallback = () => {
         <body>
           <div class="ticket">
             <div class="qr-section">
+              <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:12px;">
+                <img src="/logo.png" alt="Useqiv" style="height:32px;" onerror="this.style.display='none'" />
+                <span style="color:white;font-size:12px;font-weight:600;opacity:0.9;">Powered by Useqiv</span>
+              </div>
               <div class="qr-code">
                 ${document.getElementById('guest-ticket-qr-print')?.innerHTML || ''}
               </div>
