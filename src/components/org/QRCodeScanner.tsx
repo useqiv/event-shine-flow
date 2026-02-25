@@ -149,24 +149,45 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
   }, [eventId]);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [requestingCamera, setRequestingCamera] = useState(false);
 
-  useEffect(() => {
-    // Get available cameras
-    Html5Qrcode.getCameras().then((devices) => {
+  const requestCameraAccess = useCallback(async () => {
+    setRequestingCamera(true);
+    setCameraError(null);
+    try {
+      // First, explicitly request camera permission via getUserMedia
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      // Stop the stream immediately - we just needed the permission grant
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Now enumerate cameras
+      const devices = await Html5Qrcode.getCameras();
       if (devices && devices.length) {
         setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id}` })));
-        // Prefer back camera
         const backCamera = devices.find(d => d.label.toLowerCase().includes('back'));
         setSelectedCamera(backCamera?.id || devices[0].id);
         setCameraError(null);
       } else {
         setCameraError('No cameras found on this device.');
       }
-    }).catch(err => {
-      console.error('Error getting cameras:', err);
-      setCameraError('Camera access denied. Please allow camera permissions in your browser settings and reload the page.');
-    });
+    } catch (err: any) {
+      console.error('Camera access error:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera permission was denied. Please allow camera access in your browser settings, then tap "Try Again".');
+      } else if (err.name === 'NotFoundError') {
+        setCameraError('No camera found on this device.');
+      } else if (err.name === 'NotReadableError') {
+        setCameraError('Camera is in use by another app. Close other apps using the camera and try again.');
+      } else {
+        setCameraError(`Could not access camera: ${err.message || 'Unknown error'}. Please check your browser settings.`);
+      }
+    } finally {
+      setRequestingCamera(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    requestCameraAccess();
     return () => {
       stopScanning();
     };
@@ -408,12 +429,23 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
                     <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-destructive mx-auto mb-3 sm:mb-4" />
                     <p className="text-sm sm:text-base text-destructive font-medium mb-2">{cameraError}</p>
                     <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
-                      On mobile: Go to browser settings → Site permissions → Camera → Allow. Then reload this page.
+                      On mobile: Go to browser settings → Site permissions → Camera → Allow. Then tap "Try Again".
                     </p>
-                    <Button onClick={() => window.location.reload()} variant="outline" size="lg" className="h-12 px-6 text-base">
-                      <RefreshCw className="mr-2 h-5 w-5" />
-                      Reload Page
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button onClick={requestCameraAccess} disabled={requestingCamera} size="lg" className="h-12 px-6 text-base">
+                        <Camera className="mr-2 h-5 w-5" />
+                        {requestingCamera ? 'Requesting...' : 'Try Again'}
+                      </Button>
+                      <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Reload Page
+                      </Button>
+                    </div>
+                  </>
+                ) : requestingCamera ? (
+                  <>
+                    <Camera className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4 animate-pulse" />
+                    <p className="text-sm sm:text-base text-muted-foreground">Requesting camera access...</p>
                   </>
                 ) : (
                   <>
