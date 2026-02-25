@@ -148,6 +148,8 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
     fetchScanStats();
   }, [eventId]);
 
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
   useEffect(() => {
     // Get available cameras
     Html5Qrcode.getCameras().then((devices) => {
@@ -156,10 +158,13 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
         // Prefer back camera
         const backCamera = devices.find(d => d.label.toLowerCase().includes('back'));
         setSelectedCamera(backCamera?.id || devices[0].id);
+        setCameraError(null);
+      } else {
+        setCameraError('No cameras found on this device.');
       }
     }).catch(err => {
       console.error('Error getting cameras:', err);
-      toast.error('Could not access camera. Please ensure camera permissions are granted.');
+      setCameraError('Camera access denied. Please allow camera permissions in your browser settings and reload the page.');
     });
 
     return () => {
@@ -398,12 +403,28 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
           {!isScanning && (
             <div className="absolute inset-0 flex items-center justify-center bg-secondary z-10">
               <div className="text-center p-4 sm:p-6">
-                <Camera className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-                <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Camera is off</p>
-                <Button onClick={startScanning} disabled={!selectedCamera} size="lg" className="h-12 px-6 text-base">
-                  <Camera className="mr-2 h-5 w-5" />
-                  Start Scanning
-                </Button>
+                {cameraError ? (
+                  <>
+                    <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-destructive mx-auto mb-3 sm:mb-4" />
+                    <p className="text-sm sm:text-base text-destructive font-medium mb-2">{cameraError}</p>
+                    <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+                      On mobile: Go to browser settings → Site permissions → Camera → Allow. Then reload this page.
+                    </p>
+                    <Button onClick={() => window.location.reload()} variant="outline" size="lg" className="h-12 px-6 text-base">
+                      <RefreshCw className="mr-2 h-5 w-5" />
+                      Reload Page
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+                    <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Camera is off</p>
+                    <Button onClick={startScanning} disabled={!selectedCamera} size="lg" className="h-12 px-6 text-base">
+                      <Camera className="mr-2 h-5 w-5" />
+                      Start Scanning
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
