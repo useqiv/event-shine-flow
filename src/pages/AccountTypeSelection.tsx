@@ -28,71 +28,39 @@ const AccountTypeSelection = () => {
     }
   }, []);
 
-  // Check for pending scanner-only team invite and auto-setup
+  // Check for pending scanner-only team invite via secure server-side RPC
   useEffect(() => {
-    if (!user?.email) {
+    if (!user?.id) {
       setCheckingInvite(false);
       return;
     }
 
     const checkPendingScannerInvite = async () => {
       try {
-        // Look for a pending team_members record matching this user's email
-        const { data: pendingInvite, error } = await supabase
-          .from('team_members')
-          .select('id, organization_id, permissions, role')
-          .eq('email', user.email!)
-          .eq('status', 'pending')
-          .maybeSingle();
-
-        if (error || !pendingInvite) {
-          setCheckingInvite(false);
-          return;
-        }
-
-        // Check if this is a scanner-only invite
-        const permissions = pendingInvite.permissions as any;
-        const isScannerOnly = permissions?.can_scan_tickets === true &&
-          !permissions?.can_edit_contests &&
-          !permissions?.can_edit_events &&
-          !permissions?.can_edit_campaigns &&
-          !permissions?.can_manage_payouts &&
-          !permissions?.can_view_analytics;
-
-        if (!isScannerOnly) {
-          setCheckingInvite(false);
-          return;
-        }
-
-        // Auto-setup: set account type as "user"
-        const { error: rpcError } = await supabase.rpc('set_account_type', {
+        // Call secure SECURITY DEFINER RPC that:
+        // 1. Reads the user's email from auth.users (not client-supplied)
+        // 2. Finds pending scanner-only invites
+        // 3. Validates permissions server-side
+        // 4. Atomically sets account type + accepts invite
+        const { data, error } = await supabase.rpc('check_and_accept_scanner_invite', {
           p_user_id: user.id,
-          p_role: 'user'
         });
 
-        if (rpcError) {
-          console.error('Failed to set account type for scanner staff:', rpcError);
+        if (error) {
+          console.error('Scanner invite check failed:', error);
           setCheckingInvite(false);
           return;
         }
 
-        // Accept the team invite
-        const { error: acceptError } = await supabase
-          .from('team_members')
-          .update({
-            status: 'accepted',
-            user_id: user.id,
-            accepted_at: new Date().toISOString(),
-          })
-          .eq('id', pendingInvite.id);
+        const result = data as { success: boolean; reason?: string; organization_id?: string };
 
-        if (acceptError) {
-          console.error('Failed to accept team invite:', acceptError);
+        if (!result?.success) {
+          // No scanner invite found or not eligible — show normal account selection
           setCheckingInvite(false);
           return;
         }
 
-        // Update caches
+        // Server-side setup succeeded — update caches and redirect
         queryClient.setQueryData(['profile', user.id], (prev: any) =>
           prev ? { ...prev, account_type_selected: true } : prev
         );
@@ -114,7 +82,7 @@ const AccountTypeSelection = () => {
     };
 
     checkPendingScannerInvite();
-  }, [user?.email, user?.id, navigate, queryClient, toast]);
+  }, [user?.id, navigate, queryClient, toast]);
 
   const handleContinue = async () => {
     if (!selectedType || !user) return;
