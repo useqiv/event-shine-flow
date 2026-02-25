@@ -296,13 +296,16 @@ export const usePurchaseTicket = () => {
         ticketData.guest_name = guestName || null;
       }
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tickets')
-        .insert(ticketData)
-        .select()
-        .single();
+        .insert(ticketData);
 
       if (error) throw error;
+
+      const createdTicket = {
+        ...ticketData,
+        qr_code: qrCode,
+      };
 
       // Send organization transaction notification
       try {
@@ -415,7 +418,7 @@ export const usePurchaseTicket = () => {
         }
       }
 
-      return data;
+      return createdTicket;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket-types'] });
