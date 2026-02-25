@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
 import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
+import { useIsScannerOnly } from "@/hooks/useIsScannerOnly";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
@@ -126,9 +127,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: role, isLoading: roleLoading } = useUserRole();
+  const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   const location = useLocation();
   
-  if (loading || profileLoading || roleLoading) {
+  if (loading || profileLoading || roleLoading || scannerCheckLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
@@ -138,6 +140,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (profile && !profile.account_type_selected && location.pathname !== "/account-setup") {
     return <Navigate to="/account-setup" replace />;
+  }
+
+  // Scanner-only staff: restrict to /scanner routes only
+  if (isScannerOnly && !location.pathname.startsWith('/scanner')) {
+    return <Navigate to="/scanner" replace />;
   }
 
   const isOrganization = role === 'organization';
@@ -174,12 +181,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: role, isLoading: roleLoading } = useUserRole();
+  const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   
-  if (loading || (user && roleLoading)) {
+  if (loading || (user && (roleLoading || scannerCheckLoading))) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
   if (user) {
+    // Scanner-only staff always go to /scanner
+    if (isScannerOnly) return <Navigate to="/scanner" replace />;
+    
     const isOrganization = role === 'organization';
     const isAdmin = role === 'admin';
     const isInfluencer = (role as string) === 'influencer';
