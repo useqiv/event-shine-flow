@@ -21,7 +21,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, subject, message }: ContactFormRequest = await req.json();
 
-    // Validate required fields
     if (!name || !email || !subject || !message) {
       return new Response(
         JSON.stringify({ error: "All fields are required" }),
@@ -29,7 +28,6 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return new Response(
@@ -59,21 +57,57 @@ const handler = async (req: Request): Promise<Response> => {
         reply_to: [{ address: email, name: name }],
         subject: `Contact Form: ${subject}`,
         htmlbody: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">New Contact Form Submission</h2>
-            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Subject:</strong> ${subject}</p>
-            </div>
-            <div style="padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-              <h3 style="margin-top: 0;">Message:</h3>
-              <p style="white-space: pre-wrap;">${message}</p>
-            </div>
-            <p style="color: #888; font-size: 12px; margin-top: 20px;">
-              This message was sent from the USEQIV contact form.
-            </p>
-          </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+          <tr>
+            <td style="padding-bottom: 32px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">New Contact Form Submission</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 14px; width: 100px;">Name</td>
+                  <td style="padding: 12px 0; color: #111827; font-size: 14px; font-weight: 500;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Email</td>
+                  <td style="padding: 12px 0; color: #111827; font-size: 14px; font-weight: 500;">${email}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Subject</td>
+                  <td style="padding: 12px 0; color: #111827; font-size: 14px; font-weight: 500;">${subject}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top: 24px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280;">Message</p>
+              <p style="margin: 0; font-size: 14px; color: #111827; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-top: 32px;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Sent from the USEQIV contact form.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
         `,
       }),
     });

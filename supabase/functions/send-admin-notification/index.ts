@@ -19,7 +19,6 @@ const sendZeptoEmail = async (recipients: string[], subject: string, html: strin
     email_address: { address: email, name: "Admin" }
   }));
 
-  // Handle API key that may already contain the prefix
   const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
     ? ZEPTOMAIL_API_KEY 
     : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
@@ -40,133 +39,119 @@ const sendZeptoEmail = async (recipients: string[], subject: string, html: strin
   });
 
   const responseText = await response.text();
-  
   if (!responseText || responseText.trim() === "") {
     if (response.ok) return { success: true };
     throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
-  
   const data = JSON.parse(responseText);
-  
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
-  }
-  
+  if (!response.ok) throw new Error(data.message || "Failed to send email");
   return data;
 };
+
+const buildRow = (label: string, value: string) =>
+  `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${label}</td><td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 500;">${value}</td></tr>`;
+
+const wrapEmail = (label: string, rows: string, ctaUrl?: string, ctaText?: string) => `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+          <tr>
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${label}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+            </td>
+          </tr>
+          ${ctaUrl ? `
+          <tr>
+            <td align="center" style="padding: 24px 0;">
+              <a href="${ctaUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 15px;">${ctaText || 'View in Dashboard'}</a>
+            </td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td><p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">© ${new Date().getFullYear()} Useqiv</p></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
 const getEmailTemplate = (type: string, data: Record<string, any>) => {
   const templates: Record<string, { subject: string; html: string }> = {
     fraud_alert: {
-      subject: `🚨 Fraud Alert: ${data.alert_type || "Suspicious Activity Detected"}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #dc2626;">🚨 Fraud Alert</h1>
-          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Alert Type:</strong> ${data.alert_type}</p>
-            <p><strong>Severity:</strong> <span style="color: ${data.severity === 'high' ? '#dc2626' : data.severity === 'medium' ? '#f59e0b' : '#22c55e'}">${data.severity?.toUpperCase()}</span></p>
-            <p><strong>Description:</strong> ${data.description}</p>
-            <p><strong>Entity:</strong> ${data.entity_type} (ID: ${data.entity_id})</p>
-            <p><strong>Time:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <p>Please review this alert in the admin dashboard immediately.</p>
-          <a href="${data.dashboard_url || '#'}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View in Dashboard</a>
-        </div>
-      `,
+      subject: `Fraud Alert: ${data.alert_type || "Suspicious Activity"}`,
+      html: wrapEmail('Fraud Alert',
+        buildRow('Type', data.alert_type) +
+        buildRow('Severity', data.severity?.toUpperCase() || 'Unknown') +
+        buildRow('Description', data.description || 'N/A') +
+        buildRow('Entity', `${data.entity_type} (${data.entity_id})`) +
+        buildRow('Time', new Date().toISOString()),
+        data.dashboard_url, 'Review Alert'
+      ),
     },
     payout_request: {
-      subject: `💰 New Payout Request - ${data.amount} ${data.currency || "NGN"}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #7c3aed;">💰 New Payout Request</h1>
-          <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Organization:</strong> ${data.organization_name || "N/A"}</p>
-            <p><strong>Amount:</strong> ${data.amount} ${data.currency || "NGN"}</p>
-            <p><strong>Payment Method:</strong> ${data.payment_method}</p>
-            ${data.payment_method === 'bank' ? `
-              <p><strong>Bank:</strong> ${data.bank_name}</p>
-              <p><strong>Account:</strong> ${data.account_number}</p>
-              <p><strong>Account Name:</strong> ${data.account_name}</p>
-            ` : `
-              <p><strong>USDT Address:</strong> ${data.usdt_address}</p>
-            `}
-            <p><strong>Request Time:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <a href="${data.dashboard_url || '#'}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Review Request</a>
-        </div>
-      `,
+      subject: `Payout Request — ${data.amount} ${data.currency || "NGN"}`,
+      html: wrapEmail('Payout Request',
+        buildRow('Organization', data.organization_name || 'N/A') +
+        buildRow('Amount', `${data.amount} ${data.currency || 'NGN'}`) +
+        buildRow('Method', data.payment_method || 'N/A') +
+        (data.payment_method === 'bank' ?
+          buildRow('Bank', data.bank_name || '') + buildRow('Account', data.account_number || '') + buildRow('Name', data.account_name || '') :
+          buildRow('USDT Address', data.usdt_address || '')),
+        data.dashboard_url, 'Review Request'
+      ),
     },
     payout_approved: {
-      subject: `✅ Payout Approved - ${data.amount} ${data.currency || "NGN"}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #22c55e;">✅ Payout Approved</h1>
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Amount:</strong> ${data.amount} ${data.currency || "NGN"}</p>
-            <p><strong>Payment Method:</strong> ${data.payment_method}</p>
-            <p><strong>Reference:</strong> ${data.reference_id || "N/A"}</p>
-            <p><strong>Approved At:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <p>Your payout has been approved and will be processed shortly.</p>
-        </div>
-      `,
+      subject: `Payout Approved — ${data.amount} ${data.currency || "NGN"}`,
+      html: wrapEmail('Payout Approved',
+        buildRow('Amount', `${data.amount} ${data.currency || 'NGN'}`) +
+        buildRow('Method', data.payment_method || 'N/A') +
+        buildRow('Reference', data.reference_id || 'N/A'),
+      ),
     },
     payout_rejected: {
-      subject: `❌ Payout Rejected - ${data.amount} ${data.currency || "NGN"}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #dc2626;">❌ Payout Rejected</h1>
-          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Amount:</strong> ${data.amount} ${data.currency || "NGN"}</p>
-            <p><strong>Reason:</strong> ${data.rejection_reason || "No reason provided"}</p>
-            <p><strong>Rejected At:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <p>Please contact support if you have any questions.</p>
-        </div>
-      `,
+      subject: `Payout Rejected — ${data.amount} ${data.currency || "NGN"}`,
+      html: wrapEmail('Payout Rejected',
+        buildRow('Amount', `${data.amount} ${data.currency || 'NGN'}`) +
+        buildRow('Reason', data.rejection_reason || 'No reason provided'),
+      ),
     },
     new_organization: {
-      subject: `🏢 New Organization Registration - ${data.company_name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #7c3aed;">🏢 New Organization Registration</h1>
-          <div style="background: #f3f4f6; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Company Name:</strong> ${data.company_name}</p>
-            <p><strong>Email:</strong> ${data.email}</p>
-            <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
-            <p><strong>Registered At:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <a href="${data.dashboard_url || '#'}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Review Application</a>
-        </div>
-      `,
+      subject: `New Organization: ${data.company_name}`,
+      html: wrapEmail('New Organization',
+        buildRow('Company', data.company_name || '') +
+        buildRow('Email', data.email || '') +
+        buildRow('Phone', data.phone || 'N/A'),
+        data.dashboard_url, 'Review Application'
+      ),
     },
     content_moderation: {
-      subject: `📝 Content Pending Review - ${data.content_type}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #f59e0b;">📝 Content Pending Review</h1>
-          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p><strong>Content Type:</strong> ${data.content_type}</p>
-            <p><strong>Entity Type:</strong> ${data.entity_type}</p>
-            <p><strong>Submitted By:</strong> ${data.submitted_by || "N/A"}</p>
-            <p><strong>Submitted At:</strong> ${new Date().toISOString()}</p>
-          </div>
-          <a href="${data.dashboard_url || '#'}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Review Content</a>
-        </div>
-      `,
+      subject: `Content Review — ${data.content_type}`,
+      html: wrapEmail('Content Pending Review',
+        buildRow('Type', data.content_type || '') +
+        buildRow('Entity', data.entity_type || '') +
+        buildRow('Submitted By', data.submitted_by || 'N/A'),
+        data.dashboard_url, 'Review Content'
+      ),
     },
   };
 
-  return templates[type] || {
-    subject: "Admin Notification",
-    html: `<p>${JSON.stringify(data)}</p>`,
-  };
+  return templates[type] || { subject: "Admin Notification", html: wrapEmail('Notification', `<tr><td style="padding: 8px 0; color: #374151; font-size: 14px;">${JSON.stringify(data)}</td></tr>`) };
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("Admin notification function called");
-
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -177,60 +162,34 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { type, data, adminEmails }: AdminNotificationRequest = await req.json();
-    console.log("Notification type:", type, "Data:", data);
 
-    // Get admin emails from database if not provided
     let recipients = adminEmails;
     if (!recipients || recipients.length === 0) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
-      const { data: adminUsers, error } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-
-      if (error) {
-        console.error("Error fetching admin users:", error);
-        throw error;
-      }
-
+      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: adminUsers } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
       if (adminUsers && adminUsers.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("email")
-          .in("id", adminUsers.map((u) => u.user_id));
-
-        recipients = profiles?.map((p) => p.email).filter(Boolean) || [];
+        const { data: profiles } = await supabase.from("profiles").select("email").in("id", adminUsers.map(u => u.user_id));
+        recipients = profiles?.map(p => p.email).filter(Boolean) || [];
       }
     }
 
     if (!recipients || recipients.length === 0) {
-      console.log("No admin emails found, skipping notification");
-      return new Response(
-        JSON.stringify({ success: true, message: "No recipients found" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, message: "No recipients found" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const template = getEmailTemplate(type, data);
-    console.log("Sending email to:", recipients);
-
     const emailResponse = await sendZeptoEmail(recipients, template.subject, template.html);
 
-    console.log("Email sent successfully:", emailResponse);
-
-    return new Response(
-      JSON.stringify({ success: true, emailResponse }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, emailResponse }), {
+      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
     console.error("Error sending admin notification:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 };
 

@@ -23,7 +23,6 @@ interface ReceiptRequest {
   event_venue?: string;
   ticket_type?: string;
   qr_code?: string;
-  // Wallet-specific
   new_balance?: number;
   wallet_currency?: string;
   admin_fee?: number;
@@ -52,62 +51,63 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
   });
 
   const responseText = await response.text();
-  
   if (!responseText || responseText.trim() === "") {
     if (response.ok) return { success: true };
     throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
-  
   const data = JSON.parse(responseText);
-  
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
-  }
-  
+  if (!response.ok) throw new Error(data.message || "Failed to send email");
   return data;
 };
 
-const responsiveWrapper = (content: string, preheader: string = "") => `
+const buildRow = (label: string, value: string, bold = false) =>
+  `<tr><td style="padding: 8px 0; color: #6b7280; font-size: 14px;">${label}</td><td style="padding: 8px 0; color: #111827; font-size: ${bold ? '18px' : '14px'}; text-align: right; font-weight: ${bold ? '700' : '500'};">${value}</td></tr>`;
+
+const wrapReceipt = (label: string, greeting: string, rows: string, refId: string, footerNote: string) => `
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="x-apple-disable-message-reformatting">
-  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-  <title>Useqiv Receipt</title>
-  <!--[if mso]>
-  <noscript>
-    <xml>
-      <o:OfficeDocumentSettings>
-        <o:PixelsPerInch>96</o:PixelsPerInch>
-      </o:OfficeDocumentSettings>
-    </xml>
-  </noscript>
-  <![endif]-->
-  <style>
-    * { box-sizing: border-box; }
-    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f4f5; }
-    @media only screen and (max-width: 600px) {
-      .email-container { width: 100% !important; }
-      .fluid-padding { padding: 24px 16px !important; }
-      .mobile-center { text-align: center !important; }
-      .mobile-full-width { width: 100% !important; display: block !important; }
-    }
-  </style>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @media only screen and (max-width: 600px) {
+    .email-container { width: 100% !important; }
+    .fluid-padding { padding: 24px 16px !important; }
+  }
+</style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  ${preheader ? `<div style="display: none; max-height: 0; overflow: hidden;">${preheader}</div>` : ''}
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f5;">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
     <tr>
-      <td align="center" style="padding: 20px 10px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px;" class="email-container">
-          ${content}
+      <td align="center" style="padding: 40px 20px;" class="fluid-padding">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;" class="email-container">
+          <tr>
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">${label}</p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p style="margin: 0 0 24px; font-size: 16px; color: #111827;">${greeting}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 16px 0; text-align: center;">
+              <p style="margin: 0 0 4px; font-size: 12px; color: #6b7280;">Reference</p>
+              <p style="margin: 0; font-size: 13px; font-family: monospace; color: #111827; word-break: break-all;">${refId}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+              <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center; line-height: 1.5;">
+                ${footerNote}<br>
+                <a href="mailto:support@useqiv.com" style="color: #6b7280; text-decoration: none;">support@useqiv.com</a> · © ${new Date().getFullYear()} Useqiv
+              </p>
+            </td>
+          </tr>
         </table>
       </td>
     </tr>
@@ -117,360 +117,107 @@ const responsiveWrapper = (content: string, preheader: string = "") => `
 `;
 
 const generateVoteReceiptHtml = (data: ReceiptRequest) => {
-  const content = `
-    <!-- Header -->
-    <tr>
-      <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; line-height: 1.3;">🗳️ Vote Confirmed!</h1>
-        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 15px;">Thank you for your vote</p>
-      </td>
-    </tr>
-    
-    <!-- Content -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 32px 24px;" class="fluid-padding">
-        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
-        
-        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
-          Your vote has been successfully recorded. Here are your transaction details:
-        </p>
-        
-        <!-- Transaction Details -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 20px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Contest</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contest_title}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Contestant</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.contestant_name}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Votes</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; line-height: 1.4;">Payment Method</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
-                </tr>
-                <tr>
-                  <td colspan="2" style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 8px;">
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                      <tr>
-                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
-                        <td style="color: #7c3aed; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        <!-- Reference -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #faf5ff; border-radius: 8px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 16px; text-align: center;">
-              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
-              <p style="color: #7c3aed; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
-          Thank you for supporting your favorite contestant!
-        </p>
-      </td>
-    </tr>
-    
-    <!-- Footer -->
-    <tr>
-      <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
-        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
-          Useqiv - Your trusted voting platform<br>
-          Questions? <a href="mailto:support@useqiv.com" style="color: #7c3aed; text-decoration: none;">support@useqiv.com</a>
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveWrapper(content, `Vote confirmed for ${data.contestant_name}`);
+  return wrapReceipt(
+    'Vote Receipt',
+    `Hi ${data.user_name}, your vote has been confirmed.`,
+    buildRow('Contest', data.contest_title || '') +
+    buildRow('Contestant', data.contestant_name || '') +
+    buildRow('Votes', String(data.quantity || 1)) +
+    buildRow('Payment', data.payment_method) +
+    buildRow('Total', `${data.currency} ${data.amount.toLocaleString()}`, true),
+    data.transaction_ref,
+    'Thank you for supporting your favorite contestant.'
+  );
 };
 
 const generateTicketReceiptHtml = (data: ReceiptRequest) => {
-  const content = `
-    <!-- Header -->
+  let rows = buildRow('Event', data.event_title || '') +
+    buildRow('Date', data.event_date || '') +
+    buildRow('Venue', data.event_venue || '') +
+    buildRow('Ticket', `${data.ticket_type || 'Standard'} × ${data.quantity || 1}`) +
+    buildRow('Payment', data.payment_method) +
+    buildRow('Total', `${data.currency} ${data.amount.toLocaleString()}`, true);
+
+  if (data.qr_code) {
+    rows += `
     <tr>
-      <td style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; line-height: 1.3;">🎫 Ticket Confirmed!</h1>
-        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 15px;">Your tickets are ready</p>
+      <td colspan="2" style="padding: 16px 0 0; text-align: center; border-top: 1px solid #e5e7eb;">
+        <p style="margin: 0 0 12px; font-size: 13px; color: #6b7280;">Your ticket QR code</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.qr_code)}" alt="QR Code" width="150" height="150" style="display: inline-block;"/>
+        <p style="margin: 8px 0 0; font-size: 11px; font-family: monospace; color: #9ca3af; word-break: break-all;">${data.qr_code}</p>
       </td>
-    </tr>
-    
-    <!-- Content -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 32px 24px;" class="fluid-padding">
-        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
-        
-        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
-          Your ticket purchase was successful! Here are your ticket details:
-        </p>
-        
-        <!-- Event Card -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #1f2937 0%, #374151 100%); border-radius: 12px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 24px;">
-              <h2 style="color: #ffffff; margin: 0 0 16px; font-size: 20px; line-height: 1.3;">${data.event_title}</h2>
-              <p style="color: rgba(255,255,255,0.9); margin: 0 0 8px; font-size: 14px;">📅 ${data.event_date}</p>
-              <p style="color: rgba(255,255,255,0.9); margin: 0 0 16px; font-size: 14px;">📍 ${data.event_venue}</p>
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 16px;">
-                <tr>
-                  <td style="color: #ffffff; font-size: 14px;">${data.ticket_type}</td>
-                  <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right;">×${data.quantity}</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        ${data.qr_code ? `
-        <!-- QR Code -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 24px; text-align: center;">
-              <p style="color: #374151; font-size: 14px; font-weight: 600; margin: 0 0 16px;">Your Ticket QR Code</p>
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="background: white; padding: 16px; border-radius: 8px; border: 2px dashed #e5e7eb;">
-                <tr>
-                  <td>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.qr_code)}" alt="Ticket QR Code" width="150" height="150" style="display: block;"/>
-                  </td>
-                </tr>
-              </table>
-              <p style="color: #6b7280; font-size: 12px; margin: 16px 0 0; line-height: 1.5;">Show this QR code at the venue entrance</p>
-              <p style="color: #9ca3af; font-size: 11px; font-family: monospace; margin: 8px 0 0; word-break: break-all;">${data.qr_code}</p>
-            </td>
-          </tr>
-        </table>
-        ` : ''}
-        
-        <!-- Transaction Details -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 10px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 20px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Ticket Type</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.ticket_type}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Quantity</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.quantity}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px;">Payment Method</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600;">${data.payment_method}</td>
-                </tr>
-                <tr>
-                  <td colspan="2" style="border-top: 1px solid #e5e7eb; padding-top: 16px;">
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                      <tr>
-                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Paid</td>
-                        <td style="color: #f97316; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${data.amount.toLocaleString()}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-        
-        <!-- Reference -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #fff7ed; border-radius: 8px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 16px; text-align: center;">
-              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
-              <p style="color: #f97316; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
-          We look forward to seeing you at the event!
-        </p>
-      </td>
-    </tr>
-    
-    <!-- Footer -->
-    <tr>
-      <td style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
-        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
-          Useqiv - Your trusted event platform<br>
-          Questions? <a href="mailto:support@useqiv.com" style="color: #f97316; text-decoration: none;">support@useqiv.com</a>
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveWrapper(content, `Ticket confirmed for ${data.event_title}`);
+    </tr>`;
+  }
+
+  return wrapReceipt(
+    'Ticket Receipt',
+    `Hi ${data.user_name}, your tickets are confirmed.`,
+    rows,
+    data.transaction_ref,
+    'Show your QR code at the venue entrance.'
+  );
 };
 
 const generateWalletReceiptHtml = (data: ReceiptRequest) => {
   const adminFee = data.admin_fee || 0;
   const totalCharged = data.total_charged || (data.amount + adminFee);
   const totalCredited = data.total_credited || data.amount;
-  const content = `
-    <!-- Header with Logo -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 32px 24px 16px; text-align: center; border-radius: 12px 12px 0 0;">
-        <img src="https://tirqmqzgksclsjxfiham.supabase.co/storage/v1/object/public/contest-images/useqiv-logo.png" alt="Useqiv" width="120" style="display: inline-block; margin-bottom: 16px;" />
-        <h1 style="color: #111827; margin: 0; font-size: 24px; font-weight: 700; line-height: 1.3;">Wallet Funded Successfully</h1>
-        <p style="color: #6b7280; margin: 10px 0 0; font-size: 15px;">Your wallet has been credited</p>
-      </td>
-    </tr>
-    
-    <!-- Content -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 0 24px 32px;" class="fluid-padding">
-        <p style="color: #374151; font-size: 16px; margin: 0 0 24px; line-height: 1.5;">Hi ${data.user_name},</p>
-        
-        <p style="color: #6b7280; font-size: 15px; margin: 0 0 24px; line-height: 1.6;">
-          Your wallet funding was successful. Here is your receipt:
-        </p>
-        
-        <!-- Transaction Details -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 20px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Wallet Credit</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${data.currency} ${data.amount.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Admin Fee (3%)</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">+ ${data.currency} ${adminFee.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 10px 0; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">Payment Method</td>
-                  <td style="padding: 10px 0; color: #111827; font-size: 14px; text-align: right; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${data.payment_method}</td>
-                </tr>
-                <tr>
-                  <td colspan="2" style="padding-top: 16px;">
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-                      <tr>
-                        <td style="color: #111827; font-size: 16px; font-weight: 700;">Total Charged</td>
-                        <td style="color: #111827; font-size: 20px; text-align: right; font-weight: 700;">${data.currency} ${totalCharged.toLocaleString()}</td>
-                      </tr>
-                      <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding-top: 8px;">Credited to Wallet</td>
-                        <td style="color: #16a34a; font-size: 18px; text-align: right; font-weight: 700; padding-top: 8px;">${data.currency} ${totalCredited.toLocaleString()}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
 
-        <!-- New Balance -->
-        ${data.new_balance !== undefined ? `
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0fdf4; border-radius: 8px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 16px; text-align: center;">
-              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">New Wallet Balance</p>
-              <p style="color: #16a34a; font-size: 22px; font-weight: 700; margin: 0;">${data.wallet_currency || data.currency} ${data.new_balance.toLocaleString()}</p>
-            </td>
-          </tr>
-        </table>
-        ` : ''}
-        
-        <!-- Reference -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; margin-bottom: 24px;">
-          <tr>
-            <td style="padding: 16px; text-align: center;">
-              <p style="color: #6b7280; font-size: 12px; margin: 0 0 6px;">Transaction Reference</p>
-              <p style="color: #374151; font-size: 14px; font-family: monospace; margin: 0; word-break: break-all;">${data.transaction_ref}</p>
-            </td>
-          </tr>
-        </table>
-        
-        <p style="color: #6b7280; font-size: 14px; margin: 0; text-align: center; line-height: 1.5;">
-          Thank you for funding your wallet!
-        </p>
-      </td>
-    </tr>
-    
-    <!-- Footer -->
-    <tr>
-      <td style="background-color: #ffffff; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; border-radius: 0 0 12px 12px;">
-        <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.6;">
-          Useqiv - Your trusted platform<br>
-          Questions? <a href="mailto:support@useqiv.com" style="color: #374151; text-decoration: none;">support@useqiv.com</a>
-        </p>
-      </td>
-    </tr>
-  `;
-  return responsiveWrapper(content, `Wallet funded with ${data.currency} ${totalCredited.toLocaleString()}`);
+  let rows = buildRow('Wallet Credit', `${data.currency} ${data.amount.toLocaleString()}`) +
+    buildRow('Admin Fee (3%)', `+ ${data.currency} ${adminFee.toLocaleString()}`) +
+    buildRow('Payment', data.payment_method) +
+    buildRow('Total Charged', `${data.currency} ${totalCharged.toLocaleString()}`, true) +
+    buildRow('Credited', `${data.currency} ${totalCredited.toLocaleString()}`, true);
+
+  if (data.new_balance !== undefined) {
+    rows += buildRow('New Balance', `${data.wallet_currency || data.currency} ${data.new_balance.toLocaleString()}`, true);
+  }
+
+  return wrapReceipt(
+    'Wallet Funding Receipt',
+    `Hi ${data.user_name}, your wallet has been funded.`,
+    rows,
+    data.transaction_ref,
+    'Thank you for funding your wallet.'
+  );
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("Payment receipt function called");
-
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    if (!ZEPTOMAIL_API_KEY) {
-      console.error("ZEPTOMAIL_API_KEY is not configured");
-      throw new Error("ZEPTOMAIL_API_KEY is not configured");
-    }
+    if (!ZEPTOMAIL_API_KEY) throw new Error("ZEPTOMAIL_API_KEY is not configured");
 
     const data: ReceiptRequest = await req.json();
-    console.log("Receipt request received - Type:", data.type, "Email:", data.user_email);
-
-    if (!data.user_email) {
-      console.error("Missing user_email in receipt request");
-      throw new Error("user_email is required");
-    }
-
-    if (!data.type) {
-      console.error("Missing type in receipt request");
-      throw new Error("type is required");
-    }
+    if (!data.user_email) throw new Error("user_email is required");
+    if (!data.type) throw new Error("type is required");
 
     let html: string;
     let subject: string;
 
     if (data.type === 'vote') {
       html = generateVoteReceiptHtml(data);
-      subject = `Vote Receipt - ${data.contest_title}`;
+      subject = `Vote Receipt — ${data.contest_title}`;
     } else if (data.type === 'ticket') {
       html = generateTicketReceiptHtml(data);
-      subject = `Ticket Receipt - ${data.event_title}`;
+      subject = `Ticket Receipt — ${data.event_title}`;
     } else if (data.type === 'wallet') {
       html = generateWalletReceiptHtml(data);
-      subject = `Wallet Funding Receipt - ${data.currency} ${data.total_credited?.toLocaleString() || data.amount.toLocaleString()}`;
+      subject = `Wallet Funding Receipt — ${data.currency} ${data.total_credited?.toLocaleString() || data.amount.toLocaleString()}`;
     } else {
       throw new Error("Invalid receipt type");
     }
 
-    console.log("Sending email via ZeptoMail - To:", data.user_email);
-
     const emailResponse = await sendZeptoEmail(data.user_email, data.user_name, subject, html);
-
-    console.log("ZeptoMail API response:", JSON.stringify(emailResponse));
 
     return new Response(
       JSON.stringify({ success: true, ...emailResponse }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Error sending receipt:", error.message, error.stack);
+    console.error("Error sending receipt:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

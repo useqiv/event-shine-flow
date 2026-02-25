@@ -19,7 +19,6 @@ interface DonationReceiptRequest {
 }
 
 const sendZeptoEmail = async (to: string, toName: string, subject: string, html: string) => {
-  // Handle API key that may already contain the prefix
   const apiKey = ZEPTOMAIL_API_KEY?.startsWith("Zoho-enczapikey") 
     ? ZEPTOMAIL_API_KEY 
     : `Zoho-enczapikey ${ZEPTOMAIL_API_KEY}`;
@@ -40,25 +39,16 @@ const sendZeptoEmail = async (to: string, toName: string, subject: string, html:
   });
 
   const responseText = await response.text();
-  
   if (!responseText || responseText.trim() === "") {
     if (response.ok) return { success: true };
     throw new Error(`ZeptoMail error: ${response.status} ${response.statusText}`);
   }
-  
   const data = JSON.parse(responseText);
-  
-  if (!response.ok) {
-    console.error("ZeptoMail API error:", data);
-    throw new Error(data.message || "Failed to send email");
-  }
-  
+  if (!response.ok) throw new Error(data.message || "Failed to send email");
   return data;
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("Donation receipt email function called");
-
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -69,115 +59,83 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const {
-      donationId,
-      donorEmail,
-      donorName,
-      campaignTitle,
-      amount,
-      currency,
-      donationDate,
-      isAnonymous,
+      donationId, donorEmail, donorName, campaignTitle,
+      amount, currency, donationDate, isAnonymous,
     }: DonationReceiptRequest = await req.json();
 
     console.log(`Sending donation receipt to ${donorEmail} for donation ${donationId}`);
 
     const formattedAmount = `${currency} ${Number(amount).toLocaleString()}`;
     const formattedDate = new Date(donationDate).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
 
     const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Donation Receipt</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5;">
-        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px;">
+
           <tr>
-            <td align="center" style="padding: 40px 20px;">
-              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                <!-- Header -->
+            <td style="padding-bottom: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Donation Receipt</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #111827; line-height: 1.5;">
+                Dear ${isAnonymous ? "Generous Donor" : donorName || "Supporter"},
+              </p>
+              <p style="margin: 0 0 24px; font-size: 15px; color: #374151; line-height: 1.6;">
+                Thank you for your donation to <strong>${campaignTitle}</strong>. Your support makes a real difference.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 20px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 32px; text-align: center;">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">Thank You!</h1>
-                    <p style="margin: 8px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Your generosity makes a difference</p>
-                  </td>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Receipt ID</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right; font-family: monospace;">${donationId.slice(0, 8).toUpperCase()}</td>
                 </tr>
-                
-                <!-- Content -->
                 <tr>
-                  <td style="padding: 32px;">
-                    <p style="margin: 0 0 24px; color: #3f3f46; font-size: 16px; line-height: 1.6;">
-                      Dear ${isAnonymous ? "Generous Donor" : donorName || "Supporter"},
-                    </p>
-                    
-                    <p style="margin: 0 0 24px; color: #3f3f46; font-size: 16px; line-height: 1.6;">
-                      Thank you for your generous donation to <strong>${campaignTitle}</strong>. Your support means the world to us and helps bring this campaign closer to its goal.
-                    </p>
-                    
-                    <!-- Receipt Box -->
-                    <table role="presentation" style="width: 100%; background-color: #fafafa; border-radius: 8px; margin: 24px 0;">
-                      <tr>
-                        <td style="padding: 24px;">
-                          <h2 style="margin: 0 0 16px; color: #18181b; font-size: 18px; font-weight: 600;">Donation Receipt</h2>
-                          
-                          <table role="presentation" style="width: 100%;">
-                            <tr>
-                              <td style="padding: 8px 0; color: #71717a; font-size: 14px;">Receipt ID:</td>
-                              <td style="padding: 8px 0; color: #18181b; font-size: 14px; text-align: right; font-family: monospace;">${donationId.slice(0, 8).toUpperCase()}</td>
-                            </tr>
-                            <tr>
-                              <td style="padding: 8px 0; color: #71717a; font-size: 14px;">Date:</td>
-                              <td style="padding: 8px 0; color: #18181b; font-size: 14px; text-align: right;">${formattedDate}</td>
-                            </tr>
-                            <tr>
-                              <td style="padding: 8px 0; color: #71717a; font-size: 14px;">Campaign:</td>
-                              <td style="padding: 8px 0; color: #18181b; font-size: 14px; text-align: right;">${campaignTitle}</td>
-                            </tr>
-                            <tr>
-                              <td colspan="2" style="padding-top: 16px; border-top: 1px solid #e4e4e7;">
-                                <table role="presentation" style="width: 100%;">
-                                  <tr>
-                                    <td style="color: #18181b; font-size: 18px; font-weight: 600;">Amount:</td>
-                                    <td style="color: #8b5cf6; font-size: 24px; font-weight: bold; text-align: right;">${formattedAmount}</td>
-                                  </tr>
-                                </table>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="margin: 24px 0 0; color: #71717a; font-size: 14px; line-height: 1.6;">
-                      You'll receive updates about the campaign's progress. If you have any questions, please don't hesitate to reach out.
-                    </p>
-                  </td>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Date</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${formattedDate}</td>
                 </tr>
-                
-                <!-- Footer -->
                 <tr>
-                  <td style="background-color: #fafafa; padding: 24px; text-align: center; border-top: 1px solid #e4e4e7;">
-                    <p style="margin: 0 0 8px; color: #71717a; font-size: 14px;">
-                      Thank you for using Useqiv
-                    </p>
-                    <p style="margin: 0; color: #a1a1aa; font-size: 12px;">
-                      This is an automated receipt for your donation.
-                    </p>
-                  </td>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Campaign</td>
+                  <td style="padding: 8px 0; color: #111827; font-size: 14px; text-align: right;">${campaignTitle}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 12px 0 0; font-size: 16px; font-weight: 600; color: #111827; border-top: 1px solid #e5e7eb;">Amount</td>
+                  <td style="padding: 12px 0 0; font-size: 20px; font-weight: 700; color: #111827; text-align: right; border-top: 1px solid #e5e7eb;">${formattedAmount}</td>
                 </tr>
               </table>
             </td>
           </tr>
+
+          <tr>
+            <td style="padding-top: 24px;">
+              <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.6;">
+                You'll receive updates about the campaign's progress. Questions? <a href="mailto:support@useqiv.com" style="color: #6b7280;">support@useqiv.com</a>
+              </p>
+            </td>
+          </tr>
         </table>
-      </body>
-      </html>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `;
 
     const emailResponse = await sendZeptoEmail(
@@ -197,10 +155,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error sending donation receipt:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
