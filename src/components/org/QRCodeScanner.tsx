@@ -115,7 +115,7 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [recentCheckIns, setRecentCheckIns] = useState<RecentCheckIn[]>([]);
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
-  const [permissionChecked, setPermissionChecked] = useState(false);
+  const [canUseConstraintFallback, setCanUseConstraintFallback] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannerContainerId = 'qr-reader';
 
@@ -161,29 +161,67 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [requestingCamera, setRequestingCamera] = useState(false);
 
-  const requestCameraAccess = useCallback(async () => {
+  const isEmbeddedContext = useCallback(() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  }, []);
+
+  const isInAppBrowser = useCallback(() => {
+    const userAgent = navigator.userAgent || '';
+    return /FBAN|FBAV|Instagram|Line|; wv\)|WebView|MiuiBrowser/i.test(userAgent);
+  }, []);
+
+  const requestCameraAccess = useCallback(async (): Promise<boolean> => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('Camera is not supported on this browser/device.');
+      return false;
+    }
+
     setRequestingCamera(true);
     setCameraError(null);
+
     try {
-      // First, explicitly request camera permission via getUserMedia
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      // Stop the stream immediately - we just needed the permission grant
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false,
+      });
+
       stream.getTracks().forEach(track => track.stop());
-      
-      // Now enumerate cameras
-      const devices = await Html5Qrcode.getCameras();
-      if (devices && devices.length) {
-        setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id}` })));
-        const backCamera = devices.find(d => d.label.toLowerCase().includes('back'));
-        setSelectedCamera(backCamera?.id || devices[0].id);
-        setCameraError(null);
-      } else {
-        setCameraError('No cameras found on this device.');
+      setCanUseConstraintFallback(true);
+
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length) {
+          setCameras(devices.map(d => ({ id: d.id, label: d.label || `Camera ${d.id}` })));
+          const backCamera = devices.find(d => d.label.toLowerCase().includes('back'));
+          setSelectedCamera(backCamera?.id || devices[0].id);
+          return true;
+        }
+      } catch (enumerationError) {
+        console.warn('Camera enumeration failed, using constraint fallback:', enumerationError);
       }
+
+      // Some mobile browsers block device enumeration but still allow direct camera constraints
+      setCameras([]);
+      setSelectedCamera('');
+      return true;
     } catch (err: any) {
       console.error('Camera access error:', err);
+
+      const embedded = isEmbeddedContext();
+      const inAppBrowser = isInAppBrowser();
+
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setCameraError('Camera permission was denied. Please allow camera access in your browser settings, then tap "Try Again".');
+        if (embedded) {
+          setCameraError('Camera access is blocked inside embedded preview. Open this app in Safari or Chrome directly and try again.');
+        } else if (inAppBrowser) {
+          setCameraError('This in-app browser is blocking camera access. Open the link in Safari or Chrome and try again.');
+        } else {
+          setCameraError('Camera permission was denied. Please allow camera access in your browser settings, then tap "Try Again".');
+        }
       } else if (err.name === 'NotFoundError') {
         setCameraError('No camera found on this device.');
       } else if (err.name === 'NotReadableError') {
@@ -191,68 +229,78 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       } else {
         setCameraError(`Could not access camera: ${err.message || 'Unknown error'}. Please check your browser settings.`);
       }
+
+      return false;
     } finally {
       setRequestingCamera(false);
     }
-  }, []);
+  }, [isEmbeddedContext, isInAppBrowser]);
 
   // Check permission state on mount - show dialog if not yet granted
   useEffect(() => {
     const checkPermission = async () => {
       try {
-        // Check if permission is already granted
         if (navigator.permissions && navigator.permissions.query) {
           const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
           if (result.state === 'granted') {
-            setPermissionChecked(true);
-            requestCameraAccess();
+            setCanUseConstraintFallback(true);
+            void requestCameraAccess();
             return;
           }
         }
       } catch {
         // permissions.query not supported for camera in some browsers
       }
-      // Show the permission dialog
+
       setShowPermissionDialog(true);
     };
+
     checkPermission();
     return () => {
       stopScanning();
     };
-  }, []);
+  }, [requestCameraAccess]);
 
   const handlePermissionGrant = async () => {
-    setShowPermissionDialog(false);
-    setPermissionChecked(true);
-    await requestCameraAccess();
+    const granted = await requestCameraAccess();
+    if (granted) {
+      setShowPermissionDialog(false);
+    }
   };
 
   const startScanning = async () => {
-    if (!selectedCamera) {
-      toast.error('No camera selected');
-      return;
+    if (!selectedCamera && !canUseConstraintFallback) {
+      const granted = await requestCameraAccess();
+      if (!granted) return;
     }
 
     try {
       scannerRef.current = new Html5Qrcode(scannerContainerId);
-      
+      const cameraInput = selectedCamera || { facingMode: { ideal: 'environment' } };
+
       await scannerRef.current.start(
-        selectedCamera,
+        cameraInput,
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
         },
         onQRCodeScanned,
-        (errorMessage) => {
+        () => {
           // Ignore scan errors (no QR found)
         }
       );
-      
+
       setIsScanning(true);
       setLastScan(null);
-    } catch (err) {
+      setCameraError(null);
+      setShowPermissionDialog(false);
+    } catch (err: any) {
       console.error('Error starting scanner:', err);
-      toast.error('Failed to start camera. Please check permissions.');
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setCameraError('Camera could not be started in this browser context. Open the app directly in Safari or Chrome and try again.');
+      } else {
+        toast.error('Failed to start camera. Please check permissions.');
+      }
     }
   };
 
@@ -487,9 +535,15 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
                   <>
                     <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-destructive mx-auto mb-3 sm:mb-4" />
                     <p className="text-sm sm:text-base text-destructive font-medium mb-2">{cameraError}</p>
-                    <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
-                      On mobile: Go to browser settings → Site permissions → Camera → Allow. Then tap "Try Again".
-                    </p>
+                    {cameraError.includes('embedded preview') || cameraError.includes('in-app browser') ? (
+                      <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+                        This browser context blocks camera APIs. Open the app link directly in Safari or Chrome.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+                        On mobile: Go to browser settings → Site permissions → Camera → Allow. Then tap "Try Again".
+                      </p>
+                    )}
                     <div className="flex flex-col gap-2">
                       <Button onClick={requestCameraAccess} disabled={requestingCamera} size="lg" className="h-12 px-6 text-base">
                         <Camera className="mr-2 h-5 w-5" />
@@ -510,7 +564,12 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
                   <>
                     <Camera className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground mx-auto mb-3 sm:mb-4" />
                     <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">Camera is off</p>
-                    <Button onClick={startScanning} disabled={!selectedCamera} size="lg" className="h-12 px-6 text-base">
+                    <Button
+                      onClick={startScanning}
+                      disabled={!selectedCamera && !canUseConstraintFallback}
+                      size="lg"
+                      className="h-12 px-6 text-base"
+                    >
                       <Camera className="mr-2 h-5 w-5" />
                       Start Scanning
                     </Button>
@@ -560,7 +619,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
             Stop Scanner
           </Button>
         ) : (
-          <Button onClick={startScanning} disabled={!selectedCamera} className="flex-1 h-12 sm:h-10 text-base sm:text-sm">
+          <Button
+            onClick={startScanning}
+            disabled={!selectedCamera && !canUseConstraintFallback}
+            className="flex-1 h-12 sm:h-10 text-base sm:text-sm"
+          >
             <Camera className="mr-2 h-5 w-5 sm:h-4 sm:w-4" />
             Start Scanner
           </Button>
@@ -603,6 +666,11 @@ const QRCodeScanner: React.FC<QRCodeScannerProps> = ({ eventId, onScanComplete }
       {cameras.length > 1 && (
         <p className="text-xs text-center text-muted-foreground">
           Using: {cameras.find(c => c.id === selectedCamera)?.label || 'Unknown camera'}
+        </p>
+      )}
+      {cameras.length === 0 && canUseConstraintFallback && (
+        <p className="text-xs text-center text-muted-foreground">
+          Using automatic camera mode
         </p>
       )}
 
