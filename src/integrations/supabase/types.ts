@@ -3812,6 +3812,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_and_accept_scanner_invite: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       check_login_rate_limit: {
         Args: { p_email: string; p_ip_hash?: string }
         Returns: Json
