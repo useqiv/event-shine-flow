@@ -52,7 +52,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": ZEPTOMAIL_API_KEY,
       },
       body: JSON.stringify({
-        from: { address: "noreply@votepass.com", name: "USEQIV Contact Form" },
+        from: { address: "noreply@useqiv.com", name: "USEQIV Contact Form" },
         to: [{ email_address: { address: "info@useqiv.com", name: "USEQIV Support" } }],
         reply_to: [{ address: email, name: name }],
         subject: `Contact Form: ${subject}`,
