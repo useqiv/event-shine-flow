@@ -60,6 +60,7 @@ interface EditEventDialogProps {
     category: string;
     venue: string;
     address: string | null;
+    country?: string | null;
     event_date: string;
     currency: string;
     is_featured: boolean;
