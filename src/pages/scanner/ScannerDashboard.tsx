@@ -42,7 +42,6 @@ const ScannerDashboard = () => {
   const isLoading = permissionsLoading || eventsLoading;
 
   const upcomingEvents = events?.filter(e => !isPast(new Date(e.event_date))) || [];
-  const pastEvents = events?.filter(e => isPast(new Date(e.event_date))) || [];
 
   if (isLoading) {
     return (
