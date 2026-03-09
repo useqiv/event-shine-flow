@@ -78,7 +78,7 @@ const SavedItems = () => {
                         <div className="flex items-center justify-end mt-4">
                           <Button asChild size="sm">
                             <Link to={`/contests/${contest.id}`}>
-                              {isEnded ? 'View Results' : 'Vote Now'}
+                              Vote Now
                             </Link>
                           </Button>
                         </div>
