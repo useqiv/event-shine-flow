@@ -165,6 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
         html = wrapNotification('New Ticket Sale',
           buildRow('Event', data.event_title || '') +
           buildRow('Buyer', data.buyer_name || 'Anonymous') +
+          buildRow('Email', data.buyer_email || 'N/A') +
           buildRow('Type', data.ticket_type || 'Standard') +
           buildRow('Qty', String(data.quantity || 1)) +
           buildRow('Amount', `${data.currency} ${data.amount.toLocaleString()}`)
