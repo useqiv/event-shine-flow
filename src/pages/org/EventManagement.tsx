@@ -128,6 +128,7 @@ const EventManagement = () => {
         event_date: event.event_date ? toLocalDateTimeString(event.event_date) : '',
         venue: event.venue || '',
         address: event.address || '',
+        country: (event as any).country || '',
         custom_slug: (event as any).custom_slug || '',
         stream_url: (event as any).stream_url || '',
         stream_platform: (event as any).stream_platform || 'youtube',
