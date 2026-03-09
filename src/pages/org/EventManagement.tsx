@@ -25,7 +25,7 @@ import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
