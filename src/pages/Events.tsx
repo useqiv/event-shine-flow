@@ -169,6 +169,18 @@ const Events = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Globe className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {availableCountries.map((country) => (
+                  <SelectItem key={country} value={country}>{country}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Events Grid */}
