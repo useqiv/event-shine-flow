@@ -119,11 +119,7 @@ const SavedItems = () => {
                           alt={event.title}
                           className="w-full h-full object-cover"
                         />
-                        {isPast && (
-                          <Badge className="absolute top-2 left-2 bg-muted text-muted-foreground">
-                            Past Event
-                          </Badge>
-                        )}
+                        
                         <Button
                           variant="secondary"
                           size="icon"
