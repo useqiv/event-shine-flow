@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { MapPin, Calendar, ArrowRight, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight, Ticket, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isThisWeek, isThisMonth, addMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
