@@ -49,7 +49,6 @@ const SavedItems = () => {
             ) : savedContests && savedContests.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {savedContests.map((contest: any) => {
-                  const isEnded = new Date(contest.end_date) < new Date();
                   return (
                     <Card key={contest.id} className="overflow-hidden group">
                       <div className="relative aspect-video">
