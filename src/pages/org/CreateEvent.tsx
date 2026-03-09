@@ -53,6 +53,7 @@ const CreateEvent = () => {
     venue: '',
     address: '',
     custom_slug: '',
+    country: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
