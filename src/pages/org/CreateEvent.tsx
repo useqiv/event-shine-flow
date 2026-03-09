@@ -78,7 +78,15 @@ const CreateEvent = () => {
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-detect country when venue or address changes
+      if ((field === 'venue' || field === 'address') && !prev.country) {
+        const detected = detectCountryFromText(value);
+        if (detected) updated.country = detected;
+      }
+      return updated;
+    });
   };
 
   return (
