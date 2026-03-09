@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { AFRICAN_COUNTRIES, detectCountryFromText } from '@/lib/africanCountries';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -98,6 +99,7 @@ const EventManagement = () => {
     event_date: '',
     venue: '',
     address: '',
+    country: '',
     custom_slug: '',
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
@@ -126,6 +128,7 @@ const EventManagement = () => {
         event_date: event.event_date ? toLocalDateTimeString(event.event_date) : '',
         venue: event.venue || '',
         address: event.address || '',
+        country: (event as any).country || '',
         custom_slug: (event as any).custom_slug || '',
         stream_url: (event as any).stream_url || '',
         stream_platform: (event as any).stream_platform || 'youtube',
@@ -714,6 +717,24 @@ const EventManagement = () => {
                     value={editForm.event_date}
                     onChange={(e) => setEditForm(prev => ({ ...prev, event_date: e.target.value }))}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Select
+                    value={editForm.country}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, country: value }))}
+                  >
+                    <SelectTrigger>
+                      <Globe className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AFRICAN_COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">

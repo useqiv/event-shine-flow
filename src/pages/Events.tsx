@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEvents } from '@/hooks/useEvents';
-import { Calendar, Search, Filter, MapPin, Clock, Heart } from 'lucide-react';
+import { Calendar, Search, Filter, MapPin, Clock, Heart, Globe } from 'lucide-react';
 import { format } from 'date-fns';
+import { AFRICAN_COUNTRIES } from '@/lib/africanCountries';
 import { useIsSaved, useToggleSave } from '@/hooks/useSavedItems';
 import { useAuth } from '@/contexts/AuthContext';
 import { getBreadcrumbSchema } from '@/lib/structuredData';
@@ -75,7 +76,9 @@ const EventCard = ({ event }: { event: any }) => {
           </div>
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span className="truncate">{event.venue || 'Venue TBD'}</span>
+            <span className="truncate">
+              {event.venue || 'Venue TBD'}{(event as any).country ? `, ${(event as any).country}` : ''}
+            </span>
           </div>
           <Button className="w-full mt-4">
             Get Tickets
@@ -90,16 +93,22 @@ const Events = () => {
   const { data: events, isLoading } = useEvents();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
 
   const categories = events 
     ? [...new Set(events.map(e => e.category).filter(Boolean))]
+    : [];
+
+  const availableCountries = events
+    ? [...new Set(events.map((e: any) => e.country).filter(Boolean))]
     : [];
 
   const filteredEvents = events?.filter(event => {
     const matchesSearch = (event.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
                           (event.venue?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesCountry = countryFilter === 'all' || (event as any).country === countryFilter;
+    return matchesSearch && matchesCategory && matchesCountry;
   });
 
   const breadcrumbSchema = getBreadcrumbSchema([
@@ -159,6 +168,18 @@ const Events = () => {
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <Globe className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Countries</SelectItem>
+                {availableCountries.map((country) => (
+                  <SelectItem key={country} value={country}>{country}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

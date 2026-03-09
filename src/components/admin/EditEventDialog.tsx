@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { AFRICAN_COUNTRIES } from '@/lib/africanCountries';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ const eventSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   venue: z.string().min(1, 'Venue is required'),
   address: z.string().max(255).optional(),
+  country: z.string().optional(),
   event_date: z.string().min(1, 'Event date is required'),
   currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
@@ -59,6 +61,7 @@ interface EditEventDialogProps {
     category: string;
     venue: string;
     address: string | null;
+    country?: string | null;
     event_date: string;
     currency: string;
     is_featured: boolean;
@@ -88,6 +91,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       category: event.category,
       venue: event.venue,
       address: event.address || '',
+      country: (event as any).country || '',
       event_date: formatDateForInput(event.event_date),
       currency: event.currency || 'NGN',
       is_featured: event.is_featured,
@@ -104,6 +108,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
         category: event.category,
         venue: event.venue,
         address: event.address || '',
+        country: (event as any).country || '',
         event_date: formatDateForInput(event.event_date),
         currency: event.currency || 'NGN',
         is_featured: event.is_featured,
@@ -124,6 +129,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           category: data.category,
           venue: data.venue,
           address: data.address || null,
+          country: data.country || null,
           event_date: new Date(data.event_date).toISOString(),
           currency: data.currency,
           is_featured: data.is_featured,
@@ -197,6 +203,28 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {AFRICAN_COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

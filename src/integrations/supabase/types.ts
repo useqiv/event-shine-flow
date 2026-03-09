@@ -725,6 +725,7 @@ export type Database = {
           address: string | null
           category: string
           commission_rate: number | null
+          country: string | null
           created_at: string
           currency: string
           custom_slug: string | null
@@ -746,6 +747,7 @@ export type Database = {
           address?: string | null
           category: string
           commission_rate?: number | null
+          country?: string | null
           created_at?: string
           currency?: string
           custom_slug?: string | null
@@ -767,6 +769,7 @@ export type Database = {
           address?: string | null
           category?: string
           commission_rate?: number | null
+          country?: string | null
           created_at?: string
           currency?: string
           custom_slug?: string | null

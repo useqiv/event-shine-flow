@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN country text DEFAULT NULL;

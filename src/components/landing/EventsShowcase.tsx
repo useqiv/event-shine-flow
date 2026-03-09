@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { MapPin, Calendar, ArrowRight, Ticket, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight, Ticket, ChevronLeft, ChevronRight, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isThisWeek, isThisMonth, addMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -11,6 +11,7 @@ type FilterType = "all" | "today" | "this_week" | "this_month" | "next_month";
 
 const EventsShowcase = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [countryFilter, setCountryFilter] = useState<string>("all");
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["landing-events"],
@@ -36,34 +37,44 @@ const EventsShowcase = () => {
     { key: "next_month", label: "Next Month" },
   ];
 
+  const availableCountries = useMemo(() => {
+    if (!events) return [];
+    return [...new Set(events.map((e: any) => e.country).filter(Boolean))].sort();
+  }, [events]);
+
   const filteredEvents = useMemo(() => {
     if (!events) return [];
 
     let filtered = events;
 
+    // Apply country filter first
+    if (countryFilter !== "all") {
+      filtered = filtered.filter((event: any) => event.country === countryFilter);
+    }
+
     switch (activeFilter) {
       case "today":
-        filtered = events.filter((event) => isToday(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isToday(new Date(event.event_date)));
         break;
       case "this_week":
-        filtered = events.filter((event) => isThisWeek(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isThisWeek(new Date(event.event_date)));
         break;
       case "this_month":
-        filtered = events.filter((event) => isThisMonth(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isThisMonth(new Date(event.event_date)));
         break;
       case "next_month":
         const nextMonthStart = startOfMonth(addMonths(new Date(), 1));
         const nextMonthEnd = endOfMonth(addMonths(new Date(), 1));
-        filtered = events.filter((event) =>
+        filtered = filtered.filter((event) =>
           isWithinInterval(new Date(event.event_date), { start: nextMonthStart, end: nextMonthEnd })
         );
         break;
       default:
-        filtered = events;
+        break;
     }
 
     return filtered.slice(0, 10);
-  }, [events, activeFilter]);
+  }, [events, activeFilter, countryFilter]);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -149,9 +160,39 @@ const EventsShowcase = () => {
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
-                </div>
-              </div>
+             </div>
             </div>
+
+            {/* Country Filter */}
+            {availableCountries.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                <button
+                  onClick={() => setCountryFilter("all")}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                    countryFilter === "all"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  All Countries
+                </button>
+                {availableCountries.map((country) => (
+                  <button
+                    key={country}
+                    onClick={() => setCountryFilter(country)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                      countryFilter === country
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {country}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
             {/* Filters */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -203,6 +244,7 @@ interface EventCardProps {
     image_url: string | null;
     custom_slug: string | null;
     currency: string;
+    country?: string | null;
   };
   categoryColor: string;
 }
@@ -246,7 +288,9 @@ const EventCard = ({ event, categoryColor }: EventCardProps) => {
         <div className="space-y-2 mb-3">
           <div className="flex items-start gap-2 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-            <span className="text-xs line-clamp-1">{event.venue}</span>
+            <span className="text-xs line-clamp-1">
+              {event.venue}{event.country ? `, ${event.country}` : ''}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />

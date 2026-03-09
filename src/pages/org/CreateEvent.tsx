@@ -12,8 +12,9 @@ import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug
 import { useCreateEvent } from '@/hooks/useOrganization';
 import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
 import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
-import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote } from 'lucide-react';
+import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { AFRICAN_COUNTRIES, detectCountryFromText } from '@/lib/africanCountries';
 
 const currencies = [
   { code: 'NGN', label: 'Nigerian Naira (₦)' },
@@ -52,6 +53,7 @@ const CreateEvent = () => {
     venue: '',
     address: '',
     custom_slug: '',
+    country: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +78,15 @@ const CreateEvent = () => {
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-detect country when venue or address changes
+      if ((field === 'venue' || field === 'address') && !prev.country) {
+        const detected = detectCountryFromText(value);
+        if (detected) updated.country = detected;
+      }
+      return updated;
+    });
   };
 
   return (
@@ -216,6 +226,25 @@ const CreateEvent = () => {
               <CardDescription>Where is your event taking place?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => handleChange('country', value)}
+                  required
+                >
+                  <SelectTrigger>
+                    <Globe className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AFRICAN_COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="venue">Venue Name *</Label>
                 <Input
