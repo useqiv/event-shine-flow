@@ -29,7 +29,7 @@ const EventCard = ({ event }: { event: any }) => {
     }
   };
 
-  const isPast = event.event_date ? new Date(event.event_date) < new Date() : false;
+  
 
   return (
     <Link to={`/events/${event.id}`}>
