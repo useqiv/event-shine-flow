@@ -107,6 +107,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
         category: event.category,
         venue: event.venue,
         address: event.address || '',
+        country: (event as any).country || '',
         event_date: formatDateForInput(event.event_date),
         currency: event.currency || 'NGN',
         is_featured: event.is_featured,
