@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { MapPin, Calendar, ArrowRight, Ticket, ChevronLeft, ChevronRight, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isThisWeek, isThisMonth, addMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -183,33 +184,18 @@ const EventsShowcase = () => {
 
               {/* Country Filter */}
               {availableCountries.length > 0 && (
-                <>
-                  <div className="w-px h-6 bg-border mx-1 shrink-0" />
-                  <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <button
-                    onClick={() => setCountryFilter("all")}
-                    className={`px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                      countryFilter === "all"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    All Countries
-                  </button>
-                  {availableCountries.map((country) => (
-                    <button
-                      key={country}
-                      onClick={() => setCountryFilter(country)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                        countryFilter === country
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      {country}
-                    </button>
-                  ))}
-                </>
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
+                  <SelectTrigger className="w-auto min-w-[140px] rounded-full text-sm h-9">
+                    <Globe className="h-4 w-4 mr-1.5 shrink-0" />
+                    <SelectValue placeholder="Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Countries</SelectItem>
+                    {availableCountries.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>
