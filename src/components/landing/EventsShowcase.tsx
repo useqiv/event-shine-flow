@@ -37,34 +37,44 @@ const EventsShowcase = () => {
     { key: "next_month", label: "Next Month" },
   ];
 
+  const availableCountries = useMemo(() => {
+    if (!events) return [];
+    return [...new Set(events.map((e: any) => e.country).filter(Boolean))].sort();
+  }, [events]);
+
   const filteredEvents = useMemo(() => {
     if (!events) return [];
 
     let filtered = events;
 
+    // Apply country filter first
+    if (countryFilter !== "all") {
+      filtered = filtered.filter((event: any) => event.country === countryFilter);
+    }
+
     switch (activeFilter) {
       case "today":
-        filtered = events.filter((event) => isToday(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isToday(new Date(event.event_date)));
         break;
       case "this_week":
-        filtered = events.filter((event) => isThisWeek(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isThisWeek(new Date(event.event_date)));
         break;
       case "this_month":
-        filtered = events.filter((event) => isThisMonth(new Date(event.event_date)));
+        filtered = filtered.filter((event) => isThisMonth(new Date(event.event_date)));
         break;
       case "next_month":
         const nextMonthStart = startOfMonth(addMonths(new Date(), 1));
         const nextMonthEnd = endOfMonth(addMonths(new Date(), 1));
-        filtered = events.filter((event) =>
+        filtered = filtered.filter((event) =>
           isWithinInterval(new Date(event.event_date), { start: nextMonthStart, end: nextMonthEnd })
         );
         break;
       default:
-        filtered = events;
+        break;
     }
 
     return filtered.slice(0, 10);
-  }, [events, activeFilter]);
+  }, [events, activeFilter, countryFilter]);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
