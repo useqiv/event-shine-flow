@@ -52,6 +52,7 @@ export const useEvents = () => {
         .from('events')
         .select(selectColumns.eventCard)
         .eq('is_active', true)
+        .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true });
       
       if (error) throw error;
