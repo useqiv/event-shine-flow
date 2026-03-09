@@ -182,7 +182,7 @@ const EventsShowcase = () => {
               ))}
 
               {/* Country Filter */}
-              {availableCountries.length > 1 && (
+              {availableCountries.length > 0 && (
                 <>
                   <div className="w-px h-6 bg-border mx-1 shrink-0" />
                   <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
