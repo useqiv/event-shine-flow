@@ -244,6 +244,7 @@ interface EventCardProps {
     image_url: string | null;
     custom_slug: string | null;
     currency: string;
+    country?: string | null;
   };
   categoryColor: string;
 }
