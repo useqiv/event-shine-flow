@@ -11,6 +11,7 @@ type FilterType = "all" | "today" | "this_week" | "this_month" | "next_month";
 
 const EventsShowcase = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [countryFilter, setCountryFilter] = useState<string>("all");
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["landing-events"],
