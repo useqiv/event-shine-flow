@@ -30,8 +30,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
     }
   };
 
-  const isEnded = new Date(contest.end_date) < new Date();
-  const isStarted = new Date(contest.start_date) <= new Date();
+  
 
   return (
     <Link to={`/contests/${contest.id}`}>
