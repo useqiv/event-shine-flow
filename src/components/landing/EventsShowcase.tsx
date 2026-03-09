@@ -163,35 +163,6 @@ const EventsShowcase = () => {
              </div>
             </div>
 
-            {/* Country Filter */}
-            {availableCountries.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-                <button
-                  onClick={() => setCountryFilter("all")}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                    countryFilter === "all"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  All Countries
-                </button>
-                {availableCountries.map((country) => (
-                  <button
-                    key={country}
-                    onClick={() => setCountryFilter(country)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                      countryFilter === country
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {country}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
             {/* Filters */}
