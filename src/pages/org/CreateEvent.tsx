@@ -227,6 +227,25 @@ const CreateEvent = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="country">Country *</Label>
+                <Select
+                  value={formData.country}
+                  onValueChange={(value) => handleChange('country', value)}
+                  required
+                >
+                  <SelectTrigger>
+                    <Globe className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Select country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AFRICAN_COUNTRIES.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="venue">Venue Name *</Label>
                 <Input
                   id="venue"
