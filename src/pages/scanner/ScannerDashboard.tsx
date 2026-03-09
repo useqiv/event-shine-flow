@@ -117,38 +117,7 @@ const ScannerDashboard = () => {
           </div>
         )}
 
-        {pastEvents.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Past</h2>
-            <div className="space-y-2">
-              {pastEvents.slice(0, 5).map((event) => (
-                <Link key={event.id} to={`/scanner/${event.id}`}>
-                  <Card className="opacity-60 hover:opacity-80 transition-all cursor-pointer">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <QrCode className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground truncate">{event.title}</h3>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(event.event_date), 'MMM d, yyyy')}
-                            </span>
-                          </div>
-                        </div>
-                        <Badge variant="secondary" className="flex-shrink-0">Ended</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(!events || events.length === 0) && (
+        {(!events || events.length === 0 || upcomingEvents.length === 0) && (
           <Card>
             <CardContent className="py-12 text-center">
               <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

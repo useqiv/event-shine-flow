@@ -71,6 +71,7 @@ export const useFeaturedContests = () => {
         .select(selectColumns.contestCard)
         .eq('is_active', true)
         .eq('is_featured', true)
+        .gte('end_date', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(5);
       

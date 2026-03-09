@@ -71,6 +71,7 @@ export const useFeaturedEvents = () => {
         .select(selectColumns.eventCard)
         .eq('is_active', true)
         .eq('is_featured', true)
+        .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true })
         .limit(5);
       

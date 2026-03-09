@@ -88,7 +88,8 @@ export const useSavedEvents = () => {
       const { data: events, error: eventsError } = await supabase
         .from('events')
         .select(selectColumns.eventCard)
-        .in('id', eventIds);
+        .in('id', eventIds)
+        .gte('event_date', new Date().toISOString());
       
       if (eventsError) throw eventsError;
       return events;
