@@ -128,6 +128,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           category: data.category,
           venue: data.venue,
           address: data.address || null,
+          country: data.country || null,
           event_date: new Date(data.event_date).toISOString(),
           currency: data.currency,
           is_featured: data.is_featured,
