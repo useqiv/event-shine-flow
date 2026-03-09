@@ -720,6 +720,24 @@ const EventManagement = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label>Country</Label>
+                  <Select
+                    value={editForm.country}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, country: value }))}
+                  >
+                    <SelectTrigger>
+                      <Globe className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AFRICAN_COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="edit-venue">Venue Name *</Label>
                   <Input
                     id="edit-venue"
