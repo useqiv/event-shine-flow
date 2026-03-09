@@ -40,6 +40,7 @@ const eventSchema = z.object({
   category: z.string().min(1, 'Category is required'),
   venue: z.string().min(1, 'Venue is required'),
   address: z.string().max(255).optional(),
+  country: z.string().optional(),
   event_date: z.string().min(1, 'Event date is required'),
   currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
