@@ -76,7 +76,9 @@ const EventCard = ({ event }: { event: any }) => {
           </div>
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span className="truncate">{event.venue || 'Venue TBD'}</span>
+            <span className="truncate">
+              {event.venue || 'Venue TBD'}{(event as any).country ? `, ${(event as any).country}` : ''}
+            </span>
           </div>
           <Button className="w-full mt-4">
             Get Tickets
