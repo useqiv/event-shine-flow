@@ -22,6 +22,7 @@ const Search = () => {
         .from("events")
         .select("*")
         .eq("is_active", true)
+        .gte("event_date", new Date().toISOString())
         .or(`title.ilike.%${query}%,venue.ilike.%${query}%,description.ilike.%${query}%`)
         .limit(10);
       if (error) throw error;
@@ -38,6 +39,7 @@ const Search = () => {
         .from("contests")
         .select("*")
         .eq("is_active", true)
+        .gte("end_date", new Date().toISOString())
         .or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
         .limit(10);
       if (error) throw error;

@@ -30,8 +30,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
     }
   };
 
-  const isEnded = new Date(contest.end_date) < new Date();
-  const isStarted = new Date(contest.start_date) <= new Date();
+  
 
   return (
     <Link to={`/contests/${contest.id}`}>
@@ -61,11 +60,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
               <Heart className={`h-4 w-4 ${isSaved ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
             </button>
           )}
-          {isEnded && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-              <Badge variant="destructive" className="text-lg px-4 py-2">Ended</Badge>
-            </div>
-          )}
+          
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
@@ -80,7 +75,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
-                {isEnded ? 'Ended' : isStarted ? 'Ends' : 'Starts'} {format(new Date(isEnded || isStarted ? contest.end_date : contest.start_date), 'MMM d')}
+                Ends {format(new Date(contest.end_date), 'MMM d')}
               </span>
             </div>
           </div>

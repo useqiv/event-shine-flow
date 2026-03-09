@@ -49,7 +49,6 @@ const SavedItems = () => {
             ) : savedContests && savedContests.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {savedContests.map((contest: any) => {
-                  const isEnded = new Date(contest.end_date) < new Date();
                   return (
                     <Card key={contest.id} className="overflow-hidden group">
                       <div className="relative aspect-video">
@@ -58,9 +57,7 @@ const SavedItems = () => {
                           alt={contest.title}
                           className="w-full h-full object-cover"
                         />
-                        {isEnded && (
-                          <Badge className="absolute top-2 left-2 bg-destructive">Ended</Badge>
-                        )}
+                        
                         <Button
                           variant="secondary"
                           size="icon"
@@ -79,7 +76,7 @@ const SavedItems = () => {
                         <div className="flex items-center justify-end mt-4">
                           <Button asChild size="sm">
                             <Link to={`/contests/${contest.id}`}>
-                              {isEnded ? 'View Results' : 'Vote Now'}
+                              Vote Now
                             </Link>
                           </Button>
                         </div>
@@ -112,7 +109,6 @@ const SavedItems = () => {
             ) : savedEvents && savedEvents.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {savedEvents.map((event: any) => {
-                  const isPast = new Date(event.event_date) < new Date();
                   return (
                     <Card key={event.id} className="overflow-hidden group">
                       <div className="relative aspect-video">
@@ -121,11 +117,7 @@ const SavedItems = () => {
                           alt={event.title}
                           className="w-full h-full object-cover"
                         />
-                        {isPast && (
-                          <Badge className="absolute top-2 left-2 bg-muted text-muted-foreground">
-                            Past Event
-                          </Badge>
-                        )}
+                        
                         <Button
                           variant="secondary"
                           size="icon"
@@ -149,7 +141,7 @@ const SavedItems = () => {
                         <div className="flex justify-end mt-4">
                           <Button asChild size="sm">
                             <Link to={`/events/${event.id}`}>
-                              {isPast ? 'View Details' : 'Get Tickets'}
+                              Get Tickets
                             </Link>
                           </Button>
                         </div>
