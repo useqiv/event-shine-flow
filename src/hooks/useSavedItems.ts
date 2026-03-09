@@ -55,7 +55,8 @@ export const useSavedContests = () => {
       const { data: contests, error: contestsError } = await supabase
         .from('contests')
         .select(selectColumns.contestCard)
-        .in('id', contestIds);
+        .in('id', contestIds)
+        .gte('end_date', new Date().toISOString());
       
       if (contestsError) throw contestsError;
       return contests;
