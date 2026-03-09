@@ -288,7 +288,9 @@ const EventCard = ({ event, categoryColor }: EventCardProps) => {
         <div className="space-y-2 mb-3">
           <div className="flex items-start gap-2 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-            <span className="text-xs line-clamp-1">{event.venue}</span>
+            <span className="text-xs line-clamp-1">
+              {event.venue}{event.country ? `, ${event.country}` : ''}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
