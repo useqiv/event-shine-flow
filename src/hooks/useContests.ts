@@ -52,6 +52,7 @@ export const useContests = () => {
         .from('contests')
         .select(selectColumns.contestCard)
         .eq('is_active', true)
+        .gte('end_date', new Date().toISOString())
         .order('created_at', { ascending: false });
       
       if (error) throw error;
