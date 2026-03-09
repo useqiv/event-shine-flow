@@ -99,6 +99,7 @@ const EventManagement = () => {
     event_date: '',
     venue: '',
     address: '',
+    country: '',
     custom_slug: '',
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
