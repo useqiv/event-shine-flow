@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { AFRICAN_COUNTRIES, detectCountryFromText } from '@/lib/africanCountries';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
