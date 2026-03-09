@@ -77,8 +77,8 @@ const EventCard = ({ event }: { event: any }) => {
             <MapPin className="h-4 w-4" />
             <span className="truncate">{event.venue || 'Venue TBD'}</span>
           </div>
-          <Button className="w-full mt-4" disabled={isPast}>
-            {isPast ? 'Event Passed' : 'Get Tickets'}
+          <Button className="w-full mt-4">
+            Get Tickets
           </Button>
         </CardContent>
       </Card>

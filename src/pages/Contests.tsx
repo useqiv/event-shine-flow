@@ -75,7 +75,7 @@ const ContestCard = ({ contest }: { contest: any }) => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>
-                {isEnded ? 'Ended' : isStarted ? 'Ends' : 'Starts'} {format(new Date(isEnded || isStarted ? contest.end_date : contest.start_date), 'MMM d')}
+                Ends {format(new Date(contest.end_date), 'MMM d')}
               </span>
             </div>
           </div>
