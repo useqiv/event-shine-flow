@@ -143,7 +143,7 @@ const SavedItems = () => {
                         <div className="flex justify-end mt-4">
                           <Button asChild size="sm">
                             <Link to={`/events/${event.id}`}>
-                              {isPast ? 'View Details' : 'Get Tickets'}
+                              Get Tickets
                             </Link>
                           </Button>
                         </div>
