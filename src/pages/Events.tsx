@@ -91,16 +91,22 @@ const Events = () => {
   const { data: events, isLoading } = useEvents();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
 
   const categories = events 
     ? [...new Set(events.map(e => e.category).filter(Boolean))]
+    : [];
+
+  const availableCountries = events
+    ? [...new Set(events.map((e: any) => e.country).filter(Boolean))]
     : [];
 
   const filteredEvents = events?.filter(event => {
     const matchesSearch = (event.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
                           (event.venue?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || event.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesCountry = countryFilter === 'all' || (event as any).country === countryFilter;
+    return matchesSearch && matchesCategory && matchesCountry;
   });
 
   const breadcrumbSchema = getBreadcrumbSchema([
