@@ -59,11 +59,7 @@ const EventCard = ({ event }: { event: any }) => {
               <Heart className={`h-4 w-4 ${isSaved ? 'fill-primary text-primary' : 'text-muted-foreground'}`} />
             </button>
           )}
-          {isPast && (
-            <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-              <Badge variant="secondary" className="text-lg px-4 py-2">Past Event</Badge>
-            </div>
-          )}
+          
         </div>
         <CardContent className="p-4">
           <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
