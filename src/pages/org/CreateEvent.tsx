@@ -12,8 +12,9 @@ import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug
 import { useCreateEvent } from '@/hooks/useOrganization';
 import { EventTemplateSelector } from '@/components/org/EventTemplateSelector';
 import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
-import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote } from 'lucide-react';
+import { Calendar, MapPin, FileText, Link as LinkIcon, Banknote, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { AFRICAN_COUNTRIES, detectCountryFromText } from '@/lib/africanCountries';
 
 const currencies = [
   { code: 'NGN', label: 'Nigerian Naira (₦)' },
