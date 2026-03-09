@@ -167,25 +167,27 @@ const EventsShowcase = () => {
           </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {filters.map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setActiveFilter(filter.key)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                    activeFilter === filter.key
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between gap-4 pb-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() => setActiveFilter(filter.key)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeFilter === filter.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
 
               {/* Country Filter */}
               {availableCountries.length > 0 && (
                 <Select value={countryFilter} onValueChange={setCountryFilter}>
-                  <SelectTrigger className="w-auto min-w-[140px] rounded-full text-sm h-9">
+                  <SelectTrigger className="w-auto min-w-[140px] rounded-full text-sm h-9 shrink-0">
                     <Globe className="h-4 w-4 mr-1.5 shrink-0" />
                     <SelectValue placeholder="Country" />
                   </SelectTrigger>
