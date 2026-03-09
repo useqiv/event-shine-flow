@@ -57,9 +57,7 @@ const SavedItems = () => {
                           alt={contest.title}
                           className="w-full h-full object-cover"
                         />
-                        {isEnded && (
-                          <Badge className="absolute top-2 left-2 bg-destructive">Ended</Badge>
-                        )}
+                        
                         <Button
                           variant="secondary"
                           size="icon"
