@@ -168,7 +168,23 @@ const EventsShowcase = () => {
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 pb-2">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              {/* Mobile: Time filter dropdown */}
+              <div className="sm:hidden">
+                <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
+                  <SelectTrigger className="w-auto min-w-[130px] rounded-full text-sm h-9">
+                    <SlidersHorizontal className="h-4 w-4 mr-1.5 shrink-0" />
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filters.map((filter) => (
+                      <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Desktop: Time filter pills */}
+              <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-hide">
                 {filters.map((filter) => (
                   <button
                     key={filter.key}
