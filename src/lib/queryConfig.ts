@@ -75,7 +75,7 @@ export const queryCache = {
  */
 export const selectColumns = {
   // Events - public listing (minimal columns for cards)
-  eventCard: 'id, title, image_url, venue, event_date, category, is_featured, custom_slug',
+  eventCard: 'id, title, image_url, venue, event_date, category, is_featured, custom_slug, country, currency',
   
   // Events - full details
   eventDetail: 'id, title, description, image_url, venue, address, event_date, category, is_active, is_featured, custom_slug, currency, logo_url, stream_url, stream_platform, organization_id, created_at, updated_at',
