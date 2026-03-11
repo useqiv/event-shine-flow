@@ -15,6 +15,8 @@ export interface Event {
   is_active: boolean;
   is_featured: boolean;
   custom_slug: string | null;
+  country: string | null;
+  currency: string;
   created_at: string;
   updated_at: string;
 }
