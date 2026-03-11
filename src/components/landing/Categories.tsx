@@ -23,7 +23,7 @@ const Categories = () => {
           </div>
           
           {/* Categories - Horizontal scroll on mobile, grid on larger screens */}
-          <div className="flex sm:grid sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
+          <div className="flex sm:grid sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 overflow-x-auto pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
             {categories.map((category, index) => (
               <button
                 key={index}
