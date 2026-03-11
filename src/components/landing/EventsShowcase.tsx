@@ -136,12 +136,9 @@ const EventsShowcase = () => {
         <div className="max-w-[1600px] mx-auto">
           {/* Header */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-1">Upcoming Events</h2>
-                <p className="text-muted-foreground text-sm">Discover exciting events happening soon</p>
-              </div>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Upcoming Events</h2>
+              <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="rounded-full px-4" asChild>
                   <Link to="/events">
                     View All
@@ -161,10 +158,10 @@ const EventsShowcase = () => {
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
-             </div>
+                </div>
+              </div>
             </div>
-
-          </div>
+            <p className="text-muted-foreground text-sm -mt-2">Discover exciting events happening soon</p>
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 pb-2">
