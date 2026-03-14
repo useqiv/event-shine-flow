@@ -65,7 +65,7 @@ const Forms = () => {
   return (
     <DashboardLayout>
       <Helmet>
-        <title>My Forms | VoteApp</title>
+        <title>My Forms | USEQIV</title>
       </Helmet>
 
       <div className="space-y-6">

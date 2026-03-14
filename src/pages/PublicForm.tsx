@@ -816,7 +816,7 @@ const PublicForm = () => {
           </Card>
           <p className="text-center text-xs text-muted-foreground mt-8 flex items-center justify-center gap-1.5">
             <span>Powered by</span>
-            <span className="font-medium text-foreground/70">VoteApp Forms</span>
+            <span className="font-medium text-foreground/70">USEQIV Forms</span>
           </p>
         </div>
       </main>

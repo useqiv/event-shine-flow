@@ -146,7 +146,7 @@ const CampaignDetail: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>{campaign.title} | Fundraising Campaign</title>
+        <title>{campaign.title} | USEQIV Campaigns</title>
         <meta name="description" content={ogDescription} />
         
         {/* Open Graph / Facebook */}

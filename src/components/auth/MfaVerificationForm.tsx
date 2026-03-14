@@ -46,7 +46,7 @@ const MfaVerificationForm: React.FC<MfaVerificationFormProps> = ({
             <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
               <Vote className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="font-bold text-2xl text-foreground">VoteApp</span>
+            <span className="font-bold text-2xl text-foreground">USEQIV</span>
           </Link>
         </div>
 

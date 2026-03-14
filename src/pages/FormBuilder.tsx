@@ -195,7 +195,7 @@ const FormBuilder = () => {
   return (
     <DashboardLayout>
       <Helmet>
-        <title>Edit Form - {form.title} | VoteApp</title>
+        <title>Edit Form - {form.title} | USEQIV</title>
       </Helmet>
 
       <div className="space-y-6">

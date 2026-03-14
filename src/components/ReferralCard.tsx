@@ -35,8 +35,8 @@ const ReferralCard = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Join VoteApp',
-          text: 'Join VoteApp and get bonus points! Use my referral link:',
+          title: 'Join USEQIV',
+          text: 'Join USEQIV and get bonus points! Use my referral link:',
           url: referralLink,
         });
       } catch (error: any) {
