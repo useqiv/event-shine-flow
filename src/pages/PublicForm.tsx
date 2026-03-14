@@ -658,7 +658,7 @@ const PublicForm = () => {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30">
         <Helmet>
-          <title>{form.title} | VoteApp</title>
+          <title>{form.title} | USEQIV</title>
         </Helmet>
         <Navbar />
         <main className="flex-1 container mx-auto px-4 py-12 pt-28">
