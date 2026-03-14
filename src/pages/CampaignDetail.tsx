@@ -139,14 +139,18 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const pageUrl = `${window.location.origin}/campaigns/${campaign.id}`;
-  const ogImage = campaign.image_url || `${window.location.origin}/placeholder.svg`;
+  const pageUrl = (campaign as any).custom_slug 
+    ? `https://www.useqiv.com/campaigns/${(campaign as any).custom_slug}` 
+    : `https://www.useqiv.com/campaigns/${campaign.id}`;
+  const ogImage = campaign.image_url 
+    ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
+    : 'https://www.useqiv.com/og-image.png';
   const ogDescription = campaign.short_description || campaign.description?.substring(0, 160) || `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Helmet>
-        <title>{campaign.title} | Fundraising Campaign</title>
+        <title>{campaign.title} | USEQIV Campaigns</title>
         <meta name="description" content={ogDescription} />
         
         {/* Open Graph / Facebook */}
@@ -166,7 +170,7 @@ const CampaignDetail: React.FC = () => {
         <meta name="twitter:image" content={ogImage} />
         
         {/* Campaign specific meta */}
-        <meta property="og:site_name" content="VoteWaves Campaigns" />
+        <meta property="og:site_name" content="USEQIV" />
         <link rel="canonical" href={pageUrl} />
       </Helmet>
 

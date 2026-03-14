@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const type = url.searchParams.get("type"); // 'event' or 'contest'
+    const type = url.searchParams.get("type"); // 'event', 'contest', 'campaign', or 'form'
     const slug = url.searchParams.get("slug");
 
     if (!type || !slug) {
@@ -31,7 +31,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let title = "USEQIV";
-    let description = "Vote, attend events, and support campaigns on USEQIV";
+    let description = "The Complete Platform for Contest Voting, Event Ticketing & Crowdfunding Success";
     let image = DEFAULT_IMAGE;
     let pageUrl = SITE_URL;
 
@@ -64,6 +64,37 @@ serve(async (req) => {
         pageUrl = contest.custom_slug 
           ? `${SITE_URL}/c/${contest.custom_slug}` 
           : `${SITE_URL}/contests/${contest.id}`;
+      }
+    } else if (type === "campaign") {
+      const { data: campaign } = await supabase
+        .from("campaigns")
+        .select("id, title, description, short_description, image_url, custom_slug, goal_amount, currency, current_amount")
+        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
+        .maybeSingle();
+
+      if (campaign) {
+        title = `${campaign.title} | USEQIV Campaigns`;
+        description = campaign.short_description || campaign.description || 
+          `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
+        image = campaign.image_url || DEFAULT_IMAGE;
+        pageUrl = campaign.custom_slug 
+          ? `${SITE_URL}/campaigns/${campaign.custom_slug}` 
+          : `${SITE_URL}/campaigns/${campaign.id}`;
+      }
+    } else if (type === "form") {
+      const { data: form } = await supabase
+        .from("forms")
+        .select("id, title, description, custom_slug, logo_url")
+        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
+        .maybeSingle();
+
+      if (form) {
+        title = `${form.title} | USEQIV`;
+        description = form.description || `Fill out ${form.title}`;
+        image = form.logo_url || DEFAULT_IMAGE;
+        pageUrl = form.custom_slug 
+          ? `${SITE_URL}/f/${form.custom_slug}` 
+          : `${SITE_URL}/f/${form.id}`;
       }
     }
 
@@ -98,6 +129,7 @@ serve(async (req) => {
   
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@useqiv">
   <meta name="twitter:url" content="${escapeHtml(pageUrl)}">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
