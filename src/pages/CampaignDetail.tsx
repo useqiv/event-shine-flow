@@ -139,8 +139,12 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const pageUrl = `${window.location.origin}/campaigns/${campaign.id}`;
-  const ogImage = campaign.image_url || `${window.location.origin}/placeholder.svg`;
+  const pageUrl = campaign.custom_slug 
+    ? `https://www.useqiv.com/campaigns/${campaign.custom_slug}` 
+    : `https://www.useqiv.com/campaigns/${campaign.id}`;
+  const ogImage = campaign.image_url 
+    ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
+    : 'https://www.useqiv.com/og-image.png';
   const ogDescription = campaign.short_description || campaign.description?.substring(0, 160) || `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
 
   return (
