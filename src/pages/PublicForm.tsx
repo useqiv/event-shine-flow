@@ -701,7 +701,7 @@ const PublicForm = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/50 to-background">
       <Helmet>
-        <title>{form.title} | VoteApp</title>
+        <title>{form.title} | USEQIV</title>
         <meta name="description" content={form.description || `Fill out ${form.title}`} />
       </Helmet>
       <Navbar />
