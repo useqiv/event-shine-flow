@@ -139,8 +139,8 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const pageUrl = campaign.custom_slug 
-    ? `https://www.useqiv.com/campaigns/${campaign.custom_slug}` 
+  const pageUrl = (campaign as any).custom_slug 
+    ? `https://www.useqiv.com/campaigns/${(campaign as any).custom_slug}` 
     : `https://www.useqiv.com/campaigns/${campaign.id}`;
   const ogImage = campaign.image_url 
     ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
