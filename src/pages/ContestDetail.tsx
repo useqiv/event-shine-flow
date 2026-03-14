@@ -951,6 +951,7 @@ const ContestDetail = () => {
       </main>
       <Footer />
     </div>
+    </>
   );
 };
 
