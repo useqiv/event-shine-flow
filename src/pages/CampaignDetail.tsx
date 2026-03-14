@@ -166,7 +166,7 @@ const CampaignDetail: React.FC = () => {
         <meta name="twitter:image" content={ogImage} />
         
         {/* Campaign specific meta */}
-        <meta property="og:site_name" content="VoteWaves Campaigns" />
+        <meta property="og:site_name" content="USEQIV" />
         <link rel="canonical" href={pageUrl} />
       </Helmet>
 
