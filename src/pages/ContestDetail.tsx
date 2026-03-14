@@ -283,7 +283,36 @@ const ContestDetail = () => {
     );
   }
 
+  const contestUrl = (contest as any)?.custom_slug 
+    ? `https://www.useqiv.com/c/${(contest as any).custom_slug}` 
+    : `https://www.useqiv.com/contests/${id}`;
+  const ogDescription = contest?.description || `Vote now in ${contest?.title}`;
+  const ogImage = contest?.image_url 
+    ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
+    : 'https://www.useqiv.com/og-image.png';
+
   return (
+    <>
+      <Helmet>
+        <title>{contest.title} | USEQIV</title>
+        <meta name="description" content={ogDescription} />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={contestUrl} />
+        <meta property="og:title" content={contest.title} />
+        <meta property="og:description" content={ogDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="USEQIV" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={contest.title} />
+        <meta name="twitter:description" content={ogDescription} />
+        <meta name="twitter:image" content={ogImage} />
+        
+        <link rel="canonical" href={contestUrl} />
+      </Helmet>
     <div className="min-h-screen flex flex-col" style={brandStyles}>
       
       <Navbar />

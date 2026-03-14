@@ -703,6 +703,16 @@ const PublicForm = () => {
       <Helmet>
         <title>{form.title} | USEQIV</title>
         <meta name="description" content={form.description || `Fill out ${form.title}`} />
+        
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <meta property="og:title" content={form.title} />
+        <meta property="og:description" content={form.description || `Fill out ${form.title}`} />
+        <meta property="og:site_name" content="USEQIV" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={form.title} />
+        <meta name="twitter:description" content={form.description || `Fill out ${form.title}`} />
       </Helmet>
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-12 pt-28">
