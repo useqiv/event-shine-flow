@@ -1,29 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-export const config = {
-  matcher: [
-    '/e/:path*',
-    '/c/:path*',
-    '/events/:path*',
-    '/contests/:path*',
-    '/campaigns/:path*',
-    '/f/:path*',
-  ],
-};
-
 const CRAWLER_REGEX =
   /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Pinterest|Googlebot|Discordbot|Baiduspider|bingbot/i;
 
 const SUPABASE_URL = 'https://tirqmqzgksclsjxfiham.supabase.co';
 
-export default function middleware(req: NextRequest) {
-  const userAgent = req.headers.get('user-agent') || '';
+export default function middleware(request: Request) {
+  const userAgent = request.headers.get('user-agent') || '';
 
   if (!CRAWLER_REGEX.test(userAgent)) {
-    return NextResponse.next();
+    return;
   }
 
-  const { pathname } = req.nextUrl;
+  const url = new URL(request.url);
+  const { pathname } = url;
   let type: string | null = null;
   let slug: string | null = null;
 
@@ -35,7 +23,7 @@ export default function middleware(req: NextRequest) {
     slug = pathname.replace('/events/', '');
   } else if (pathname.startsWith('/c/')) {
     type = 'contest';
-    slug = pathname.replace('/c/', '').split('/')[0]; // handle /c/slug/contestant/...
+    slug = pathname.replace('/c/', '').split('/')[0];
   } else if (pathname.startsWith('/contests/')) {
     type = 'contest';
     slug = pathname.replace('/contests/', '').split('/')[0];
@@ -49,8 +37,19 @@ export default function middleware(req: NextRequest) {
 
   if (type && slug) {
     const ogUrl = `${SUPABASE_URL}/functions/v1/og-meta?type=${type}&slug=${encodeURIComponent(slug)}`;
-    return NextResponse.rewrite(new URL(ogUrl));
+    return fetch(ogUrl, {
+      headers: { 'user-agent': userAgent },
+    });
   }
-
-  return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    '/e/:path*',
+    '/c/:path*',
+    '/events/:path*',
+    '/contests/:path*',
+    '/campaigns/:path*',
+    '/f/:path*',
+  ],
+};
