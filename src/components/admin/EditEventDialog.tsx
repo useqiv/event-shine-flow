@@ -46,6 +46,7 @@ const eventSchema = z.object({
   currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
   is_active: z.boolean(),
+  is_private: z.boolean(),
   commission_rate: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
