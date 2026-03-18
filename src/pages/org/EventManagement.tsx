@@ -799,6 +799,49 @@ const EventManagement = () => {
               </CardContent>
             </Card>
 
+            {/* Visibility */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {editForm.is_private ? <Lock className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  Event Visibility
+                </CardTitle>
+                <CardDescription>
+                  Control who can discover your event
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {editForm.is_private ? 'Private Event' : 'Public Event'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {editForm.is_private 
+                        ? 'Only people with the direct link can access this event. It won\'t appear in public listings or search results.'
+                        : 'This event is visible to everyone in public listings and search results.'}
+                    </p>
+                  </div>
+                  <Select
+                    value={editForm.is_private ? 'private' : 'public'}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, is_private: value === 'private' }))}
+                  >
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">
+                        <span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Public</span>
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <span className="flex items-center gap-2"><Lock className="h-3 w-3" /> Private</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="flex justify-end">
               <Button onClick={handleSaveEventDetails} disabled={updateEvent.isPending}>
                 <Save className="mr-2 h-4 w-4" />
