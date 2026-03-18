@@ -55,6 +55,7 @@ export const useEvents = () => {
         .from('events')
         .select(selectColumns.eventCard)
         .eq('is_active', true)
+        .eq('is_private', false)
         .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true });
       
@@ -73,6 +74,7 @@ export const useFeaturedEvents = () => {
         .from('events')
         .select(selectColumns.eventCard)
         .eq('is_active', true)
+        .eq('is_private', false)
         .eq('is_featured', true)
         .gte('event_date', new Date().toISOString())
         .order('event_date', { ascending: true })
