@@ -14,6 +14,7 @@ export interface Event {
   event_date: string;
   is_active: boolean;
   is_featured: boolean;
+  is_private: boolean;
   custom_slug: string | null;
   country: string | null;
   currency: string;
