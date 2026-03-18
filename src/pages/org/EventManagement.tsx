@@ -133,6 +133,7 @@ const EventManagement = () => {
         custom_slug: (event as any).custom_slug || '',
         stream_url: (event as any).stream_url || '',
         stream_platform: (event as any).stream_platform || 'youtube',
+        is_private: (event as any).is_private || false,
       });
     }
   }, [event]);
