@@ -138,6 +138,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           currency: data.currency,
           is_featured: data.is_featured,
           is_active: data.is_active,
+          is_private: data.is_private,
           commission_rate: data.commission_rate || null,
         })
         .eq('id', event.id);
