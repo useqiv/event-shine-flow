@@ -46,6 +46,7 @@ const eventSchema = z.object({
   currency: z.string().min(1, 'Currency is required'),
   is_featured: z.boolean(),
   is_active: z.boolean(),
+  is_private: z.boolean(),
   commission_rate: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
@@ -66,6 +67,7 @@ interface EditEventDialogProps {
     currency: string;
     is_featured: boolean;
     is_active: boolean;
+    is_private: boolean;
     commission_rate: number | null;
   };
 }
@@ -96,6 +98,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       currency: event.currency || 'NGN',
       is_featured: event.is_featured,
       is_active: event.is_active,
+      is_private: event.is_private,
       commission_rate: event.commission_rate,
     },
   });
@@ -113,6 +116,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
         currency: event.currency || 'NGN',
         is_featured: event.is_featured,
         is_active: event.is_active,
+        is_private: event.is_private,
         commission_rate: event.commission_rate,
       });
     }
@@ -134,6 +138,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
           currency: data.currency,
           is_featured: data.is_featured,
           is_active: data.is_active,
+          is_private: data.is_private,
           commission_rate: data.commission_rate || null,
         })
         .eq('id', event.id);
@@ -317,7 +322,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                 </FormItem>
               )}
             />
-            <div className="flex gap-6">
+            <div className="flex gap-6 flex-wrap">
               <FormField
                 control={form.control}
                 name="is_featured"
@@ -345,6 +350,21 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                       />
                     </FormControl>
                     <FormLabel className="!mt-0">Active</FormLabel>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_private"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Private</FormLabel>
                   </FormItem>
                 )}
               />

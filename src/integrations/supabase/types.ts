@@ -735,6 +735,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          is_private: boolean
           logo_url: string | null
           organization_id: string | null
           stream_platform: string | null
@@ -757,6 +758,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_private?: boolean
           logo_url?: string | null
           organization_id?: string | null
           stream_platform?: string | null
@@ -779,6 +781,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_private?: boolean
           logo_url?: string | null
           organization_id?: string | null
           stream_platform?: string | null

@@ -25,7 +25,7 @@ import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe, Lock, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -103,6 +103,7 @@ const EventManagement = () => {
     custom_slug: '',
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
+    is_private: false,
   });
 
   // Helper to convert UTC date to local datetime-local format
@@ -132,6 +133,7 @@ const EventManagement = () => {
         custom_slug: (event as any).custom_slug || '',
         stream_url: (event as any).stream_url || '',
         stream_platform: (event as any).stream_platform || 'youtube',
+        is_private: (event as any).is_private || false,
       });
     }
   }, [event]);
@@ -794,6 +796,49 @@ const EventManagement = () => {
                     stream_platform: platform 
                   }))}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Visibility */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {editForm.is_private ? <Lock className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  Event Visibility
+                </CardTitle>
+                <CardDescription>
+                  Control who can discover your event
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {editForm.is_private ? 'Private Event' : 'Public Event'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {editForm.is_private 
+                        ? 'Only people with the direct link can access this event. It won\'t appear in public listings or search results.'
+                        : 'This event is visible to everyone in public listings and search results.'}
+                    </p>
+                  </div>
+                  <Select
+                    value={editForm.is_private ? 'private' : 'public'}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, is_private: value === 'private' }))}
+                  >
+                    <SelectTrigger className="w-[130px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">
+                        <span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Public</span>
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <span className="flex items-center gap-2"><Lock className="h-3 w-3" /> Private</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardContent>
             </Card>
 
