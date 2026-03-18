@@ -98,6 +98,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
       currency: event.currency || 'NGN',
       is_featured: event.is_featured,
       is_active: event.is_active,
+      is_private: event.is_private,
       commission_rate: event.commission_rate,
     },
   });
