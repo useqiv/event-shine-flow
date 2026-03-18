@@ -103,6 +103,7 @@ const EventManagement = () => {
     custom_slug: '',
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
+    is_private: false,
   });
 
   // Helper to convert UTC date to local datetime-local format
