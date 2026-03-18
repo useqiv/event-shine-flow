@@ -67,6 +67,7 @@ interface EditEventDialogProps {
     currency: string;
     is_featured: boolean;
     is_active: boolean;
+    is_private: boolean;
     commission_rate: number | null;
   };
 }
