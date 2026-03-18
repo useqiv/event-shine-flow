@@ -322,7 +322,7 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                 </FormItem>
               )}
             />
-            <div className="flex gap-6">
+            <div className="flex gap-6 flex-wrap">
               <FormField
                 control={form.control}
                 name="is_featured"
@@ -350,6 +350,21 @@ const EditEventDialog: React.FC<EditEventDialogProps> = ({
                       />
                     </FormControl>
                     <FormLabel className="!mt-0">Active</FormLabel>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="is_private"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">Private</FormLabel>
                   </FormItem>
                 )}
               />
