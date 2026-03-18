@@ -75,10 +75,10 @@ export const queryCache = {
  */
 export const selectColumns = {
   // Events - public listing (minimal columns for cards)
-  eventCard: 'id, title, image_url, venue, event_date, category, is_featured, custom_slug, country, currency',
+  eventCard: 'id, title, image_url, venue, event_date, category, is_featured, is_private, custom_slug, country, currency',
   
   // Events - full details
-  eventDetail: 'id, title, description, image_url, venue, address, event_date, category, is_active, is_featured, custom_slug, currency, country, logo_url, stream_url, stream_platform, organization_id, created_at, updated_at',
+  eventDetail: 'id, title, description, image_url, venue, address, event_date, category, is_active, is_featured, is_private, custom_slug, currency, country, logo_url, stream_url, stream_platform, organization_id, created_at, updated_at',
   
   // Contests - public listing (includes all fields needed by Contest type)
   contestCard: 'id, title, description, image_url, category, vote_price, vote_currency, end_date, start_date, is_featured, custom_slug, is_active, total_votes, created_at, updated_at',
