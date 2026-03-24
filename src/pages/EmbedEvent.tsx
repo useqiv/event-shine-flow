@@ -32,11 +32,9 @@ const EmbedEvent = () => {
       const { data, error } = await supabase
         .from('ticket_types')
         .select('*')
-        .eq('event_id', eventId!)
-        .eq('is_active', true)
-        .order('price', { ascending: true });
+        .eq('event_id', eventId!);
       if (error) throw error;
-      return data;
+      return (data || []).filter((t: any) => t.is_active).sort((a: any, b: any) => a.price - b.price);
     },
     enabled: !!eventId,
   });
