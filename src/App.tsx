@@ -229,7 +229,9 @@ const AppRoutes = () => (
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
+    <Route path="/embed/contest/:contestId" element={<EmbedContest />} />
     <Route path="/embed/campaign/:campaignId" element={<EmbedCampaign />} />
+    <Route path="/embed/event/:eventId" element={<EmbedEvent />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
