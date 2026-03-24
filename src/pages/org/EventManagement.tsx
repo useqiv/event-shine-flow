@@ -843,6 +843,11 @@ const EventManagement = () => {
               </CardContent>
             </Card>
 
+            {/* Embed Code Generator */}
+            {event && (
+              <EventEmbedGenerator eventId={event.id} eventTitle={event.title} />
+            )}
+
             <div className="flex justify-end">
               <Button onClick={handleSaveEventDetails} disabled={updateEvent.isPending}>
                 <Save className="mr-2 h-4 w-4" />

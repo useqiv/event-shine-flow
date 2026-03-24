@@ -1374,6 +1374,11 @@ const ContestManagement = () => {
               />
             </div>
 
+            {/* Embed Code Generator */}
+            {contest && (
+              <ContestEmbedGenerator contestId={contest.id} contestTitle={contest.title} />
+            )}
+
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
                 <Save className="mr-2 h-4 w-4" />
