@@ -34,6 +34,8 @@ import PaymentCallback from "./pages/PaymentCallback";
 import AcceptTransfer from "./pages/AcceptTransfer";
 import EmbedLeaderboard from "./pages/EmbedLeaderboard";
 import EmbedCampaign from "./pages/EmbedCampaign";
+import EmbedContest from "./pages/EmbedContest";
+import EmbedEvent from "./pages/EmbedEvent";
 import FavoriteContestants from "./pages/FavoriteContestants";
 import ResetPassword from "./pages/ResetPassword";
 import Campaigns from "./pages/Campaigns";
@@ -227,7 +229,9 @@ const AppRoutes = () => (
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />
+    <Route path="/embed/contest/:contestId" element={<EmbedContest />} />
     <Route path="/embed/campaign/:campaignId" element={<EmbedCampaign />} />
+    <Route path="/embed/event/:eventId" element={<EmbedEvent />} />
     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
     <Route path="/reset-password" element={<ResetPassword />} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

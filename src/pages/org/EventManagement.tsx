@@ -25,7 +25,8 @@ import EditTicketTypeDialog from '@/components/org/EditTicketTypeDialog';
 import AttendanceReportExport from '@/components/org/AttendanceReportExport';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
-import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe, Lock, Eye } from 'lucide-react';
+import { Calendar, Ticket, Users, PlusCircle, QrCode, Download, ArrowLeft, Copy, MapPin, Banknote, Save, Megaphone, Pencil, TrendingUp, Info, Video, Globe, Lock, Eye, Code } from 'lucide-react';
+import { EventEmbedGenerator } from '@/components/org/EventEmbedGenerator';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
@@ -841,6 +842,11 @@ const EventManagement = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Embed Code Generator */}
+            {event && (
+              <EventEmbedGenerator eventId={event.id} eventTitle={event.title} />
+            )}
 
             <div className="flex justify-end">
               <Button onClick={handleSaveEventDetails} disabled={updateEvent.isPending}>

@@ -21,6 +21,7 @@ import { SortableContestantCard } from '@/components/org/SortableContestantCard'
 import { FraudAlertsCard } from '@/components/org/FraudAlertsCard';
 import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
 import { ShareCardGenerator } from '@/components/org/ShareCardGenerator';
+import { ContestEmbedGenerator } from '@/components/org/ContestEmbedGenerator';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { BrandingPreview } from '@/components/org/BrandingPreview';
 import { CategoryManager } from '@/components/org/CategoryManager';
@@ -1372,6 +1373,11 @@ const ContestManagement = () => {
                 })) || []}
               />
             </div>
+
+            {/* Embed Code Generator */}
+            {contest && (
+              <ContestEmbedGenerator contestId={contest.id} contestTitle={contest.title} />
+            )}
 
             <div className="flex justify-end">
               <Button onClick={handleSaveContestDetails} disabled={updateContest.isPending}>
