@@ -86,7 +86,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   }, [baseDiscountAmount, baseCurrency, selectedCurrency, rates]);
 
   // Calculate final amount after discount (using converted amount)
-  const finalAmount = Math.max(0, convertedAmount - discountAmount);
+  const amountAfterDiscount = Math.max(0, convertedAmount - discountAmount);
+  
+  // Calculate fees based on payment method
+  const feeBreakdown = useMemo(() => {
+    return calculateFees(amountAfterDiscount, paymentMethod);
+  }, [amountAfterDiscount, paymentMethod, calculateFees]);
+  
+  const finalAmount = feeBreakdown.totalWithFees;
   const effectiveCurrency = selectedCurrency;
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
