@@ -182,14 +182,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       const expectedBaseAmount = contest.vote_price * payload.vote_quantity;
-      // Allow currency conversion tolerance (5%) for cross-currency payments
-      const tolerance = contest.vote_currency !== payload.currency ? 0.05 : 0.01;
-      if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && contest.vote_currency === payload.currency) {
-        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+      const isCrossCurrency = contest.vote_currency !== payload.currency;
+      const tolerance = isCrossCurrency ? 0.05 : 0.01;
+      const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
+      if (deviation > tolerance) {
+        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
         return new Response(
           JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+      if (!isCrossCurrency) {
+        serverVerifiedAmount = expectedBaseAmount;
+        console.log(`Using server-verified vote amount: ${serverVerifiedAmount}`);
       }
     }
     
