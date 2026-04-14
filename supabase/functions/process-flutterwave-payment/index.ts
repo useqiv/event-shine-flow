@@ -55,7 +55,12 @@ const handler = async (req: Request): Promise<Response> => {
         "flutterwave_public_key",
         "flutterwave_test_mode",
         "flutterwave_currencies",
-        "flutterwave_default_currency"
+        "flutterwave_default_currency",
+        "flutterwave_fee_percentage",
+        "flutterwave_fee_fixed",
+        "convenience_fee_type",
+        "convenience_fee_value",
+        "convenience_fee_cap",
       ]);
 
     if (settingsError) {
