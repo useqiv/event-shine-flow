@@ -182,14 +182,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
       
       const expectedBaseAmount = contest.vote_price * payload.vote_quantity;
-      // Allow currency conversion tolerance (5%) for cross-currency payments
-      const tolerance = contest.vote_currency !== payload.currency ? 0.05 : 0.01;
-      if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && contest.vote_currency === payload.currency) {
-        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+      const isCrossCurrency = contest.vote_currency !== payload.currency;
+      const tolerance = isCrossCurrency ? 0.05 : 0.01;
+      const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
+      if (deviation > tolerance) {
+        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
         return new Response(
           JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
+      }
+      if (!isCrossCurrency) {
+        serverVerifiedAmount = expectedBaseAmount;
+        console.log(`Using server-verified vote amount: ${serverVerifiedAmount}`);
       }
     }
     
@@ -202,13 +207,21 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (!ticketErr && ticketType) {
         const expectedBaseAmount = ticketType.price * payload.ticket_quantity;
-        const tolerance = ticketType.currency !== payload.currency ? 0.05 : 0.01;
-        if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && ticketType.currency === payload.currency) {
-          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+        // Use 5% tolerance for cross-currency, 1% for same currency
+        const isCrossCurrency = ticketType.currency !== payload.currency;
+        const tolerance = isCrossCurrency ? 0.05 : 0.01;
+        const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
+        if (deviation > tolerance) {
+          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
           return new Response(
             JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
+        }
+        // For same-currency payments, use the authoritative DB price
+        if (!isCrossCurrency) {
+          serverVerifiedAmount = expectedBaseAmount;
+          console.log(`Using server-verified ticket amount: ${serverVerifiedAmount}`);
         }
       }
     }
@@ -284,12 +297,13 @@ const handler = async (req: Request): Promise<Response> => {
     // --- Fee Calculation (server-side) ---
     // Wallet funding keeps its own 3% admin fee logic
     const WALLET_ADMIN_FEE_RATE = 0.03;
-    let chargeAmount = payload.amount;
+    // Use server-verified amount as the base for fee calculation
+    let chargeAmount = serverVerifiedAmount;
 
     if (payload.type === "wallet") {
-      const adminFee = Math.round(payload.amount * WALLET_ADMIN_FEE_RATE * 100) / 100;
-      chargeAmount = Math.round((payload.amount + adminFee) * 100) / 100;
-      console.log(`Wallet funding: base=${payload.amount}, admin fee(3%)=${adminFee}, total charged=${chargeAmount}`);
+      const adminFee = Math.round(serverVerifiedAmount * WALLET_ADMIN_FEE_RATE * 100) / 100;
+      chargeAmount = Math.round((serverVerifiedAmount + adminFee) * 100) / 100;
+      console.log(`Wallet funding: base=${serverVerifiedAmount}, admin fee(3%)=${adminFee}, total charged=${chargeAmount}`);
     } else {
       // Apply platform fee settings for non-wallet payments
       const fwFeePercentage = parseFloat(getSetting("flutterwave_fee_percentage")) || 0;
@@ -298,12 +312,12 @@ const handler = async (req: Request): Promise<Response> => {
       const convFeeValue = parseFloat(getSetting("convenience_fee_value")) || 0;
       const convFeeCap = parseFloat(getSetting("convenience_fee_cap")) || 0;
 
-      let paymentMethodFee = (payload.amount * fwFeePercentage) / 100 + fwFeeFixed;
+      let paymentMethodFee = (serverVerifiedAmount * fwFeePercentage) / 100 + fwFeeFixed;
       paymentMethodFee = Math.round(paymentMethodFee * 100) / 100;
 
       let convenienceFee = 0;
       if (convFeeType === "percentage") {
-        convenienceFee = (payload.amount * convFeeValue) / 100;
+        convenienceFee = (serverVerifiedAmount * convFeeValue) / 100;
       } else if (convFeeType === "fixed") {
         convenienceFee = convFeeValue;
       }
@@ -313,12 +327,12 @@ const handler = async (req: Request): Promise<Response> => {
       convenienceFee = Math.round(convenienceFee * 100) / 100;
 
       const totalFees = Math.round((paymentMethodFee + convenienceFee) * 100) / 100;
-      chargeAmount = Math.round((payload.amount + totalFees) * 100) / 100;
+      chargeAmount = Math.round((serverVerifiedAmount + totalFees) * 100) / 100;
       
       if (totalFees > 0) {
         console.log(`Fees applied: method=${paymentMethodFee}, convenience=${convenienceFee}, total fees=${totalFees}, charge=${chargeAmount}`);
         meta.platform_fees = totalFees;
-        meta.base_amount = payload.amount;
+        meta.base_amount = serverVerifiedAmount;
       }
     }
 
