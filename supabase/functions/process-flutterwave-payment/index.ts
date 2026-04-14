@@ -202,13 +202,21 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (!ticketErr && ticketType) {
         const expectedBaseAmount = ticketType.price * payload.ticket_quantity;
-        const tolerance = ticketType.currency !== payload.currency ? 0.05 : 0.01;
-        if (Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount > tolerance && ticketType.currency === payload.currency) {
-          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}`);
+        // Use 5% tolerance for cross-currency, 1% for same currency
+        const isCrossCurrency = ticketType.currency !== payload.currency;
+        const tolerance = isCrossCurrency ? 0.05 : 0.01;
+        const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
+        if (deviation > tolerance) {
+          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
           return new Response(
             JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
+        }
+        // For same-currency payments, use the authoritative DB price
+        if (!isCrossCurrency) {
+          serverVerifiedAmount = expectedBaseAmount;
+          console.log(`Using server-verified ticket amount: ${serverVerifiedAmount}`);
         }
       }
     }
