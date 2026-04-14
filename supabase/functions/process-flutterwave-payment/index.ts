@@ -281,13 +281,45 @@ const handler = async (req: Request): Promise<Response> => {
       }
     };
 
-    // For wallet funding, add 3% admin fee on top of the deposit amount
+    // --- Fee Calculation (server-side) ---
+    // Wallet funding keeps its own 3% admin fee logic
     const WALLET_ADMIN_FEE_RATE = 0.03;
     let chargeAmount = payload.amount;
+
     if (payload.type === "wallet") {
       const adminFee = Math.round(payload.amount * WALLET_ADMIN_FEE_RATE * 100) / 100;
       chargeAmount = Math.round((payload.amount + adminFee) * 100) / 100;
       console.log(`Wallet funding: base=${payload.amount}, admin fee(3%)=${adminFee}, total charged=${chargeAmount}`);
+    } else {
+      // Apply platform fee settings for non-wallet payments
+      const fwFeePercentage = parseFloat(getSetting("flutterwave_fee_percentage")) || 0;
+      const fwFeeFixed = parseFloat(getSetting("flutterwave_fee_fixed")) || 0;
+      const convFeeType = getSetting("convenience_fee_type") || "none";
+      const convFeeValue = parseFloat(getSetting("convenience_fee_value")) || 0;
+      const convFeeCap = parseFloat(getSetting("convenience_fee_cap")) || 0;
+
+      let paymentMethodFee = (payload.amount * fwFeePercentage) / 100 + fwFeeFixed;
+      paymentMethodFee = Math.round(paymentMethodFee * 100) / 100;
+
+      let convenienceFee = 0;
+      if (convFeeType === "percentage") {
+        convenienceFee = (payload.amount * convFeeValue) / 100;
+      } else if (convFeeType === "fixed") {
+        convenienceFee = convFeeValue;
+      }
+      if (convFeeCap > 0 && convenienceFee > convFeeCap) {
+        convenienceFee = convFeeCap;
+      }
+      convenienceFee = Math.round(convenienceFee * 100) / 100;
+
+      const totalFees = Math.round((paymentMethodFee + convenienceFee) * 100) / 100;
+      chargeAmount = Math.round((payload.amount + totalFees) * 100) / 100;
+      
+      if (totalFees > 0) {
+        console.log(`Fees applied: method=${paymentMethodFee}, convenience=${convenienceFee}, total fees=${totalFees}, charge=${chargeAmount}`);
+        meta.platform_fees = totalFees;
+        meta.base_amount = payload.amount;
+      }
     }
 
     const flutterwavePayload = {
