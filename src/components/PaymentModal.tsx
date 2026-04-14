@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useFlutterwavePayment, useCryptoPayment, useVerifyCryptoPayment } from '@/hooks/usePayments';
+import { usePaymentFees } from '@/hooks/usePaymentFees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { usePromoCodeValidation } from '@/hooks/usePromoCode';
@@ -47,7 +48,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
-  
+  const { calculateFees } = usePaymentFees();
   const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
   const [cryptoCurrency, setCryptoCurrency] = useState<'USDT' | 'USDC'>('USDT');
   const [network, setNetwork] = useState<'ethereum' | 'bsc' | 'polygon' | 'tron'>('bsc');
@@ -85,7 +86,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   }, [baseDiscountAmount, baseCurrency, selectedCurrency, rates]);
 
   // Calculate final amount after discount (using converted amount)
-  const finalAmount = Math.max(0, convertedAmount - discountAmount);
+  const amountAfterDiscount = Math.max(0, convertedAmount - discountAmount);
+  
+  // Calculate fees based on payment method
+  const feeBreakdown = useMemo(() => {
+    return calculateFees(amountAfterDiscount, paymentMethod);
+  }, [amountAfterDiscount, paymentMethod, calculateFees]);
+  
+  const finalAmount = feeBreakdown.totalWithFees;
   const effectiveCurrency = selectedCurrency;
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
@@ -270,6 +278,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   Discount ({appliedPromo.code})
                 </span>
                 <span>-{formatCurrency(discountAmount, effectiveCurrency)}</span>
+              </div>
+            )}
+            {feeBreakdown.paymentMethodFee > 0 && (
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>{paymentMethod === 'flutterwave' ? 'Processing Fee' : 'Crypto Fee'}</span>
+                <span>+{formatCurrency(feeBreakdown.paymentMethodFee, effectiveCurrency)}</span>
+              </div>
+            )}
+            {feeBreakdown.convenienceFee > 0 && (
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Convenience Fee</span>
+                <span>+{formatCurrency(feeBreakdown.convenienceFee, effectiveCurrency)}</span>
               </div>
             )}
             <div className="flex justify-between pt-2 border-t">
