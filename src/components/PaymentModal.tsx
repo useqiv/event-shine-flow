@@ -48,7 +48,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
-  
+  const { calculateFees } = usePaymentFees();
   const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
   const [cryptoCurrency, setCryptoCurrency] = useState<'USDT' | 'USDC'>('USDT');
   const [network, setNetwork] = useState<'ethereum' | 'bsc' | 'polygon' | 'tron'>('bsc');
