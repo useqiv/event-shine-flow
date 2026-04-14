@@ -163,7 +163,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
     flutterwavePayment.mutate({
       type,
-      amount: finalAmount,
+      amount: amountAfterDiscount,
       currency: effectiveCurrency,
       email,
       name,
