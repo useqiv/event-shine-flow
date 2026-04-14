@@ -332,7 +332,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (totalFees > 0) {
         console.log(`Fees applied: method=${paymentMethodFee}, convenience=${convenienceFee}, total fees=${totalFees}, charge=${chargeAmount}`);
         meta.platform_fees = totalFees;
-        meta.base_amount = payload.amount;
+        meta.base_amount = serverVerifiedAmount;
       }
     }
 
