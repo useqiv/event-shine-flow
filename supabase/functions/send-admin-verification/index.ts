@@ -133,8 +133,8 @@ serve(async (req) => {
 
     if (!emailResponse.ok) {
       const errText = await emailResponse.text();
-      console.error("ZeptoMail error:", errText);
-      return new Response(JSON.stringify({ error: "Failed to send verification email" }), {
+      console.error("ZeptoMail error status:", emailResponse.status, "body:", errText);
+      return new Response(JSON.stringify({ error: `Failed to send verification email (${emailResponse.status})` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
