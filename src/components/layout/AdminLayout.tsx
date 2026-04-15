@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
+import AdminMfaGate from '@/components/admin/AdminMfaGate';
 import appLogo from "@/assets/logo.png";
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -79,6 +80,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
+    <AdminMfaGate>
     <div className="min-h-screen bg-background flex w-full">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
@@ -297,6 +299,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </main>
       </div>
     </div>
+    </AdminMfaGate>
   );
 };
 
