@@ -299,6 +299,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </main>
       </div>
     </div>
+    </AdminMfaGate>
   );
 };
 
