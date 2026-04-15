@@ -80,6 +80,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
+    <AdminMfaGate>
     <div className="min-h-screen bg-background flex w-full">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-64 border-r border-border bg-card fixed h-full">
