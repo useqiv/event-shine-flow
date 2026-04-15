@@ -64,6 +64,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (response.error) {
         const errorMsg = response.error.message || 'Failed to send verification code';
         setError(errorMsg);
+        setStatus('verify');
         setIsSending(false);
         return;
       }
@@ -71,6 +72,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       const data = response.data;
       if (data?.error) {
         setError(data.error);
+        setStatus('verify');
         setIsSending(false);
         return;
       }
@@ -81,6 +83,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       toast.success('Verification code sent to your email');
     } catch (err: any) {
       setError('Failed to send verification code. Please try again.');
+      setStatus('verify');
       console.error('Send verification error:', err);
     } finally {
       setIsSending(false);
