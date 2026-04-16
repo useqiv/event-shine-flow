@@ -21,7 +21,6 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    // Check if already verified this session
     const verified = sessionStorage.getItem('admin_verified');
     if (verified === 'true') {
       setStatus('verified');
@@ -30,7 +29,6 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
   }, []);
 
-  // Cooldown timer
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
@@ -45,39 +43,33 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const sendVerificationCode = async () => {
+    if (!user?.email) {
+      setError('No email found. Please sign in again.');
+      setStatus('verify');
+      return;
+    }
+
     setIsSending(true);
     setError(null);
     setStatus('sending');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Session expired. Please sign in again.');
-        setIsSending(false);
-        return;
-      }
-
-      const response = await supabase.functions.invoke('send-admin-verification', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: user.email,
+        options: {
+          shouldCreateUser: false,
+        },
       });
 
-      if (response.error) {
-        const errorMsg = response.error.message || 'Failed to send verification code';
-        setError(errorMsg);
+      if (otpError) {
+        console.error('OTP send error:', otpError);
+        setError(otpError.message || 'Failed to send verification code');
         setStatus('verify');
         setIsSending(false);
         return;
       }
 
-      const data = response.data;
-      if (data?.error) {
-        setError(data.error);
-        setStatus('verify');
-        setIsSending(false);
-        return;
-      }
-
-      setMaskedEmail(maskEmail(data?.email || user?.email || ''));
+      setMaskedEmail(maskEmail(user.email));
       setStatus('verify');
       setCooldown(60);
       toast.success('Verification code sent to your email');
@@ -91,40 +83,25 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const handleVerify = async () => {
-    if (code.length !== 6) return;
+    if (code.length !== 6 || !user?.email) return;
 
     setIsVerifying(true);
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Session expired. Please sign in again.');
-        setIsVerifying(false);
-        return;
-      }
-
-      const response = await supabase.functions.invoke('verify-admin-code', {
-        body: { code },
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: user.email,
+        token: code,
+        type: 'email',
       });
 
-      if (response.error) {
+      if (verifyError) {
         setError('Invalid or expired code. Please try again.');
         setCode('');
         setIsVerifying(false);
         return;
       }
 
-      const data = response.data;
-      if (data?.error) {
-        setError(data.error);
-        setCode('');
-        setIsVerifying(false);
-        return;
-      }
-
-      // Mark as verified for this session
       sessionStorage.setItem('admin_verified', 'true');
       setStatus('verified');
       toast.success('Admin access verified');
@@ -165,7 +142,6 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     return <>{children}</>;
   }
 
-  // verify - show OTP input
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
