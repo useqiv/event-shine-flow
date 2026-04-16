@@ -9,6 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// In-memory verification flag — cannot be tampered with via devtools/storage.
+// Resets on full page reload, so admins must re-verify each session.
+let adminVerifiedInMemory = false;
+export const resetAdminVerification = () => {
+  adminVerifiedInMemory = false;
+};
+
 const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
@@ -21,10 +28,12 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
-    const verified = sessionStorage.getItem('admin_verified');
-    if (verified === 'true') {
+    if (adminVerifiedInMemory) {
       setStatus('verified');
     } else {
+      // Clear any legacy/tampered storage flags
+      sessionStorage.removeItem('admin_verified');
+      localStorage.removeItem('admin_verified');
       sendVerificationCode();
     }
   }, []);
@@ -102,6 +111,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         return;
       }
 
+      adminVerifiedInMemory = true;
       sessionStorage.setItem('admin_verified', 'true');
       setStatus('verified');
       toast.success('Admin access verified');
@@ -120,6 +130,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const handleSignOut = async () => {
+    adminVerifiedInMemory = false;
     sessionStorage.removeItem('admin_verified');
     await signOut();
     navigate('/auth');
