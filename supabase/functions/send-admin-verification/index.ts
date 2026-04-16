@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -14,9 +16,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const zeptoApiKey = Deno.env.get("ZEPTOMAIL_API_KEY")!;
+    const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY")!;
 
-    // Verify the user is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -27,7 +29,6 @@ serve(async (req) => {
 
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user from token
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
     const { data: { user }, error: userError } = await anonClient.auth.getUser(
       authHeader.replace("Bearer ", "")
@@ -71,7 +72,7 @@ serve(async (req) => {
 
     // Generate 6-digit PIN
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Delete any existing unused codes for this user
     await supabaseClient
@@ -97,18 +98,19 @@ serve(async (req) => {
       });
     }
 
-    // Send email via ZeptoMail
-    const emailResponse = await fetch("https://api.zeptomail.com/v1.1/email", {
+    // Send email via Resend
+    const emailResponse = await fetch(`${GATEWAY_URL}/emails`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Zoho-enczapikey ${zeptoApiKey}`,
+        "Authorization": `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": resendApiKey,
       },
       body: JSON.stringify({
-        from: { address: "noreply@useqiv.com", name: "USEQIV" },
-        to: [{ email_address: { address: user.email, name: "Admin" } }],
+        from: "USEQIV <onboarding@resend.dev>",
+        to: [user.email],
         subject: "Admin Dashboard Verification Code",
-        htmlbody: `
+        html: `
           <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">Admin Verification</h1>
@@ -133,7 +135,7 @@ serve(async (req) => {
 
     if (!emailResponse.ok) {
       const errText = await emailResponse.text();
-      console.error("ZeptoMail error status:", emailResponse.status, "body:", errText);
+      console.error("Resend error status:", emailResponse.status, "body:", errText);
       return new Response(JSON.stringify({ error: `Failed to send verification email (${emailResponse.status})` }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
