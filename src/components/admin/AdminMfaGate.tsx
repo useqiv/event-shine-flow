@@ -92,7 +92,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const handleVerify = async () => {
-    if (code.length !== 7 || !user?.email) return;
+    if (code.length !== 6 || !user?.email) return;
 
     setIsVerifying(true);
     setError(null);
@@ -165,7 +165,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           <CardTitle>Admin Verification Required</CardTitle>
           <CardDescription className="space-y-1">
           <span className="block">
-              A 7-digit verification code has been sent to
+              A 6-digit verification code has been sent to
             </span>
             <span className="block font-medium text-foreground">
               <Mail className="inline h-4 w-4 mr-1" />
@@ -182,7 +182,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           )}
 
           <div className="flex justify-center">
-            <InputOTP maxLength={7} value={code} onChange={setCode}>
+            <InputOTP maxLength={6} value={code} onChange={setCode}>
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -190,7 +190,6 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                 <InputOTPSlot index={3} />
                 <InputOTPSlot index={4} />
                 <InputOTPSlot index={5} />
-                <InputOTPSlot index={6} />
               </InputOTPGroup>
             </InputOTP>
           </div>
@@ -198,7 +197,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           <Button
             onClick={handleVerify}
             className="w-full"
-            disabled={code.length !== 7 || isVerifying}
+            disabled={code.length !== 6 || isVerifying}
           >
             {isVerifying ? (
               <>
