@@ -70,7 +70,7 @@ const Hero = () => {
                   text: "Auto Content Generation"
                 }].map((item, i) => (
                   <div key={i} className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-primary/10 border border-primary/20 rounded-full">
-                    <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
+                    
                     <span className="text-xs sm:text-sm font-medium text-foreground">{item.text}</span>
                   </div>
                 ))}
