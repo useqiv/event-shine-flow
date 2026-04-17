@@ -119,10 +119,6 @@ const Hero = () => {
                     <h3 className="text-sm sm:text-base lg:text-lg font-bold text-foreground">Live Dashboard</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Real-time performance</p>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/10 rounded-full">
-                    
-                    <span className="text-[10px] sm:text-xs font-semibold text-primary">Live</span>
-                  </div>
                 </div>
 
                 {/* Stats Grid */}
