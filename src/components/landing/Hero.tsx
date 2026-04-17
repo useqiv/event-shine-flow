@@ -120,7 +120,7 @@ const Hero = () => {
                     <p className="text-xs sm:text-sm text-muted-foreground">Real-time performance</p>
                   </div>
                   <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/10 rounded-full">
-                    <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 bg-primary rounded-full animate-pulse" />
+                    
                     <span className="text-[10px] sm:text-xs font-semibold text-primary">Live</span>
                   </div>
                 </div>
