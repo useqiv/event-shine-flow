@@ -39,10 +39,6 @@ const Hero = () => {
             <div className="text-center lg:text-left">
               {/* Badge - Smaller on mobile */}
               <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-card border border-border rounded-full mb-4 sm:mb-6 shadow-sm">
-                <span className="flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-primary opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
                 <span className="text-xs sm:text-sm font-medium text-foreground">Now serving 25+ countries</span>
               </div>
 
