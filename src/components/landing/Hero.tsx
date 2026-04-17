@@ -34,16 +34,16 @@ const Hero = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-[1400px] mx-auto">
           {/* Main Hero Content */}
-          <div className="grid lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-[1.15fr_1fr] gap-8 sm:gap-10 lg:gap-12 items-center">
             {/* Left Content */}
-            <div className="text-center lg:text-left">
+            <div className="text-center lg:text-left min-w-0">
               {/* Badge - Smaller on mobile */}
               <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-card border border-border rounded-full mb-4 sm:mb-6 shadow-sm">
                 <span className="text-xs sm:text-sm font-medium text-foreground">Now serving 25+ countries</span>
               </div>
 
               {/* Headline - Responsive sizing */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-[1.15] sm:leading-[1.1] mb-4 sm:mb-6">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold text-foreground leading-[1.1] mb-4 sm:mb-6">
                 The Complete{" "}
                 <span className="text-primary relative whitespace-nowrap">
                   Event Platform
