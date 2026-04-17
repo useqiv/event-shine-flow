@@ -83,7 +83,7 @@ const Hero = () => {
                   text: "Anti-Fraud Protected"
                 }, {
                   icon: Zap,
-                  text: "Real-time Results"
+                  text: "Real time Results"
                 }, {
                   icon: CheckCircle,
                   text: "Instant Setup"
