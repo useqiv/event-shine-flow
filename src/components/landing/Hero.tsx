@@ -43,7 +43,7 @@ const Hero = () => {
               </div>
 
               {/* Headline - Responsive sizing */}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-[1.15] sm:leading-[1.1] mb-4 sm:mb-6">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl xl:text-7xl 2xl:text-8xl font-bold text-foreground leading-[1.1] mb-4 sm:mb-6">
                 The Complete{" "}
                 <span className="text-primary relative whitespace-nowrap">
                   Event Platform
