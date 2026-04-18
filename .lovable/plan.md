@@ -1,62 +1,45 @@
 
+## Plan: Partnership Proposal Document for Event Companies
 
-## Analysis Summary
+I'll create a professional, persuasive partnership proposal as a downloadable **.docx** document that you can email to event management companies or present to partners.
 
-The "Failed to claim ticket new row violates row-level security policy" error is **not actually an RLS issue** - it's caused by a **CHECK constraint violation** on the `payment_method` column.
+### Document Format
+- **File**: `USEQIV_Event_Partnership_Proposal.docx`
+- **Format**: Microsoft Word (editable, print-ready)
+- **Layout**: US Letter, 1" margins, Arial typography
+- **Branding**: USEQIV orange (#f05a28) accent color on headings, clean professional styling
 
-### Root Cause
+### Proposal Structure (9 Sections as requested)
 
-The `tickets` table has a CHECK constraint that only allows these payment methods:
-- `wallet`
-- `card`
-- `bank_transfer`
-- `usdt`
+1. **Cover / Introduction** — USEQIV introduction, mission, purpose of the proposal
+2. **The Industry Challenge** — Pain points: fragmented tools, manual check-ins, ticket fraud, payment friction, weak attendee data, slow payouts
+3. **Our Solution** — USEQIV as an all-in-one event commerce & engagement platform
+4. **Key Features** — Pulled from the actual platform:
+   - Multiple ticket tiers (regular, VIP, early bird, group)
+   - QR-code tickets + mobile scanner app (works offline)
+   - Multi-currency payments (Flutterwave, mobile money, crypto USDT/USDC)
+   - Real-time analytics dashboards
+   - Influencer tracking links & promo codes
+   - Embeddable widgets + custom vanity URLs
+   - Automated reminders, transfers, and receipts (ZeptoMail)
+   - Anti-fraud protection & atomic check-in
+5. **Benefits to Event Companies** — Revenue growth, operational efficiency, fast 24–48h payouts, better attendee experience, data-driven decisions
+6. **Partnership Opportunity** — Co-marketing, preferred-partner status, revenue share/volume incentives, dedicated onboarding
+7. **Implementation** — 4-step quick start (sign up → create event → customize tickets → go live), no upfront cost, free training
+8. **Why Choose USEQIV** — Africa-first multi-currency, all-in-one (vs. juggling Eventbrite + Mailchimp + Stripe), transparent fees, security-first (PCI, RLS, MFA)
+9. **Call to Action** — Schedule a demo, contact details, signature block
 
-However, when claiming a free ticket, the code sets `payment_method: 'free'`, which violates this constraint. PostgreSQL sometimes surfaces constraint violations as RLS errors in certain contexts, which made debugging confusing.
+### Visual Elements
+- Branded title page with USEQIV identity
+- Section dividers with orange accent rule
+- A "Key Metrics at a Glance" table (ticket types, currencies supported, payout time, etc.)
+- A features comparison table (USEQIV vs. typical alternatives)
+- Professional footer with contact info (info@useqiv.com, useqiv.com)
 
-### Evidence
-- **Network request shows**: `"payment_method":"free"`
-- **Code in `useEvents.ts`**: `payment_method: isFreeTicket ? 'free' : paymentMethod`
-- **Database constraint**: `CHECK ((payment_method = ANY (ARRAY['wallet', 'card', 'bank_transfer', 'usdt'])))`
+### Process
+1. Generate the .docx using the `docx` npm library following docx skill guidelines
+2. QA: convert to PDF → render pages as images → inspect each page for layout issues
+3. Fix any clipping/overflow and re-render until clean
+4. Deliver as `<lov-artifact>` for one-click download
 
-## Solution
-
-There are two options to fix this:
-
-### Option A: Add 'free' to the allowed payment methods (Recommended)
-
-**Database Change:**
-- Alter the CHECK constraint on `tickets.payment_method` to include `'free'` as a valid option
-- SQL: `ALTER TABLE tickets DROP CONSTRAINT tickets_payment_method_check; ALTER TABLE tickets ADD CONSTRAINT tickets_payment_method_check CHECK (payment_method = ANY (ARRAY['wallet', 'card', 'bank_transfer', 'usdt', 'free']));`
-
-No code changes needed - the current code already correctly uses `'free'` for free tickets.
-
-### Option B: Change code to use an existing payment method
-
-**Code Change:**
-- In `src/hooks/useEvents.ts`, change the free ticket payment method from `'free'` to `'wallet'` (or another existing option)
-- Change: `payment_method: isFreeTicket ? 'free' : paymentMethod` → `payment_method: isFreeTicket ? 'wallet' : paymentMethod`
-
-Not recommended because `'wallet'` is misleading for free tickets.
-
-## Recommendation
-
-**Option A** is the better solution because:
-1. `'free'` is semantically correct for free ticket claims
-2. It makes reporting and analytics clearer
-3. It's a minimal change that doesn't affect existing data
-
-## Technical Implementation
-
-**Database Migration:**
-```sql
--- Drop the existing constraint
-ALTER TABLE public.tickets DROP CONSTRAINT IF EXISTS tickets_payment_method_check;
-
--- Add the new constraint with 'free' included
-ALTER TABLE public.tickets ADD CONSTRAINT tickets_payment_method_check 
-  CHECK (payment_method = ANY (ARRAY['wallet', 'card', 'bank_transfer', 'usdt', 'free']));
-```
-
-No frontend code changes are needed since the code already uses `'free'` as the payment method for free tickets.
-
+After delivery, you can edit it freely in Word/Google Docs to personalize for each recipient (add their company name, tweak commercial terms, etc.).
