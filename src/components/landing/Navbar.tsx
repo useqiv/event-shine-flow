@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import appLogo from "@/assets/logo.png";
-import { useUserRole } from "@/hooks/useUserRole";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -30,8 +29,6 @@ const Navbar = () => {
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: role } = useUserRole();
-  const isAdmin = role === 'admin';
 
   useEffect(() => {
     // Get initial session
@@ -162,7 +159,7 @@ const Navbar = () => {
             <ThemeToggle />
             {user ? (
               <>
-                <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"}>
+                <Link to="/dashboard">
                   <Button variant="ghost">Dashboard</Button>
                 </Link>
                 <DropdownMenu>
@@ -184,14 +181,12 @@ const Navbar = () => {
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    {!isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer">
-                          <User className="mr-2 h-4 w-4" />
-                          Profile
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -266,17 +261,15 @@ const Navbar = () => {
               {/* Quick Actions for logged-in users */}
               {user && (
                 <div className="space-y-1 mb-6">
-                  <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"} onClick={() => setIsOpen(false)}>
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">Dashboard</Button>
                   </Link>
-                  {!isAdmin && (
-                    <Link to="/profile" onClick={() => setIsOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </Button>
-                    </Link>
-                  )}
+                  <Link to="/profile" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Button>
+                  </Link>
                 </div>
               )}
 

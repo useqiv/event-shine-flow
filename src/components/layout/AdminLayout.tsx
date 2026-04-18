@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
-import AdminMfaGate, { resetAdminVerification } from '@/components/admin/AdminMfaGate';
+import AdminMfaGate from '@/components/admin/AdminMfaGate';
 import appLogo from "@/assets/logo.png";
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -50,7 +50,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useAdminRealtime();
 
   const handleSignOut = async () => {
-    resetAdminVerification();
     await signOut();
     navigate('/');
   };

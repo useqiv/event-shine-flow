@@ -8,7 +8,6 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
-import { isAdminVerificationComplete } from "@/components/admin/AdminMfaGate";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
 import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
@@ -153,15 +152,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isOrganization = role === 'organization';
   const isAdmin = role === 'admin';
   const isInfluencer = (role as string) === 'influencer';
-  const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
-
-  if (isAdmin && !isAdminRoute) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  if (isAdminRoute && !isAdminVerificationComplete()) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
   
   if (isOrganization && location.pathname === '/dashboard') {
     return <Navigate to="/org/dashboard" replace />;

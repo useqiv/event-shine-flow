@@ -15,7 +15,6 @@ let adminVerifiedInMemory = false;
 export const resetAdminVerification = () => {
   adminVerifiedInMemory = false;
 };
-export const isAdminVerificationComplete = () => adminVerifiedInMemory;
 
 const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut, user } = useAuth();
@@ -108,7 +107,6 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       if (verifyError) {
         setError('Invalid or expired code. Please try again.');
         setCode('');
-        adminVerifiedInMemory = false;
         setIsVerifying(false);
         return;
       }
