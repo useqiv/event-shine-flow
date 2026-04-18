@@ -153,7 +153,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isOrganization = role === 'organization';
   const isAdmin = role === 'admin';
   const isInfluencer = (role as string) === 'influencer';
-  const isAdminRoute = location.pathname.startsWith('/admin/');
+  const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
 
   if (isAdmin && !isAdminRoute) {
     return <Navigate to="/admin/dashboard" replace />;
