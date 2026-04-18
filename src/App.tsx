@@ -159,7 +159,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  if (isAdminRoute && !isAdminVerificationComplete()) {
+  // Before MFA verification, only allow the dashboard route (where AdminMfaGate renders the PIN screen)
+  if (isAdmin && isAdminRoute && !isAdminVerificationComplete() && location.pathname !== '/admin/dashboard') {
     return <Navigate to="/admin/dashboard" replace />;
   }
   
