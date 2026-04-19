@@ -155,12 +155,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isInfluencer = (role as string) === 'influencer';
   const isAdminRoute = location.pathname.startsWith('/admin/');
 
-  if (isAdmin && !isAdminRoute) {
+  // Admin must complete PIN verification before accessing ANY route.
+  // Until verified, force them to /admin/dashboard where the PIN gate is rendered.
+  if (isAdmin && !isAdminVerificationComplete() && location.pathname !== '/admin/dashboard') {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // Before MFA verification, only allow the dashboard route (where AdminMfaGate renders the PIN screen)
-  if (isAdmin && isAdminRoute && !isAdminVerificationComplete() && location.pathname !== '/admin/dashboard') {
+  // Once verified, admin is locked to /admin/* routes
+  if (isAdmin && isAdminVerificationComplete() && !isAdminRoute) {
     return <Navigate to="/admin/dashboard" replace />;
   }
   
