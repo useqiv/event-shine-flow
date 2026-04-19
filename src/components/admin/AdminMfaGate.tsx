@@ -93,7 +93,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   };
 
   const handleVerify = async () => {
-    if (code.length !== 6 || !user?.email) return;
+    if (code.length !== 8 || !user?.email) return;
 
     setIsVerifying(true);
     setError(null);
@@ -184,7 +184,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           )}
 
           <div className="flex justify-center">
-            <InputOTP maxLength={6} value={code} onChange={setCode}>
+            <InputOTP maxLength={8} value={code} onChange={setCode}>
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -192,6 +192,8 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
                 <InputOTPSlot index={3} />
                 <InputOTPSlot index={4} />
                 <InputOTPSlot index={5} />
+                <InputOTPSlot index={6} />
+                <InputOTPSlot index={7} />
               </InputOTPGroup>
             </InputOTP>
           </div>
@@ -199,7 +201,7 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
           <Button
             onClick={handleVerify}
             className="w-full"
-            disabled={code.length !== 6 || isVerifying}
+            disabled={code.length !== 8 || isVerifying}
           >
             {isVerifying ? (
               <>
