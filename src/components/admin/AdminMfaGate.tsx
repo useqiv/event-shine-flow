@@ -48,8 +48,12 @@ const AdminMfaGate: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   const maskEmail = (email: string) => {
     const [local, domain] = email.split('@');
-    if (local.length <= 2) return `${local[0]}***@${domain}`;
-    return `${local[0]}${local[1]}${'*'.repeat(Math.min(local.length - 2, 5))}@${domain}`;
+    if (!domain) return email;
+    const [domainName, tld] = domain.split('.');
+    const maskedLocal = local[0] + '***';
+    const maskedDomain = domainName ? domainName[0] + '***' : '***';
+    const maskedTld = tld ? tld[0] + '**' : '';
+    return `${maskedLocal}@${maskedDomain}.${maskedTld}`;
   };
 
   const sendVerificationCode = async () => {
