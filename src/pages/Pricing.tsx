@@ -51,7 +51,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Event Ticketing",
     icon: Ticket,
     tagline: "Sell tickets, scan QR codes, manage check-ins.",
-    percent: 5,
+    percent: 8,
     unit: "per paid ticket",
     freeTier: "Free events are 100% free — forever.",
     features: [
