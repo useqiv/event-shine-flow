@@ -140,25 +140,31 @@ const Navbar = () => {
           </a>
 
           {/* Search Bar - Desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-lg">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xs">
             <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search organizers, events, venues..."
-                className="w-full pl-12 pr-12 py-3 bg-card border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                placeholder="Search..."
+                className="w-full pl-9 pr-9 py-2 text-sm bg-card border border-border rounded-full text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
-              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-colors">
-                <Search className="h-5 w-5 text-primary" />
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition-colors">
+                <Search className="h-4 w-4 text-primary" />
               </button>
             </div>
           </form>
 
+          {/* Desktop Nav Links */}
+          <div className="hidden lg:flex items-center gap-1 shrink-0">
+            <a href="/#how-it-works" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">How It Works</a>
+            <Link to="/pricing" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">Pricing</Link>
+            <Link to="/about" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">About USEQIV</Link>
+          </div>
+
           {/* Desktop Right Section */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
-            <ThemeToggle />
             {user ? (
               <>
                 <Link to={isAdmin ? "/admin/dashboard" : "/dashboard"}>
