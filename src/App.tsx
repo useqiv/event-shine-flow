@@ -55,6 +55,7 @@ import EmbedForm from "./pages/EmbedForm";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
 import ForOrganizers from "./pages/ForOrganizers";
 import ForParticipants from "./pages/ForParticipants";
 import ForInfluencers from "./pages/ForInfluencers";
@@ -223,6 +224,7 @@ const AppRoutes = () => (
     <Route path="/about" element={<About />} />
     <Route path="/contact" element={<Contact />} />
     <Route path="/features" element={<Features />} />
+    <Route path="/pricing" element={<Pricing />} />
     <Route path="/for-organizers" element={<ForOrganizers />} />
     <Route path="/for-participants" element={<ForParticipants />} />
     <Route path="/for-influencers" element={<ForInfluencers />} />
