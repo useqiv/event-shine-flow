@@ -48,11 +48,11 @@ const PRODUCTS: Record<ProductKey, {
   features: string[];
 }> = {
   events: {
-    label: "Event Ticketing",
+    label: "Event Ticketin",
     icon: Ticket,
     tagline: "Sell tickets, scan QR codes, manage check-ins.",
     percent: 8,
-    unit: "per paid ticket",
+    unit: "per transation",
     freeTier: "Free events are 100% free — forever.",
     features: [
       "Unlimited free & paid events",
@@ -67,7 +67,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Contest Voting",
     icon: Vote,
     tagline: "Run paid voting contests with anti-fraud built in.",
-    percent: 7,
+    percent: 8,
     unit: "per paid vote",
     freeTier: "No setup fees. You only pay when votes are cast.",
     features: [
@@ -99,7 +99,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Smart Forms",
     icon: FileText,
     tagline: "Build forms with payments, logic, and multi-page flows.",
-    percent: 3,
+    percent: 4,
     unit: "per paid submission",
     freeTier: "Unlimited free forms. Pay only when collecting payments.",
     features: [
