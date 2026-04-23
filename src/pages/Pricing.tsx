@@ -51,7 +51,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Event Ticketin",
     icon: Ticket,
     tagline: "Sell tickets, scan QR codes, manage check-ins.",
-    percent: 8,
+    percent: 10,
     unit: "per transation",
     freeTier: "Free events are 100% free — forever.",
     features: [
@@ -67,7 +67,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Contest Voting",
     icon: Vote,
     tagline: "Run paid voting contests with anti-fraud built in.",
-    percent: 8,
+    percent: 10,
     unit: "per paid vote",
     freeTier: "No setup fees. You only pay when votes are cast.",
     features: [
@@ -117,7 +117,7 @@ const Pricing = () => {
   const [country, setCountry] = useState<CountryCode>("NG");
   const [product, setProduct] = useState<ProductKey>("events");
   const [calcAmount, setCalcAmount] = useState<string>("10000");
-  const [calcQty, setCalcQty] = useState<string>("100");
+  const [calcQty, setCalcQty] = useState<string>("");
 
   const c = COUNTRIES[country];
   const p = PRODUCTS[product];
@@ -126,7 +126,7 @@ const Pricing = () => {
     const amount = parseFloat(calcAmount) || 0;
     const qty = parseInt(calcQty) || 0;
     const gross = amount * qty;
-    const feePerUnit = (amount * p.percent) / 2 + p.percent;
+    const feePerUnit = (amount * p.percent) / ;
     const totalFee = feePerUnit * qty;
     const net = gross - totalFee;
     return { gross, totalFee, net, feePerUnit };
