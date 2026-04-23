@@ -126,7 +126,7 @@ const Pricing = () => {
     const amount = parseFloat(calcAmount) || 0;
     const qty = parseInt(calcQty) || 0;
     const gross = amount * qty;
-    const feePerUnit = (amount * p.percent) / ;
+    const feePerUnit = (amount * p.percent) / 100 + c.flat;
     const totalFee = feePerUnit * qty;
     const net = gross - totalFee;
     return { gross, totalFee, net, feePerUnit };
