@@ -110,7 +110,7 @@ const TermsOfService = () => {
               
               <h3 className="text-xl font-medium text-foreground mb-3 mt-6">6.2 Platform Fees</h3>
               <p className="text-muted-foreground leading-relaxed">
-                UseQiv charges service fees, disclosed at the point of transaction. Fee structures may change at our discretion.
+                UseQiv charges service fees depending on the feature you are using, Fee structures may change at our discretion.
               </p>
 
               <h3 className="text-xl font-medium text-foreground mb-3 mt-6">6.3 Refund Policy</h3>
