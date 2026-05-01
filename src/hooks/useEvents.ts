@@ -251,35 +251,26 @@ export const usePurchaseTicket = () => {
       const qrCode = `TICKET-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
       // If paying with wallet (only for authenticated users with paid tickets)
+      // Atomically debit the wallet on the server (race-safe, currency-aware)
       if (paymentMethod === 'wallet' && !isFreeTicket && user?.id) {
-        const { data: wallet, error: walletError } = await supabase
-          .from('wallets')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+        const ticketCurrency = eventDetails?.currency || 'NGN';
+        const { data: debitResult, error: debitError } = await supabase.rpc(
+          'debit_wallet_safely',
+          {
+            p_user_id: user.id,
+            p_amount: amountPaid,
+            p_currency: ticketCurrency,
+            p_type: 'ticket',
+            p_description: `Ticket purchase (${quantity}x ${eventDetails?.ticketTypeName || 'ticket'})`,
+            p_reference_id: eventId,
+          }
+        );
 
-        if (walletError) throw walletError;
-        if (Number(wallet.balance) < amountPaid) {
-          throw new Error('Insufficient wallet balance');
+        if (debitError) throw debitError;
+        const result = debitResult as { success: boolean; error?: string };
+        if (!result?.success) {
+          throw new Error(result?.error || 'Wallet payment failed');
         }
-
-        // Create wallet transaction
-        await supabase
-          .from('wallet_transactions')
-          .insert({
-            wallet_id: wallet.id,
-            user_id: user.id,
-            type: 'ticket',
-            amount: -amountPaid,
-            description: `Ticket purchase`,
-            status: 'completed'
-          });
-
-        // Update wallet balance
-        await supabase
-          .from('wallets')
-          .update({ balance: Number(wallet.balance) - amountPaid })
-          .eq('id', wallet.id);
       }
 
       // Create ticket record - supports both authenticated and guest users

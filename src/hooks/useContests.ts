@@ -208,36 +208,25 @@ export const useVote = () => {
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      // If paying with wallet, deduct balance
+      // If paying with wallet, atomically debit balance (server-side, race-safe)
       if (paymentMethod === 'wallet') {
-        const { data: wallet, error: walletError } = await supabase
-          .from('wallets')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+        const { data: debitResult, error: debitError } = await supabase.rpc(
+          'debit_wallet_safely',
+          {
+            p_user_id: user.id,
+            p_amount: amountPaid,
+            p_currency: currency || 'NGN',
+            p_type: 'vote',
+            p_description: `Vote for contestant (${quantity})`,
+            p_reference_id: contestantId,
+          }
+        );
 
-        if (walletError) throw walletError;
-        if (Number(wallet.balance) < amountPaid) {
-          throw new Error('Insufficient wallet balance');
+        if (debitError) throw debitError;
+        const result = debitResult as { success: boolean; error?: string };
+        if (!result?.success) {
+          throw new Error(result?.error || 'Wallet payment failed');
         }
-
-        // Create wallet transaction
-        await supabase
-          .from('wallet_transactions')
-          .insert({
-            wallet_id: wallet.id,
-            user_id: user.id,
-            type: 'vote',
-            amount: -amountPaid,
-            description: `Vote for contestant`,
-            status: 'completed'
-          });
-
-        // Update wallet balance
-        await supabase
-          .from('wallets')
-          .update({ balance: Number(wallet.balance) - amountPaid })
-          .eq('id', wallet.id);
       }
 
       // Create vote record
