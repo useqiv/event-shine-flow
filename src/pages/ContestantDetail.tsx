@@ -661,14 +661,14 @@ const ContestantDetail = () => {
                     size="lg" 
                     className="w-full text-base sm:text-lg h-12 sm:h-14 font-semibold hidden lg:flex"
                     onClick={handleVoteClick}
-                    disabled={isEnded}
+                    disabled={isVotingLocked}
                     style={{ 
-                      backgroundColor: isEnded ? undefined : primaryColor,
-                      color: isEnded ? undefined : 'white'
+                      backgroundColor: isVotingLocked ? undefined : primaryColor,
+                      color: isVotingLocked ? undefined : 'white'
                     }}
                   >
                     <Vote className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    {isEnded ? 'Contest Ended' : 'Vote Now'}
+                    {isEnded ? 'Contest Ended' : hasNotStarted ? 'Voting Not Open Yet' : 'Vote Now'}
                   </Button>
                 </div>
               </CardContent>
