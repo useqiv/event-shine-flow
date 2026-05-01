@@ -162,6 +162,14 @@ const ContestantDetail = () => {
       });
       return;
     }
+    if (hasNotStarted) {
+      toast({
+        title: "Voting Not Open Yet",
+        description: `Voting opens on ${new Date(contest!.start_date).toLocaleString()}.`,
+        variant: "destructive"
+      });
+      return;
+    }
     setVoteQuantity(1);
     setIsVoteSelectionOpen(true);
   };
