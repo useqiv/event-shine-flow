@@ -199,6 +199,22 @@ export const usePurchaseTicket = () => {
       const isGuest = !user?.id;
       const isFreeTicket = amountPaid === 0;
 
+      // Enforce event activation & event_date — purchases lock once event has passed or while inactive
+      const { data: eventRow, error: eventRowError } = await supabase
+        .from('events')
+        .select('event_date, is_active, title')
+        .eq('id', eventId)
+        .maybeSingle();
+
+      if (eventRowError) throw eventRowError;
+      if (!eventRow) throw new Error('Event not found');
+      if (eventRow.is_active === false) {
+        throw new Error('Ticket sales are not open for this event yet.');
+      }
+      if (eventRow.event_date && new Date(eventRow.event_date) < new Date()) {
+        throw new Error('This event has already passed. Tickets are no longer available.');
+      }
+
       // For paid tickets, require authentication
       if (!isFreeTicket && isGuest) {
         throw new Error('Please login to purchase paid tickets');
