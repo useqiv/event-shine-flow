@@ -3858,6 +3858,17 @@ export type Database = {
         Returns: Json
       }
       clear_login_attempts: { Args: { p_email: string }; Returns: undefined }
+      debit_wallet_safely: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_description?: string
+          p_reference_id?: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       decrypt_banking_data: {
         Args: { encrypted_data: string }
         Returns: string
