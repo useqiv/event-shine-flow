@@ -131,6 +131,8 @@ const ContestantDetail = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
+  const hasNotStarted = contest && new Date(contest.start_date) > new Date();
+  const isVotingLocked = isEnded || hasNotStarted;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
@@ -156,6 +158,14 @@ const ContestantDetail = () => {
       toast({
         title: "Contest Ended",
         description: "This contest has ended. Voting is no longer available.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (hasNotStarted) {
+      toast({
+        title: "Voting Not Open Yet",
+        description: `Voting opens on ${new Date(contest!.start_date).toLocaleString()}.`,
         variant: "destructive"
       });
       return;
@@ -651,14 +661,14 @@ const ContestantDetail = () => {
                     size="lg" 
                     className="w-full text-base sm:text-lg h-12 sm:h-14 font-semibold hidden lg:flex"
                     onClick={handleVoteClick}
-                    disabled={isEnded}
+                    disabled={isVotingLocked}
                     style={{ 
-                      backgroundColor: isEnded ? undefined : primaryColor,
-                      color: isEnded ? undefined : 'white'
+                      backgroundColor: isVotingLocked ? undefined : primaryColor,
+                      color: isVotingLocked ? undefined : 'white'
                     }}
                   >
                     <Vote className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    {isEnded ? 'Contest Ended' : 'Vote Now'}
+                    {isEnded ? 'Contest Ended' : hasNotStarted ? 'Voting Not Open Yet' : 'Vote Now'}
                   </Button>
                 </div>
               </CardContent>
@@ -783,14 +793,14 @@ const ContestantDetail = () => {
             size="default"
             className="px-6 sm:px-8 font-semibold h-10 sm:h-11 text-sm sm:text-base"
             onClick={handleVoteClick}
-            disabled={isEnded}
+            disabled={isVotingLocked}
             style={{ 
-              backgroundColor: isEnded ? undefined : primaryColor,
-              color: isEnded ? undefined : 'white'
+              backgroundColor: isVotingLocked ? undefined : primaryColor,
+              color: isVotingLocked ? undefined : 'white'
             }}
           >
             <Vote className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            {isEnded ? 'Ended' : 'Vote Now'}
+            {isEnded ? 'Ended' : hasNotStarted ? 'Not Open' : 'Vote Now'}
           </Button>
         </div>
       </div>

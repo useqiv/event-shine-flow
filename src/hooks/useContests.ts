@@ -208,6 +208,30 @@ export const useVote = () => {
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
+      // Enforce contest start_date — voting is locked until contest starts
+      const { data: contestWindow, error: contestWindowError } = await supabase
+        .from('contests')
+        .select('start_date, end_date, is_active, title')
+        .eq('id', contestId)
+        .maybeSingle();
+
+      if (contestWindowError) throw contestWindowError;
+      if (!contestWindow) throw new Error('Contest not found');
+
+      const nowTs = new Date();
+      const startTs = contestWindow.start_date ? new Date(contestWindow.start_date) : null;
+      const endTs = contestWindow.end_date ? new Date(contestWindow.end_date) : null;
+
+      if (startTs && nowTs < startTs) {
+        throw new Error(`Voting has not started yet. Voting opens on ${startTs.toLocaleString()}.`);
+      }
+      if (endTs && nowTs > endTs) {
+        throw new Error('Voting has ended for this contest.');
+      }
+      if (contestWindow.is_active === false && startTs && nowTs >= startTs) {
+        throw new Error('Voting is currently closed for this contest.');
+      }
+
       // If paying with wallet, atomically debit balance (server-side, race-safe)
       if (paymentMethod === 'wallet') {
         const { data: debitResult, error: debitError } = await supabase.rpc(
