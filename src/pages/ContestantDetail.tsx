@@ -131,6 +131,8 @@ const ContestantDetail = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
+  const hasNotStarted = contest && new Date(contest.start_date) > new Date();
+  const isVotingLocked = isEnded || hasNotStarted;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
