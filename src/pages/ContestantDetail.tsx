@@ -793,14 +793,14 @@ const ContestantDetail = () => {
             size="default"
             className="px-6 sm:px-8 font-semibold h-10 sm:h-11 text-sm sm:text-base"
             onClick={handleVoteClick}
-            disabled={isEnded}
+            disabled={isVotingLocked}
             style={{ 
-              backgroundColor: isEnded ? undefined : primaryColor,
-              color: isEnded ? undefined : 'white'
+              backgroundColor: isVotingLocked ? undefined : primaryColor,
+              color: isVotingLocked ? undefined : 'white'
             }}
           >
             <Vote className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            {isEnded ? 'Ended' : 'Vote Now'}
+            {isEnded ? 'Ended' : hasNotStarted ? 'Not Open' : 'Vote Now'}
           </Button>
         </div>
       </div>
