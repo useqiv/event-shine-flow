@@ -437,24 +437,46 @@ export const useRejectOrganization = () => {
 
   return useMutation({
     mutationFn: async ({ orgId, reason }: { orgId: string; reason: string }) => {
+      // Check if approval row already exists
+      const { data: existing, error: fetchError } = await supabase
+        .from('organization_approvals')
+        .select('id, status')
+        .eq('organization_id', orgId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      const isBlacklisting = existing?.status === 'approved';
+      const nowIso = new Date().toISOString();
+
+      const payload: Record<string, any> = {
+        organization_id: orgId,
+        reviewed_by: user?.id,
+        reviewed_at: nowIso,
+      };
+
+      if (isBlacklisting) {
+        payload.is_blacklisted = true;
+        payload.blacklisted_at = nowIso;
+        payload.blacklist_reason = reason;
+      } else {
+        payload.status = 'rejected';
+        payload.rejection_reason = reason;
+      }
+
       const { error } = await supabase
         .from('organization_approvals')
-        .upsert({
-          organization_id: orgId,
-          status: 'rejected',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-          rejection_reason: reason
-        });
+        .upsert(payload as any, { onConflict: 'organization_id' });
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-organizations'] });
-      toast.success('Organization rejected');
+      toast.success('Organization updated');
     },
-    onError: () => {
-      toast.error('Failed to reject organization');
+    onError: (err: any) => {
+      console.error('Reject/blacklist organization failed:', err);
+      toast.error(err?.message || 'Failed to reject organization');
     }
   });
 };
