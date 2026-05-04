@@ -3845,6 +3845,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_reject_or_blacklist_organization: {
+        Args: { p_organization_id: string; p_reason: string }
+        Returns: Json
+      }
       atomic_ticket_checkin: {
         Args: { p_event_id: string; p_scanned_by: string; p_ticket_id: string }
         Returns: Json

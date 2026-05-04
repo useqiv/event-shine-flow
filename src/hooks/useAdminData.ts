@@ -433,42 +433,19 @@ export const useUpdateOrganizationCommission = () => {
 
 export const useRejectOrganization = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ orgId, reason }: { orgId: string; reason: string }) => {
-      // Check if approval row already exists
-      const { data: existing, error: fetchError } = await supabase
-        .from('organization_approvals')
-        .select('id, status')
-        .eq('organization_id', orgId)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      const isBlacklisting = existing?.status === 'approved';
-      const nowIso = new Date().toISOString();
-
-      const payload: Record<string, any> = {
-        organization_id: orgId,
-        reviewed_by: user?.id,
-        reviewed_at: nowIso,
-      };
-
-      if (isBlacklisting) {
-        payload.is_blacklisted = true;
-        payload.blacklisted_at = nowIso;
-        payload.blacklist_reason = reason;
-      } else {
-        payload.status = 'rejected';
-        payload.rejection_reason = reason;
-      }
-
-      const { error } = await supabase
-        .from('organization_approvals')
-        .upsert(payload as any, { onConflict: 'organization_id' });
+      const { data, error } = await (supabase as any).rpc('admin_reject_or_blacklist_organization', {
+        p_organization_id: orgId,
+        p_reason: reason,
+      });
 
       if (error) throw error;
+
+      if (data && data.success === false) {
+        throw new Error(data.error || 'Failed to reject organization');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-organizations'] });
