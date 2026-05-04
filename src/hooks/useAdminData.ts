@@ -466,7 +466,7 @@ export const useRejectOrganization = () => {
 
       const { error } = await supabase
         .from('organization_approvals')
-        .upsert(payload, { onConflict: 'organization_id' });
+        .upsert(payload as any, { onConflict: 'organization_id' });
 
       if (error) throw error;
     },
