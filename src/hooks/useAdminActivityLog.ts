@@ -72,6 +72,18 @@ export const useLogAdminActivity = () => {
     }) => {
       if (!user) throw new Error('Not authenticated');
 
+      let ipAddress: string | null = null;
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        if (res.ok) {
+          const j = await res.json();
+          ipAddress = j?.ip ?? null;
+        }
+      } catch {
+        // Best-effort: ignore IP lookup failures
+      }
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
+
       const { error } = await supabase
         .from('admin_activity_logs')
         .insert({
@@ -80,8 +92,10 @@ export const useLogAdminActivity = () => {
           entity_type: entityType || null,
           entity_id: entityId || null,
           description,
-          metadata: metadata || null
-        });
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          metadata: { ...(metadata || {}), ip_address: ipAddress, user_agent: userAgent },
+        } as any);
 
       if (error) throw error;
     },
