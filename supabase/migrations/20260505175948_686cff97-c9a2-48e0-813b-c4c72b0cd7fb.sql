@@ -1,0 +1,1 @@
+ALTER TABLE public.admin_activity_logs ADD COLUMN IF NOT EXISTS user_agent text;
