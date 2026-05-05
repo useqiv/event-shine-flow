@@ -444,12 +444,26 @@ export const useRejectOrganization = () => {
   ) => {
     if (!user) return;
     try {
+      let ipAddress: string | null = null;
+      try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        if (res.ok) {
+          const j = await res.json();
+          ipAddress = j?.ip ?? null;
+        }
+      } catch {
+        // Best-effort: ignore IP lookup failures
+      }
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
+
       await supabase.from('admin_activity_logs').insert({
         admin_id: user.id,
         action_type: `organization_${actionType}_${outcome}`,
         entity_type: 'organization',
         entity_id: orgId,
         description: `Admin ${actionType} attempt for organization ${orgId} — ${outcome}${errorMessage ? `: ${errorMessage}` : ''}`,
+        ip_address: ipAddress,
+        user_agent: userAgent,
         metadata: {
           organization_id: orgId,
           reason,
@@ -457,8 +471,10 @@ export const useRejectOrganization = () => {
           action: actionType,
           error: errorMessage ?? null,
           attempted_at: new Date().toISOString(),
+          ip_address: ipAddress,
+          user_agent: userAgent,
         },
-      });
+      } as any);
     } catch (e) {
       console.error('Failed to write admin activity log', e);
     }

@@ -25,6 +25,7 @@ export type Database = {
           id: string
           ip_address: string | null
           metadata: Json | null
+          user_agent: string | null
         }
         Insert: {
           action_type: string
@@ -36,6 +37,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           metadata?: Json | null
+          user_agent?: string | null
         }
         Update: {
           action_type?: string
@@ -47,6 +49,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           metadata?: Json | null
+          user_agent?: string | null
         }
         Relationships: [
           {
