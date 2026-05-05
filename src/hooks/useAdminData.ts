@@ -433,22 +433,70 @@ export const useUpdateOrganizationCommission = () => {
 
 export const useRejectOrganization = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const logAttempt = async (
+    orgId: string,
+    reason: string,
+    outcome: 'success' | 'failure',
+    actionType: 'reject' | 'blacklist' | 'reject_or_blacklist',
+    errorMessage?: string,
+  ) => {
+    if (!user) return;
+    try {
+      await supabase.from('admin_activity_logs').insert({
+        admin_id: user.id,
+        action_type: `organization_${actionType}_${outcome}`,
+        entity_type: 'organization',
+        entity_id: orgId,
+        description: `Admin ${actionType} attempt for organization ${orgId} — ${outcome}${errorMessage ? `: ${errorMessage}` : ''}`,
+        metadata: {
+          organization_id: orgId,
+          reason,
+          outcome,
+          action: actionType,
+          error: errorMessage ?? null,
+          attempted_at: new Date().toISOString(),
+        },
+      });
+    } catch (e) {
+      console.error('Failed to write admin activity log', e);
+    }
+  };
 
   return useMutation({
     mutationFn: async ({ orgId, reason }: { orgId: string; reason: string }) => {
+      // Determine if this is a reject or blacklist based on existing approval status
+      const { data: existing } = await supabase
+        .from('organization_approvals')
+        .select('status')
+        .eq('organization_id', orgId)
+        .maybeSingle();
+      const action: 'reject' | 'blacklist' =
+        existing?.status === 'approved' ? 'blacklist' : 'reject';
+
       const { data, error } = await (supabase as any).rpc('admin_reject_or_blacklist_organization', {
         p_organization_id: orgId,
         p_reason: reason,
       });
 
-      if (error) throw error;
+      if (error) {
+        await logAttempt(orgId, reason, 'failure', action, error.message);
+        throw error;
+      }
 
       if (data && data.success === false) {
-        throw new Error(data.error || 'Failed to reject organization');
+        const msg = data.error || 'Failed to reject organization';
+        await logAttempt(orgId, reason, 'failure', action, msg);
+        throw new Error(msg);
       }
+
+      await logAttempt(orgId, reason, 'success', action);
+      return { action };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-activity-logs'] });
       toast.success('Organization updated');
     },
     onError: (err: any) => {
