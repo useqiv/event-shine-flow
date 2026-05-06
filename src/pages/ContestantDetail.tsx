@@ -139,8 +139,12 @@ const ContestantDetail = () => {
   // Generate URLs - use custom_slug if available
   const contestUrl = contest ? getContestUrl(contest.id, (contest as any)?.custom_slug) : '';
   const contestantUrl = contestant 
-    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug)
+    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
     : '';
+  const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
+  const ogImage = contestant?.photo_url
+    ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
+    : DEFAULT_OG_IMAGE;
   
   // Back link path - use short URL if accessed via slug route
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
