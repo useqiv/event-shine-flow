@@ -20,7 +20,7 @@ import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
-import { createSlug } from '@/lib/urlHelpers';
+import { createSlug, getContestShareUrl } from '@/lib/urlHelpers';
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -87,6 +87,13 @@ const PublicContest = () => {
   const ogImage = contest?.image_url 
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
     : 'https://www.useqiv.com/og-image.png';
+  const contestShareUrl = contest
+    ? `${getContestShareUrl(contest.custom_slug || contest.id, true)}?${new URLSearchParams({
+        title: contest.title || '',
+        description: contest.description || `Vote now in ${contest.title}`,
+        image: ogImage,
+      }).toString()}`
+    : contestUrl;
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
   const baseVoteAmount = Math.max(1, Number(contest?.vote_amount ?? 1));
   const voteOptions = useMemo(
@@ -279,7 +286,7 @@ const PublicContest = () => {
                 <ShareButtons 
                   title={contest.title} 
                   description={contest.description || `Vote now in ${contest.title}`}
-                  url={contestUrl}
+                  url={contestShareUrl}
                 />
               </div>
               {contest.description && (

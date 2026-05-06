@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
-import { getContestUrl, getContestantUrl } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, getContestShareUrl } from '@/lib/urlHelpers';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const ContestDetail = () => {
@@ -305,6 +305,13 @@ const ContestDetail = () => {
   const ogImage = contest?.image_url 
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
     : 'https://www.useqiv.com/og-image.png';
+  const contestShareUrl = contest
+    ? `${getContestShareUrl((contest as any)?.custom_slug || contest.id, true)}?${new URLSearchParams({
+        title: contest.title || '',
+        description: ogDescription,
+        image: ogImage,
+      }).toString()}`
+    : contestUrl;
 
   return (
     <>
@@ -406,7 +413,7 @@ const ContestDetail = () => {
               <ShareButtons 
                 title={contest.title} 
                 description={contest.description || `Vote now in ${contest.title}`}
-                url={getContestUrl(id!, (contest as any).custom_slug)}
+                url={contestShareUrl}
               />
             </div>
           {contest.description && (

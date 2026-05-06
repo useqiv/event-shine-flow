@@ -52,6 +52,20 @@ serve(async (req) => {
           : `${SITE_URL}/events/${event.id}`;
       }
     } else if (type === "contest") {
+      image = "";
+      const qpTitle = url.searchParams.get("title");
+      const qpDescription = url.searchParams.get("description");
+      const qpImage = url.searchParams.get("image");
+      pageUrl = isUuid(slug) ? `${SITE_URL}/contests/${slug}` : `${SITE_URL}/c/${slug}`;
+      if (qpTitle) {
+        title = qpTitle;
+      }
+      if (qpDescription) {
+        description = qpDescription;
+      }
+      if (qpImage) {
+        image = qpImage;
+      }
       const { data: contest } = await supabase
         .from("contests")
         .select("id, title, description, image_url, custom_slug")
@@ -67,6 +81,7 @@ serve(async (req) => {
           : `${SITE_URL}/contests/${contest.id}`;
       }
     } else if (type === "contestant") {
+      image = "";
       // slug format: "<contestSlugOrId>/<contestantSlug>"
       const [contestKey, contestantSlug] = slug.split("/");
       const normalizedContestantSlug = normalizeSlugSegment(contestantSlug || "");
@@ -148,8 +163,10 @@ serve(async (req) => {
       }
     }
 
-    // Ensure image is absolute URL
-    image = toAbsolutePublicImageUrl(image);
+    // Ensure image is absolute URL when present.
+    if (image) {
+      image = toAbsolutePublicImageUrl(image);
+    }
 
     // Return JSON with OG data (for debugging) or HTML for crawlers
     const userAgent = req.headers.get("user-agent") || "";
@@ -157,6 +174,17 @@ serve(async (req) => {
 
     if (isCrawler) {
       // Return minimal HTML with OG tags for social media crawlers
+      const imageMeta = image
+        ? `
+  <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${escapeHtml(title)}">
+  <meta name="twitter:image" content="${escapeHtml(image)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(title)}">`
+        : "";
+
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,11 +198,7 @@ serve(async (req) => {
   <meta property="og:url" content="${escapeHtml(pageUrl)}">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
-  <meta property="og:image" content="${escapeHtml(image)}">
-  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="${escapeHtml(title)}">
+${imageMeta}
   <meta property="og:site_name" content="USEQIV">
   
   <!-- Twitter Card -->
@@ -183,8 +207,6 @@ serve(async (req) => {
   <meta name="twitter:url" content="${escapeHtml(pageUrl)}">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
-  <meta name="twitter:image" content="${escapeHtml(image)}">
-  <meta name="twitter:image:alt" content="${escapeHtml(title)}">
   
   <link rel="canonical" href="${escapeHtml(pageUrl)}">
 </head>

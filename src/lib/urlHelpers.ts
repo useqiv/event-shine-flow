@@ -68,6 +68,17 @@ export const getContestantShareUrl = (
 };
 
 /**
+ * Generate domain-based contest share URL for OG previews.
+ */
+export const getContestShareUrl = (
+  contestKey: string,
+  useAbsolute = true
+): string => {
+  const origin = getOrigin(useAbsolute);
+  return `${origin}/share/contest/${encodeURIComponent(contestKey)}`;
+};
+
+/**
  * Generate event URL - uses custom_slug if available, otherwise falls back to UUID
  */
 export const getEventUrl = (eventId: string, customSlug?: string | null, useAbsolute = false): string => {
