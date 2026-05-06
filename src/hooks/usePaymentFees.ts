@@ -81,7 +81,7 @@ export const usePaymentFees = () => {
   });
 
   const calculateFees = useMemo(() => {
-    return (amount: number, method: 'flutterwave' | 'crypto'): FeeBreakdown => {
+    return (amount: number, method: 'flutterwave' | 'crypto', purchaseType?: 'vote' | 'ticket' | 'wallet' | 'donation'): FeeBreakdown => {
       const s = settings || defaultSettings;
 
       // Payment method fee
@@ -93,17 +93,19 @@ export const usePaymentFees = () => {
       }
       paymentMethodFee = Math.round(paymentMethodFee * 100) / 100;
 
-      // Convenience fee
+      // Convenience fee — never applied to vote purchases
       let convenienceFee = 0;
-      if (s.convenience_fee_type === 'percentage') {
-        convenienceFee = (amount * s.convenience_fee_value) / 100;
-      } else if (s.convenience_fee_type === 'fixed') {
-        convenienceFee = s.convenience_fee_value;
+      if (purchaseType !== 'vote') {
+        if (s.convenience_fee_type === 'percentage') {
+          convenienceFee = (amount * s.convenience_fee_value) / 100;
+        } else if (s.convenience_fee_type === 'fixed') {
+          convenienceFee = s.convenience_fee_value;
+        }
+        if (s.convenience_fee_cap && convenienceFee > s.convenience_fee_cap) {
+          convenienceFee = s.convenience_fee_cap;
+        }
+        convenienceFee = Math.round(convenienceFee * 100) / 100;
       }
-      if (s.convenience_fee_cap && convenienceFee > s.convenience_fee_cap) {
-        convenienceFee = s.convenience_fee_cap;
-      }
-      convenienceFee = Math.round(convenienceFee * 100) / 100;
 
       const totalFees = Math.round((paymentMethodFee + convenienceFee) * 100) / 100;
       const totalWithFees = Math.round((amount + totalFees) * 100) / 100;
