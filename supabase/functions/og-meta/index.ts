@@ -8,6 +8,8 @@ const corsHeaders = {
 
 const SITE_URL = "https://www.useqiv.com";
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_STORAGE_PUBLIC_BASE = `${SUPABASE_URL}/storage/v1/object/public`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -26,9 +28,8 @@ serve(async (req) => {
       );
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(SUPABASE_URL, supabaseKey);
 
     let title = "USEQIV";
     let description = "The Complete Platform for Contest Voting, Event Ticketing & Crowdfunding Success";
@@ -81,7 +82,7 @@ serve(async (req) => {
           .eq("contest_id", contest.id);
 
         const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const contestant = contestants?.find((c) => slugify(c.name) === contestantSlug);
+        const contestant = contestants?.find((c) => slugify(c.name) === contestantSlug || c.id === contestantSlug);
 
         if (contestant) {
           title = `Vote for ${contestant.name} in ${contest.title} | USEQIV`;
@@ -126,13 +127,11 @@ serve(async (req) => {
     }
 
     // Ensure image is absolute URL
-    if (image && !image.startsWith("http")) {
-      image = `${SITE_URL}${image}`;
-    }
+    image = toAbsolutePublicImageUrl(image);
 
     // Return JSON with OG data (for debugging) or HTML for crawlers
     const userAgent = req.headers.get("user-agent") || "";
-    const isCrawler = /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Pinterest|Googlebot/i.test(userAgent);
+    const isCrawler = /facebookexternalhit|Twitterbot|Xbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Pinterest|Googlebot|Discordbot|Baiduspider|bingbot/i.test(userAgent);
 
     if (isCrawler) {
       // Return minimal HTML with OG tags for social media crawlers
@@ -145,13 +144,15 @@ serve(async (req) => {
   <meta name="description" content="${escapeHtml(description)}">
   
   <!-- Open Graph -->
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="${escapeHtml(type === "contestant" ? "profile" : "website")}">
   <meta property="og:url" content="${escapeHtml(pageUrl)}">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${escapeHtml(title)}">
   <meta property="og:site_name" content="USEQIV">
   
   <!-- Twitter Card -->
@@ -161,14 +162,13 @@ serve(async (req) => {
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
   <meta name="twitter:image" content="${escapeHtml(image)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(title)}">
   
   <link rel="canonical" href="${escapeHtml(pageUrl)}">
-  
-  <!-- Redirect to actual page -->
-  <meta http-equiv="refresh" content="0;url=${escapeHtml(pageUrl)}">
 </head>
 <body>
-  <p>Redirecting to <a href="${escapeHtml(pageUrl)}">${escapeHtml(title)}</a>...</p>
+  <p>${escapeHtml(description)}</p>
+  <p><a href="${escapeHtml(pageUrl)}">${escapeHtml(pageUrl)}</a></p>
 </body>
 </html>`;
 
@@ -200,4 +200,21 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
+  if (!rawImage) return DEFAULT_IMAGE;
+  const image = rawImage.trim();
+  if (!image) return DEFAULT_IMAGE;
+  if (/^https?:\/\//i.test(image)) return image;
+  if (image.startsWith("/storage/v1/object/public/")) {
+    return `${SUPABASE_URL}${image}`;
+  }
+  if (image.startsWith("storage/v1/object/public/")) {
+    return `${SUPABASE_URL}/${image}`;
+  }
+  if (image.startsWith("/")) {
+    return `${SITE_URL}${image}`;
+  }
+  return `${SUPABASE_STORAGE_PUBLIC_BASE}/${image}`;
 }

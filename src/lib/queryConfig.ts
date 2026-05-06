@@ -81,10 +81,10 @@ export const selectColumns = {
   eventDetail: 'id, title, description, image_url, venue, address, event_date, category, is_active, is_featured, is_private, custom_slug, currency, country, logo_url, stream_url, stream_platform, organization_id, created_at, updated_at',
   
   // Contests - public listing (includes all fields needed by Contest type)
-  contestCard: 'id, title, description, image_url, category, vote_price, vote_currency, end_date, start_date, is_featured, custom_slug, is_active, total_votes, created_at, updated_at',
+  contestCard: 'id, title, description, image_url, category, vote_amount, vote_price, vote_currency, end_date, start_date, is_featured, custom_slug, is_active, total_votes, created_at, updated_at',
   
   // Contests - full details
-  contestDetail: 'id, title, description, image_url, category, vote_price, vote_currency, start_date, end_date, is_active, is_featured, is_live_voting, total_votes, custom_slug, brand_logo_url, brand_primary_color, brand_secondary_color, stream_url, stream_platform, organization_id, contest_type, created_at, updated_at',
+  contestDetail: 'id, title, description, image_url, category, vote_amount, vote_price, vote_currency, start_date, end_date, is_active, is_featured, is_live_voting, total_votes, custom_slug, brand_logo_url, brand_primary_color, brand_secondary_color, stream_url, stream_platform, organization_id, contest_type, created_at, updated_at',
   
   // Contestants - public listing (includes all fields needed by Contestant type)
   contestantCard: 'id, name, photo_url, vote_count, contest_id, bio, category_id, performance, is_public_votes, created_at, updated_at',

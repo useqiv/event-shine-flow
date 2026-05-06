@@ -580,6 +580,7 @@ export const useCreateContest = () => {
       start_date: string;
       end_date: string;
       vote_price: number;
+      vote_amount: number;
       vote_currency?: string;
       custom_slug?: string;
       brand_primary_color?: string;

@@ -1,5 +1,5 @@
 const CRAWLER_REGEX =
-  /facebookexternalhit|Twitterbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Pinterest|Googlebot|Discordbot|Baiduspider|bingbot/i;
+  /facebookexternalhit|Twitterbot|Xbot|WhatsApp|LinkedInBot|Slackbot|TelegramBot|Pinterest|Googlebot|Discordbot|Baiduspider|bingbot/i;
 
 const SUPABASE_URL = 'https://tirqmqzgksclsjxfiham.supabase.co';
 

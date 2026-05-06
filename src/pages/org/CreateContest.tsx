@@ -45,6 +45,7 @@ const CreateContest = () => {
     start_date: '',
     end_date: '',
     vote_price: 1,
+    vote_amount: 1,
     vote_currency: 'USD',
     custom_slug: '',
     brand_primary_color: '#7c3aed',
@@ -79,6 +80,7 @@ const CreateContest = () => {
         start_date: formData.start_date,
         end_date: formData.end_date,
         vote_price: Number(formData.vote_price),
+        vote_amount: Number(formData.vote_amount),
         vote_currency: formData.vote_currency,
         custom_slug: formData.custom_slug || undefined,
         brand_primary_color: formData.brand_primary_color,
@@ -318,7 +320,19 @@ const CreateContest = () => {
               <CardDescription>Set the price and currency per vote</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="vote_amount">Voting Amount *</Label>
+                  <Input
+                    id="vote_amount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.vote_amount}
+                    onChange={(e) => handleChange('vote_amount', e.target.value)}
+                    required
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="vote_currency">Currency *</Label>
                   <CurrencySelector
@@ -340,7 +354,7 @@ const CreateContest = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Users will pay this amount for each vote they cast.
+                Set the base voting amount and the price charged per vote.
               </p>
             </CardContent>
           </Card>
