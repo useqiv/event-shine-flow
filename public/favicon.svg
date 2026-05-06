@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="useqivGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#useqivGradient)" />
+  <path
+    d="M16 20v17c0 9 7 15 16 15s16-6 16-15V20h-8v17c0 4-3 7-8 7s-8-3-8-7V20z"
+    fill="#ffffff"
+  />
+</svg>
