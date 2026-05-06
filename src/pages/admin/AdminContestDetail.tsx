@@ -456,7 +456,7 @@ const AdminContestDetail: React.FC = () => {
                         </TableCell>
                         <TableCell>{vote.contestants?.name || 'Unknown'}</TableCell>
                         <TableCell>{vote.quantity}</TableCell>
-                        <TableCell>{formatCurrency(vote.amount_paid, contest.vote_currency)}</TableCell>
+                        <TableCell>{formatCurrency((vote.quantity || 0) * (contest.vote_price || 0), contest.vote_currency)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{vote.payment_method}</Badge>
                         </TableCell>
