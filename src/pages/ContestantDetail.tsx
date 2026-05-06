@@ -40,7 +40,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, createContestantSlug } from '@/lib/urlHelpers';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -141,22 +141,11 @@ const ContestantDetail = () => {
   const contestantUrl = contestant 
     ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
     : '';
-  const contestantPageSlug = contestant ? createContestantSlug(contestant.name) : '';
-  const contestantShareSlug = contest
-    ? `${(contest as any)?.custom_slug || contestId}/${contestantPageSlug}`
-    : '';
   const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
   const ogImage = contestant?.photo_url
     ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
     : DEFAULT_OG_IMAGE;
-  const contestantShareUrl = contestantShareSlug
-    ? `${getContestantShareUrl((contest as any)?.custom_slug || contestId!, contestantPageSlug, true)}?${new URLSearchParams({
-        name: contestant?.name || '',
-        contest: contest?.title || '',
-        description: `Vote and support ${contestant?.name || ''} on ${contest?.title || ''}`.trim(),
-        image: ogImage,
-      }).toString()}`
-    : contestantUrl;
+  const contestantShareUrl = contestantUrl;
   
   // Back link path - use short URL if accessed via slug route
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;

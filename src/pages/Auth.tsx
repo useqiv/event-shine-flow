@@ -9,6 +9,7 @@ import { useLoginRateLimit } from '@/hooks/useLoginRateLimit';
 import LoginForm from '@/components/auth/LoginForm';
 import SignupForm from '@/components/auth/SignupForm';
 import MfaVerificationForm from '@/components/auth/MfaVerificationForm';
+import appLogo from '@/assets/logo.png';
 
 const Auth = () => {
   const { signIn, signUp, signInWithGoogle, mfaState, verifyMfa, clearMfaState } = useAuth();
@@ -167,7 +168,7 @@ const Auth = () => {
             <img
               alt="USEQIV"
               className="h-12 w-auto"
-              src="/lovable-uploads/d7ec8140-f8f1-4a50-bfcc-d4de2001a79c.png"
+              src={appLogo}
             />
           </Link>
         </div>

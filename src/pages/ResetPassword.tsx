@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Vote, Lock, Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
 import { PasswordStrength, isPasswordStrong } from '@/components/ui/password-strength';
+import appLogo from '@/assets/logo.png';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -138,7 +139,7 @@ const ResetPassword = () => {
           <img
             alt="USEQIV"
             className="h-12 w-auto"
-            src="/lovable-uploads/d7ec8140-f8f1-4a50-bfcc-d4de2001a79c.png"
+            src={appLogo}
           />
         </Link>
 
