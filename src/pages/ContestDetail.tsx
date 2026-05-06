@@ -126,10 +126,12 @@ const ContestDetail = () => {
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const normalizedVoteOptions = useMemo(() => {
     if (contestVoteOptions.length > 0) {
-      return contestVoteOptions.map((option) => ({
-        vote_quantity: Number(option.vote_quantity),
-        price: Number(option.price),
-      }));
+      return contestVoteOptions
+        .map((option) => ({
+          vote_quantity: Number(option.vote_quantity),
+          price: Number(option.price),
+        }))
+        .sort((a, b) => a.vote_quantity - b.vote_quantity);
     }
     const fallbackQuantity = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
     return [{ vote_quantity: fallbackQuantity, price: Number(contest?.vote_price ?? 1) * fallbackQuantity }];
@@ -139,7 +141,19 @@ const ContestDetail = () => {
       normalizedVoteOptions.find((option) => option.vote_quantity === voteQuantity) || normalizedVoteOptions[0],
     [normalizedVoteOptions, voteQuantity]
   );
-  const totalAmount = selectedOption?.price || 0;
+  const minimumVoteQuantity = normalizedVoteOptions[0]?.vote_quantity || 1;
+  const fallbackUnitPrice = useMemo(() => {
+    if (contest?.vote_price) {
+      return Number(contest.vote_price);
+    }
+
+    const baseOption = normalizedVoteOptions[0];
+    if (!baseOption || !baseOption.vote_quantity) return 0;
+    return Number(baseOption.price) / Number(baseOption.vote_quantity);
+  }, [contest?.vote_price, normalizedVoteOptions]);
+  const totalAmount = selectedOption?.vote_quantity === voteQuantity
+    ? selectedOption.price
+    : voteQuantity * fallbackUnitPrice;
 
   // Group contestants by category
   const contestantsByCategory = useMemo(() => {
@@ -223,12 +237,29 @@ const ContestDetail = () => {
   };
 
   const handleProceedToPayment = () => {
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsVoteSelectionOpen(false);
     setIsPaymentModalOpen(true);
   };
 
   const handleWalletPayment = async () => {
     if (!selectedContestant || !contest) return;
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       await vote.mutateAsync({
@@ -892,6 +923,28 @@ const ContestDetail = () => {
                     </Button>
                   ))}
                 </div>
+                <div className="mt-3 space-y-2">
+                  <label className="text-sm font-medium" htmlFor="custom-vote-quantity-detail">
+                    Custom votes (minimum {minimumVoteQuantity})
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    You can enter any number of votes, but it must be at least {minimumVoteQuantity}.
+                  </p>
+                  <Input
+                    id="custom-vote-quantity-detail"
+                    type="number"
+                    min={minimumVoteQuantity}
+                    step={1}
+                    value={voteQuantity}
+                    onChange={(event) => {
+                      const rawValue = Number(event.target.value);
+                      if (!Number.isFinite(rawValue)) return;
+                      const parsed = Math.floor(rawValue);
+                      if (parsed <= 0) return;
+                      setVoteQuantity(Math.max(parsed, minimumVoteQuantity));
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Total */}
@@ -930,7 +983,7 @@ const ContestDetail = () => {
                       const currencyBalance = currencyBalances?.find(b => b.currency === voteCurrency)?.balance || 0;
                       return currencyBalance >= totalAmount;
                     })() && (
-                      <Button onClick={handleWalletPayment} disabled={vote.isPending} className="flex-1">
+                      <Button onClick={handleWalletPayment} disabled={vote.isPending || voteQuantity < minimumVoteQuantity} className="flex-1">
                         {vote.isPending ? 'Processing...' : 'Pay with Wallet'}
                       </Button>
                     )}
@@ -942,6 +995,7 @@ const ContestDetail = () => {
                       return currencyBalance >= totalAmount;
                     })() ? 'outline' : 'default'} 
                     onClick={handleProceedToPayment}
+                  disabled={voteQuantity < minimumVoteQuantity}
                   className="w-full"
                 >
                   Pay with Card/Bank/Crypto
