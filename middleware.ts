@@ -22,11 +22,25 @@ export default function middleware(request: Request) {
     type = 'event';
     slug = pathname.replace('/events/', '');
   } else if (pathname.startsWith('/c/')) {
-    type = 'contest';
-    slug = pathname.replace('/c/', '').split('/')[0];
+    const rest = pathname.replace('/c/', '');
+    const parts = rest.split('/');
+    if (parts[1] === 'contestant' && parts[2]) {
+      type = 'contestant';
+      slug = `${parts[0]}/${parts[2]}`;
+    } else {
+      type = 'contest';
+      slug = parts[0];
+    }
   } else if (pathname.startsWith('/contests/')) {
-    type = 'contest';
-    slug = pathname.replace('/contests/', '').split('/')[0];
+    const rest = pathname.replace('/contests/', '');
+    const parts = rest.split('/');
+    if (parts[1] === 'contestant' && parts[2]) {
+      type = 'contestant';
+      slug = `${parts[0]}/${parts[2]}`;
+    } else {
+      type = 'contest';
+      slug = parts[0];
+    }
   } else if (pathname.startsWith('/campaigns/')) {
     type = 'campaign';
     slug = pathname.replace('/campaigns/', '');

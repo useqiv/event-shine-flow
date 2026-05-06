@@ -139,8 +139,12 @@ const ContestantDetail = () => {
   // Generate URLs - use custom_slug if available
   const contestUrl = contest ? getContestUrl(contest.id, (contest as any)?.custom_slug) : '';
   const contestantUrl = contestant 
-    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug)
+    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
     : '';
+  const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
+  const ogImage = contestant?.photo_url
+    ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
+    : DEFAULT_OG_IMAGE;
   
   // Back link path - use short URL if accessed via slug route
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
@@ -330,22 +334,30 @@ const ContestantDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0" style={brandStyles}>
       <Helmet>
-        <title>{contestant.name} - Vote in {contest.title}</title>
-        <meta name="description" content={`Vote for ${contestant.name} in ${contest.title}. ${contestant.bio || ''}`} />
-        
+        <title>{`Vote for ${contestant.name} in ${contest.title}`}</title>
+        <meta name="description" content={`Vote and support ${contestant.name} for ${contest.title}. ${contestant.bio || ''}`.trim()} />
+        <link rel="canonical" href={contestantUrl} />
+
         {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
+        <meta property="og:type" content="profile" />
         <meta property="og:url" content={contestantUrl} />
         <meta property="og:title" content={`Vote for ${contestant.name} in ${contest.title}`} />
-        <meta property="og:description" content={contestant.bio || `Support ${contestant.name} by voting! Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`} />
-        {contestant.photo_url && <meta property="og:image" content={contestant.photo_url} />}
-        <meta property="og:site_name" content="EventShine" />
-        
+        <meta property="og:description" content={`Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:secure_url" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={contestant.name} />
+        <meta property="og:site_name" content="USEQIV" />
+
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@useqiv" />
+        <meta name="twitter:url" content={contestantUrl} />
         <meta name="twitter:title" content={`Vote for ${contestant.name}`} />
-        <meta name="twitter:description" content={contestant.bio || `Support ${contestant.name} in ${contest.title}. Cast your votes now!`} />
-        {contestant.photo_url && <meta name="twitter:image" content={contestant.photo_url} />}
+        <meta name="twitter:description" content={`Support ${contestant.name} in ${contest.title}. Cast your votes now!`} />
+        <meta name="twitter:image" content={ogImage} />
+        <meta name="twitter:image:alt" content={contestant.name} />
       </Helmet>
 
       <Navbar />
