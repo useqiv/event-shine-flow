@@ -32,7 +32,7 @@ const PublicContest = () => {
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
+  const [viewMode, setViewMode] = useState<'live' | 'standard'>('standard');
   const [paymentCurrency, setPaymentCurrency] = useState<string>('');
   const [customVoteAmount, setCustomVoteAmount] = useState('');
 
