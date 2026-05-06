@@ -69,10 +69,24 @@ serve(async (req) => {
     } else if (type === "contestant") {
       // slug format: "<contestSlugOrId>/<contestantSlug>"
       const [contestKey, contestantSlug] = slug.split("/");
+      const normalizedContestantSlug = normalizeSlugSegment(contestantSlug || "");
+      const qpName = url.searchParams.get("name");
+      const qpContest = url.searchParams.get("contest");
+      const qpDescription = url.searchParams.get("description");
+      const qpImage = url.searchParams.get("image");
       if (contestKey && contestantSlug) {
         pageUrl = isUuid(contestKey)
-          ? `${SITE_URL}/contests/${contestKey}/contestant/${contestantSlug}`
-          : `${SITE_URL}/c/${contestKey}/contestant/${contestantSlug}`;
+          ? `${SITE_URL}/contests/${contestKey}/contestant/${normalizedContestantSlug || contestantSlug}`
+          : `${SITE_URL}/c/${contestKey}/contestant/${normalizedContestantSlug || contestantSlug}`;
+      }
+      // Prefer explicit metadata from share URL when present.
+      // This guarantees correct OG output even if DB lookup misses.
+      if (qpName && qpContest) {
+        title = `Vote for ${qpName} in ${qpContest} | USEQIV`;
+        description = qpDescription || `Vote and support ${qpName} on ${qpContest}`;
+      }
+      if (qpImage) {
+        image = qpImage;
       }
       const { data: contest } = await supabase
         .from("contests")
@@ -87,7 +101,10 @@ serve(async (req) => {
           .eq("contest_id", contest.id);
 
         const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const contestant = contestants?.find((c) => slugify(c.name) === contestantSlug || c.id === contestantSlug);
+        const contestant = contestants?.find((c) => {
+          const nameSlug = slugify(c.name);
+          return nameSlug === normalizedContestantSlug || c.id === contestantSlug;
+        });
 
         if (contestant) {
           title = `Vote for ${contestant.name} in ${contest.title} | USEQIV`;
@@ -242,4 +259,8 @@ function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+function normalizeSlugSegment(value: string): string {
+  return decodeURIComponent(value).trim().toLowerCase();
 }

@@ -145,13 +145,18 @@ const ContestantDetail = () => {
   const contestantShareSlug = contest
     ? `${(contest as any)?.custom_slug || contestId}/${contestantPageSlug}`
     : '';
-  const contestantShareUrl = contestantShareSlug
-    ? getContestantShareUrl((contest as any)?.custom_slug || contestId!, contestantPageSlug, true)
-    : contestantUrl;
   const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
   const ogImage = contestant?.photo_url
     ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
     : DEFAULT_OG_IMAGE;
+  const contestantShareUrl = contestantShareSlug
+    ? `${getContestantShareUrl((contest as any)?.custom_slug || contestId!, contestantPageSlug, true)}?${new URLSearchParams({
+        name: contestant?.name || '',
+        contest: contest?.title || '',
+        description: `Vote and support ${contestant?.name || ''} on ${contest?.title || ''}`.trim(),
+        image: ogImage,
+      }).toString()}`
+    : contestantUrl;
   
   // Back link path - use short URL if accessed via slug route
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
