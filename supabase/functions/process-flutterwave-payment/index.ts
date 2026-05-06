@@ -316,15 +316,18 @@ const handler = async (req: Request): Promise<Response> => {
       paymentMethodFee = Math.round(paymentMethodFee * 100) / 100;
 
       let convenienceFee = 0;
-      if (convFeeType === "percentage") {
-        convenienceFee = (serverVerifiedAmount * convFeeValue) / 100;
-      } else if (convFeeType === "fixed") {
-        convenienceFee = convFeeValue;
+      // No convenience fee for vote purchases
+      if (payload.type !== "vote") {
+        if (convFeeType === "percentage") {
+          convenienceFee = (serverVerifiedAmount * convFeeValue) / 100;
+        } else if (convFeeType === "fixed") {
+          convenienceFee = convFeeValue;
+        }
+        if (convFeeCap > 0 && convenienceFee > convFeeCap) {
+          convenienceFee = convFeeCap;
+        }
+        convenienceFee = Math.round(convenienceFee * 100) / 100;
       }
-      if (convFeeCap > 0 && convenienceFee > convFeeCap) {
-        convenienceFee = convFeeCap;
-      }
-      convenienceFee = Math.round(convenienceFee * 100) / 100;
 
       const totalFees = Math.round((paymentMethodFee + convenienceFee) * 100) / 100;
       chargeAmount = Math.round((serverVerifiedAmount + totalFees) * 100) / 100;

@@ -90,7 +90,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   
   // Calculate fees based on payment method
   const feeBreakdown = useMemo(() => {
-    return calculateFees(amountAfterDiscount, paymentMethod);
+    return calculateFees(amountAfterDiscount, paymentMethod, type);
   }, [amountAfterDiscount, paymentMethod, calculateFees]);
   
   const finalAmount = feeBreakdown.totalWithFees;
