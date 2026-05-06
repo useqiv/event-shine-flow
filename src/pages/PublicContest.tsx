@@ -20,6 +20,7 @@ import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
+import { createSlug } from '@/lib/urlHelpers';
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -387,14 +388,24 @@ const PublicContest = () => {
                             : 'Votes hidden'}
                         </span>
                       </div>
-                      <Button 
-                          className="w-full mt-4"
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        <Link
+                          to={`/c/${slug}/contestant/${createSlug(contestant.name)}`}
+                          className="w-full"
+                        >
+                          <Button variant="outline" className="w-full">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Button
+                          className="w-full"
                           style={{ backgroundColor: primaryColor }}
                           disabled={isEnded}
                           onClick={() => handleVoteClick(contestant)}
                         >
-                          {isEnded ? 'Voting Ended' : 'Vote Now'}
+                          {isEnded ? 'Ended' : 'Vote Now'}
                         </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
