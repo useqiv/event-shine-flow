@@ -65,6 +65,33 @@ serve(async (req) => {
           ? `${SITE_URL}/c/${contest.custom_slug}` 
           : `${SITE_URL}/contests/${contest.id}`;
       }
+    } else if (type === "contestant") {
+      // slug format: "<contestSlugOrId>/<contestantSlug>"
+      const [contestKey, contestantSlug] = slug.split("/");
+      const { data: contest } = await supabase
+        .from("contests")
+        .select("id, title, custom_slug")
+        .or(`custom_slug.eq.${contestKey},id.eq.${contestKey}`)
+        .maybeSingle();
+
+      if (contest && contestantSlug) {
+        const { data: contestants } = await supabase
+          .from("contestants")
+          .select("id, name, bio, photo_url, vote_count")
+          .eq("contest_id", contest.id);
+
+        const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const contestant = contestants?.find((c) => slugify(c.name) === contestantSlug);
+
+        if (contestant) {
+          title = `Vote for ${contestant.name} in ${contest.title} | USEQIV`;
+          description = `Vote and support ${contestant.name} for ${contest.title}.${contestant.bio ? " " + contestant.bio : ""}`;
+          image = contestant.photo_url || DEFAULT_IMAGE;
+          pageUrl = contest.custom_slug
+            ? `${SITE_URL}/c/${contest.custom_slug}/contestant/${contestantSlug}`
+            : `${SITE_URL}/contests/${contest.id}/contestant/${contestantSlug}`;
+        }
+      }
     } else if (type === "campaign") {
       const { data: campaign } = await supabase
         .from("campaigns")
