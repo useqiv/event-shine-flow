@@ -17,6 +17,10 @@
   ],
   "rewrites": [
     {
+      "source": "/share/contestant/:contestKey/:contestantSlug",
+      "destination": "https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/og-meta?type=contestant&slug=:contestKey/:contestantSlug"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

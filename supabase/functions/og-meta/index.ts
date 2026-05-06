@@ -69,6 +69,11 @@ serve(async (req) => {
     } else if (type === "contestant") {
       // slug format: "<contestSlugOrId>/<contestantSlug>"
       const [contestKey, contestantSlug] = slug.split("/");
+      if (contestKey && contestantSlug) {
+        pageUrl = isUuid(contestKey)
+          ? `${SITE_URL}/contests/${contestKey}/contestant/${contestantSlug}`
+          : `${SITE_URL}/c/${contestKey}/contestant/${contestantSlug}`;
+      }
       const { data: contest } = await supabase
         .from("contests")
         .select("id, title, custom_slug")
@@ -233,4 +238,8 @@ function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
     return `${SITE_URL}${image}`;
   }
   return `${SUPABASE_STORAGE_PUBLIC_BASE}/${image}`;
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }

@@ -40,7 +40,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug, getOgShareUrl } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl } from '@/lib/urlHelpers';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -146,7 +146,7 @@ const ContestantDetail = () => {
     ? `${(contest as any)?.custom_slug || contestId}/${contestantPageSlug}`
     : '';
   const contestantShareUrl = contestantShareSlug
-    ? getOgShareUrl('contestant', contestantShareSlug)
+    ? getContestantShareUrl((contest as any)?.custom_slug || contestId!, contestantPageSlug, true)
     : contestantUrl;
   const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
   const ogImage = contestant?.photo_url
