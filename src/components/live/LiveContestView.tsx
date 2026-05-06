@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { LiveVotingWidget } from './LiveVotingWidget';
 import { LiveStreamEmbed } from './LiveStreamEmbed';
 import { User, Vote, Radio, Maximize2, Minimize2 } from 'lucide-react';
@@ -125,68 +124,72 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                     /vote
                   </span>
                 </div>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-2 pr-3">
+                <div className="max-h-[420px] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {sortedContestants.map((contestant, index) => (
                       <div
                         key={contestant.id}
                         className={cn(
-                          "flex items-center gap-3 p-2 rounded-lg transition-all",
+                          "flex flex-col gap-3 p-3 rounded-lg transition-all border border-border/60",
                           "hover:bg-secondary/50 cursor-pointer",
                           highlightedContestant === contestant.id && "ring-2 ring-green-500 bg-green-500/10"
                         )}
                         onClick={() => !isEnded && onVoteClick(contestant)}
                       >
-                        {/* Rank & Photo */}
-                        <div className="relative">
-                          <div className="h-10 w-10 rounded-full bg-secondary overflow-hidden">
-                            {contestant.photo_url ? (
-                              <img
-                                src={contestant.photo_url}
-                                alt={contestant.name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center">
-                                <User className="h-5 w-5 text-muted-foreground" />
-                              </div>
+                        <div className="flex items-center gap-3">
+                          {/* Rank & Photo */}
+                          <div className="relative">
+                            <div className="h-10 w-10 rounded-full bg-secondary overflow-hidden">
+                              {contestant.photo_url ? (
+                                <img
+                                  src={contestant.photo_url}
+                                  alt={contestant.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            {index < 3 && (
+                              <Badge
+                                className={cn(
+                                  "absolute -top-1 -left-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]",
+                                  index === 0 && "bg-yellow-500",
+                                  index === 1 && "bg-gray-400",
+                                  index === 2 && "bg-amber-600"
+                                )}
+                              >
+                                {index + 1}
+                              </Badge>
                             )}
                           </div>
-                          {index < 3 && (
-                            <Badge
-                              className={cn(
-                                "absolute -top-1 -left-1 h-5 w-5 flex items-center justify-center p-0 text-[10px]",
-                                index === 0 && "bg-yellow-500",
-                                index === 1 && "bg-gray-400",
-                                index === 2 && "bg-amber-600"
-                              )}
-                            >
-                              {index + 1}
-                            </Badge>
-                          )}
-                        </div>
 
-                        {/* Name & Votes */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{contestant.name}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Vote className="h-3 w-3" />
-                            {contestant.is_public_votes !== false
-                              ? contestant.vote_count.toLocaleString()
-                              : 'Hidden'}
-                          </p>
+                          {/* Name & Votes */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{contestant.name}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Vote className="h-3 w-3" />
+                              {contestant.is_public_votes !== false
+                                ? contestant.vote_count.toLocaleString()
+                                : 'Hidden'}
+                            </p>
+                          </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1">
-                          <FavoriteButton contestantId={contestant.id} />
-                          <ContestantShareButton
-                            contestId={contestId}
-                            contestantId={contestant.id}
-                            contestantName={contestant.name}
-                            contestTitle={contestTitle}
-                            contestCustomSlug={contestCustomSlug}
-                          />
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1">
+                            <FavoriteButton contestantId={contestant.id} />
+                            <ContestantShareButton
+                              contestId={contestId}
+                              contestantId={contestant.id}
+                              contestantName={contestant.name}
+                              contestTitle={contestTitle}
+                              contestCustomSlug={contestCustomSlug}
+                            />
+                          </div>
                           <Button
                             size="sm"
                             disabled={isEnded}
@@ -202,7 +205,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -105,7 +105,7 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
 
   // Calculate leader percentage
   const maxVotes = Math.max(...contestants.map(c => c.vote_count), 1);
-  const topContestants = [...contestants].sort((a, b) => b.vote_count - a.vote_count).slice(0, 5);
+  const rankedContestants = [...contestants].sort((a, b) => b.vote_count - a.vote_count);
 
   return (
     <Card className="overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-background to-secondary/30">
@@ -125,59 +125,66 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
 
-        {/* Top 5 Leaderboard */}
+        {/* Horizontal leaderboard */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Trophy className="h-4 w-4" />
             Top Contestants
           </div>
-          {topContestants.map((contestant, index) => {
-            const percentage = (contestant.vote_count / maxVotes) * 100;
-            const isAnimating = animatingVotes[contestant.id];
-            
-            return (
-              <div
-                key={contestant.id}
-                className={cn(
-                  "relative rounded-lg p-2 transition-all duration-300",
-                  isAnimating && "ring-2 ring-green-500 ring-offset-2 ring-offset-background scale-[1.02]",
-                  index === 0 && "bg-yellow-500/10"
-                )}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-3 min-w-max">
+              {rankedContestants.map((contestant, index) => {
+                const percentage = (contestant.vote_count / maxVotes) * 100;
+                const isAnimating = animatingVotes[contestant.id];
+
+                return (
+                  <div
+                    key={contestant.id}
+                    className={cn(
+                      "relative rounded-lg p-2 transition-all duration-300 w-[220px] shrink-0",
+                      "border border-border bg-card/70",
+                      isAnimating && "ring-2 ring-green-500 ring-offset-2 ring-offset-background scale-[1.02]",
+                      index === 0 && "bg-yellow-500/10"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs w-6 h-6 flex items-center justify-center p-0",
+                            index === 0 && "bg-yellow-500 text-white border-yellow-500",
+                            index === 1 && "bg-gray-400 text-white border-gray-400",
+                            index === 2 && "bg-amber-600 text-white border-amber-600"
+                          )}
+                        >
+                          {index + 1}
+                        </Badge>
+                        <span className="font-medium text-sm truncate">
+                          {contestant.name}
+                        </span>
+                      </div>
+                      <span
+                        className={cn(
+                          "text-sm font-bold tabular-nums transition-all ml-2",
+                          isAnimating && "text-green-500 scale-110"
+                        )}
+                      >
+                        {contestant.vote_count.toLocaleString()}
+                      </span>
+                    </div>
+                    <Progress
+                      value={percentage}
                       className={cn(
-                        "text-xs w-6 h-6 flex items-center justify-center p-0",
-                        index === 0 && "bg-yellow-500 text-white border-yellow-500",
-                        index === 1 && "bg-gray-400 text-white border-gray-400",
-                        index === 2 && "bg-amber-600 text-white border-amber-600"
+                        "h-2 transition-all",
+                        isAnimating && "bg-green-200"
                       )}
-                    >
-                      {index + 1}
-                    </Badge>
-                    <span className="font-medium text-sm truncate max-w-[120px]">
-                      {contestant.name}
-                    </span>
+                    />
                   </div>
-                  <span className={cn(
-                    "text-sm font-bold tabular-nums transition-all",
-                    isAnimating && "text-green-500 scale-110"
-                  )}>
-                    {contestant.vote_count.toLocaleString()}
-                  </span>
-                </div>
-                <Progress 
-                  value={percentage} 
-                  className={cn(
-                    "h-2 transition-all",
-                    isAnimating && "bg-green-200"
-                  )}
-                />
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Recent Vote Activity */}
