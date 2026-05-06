@@ -253,6 +253,22 @@ const ContestManagement = () => {
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
   });
+  const [voteOptions, setVoteOptions] = useState<Array<{ id?: string; vote_quantity: number; price: number }>>([]);
+
+  const { data: contestVoteOptions = [] } = useQuery({
+    queryKey: ['contest-vote-options', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contest_vote_options')
+        .select('id, vote_quantity, price, sort_order')
+        .eq('contest_id', id!)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
 
   // Share card state
   const [shareCardContestant, setShareCardContestant] = useState<any>(null);
@@ -279,6 +295,28 @@ const ContestManagement = () => {
       });
     }
   }, [contest]);
+
+  useEffect(() => {
+    if (contestVoteOptions.length > 0) {
+      setVoteOptions(
+        contestVoteOptions.map((option: any) => ({
+          id: option.id,
+          vote_quantity: Number(option.vote_quantity) || 1,
+          price: Number(option.price) || 1,
+        }))
+      );
+      return;
+    }
+
+    if (contest) {
+      setVoteOptions([
+        {
+          vote_quantity: Math.max(1, Number((contest as any).vote_amount || 1)),
+          price: Number(contest.vote_price) || 1,
+        },
+      ]);
+    }
+  }, [contestVoteOptions, contest]);
 
   const handleAddContestant = async () => {
     if (!id || !newContestant.name) return;
@@ -463,6 +501,19 @@ const ContestManagement = () => {
       return;
     }
     
+    const sanitizedVoteOptions = voteOptions
+      .map((option) => ({
+        id: option.id,
+        vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
+        price: Number(option.price) || 0,
+      }))
+      .filter((option) => option.price > 0);
+
+    if (sanitizedVoteOptions.length === 0) {
+      toast.error('Add at least one valid voting option');
+      return;
+    }
+
     try {
       await updateContest.mutateAsync({
         id: contest.id,
@@ -472,7 +523,8 @@ const ContestManagement = () => {
         image_url: editForm.image_url || null,
         start_date: editForm.start_date ? new Date(editForm.start_date).toISOString() : contest.start_date,
         end_date: editForm.end_date ? new Date(editForm.end_date).toISOString() : contest.end_date,
-        vote_price: Number(editForm.vote_price) || 100,
+        vote_price: sanitizedVoteOptions[0].price,
+        vote_amount: sanitizedVoteOptions[0].vote_quantity,
         vote_currency: editForm.vote_currency || 'NGN',
         custom_slug: editForm.custom_slug?.trim() || null,
         brand_primary_color: editForm.brand_primary_color || '#7c3aed',
@@ -482,10 +534,52 @@ const ContestManagement = () => {
         stream_url: editForm.stream_url || null,
         stream_platform: editForm.stream_platform || 'youtube',
       });
+
+      const { error: deleteOptionsError } = await supabase
+        .from('contest_vote_options')
+        .delete()
+        .eq('contest_id', contest.id);
+
+      if (deleteOptionsError) throw deleteOptionsError;
+
+      const { error: insertOptionsError } = await supabase
+        .from('contest_vote_options')
+        .insert(
+          sanitizedVoteOptions.map((option, index) => ({
+            contest_id: contest.id,
+            vote_quantity: option.vote_quantity,
+            price: option.price,
+            sort_order: index,
+            is_active: true,
+          }))
+        );
+
+      if (insertOptionsError) throw insertOptionsError;
     } catch (error: any) {
       console.error('Failed to update contest:', error);
       toast.error(error?.message || 'Failed to update contest');
     }
+  };
+
+  const handleVoteOptionChange = (index: number, field: 'vote_quantity' | 'price', value: string) => {
+    setVoteOptions((prev) =>
+      prev.map((option, idx) =>
+        idx === index
+          ? {
+              ...option,
+              [field]: field === 'vote_quantity' ? Math.max(1, Math.floor(Number(value) || 0)) : Number(value),
+            }
+          : option
+      )
+    );
+  };
+
+  const addVoteOption = () => {
+    setVoteOptions((prev) => [...prev, { vote_quantity: 1, price: 1 }]);
+  };
+
+  const removeVoteOption = (index: number) => {
+    setVoteOptions((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)));
   };
 
   const handleExportContestants = () => {
@@ -1242,23 +1336,47 @@ const ContestManagement = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="edit-vote-price">Price per Vote ({getCurrencySymbol(editForm.vote_currency)}) *</Label>
-                    <Input
-                      id="edit-vote-price"
-                      type="number"
-                      min="1"
-                      value={editForm.vote_price}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, vote_price: Number(e.target.value) }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label>Currency *</Label>
                     <CurrencySelector
                       value={editForm.vote_currency}
                       onValueChange={(value) => setEditForm(prev => ({ ...prev, vote_currency: value }))}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Voting Options ({getCurrencySymbol(editForm.vote_currency)}) *</Label>
+                  {voteOptions.map((option, index) => (
+                    <div key={option.id || index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                      <div className="space-y-1">
+                        <Label>Number of Votes</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={option.vote_quantity}
+                          onChange={(e) => handleVoteOptionChange(index, 'vote_quantity', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Price</Label>
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={option.price}
+                          onChange={(e) => handleVoteOptionChange(index, 'price', e.target.value)}
+                        />
+                      </div>
+                      <Button type="button" variant="outline" size="icon" onClick={() => removeVoteOption(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="secondary" onClick={addVoteOption}>
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Voting Option
+                  </Button>
                 </div>
 
                 <ImageUpload

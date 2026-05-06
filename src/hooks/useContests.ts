@@ -34,6 +34,15 @@ export interface Contestant {
   updated_at: string;
 }
 
+export interface ContestVoteOption {
+  id: string;
+  contest_id: string;
+  vote_quantity: number;
+  price: number;
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface Vote {
   id: string;
   user_id: string;
@@ -116,6 +125,25 @@ export const useContestants = (contestId: string) => {
     },
     enabled: !!contestId,
     ...queryCache.dynamic, // Vote counts change frequently
+  });
+};
+
+export const useContestVoteOptions = (contestId: string) => {
+  return useQuery({
+    queryKey: ['contest-vote-options', contestId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contest_vote_options')
+        .select('id, contest_id, vote_quantity, price, sort_order, is_active')
+        .eq('contest_id', contestId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+      return data as ContestVoteOption[];
+    },
+    enabled: !!contestId,
+    ...queryCache.moderate,
   });
 };
 

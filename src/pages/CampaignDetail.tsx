@@ -142,9 +142,9 @@ const CampaignDetail: React.FC = () => {
   const pageUrl = (campaign as any).custom_slug 
     ? `https://www.useqiv.com/campaigns/${(campaign as any).custom_slug}` 
     : `https://www.useqiv.com/campaigns/${campaign.id}`;
-  const ogImage = campaign.image_url 
+  const ogImage = campaign.image_url
     ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
-    : 'https://www.useqiv.com/og-image.png';
+    : '';
   const ogDescription = campaign.short_description || campaign.description?.substring(0, 160) || `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
 
   return (
@@ -158,16 +158,16 @@ const CampaignDetail: React.FC = () => {
         <meta property="og:url" content={pageUrl} />
         <meta property="og:title" content={campaign.title} />
         <meta property="og:description" content={ogDescription} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:url" content={pageUrl} />
         <meta name="twitter:title" content={campaign.title} />
         <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={ogImage} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         
         {/* Campaign specific meta */}
         <meta property="og:site_name" content="USEQIV" />

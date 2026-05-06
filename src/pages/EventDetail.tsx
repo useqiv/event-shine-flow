@@ -221,9 +221,9 @@ const EventDetail = () => {
     : `https://www.useqiv.com/events/${id}`;
   const ogDescription = event?.description || `Join us at ${event?.title} on ${event ? format(new Date(event.event_date), 'MMMM d, yyyy') : ''} at ${event?.venue}`;
   // Ensure absolute URL for OG image - use the image directly if it's already absolute, otherwise construct one
-  const ogImage = event?.image_url 
+  const ogImage = event?.image_url
     ? (event.image_url.startsWith('http') ? event.image_url : `https://www.useqiv.com${event.image_url}`)
-    : 'https://www.useqiv.com/og-image.png';
+    : '';
 
   return (
     <>
@@ -236,9 +236,9 @@ const EventDetail = () => {
         <meta property="og:url" content={eventUrl} />
         <meta property="og:title" content={event.title} />
         <meta property="og:description" content={ogDescription} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
         <meta property="og:site_name" content="USEQIV" />
         
         {/* Twitter Card */}
@@ -246,7 +246,7 @@ const EventDetail = () => {
         <meta name="twitter:url" content={eventUrl} />
         <meta name="twitter:title" content={event.title} />
         <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={ogImage} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         
         {/* Canonical URL */}
         <link rel="canonical" href={eventUrl} />

@@ -497,6 +497,47 @@ export type Database = {
           },
         ]
       }
+      contest_vote_options: {
+        Row: {
+          contest_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          price: number
+          sort_order: number
+          updated_at: string
+          vote_quantity: number
+        }
+        Insert: {
+          contest_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          price: number
+          sort_order?: number
+          updated_at?: string
+          vote_quantity: number
+        }
+        Update: {
+          contest_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          price?: number
+          sort_order?: number
+          updated_at?: string
+          vote_quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_vote_options_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "contests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contests: {
         Row: {
           brand_logo_url: string | null

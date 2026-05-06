@@ -581,6 +581,10 @@ export const useCreateContest = () => {
       end_date: string;
       vote_price: number;
       vote_amount: number;
+      vote_options?: Array<{
+        vote_quantity: number;
+        price: number;
+      }>;
       vote_currency?: string;
       custom_slug?: string;
       brand_primary_color?: string;
@@ -589,13 +593,34 @@ export const useCreateContest = () => {
       contest_type?: 'single' | 'category';
       is_live_voting?: boolean;
     }) => {
+      const { vote_options, ...contestPayload } = contestData;
       const { data, error } = await supabase
         .from('contests')
-        .insert({ ...contestData, organization_id: user!.id })
+        .insert({ ...contestPayload, organization_id: user!.id })
         .select()
         .single();
       
       if (error) throw error;
+
+      if (vote_options && vote_options.length > 0) {
+        const sanitizedOptions = vote_options
+          .map((option, index) => ({
+            contest_id: data.id,
+            vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
+            price: Number(option.price) || 0,
+            sort_order: index,
+            is_active: true,
+          }))
+          .filter((option) => option.price > 0);
+
+        if (sanitizedOptions.length > 0) {
+          const { error: optionsError } = await supabase
+            .from('contest_vote_options')
+            .insert(sanitizedOptions);
+
+          if (optionsError) throw optionsError;
+        }
+      }
       return data;
     },
     onSuccess: () => {
@@ -1121,6 +1146,7 @@ export const useUpdateContest = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-contest-detail', contestId] });
       queryClient.invalidateQueries({ queryKey: ['featured-contests'] });
       queryClient.invalidateQueries({ queryKey: ['contestants', contestId] });
+      queryClient.invalidateQueries({ queryKey: ['contest-vote-options', contestId] });
       toast.success('Contest updated successfully');
     },
     onError: (error: any) => {

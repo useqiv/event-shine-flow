@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const SITE_URL = "https://www.useqiv.com";
-const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
+const DEFAULT_IMAGE = "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_STORAGE_PUBLIC_BASE = `${SUPABASE_URL}/storage/v1/object/public`;
 
@@ -46,7 +46,7 @@ serve(async (req) => {
       if (event) {
         title = `${event.title} | USEQIV Events`;
         description = event.description || `Join us at ${event.title} at ${event.venue}`;
-        image = event.image_url || DEFAULT_IMAGE;
+        image = event.image_url || "";
         pageUrl = event.custom_slug 
           ? `${SITE_URL}/e/${event.custom_slug}` 
           : `${SITE_URL}/events/${event.id}`;
@@ -75,7 +75,7 @@ serve(async (req) => {
       if (contest) {
         title = `${contest.title} | USEQIV`;
         description = contest.description || `Vote now in ${contest.title}`;
-        image = contest.image_url || DEFAULT_IMAGE;
+        image = contest.image_url || "";
         pageUrl = contest.custom_slug 
           ? `${SITE_URL}/c/${contest.custom_slug}` 
           : `${SITE_URL}/contests/${contest.id}`;
@@ -89,6 +89,7 @@ serve(async (req) => {
       const qpContest = url.searchParams.get("contest");
       const qpDescription = url.searchParams.get("description");
       const qpImage = url.searchParams.get("image");
+      const hasExplicitImage = !!qpImage;
       if (contestKey && contestantSlug) {
         pageUrl = isUuid(contestKey)
           ? `${SITE_URL}/contests/${contestKey}/contestant/${normalizedContestantSlug || contestantSlug}`
@@ -124,7 +125,9 @@ serve(async (req) => {
         if (contestant) {
           title = `Vote for ${contestant.name} in ${contest.title} | USEQIV`;
           description = `Vote and support ${contestant.name} for ${contest.title}.${contestant.bio ? " " + contestant.bio : ""}`;
-          image = contestant.photo_url || DEFAULT_IMAGE;
+          if (!hasExplicitImage) {
+            image = contestant.photo_url || "";
+          }
           pageUrl = contest.custom_slug
             ? `${SITE_URL}/c/${contest.custom_slug}/contestant/${contestantSlug}`
             : `${SITE_URL}/contests/${contest.id}/contestant/${contestantSlug}`;
@@ -141,7 +144,7 @@ serve(async (req) => {
         title = `${campaign.title} | USEQIV Campaigns`;
         description = campaign.short_description || campaign.description || 
           `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
-        image = campaign.image_url || DEFAULT_IMAGE;
+        image = campaign.image_url || "";
         pageUrl = campaign.custom_slug 
           ? `${SITE_URL}/campaigns/${campaign.custom_slug}` 
           : `${SITE_URL}/campaigns/${campaign.id}`;
@@ -156,7 +159,7 @@ serve(async (req) => {
       if (form) {
         title = `${form.title} | USEQIV`;
         description = form.description || `Fill out ${form.title}`;
-        image = form.logo_url || DEFAULT_IMAGE;
+        image = form.logo_url || "";
         pageUrl = form.custom_slug 
           ? `${SITE_URL}/f/${form.custom_slug}` 
           : `${SITE_URL}/f/${form.id}`;
@@ -263,9 +266,9 @@ function escapeHtml(text: string): string {
 }
 
 function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
-  if (!rawImage) return DEFAULT_IMAGE;
+  if (!rawImage) return "";
   const image = rawImage.trim();
-  if (!image) return DEFAULT_IMAGE;
+  if (!image) return "";
   if (/^https?:\/\//i.test(image)) return image;
   if (image.startsWith("/storage/v1/object/public/")) {
     return `${SUPABASE_URL}${image}`;

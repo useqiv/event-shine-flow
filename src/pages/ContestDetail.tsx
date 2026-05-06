@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/useContests';
+import { useContest, useContestants, useVote, useMyContestVotes, useContestVoteOptions } from '@/hooks/useContests';
 import { useContestCategories, ContestCategory } from '@/hooks/useContestCategories';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { LiveContestView } from '@/components/live/LiveContestView';
@@ -54,6 +54,7 @@ const ContestDetail = () => {
   const { data: contest, isLoading: contestLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const { data: contestCategories } = useContestCategories(id || '');
+  const { data: contestVoteOptions = [] } = useContestVoteOptions(id || '');
   const { data: myVotes, isLoading: myVotesLoading } = useMyContestVotes(id || '');
   const { data: wallet } = useWallet();
   const { data: currencyBalances } = useWalletCurrencyBalances();
@@ -74,7 +75,6 @@ const ContestDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [customVoteAmount, setCustomVoteAmount] = useState('');
   
   // View mode for live voting contests
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
@@ -124,12 +124,22 @@ const ContestDetail = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
-  const baseVoteAmount = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
-  const voteOptions = useMemo(
-    () => [1, 5, 10, 25, 50, 100].map((multiplier) => baseVoteAmount * multiplier),
-    [baseVoteAmount]
+  const normalizedVoteOptions = useMemo(() => {
+    if (contestVoteOptions.length > 0) {
+      return contestVoteOptions.map((option) => ({
+        vote_quantity: Number(option.vote_quantity),
+        price: Number(option.price),
+      }));
+    }
+    const fallbackQuantity = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
+    return [{ vote_quantity: fallbackQuantity, price: Number(contest?.vote_price ?? 1) * fallbackQuantity }];
+  }, [contestVoteOptions, contest, (contest as any)?.vote_amount]);
+  const selectedOption = useMemo(
+    () =>
+      normalizedVoteOptions.find((option) => option.vote_quantity === voteQuantity) || normalizedVoteOptions[0],
+    [normalizedVoteOptions, voteQuantity]
   );
-  const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+  const totalAmount = selectedOption?.price || 0;
 
   // Group contestants by category
   const contestantsByCategory = useMemo(() => {
@@ -208,18 +218,8 @@ const ContestDetail = () => {
 
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
-    setVoteQuantity(baseVoteAmount);
-    setCustomVoteAmount(String(baseVoteAmount));
+    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setIsVoteSelectionOpen(true);
-  };
-
-  const handleCustomVoteAmountChange = (value: string) => {
-    setCustomVoteAmount(value);
-    const parsedVotes = Number(value);
-    if (!Number.isFinite(parsedVotes)) return;
-
-    const sanitizedVotes = Math.max(baseVoteAmount, Math.floor(parsedVotes));
-    setVoteQuantity(sanitizedVotes);
   };
 
   const handleProceedToPayment = () => {
@@ -249,7 +249,7 @@ const ContestDetail = () => {
       });
 
       setIsVoteSelectionOpen(false);
-      setVoteQuantity(1);
+      setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     } catch (error: any) {
       toast({
         title: 'Vote Failed',
@@ -302,14 +302,14 @@ const ContestDetail = () => {
     ? `https://www.useqiv.com/c/${(contest as any).custom_slug}` 
     : `https://www.useqiv.com/contests/${id}`;
   const ogDescription = contest?.description || `Vote now in ${contest?.title}`;
-  const ogImage = contest?.image_url 
+  const ogImage = contest?.image_url
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
-    : 'https://www.useqiv.com/og-image.png';
+    : '';
   const contestShareUrl = contest
     ? `${getContestShareUrl((contest as any)?.custom_slug || contest.id, true)}?${new URLSearchParams({
         title: contest.title || '',
         description: ogDescription,
-        image: ogImage,
+        ...(ogImage ? { image: ogImage } : {}),
       }).toString()}`
     : contestUrl;
 
@@ -323,15 +323,15 @@ const ContestDetail = () => {
         <meta property="og:url" content={contestUrl} />
         <meta property="og:title" content={contest.title} />
         <meta property="og:description" content={ogDescription} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
         <meta property="og:site_name" content="USEQIV" />
         
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={contest.title} />
         <meta name="twitter:description" content={ogDescription} />
-        <meta name="twitter:image" content={ogImage} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         
         <link rel="canonical" href={contestUrl} />
       </Helmet>
@@ -883,33 +883,18 @@ const ContestDetail = () => {
               <div>
                 <p className="text-sm font-medium mb-2">Number of Votes</p>
                 <div className="grid grid-cols-3 gap-2">
-                  {voteOptions.map((option) => (
+                  {normalizedVoteOptions.map((option) => (
                     <Button
-                      key={option}
-                      variant={voteQuantity === option ? 'default' : 'outline'}
+                      key={option.vote_quantity}
+                      variant={voteQuantity === option.vote_quantity ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => {
-                        setVoteQuantity(option);
-                        setCustomVoteAmount(String(option));
+                        setVoteQuantity(option.vote_quantity);
                       }}
                     >
-                      {option} {option === 1 ? 'vote' : 'votes'}
+                      {option.vote_quantity} {option.vote_quantity === 1 ? 'vote' : 'votes'}
                     </Button>
                   ))}
-                </div>
-                <div className="mt-3 space-y-2">
-                  <label className="text-sm font-medium" htmlFor="custom-vote-amount">
-                    Or enter custom votes
-                  </label>
-                  <Input
-                    id="custom-vote-amount"
-                    type="number"
-                    min={baseVoteAmount}
-                    step={1}
-                    value={customVoteAmount}
-                    onChange={(event) => handleCustomVoteAmountChange(event.target.value)}
-                    placeholder={`Minimum ${baseVoteAmount}`}
-                  />
                 </div>
               </div>
 

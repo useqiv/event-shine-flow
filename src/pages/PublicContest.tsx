@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 import { createSlug, getContestShareUrl } from '@/lib/urlHelpers';
+import { useContestVoteOptions } from '@/hooks/useContests';
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -35,7 +36,6 @@ const PublicContest = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('standard');
   const [paymentCurrency, setPaymentCurrency] = useState<string>('');
-  const [customVoteAmount, setCustomVoteAmount] = useState('');
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -69,6 +69,7 @@ const PublicContest = () => {
     },
     enabled: !!contest?.id,
   });
+  const { data: contestVoteOptions = [] } = useContestVoteOptions(contest?.id || '');
 
   // Brand colors with fallbacks
   const primaryColor = contest?.brand_primary_color || '#7c3aed';
@@ -84,22 +85,32 @@ const PublicContest = () => {
   const contestUrl = `https://www.useqiv.com/c/${slug}`;
   const contestCurrency = contest?.vote_currency || 'NGN';
   // Ensure absolute URL for OG image
-  const ogImage = contest?.image_url 
+  const ogImage = contest?.image_url
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
-    : 'https://www.useqiv.com/og-image.png';
+    : '';
   const contestShareUrl = contest
     ? `${getContestShareUrl(contest.custom_slug || contest.id, true)}?${new URLSearchParams({
         title: contest.title || '',
         description: contest.description || `Vote now in ${contest.title}`,
-        image: ogImage,
+        ...(ogImage ? { image: ogImage } : {}),
       }).toString()}`
     : contestUrl;
-  const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
-  const baseVoteAmount = Math.max(1, Number(contest?.vote_amount ?? 1));
-  const voteOptions = useMemo(
-    () => [1, 5, 10, 25, 50, 100].map((multiplier) => baseVoteAmount * multiplier),
-    [baseVoteAmount]
+  const normalizedVoteOptions = useMemo(() => {
+    if (contestVoteOptions.length > 0) {
+      return contestVoteOptions.map((option) => ({
+        vote_quantity: Number(option.vote_quantity),
+        price: Number(option.price),
+      }));
+    }
+    const fallbackQuantity = Math.max(1, Number(contest?.vote_amount ?? 1));
+    return [{ vote_quantity: fallbackQuantity, price: Number(contest?.vote_price ?? 1) * fallbackQuantity }];
+  }, [contestVoteOptions, contest?.vote_amount, contest?.vote_price]);
+  const selectedOption = useMemo(
+    () =>
+      normalizedVoteOptions.find((option) => option.vote_quantity === voteQuantity) || normalizedVoteOptions[0],
+    [normalizedVoteOptions, voteQuantity]
   );
+  const totalAmount = selectedOption?.price || 0;
   
   // Calculate converted amount for payment
   const effectivePaymentCurrency = paymentCurrency || contestCurrency;
@@ -115,19 +126,9 @@ const PublicContest = () => {
 
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
-    setVoteQuantity(baseVoteAmount);
-    setCustomVoteAmount(String(baseVoteAmount));
+    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setPaymentCurrency(''); // Reset to contest currency
     setIsVoteSelectionOpen(true);
-  };
-
-  const handleCustomVoteAmountChange = (value: string) => {
-    setCustomVoteAmount(value);
-    const parsedVotes = Number(value);
-    if (!Number.isFinite(parsedVotes)) return;
-
-    const sanitizedVotes = Math.max(baseVoteAmount, Math.floor(parsedVotes));
-    setVoteQuantity(sanitizedVotes);
   };
 
   const handleProceedToPayment = () => {
@@ -176,9 +177,9 @@ const PublicContest = () => {
         <meta property="og:url" content={contestUrl} />
         <meta property="og:title" content={contest.title} />
         <meta property="og:description" content={contest.description || `Vote now in ${contest.title}`} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
         <meta property="og:site_name" content="USEQIV" />
         
         {/* Twitter Card */}
@@ -186,7 +187,7 @@ const PublicContest = () => {
         <meta name="twitter:url" content={contestUrl} />
         <meta name="twitter:title" content={contest.title} />
         <meta name="twitter:description" content={contest.description || `Vote now in ${contest.title}`} />
-        <meta name="twitter:image" content={ogImage} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         
         {/* Canonical URL */}
         <link rel="canonical" href={contestUrl} />
@@ -473,34 +474,18 @@ const PublicContest = () => {
           
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-3 gap-2">
-              {voteOptions.map((option) => (
+              {normalizedVoteOptions.map((option) => (
                 <Button
-                  key={option}
-                  variant={voteQuantity === option ? 'default' : 'outline'}
+                  key={option.vote_quantity}
+                  variant={voteQuantity === option.vote_quantity ? 'default' : 'outline'}
                   onClick={() => {
-                    setVoteQuantity(option);
-                    setCustomVoteAmount(String(option));
+                    setVoteQuantity(option.vote_quantity);
                   }}
-                  style={voteQuantity === option ? { backgroundColor: primaryColor } : undefined}
+                  style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
                 >
-                  {option} {option === 1 ? 'Vote' : 'Votes'}
+                  {option.vote_quantity} {option.vote_quantity === 1 ? 'Vote' : 'Votes'}
                 </Button>
               ))}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="custom-vote-amount">
-                Or enter custom votes
-              </label>
-              <Input
-                id="custom-vote-amount"
-                type="number"
-                min={baseVoteAmount}
-                step={1}
-                value={customVoteAmount}
-                onChange={(event) => handleCustomVoteAmountChange(event.target.value)}
-                placeholder={`Minimum ${baseVoteAmount}`}
-              />
             </div>
             
             {/* Currency Selection */}

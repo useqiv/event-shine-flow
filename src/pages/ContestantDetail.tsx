@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useContest, useContestants, useVote } from '@/hooks/useContests';
+import { useContest, useContestants, useVote, useContestVoteOptions } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -40,9 +40,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug } from '@/lib/urlHelpers';
-
-const voteOptions = [1, 5, 10, 25, 50, 100];
+import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl } from '@/lib/urlHelpers';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
 
@@ -83,6 +81,7 @@ const ContestantDetail = () => {
   const { data: contestFromHook, isLoading: contestHookLoading } = useContest(contestIdFromParams || '');
   const contest = contestIdFromParams ? contestFromHook : contestBySlug;
   const contestLoading = contestIdFromParams ? contestHookLoading : slugLoading;
+  const { data: contestVoteOptions = [] } = useContestVoteOptions(contestId || '');
   
   const { data: contestants, isLoading: contestantsLoading } = useContestants(contestId || '');
   
@@ -133,7 +132,22 @@ const ContestantDetail = () => {
   const isEnded = contest && new Date(contest.end_date) < new Date();
   const hasNotStarted = contest && new Date(contest.start_date) > new Date();
   const isVotingLocked = isEnded || hasNotStarted;
-  const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+  const normalizedVoteOptions = useMemo(() => {
+    if (contestVoteOptions.length > 0) {
+      return contestVoteOptions.map((option) => ({
+        vote_quantity: Number(option.vote_quantity),
+        price: Number(option.price),
+      }));
+    }
+    const fallbackQuantity = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
+    return [{ vote_quantity: fallbackQuantity, price: Number(contest?.vote_price ?? 1) * fallbackQuantity }];
+  }, [contestVoteOptions, contest, (contest as any)?.vote_amount]);
+  const selectedOption = useMemo(
+    () =>
+      normalizedVoteOptions.find((option) => option.vote_quantity === voteQuantity) || normalizedVoteOptions[0],
+    [normalizedVoteOptions, voteQuantity]
+  );
+  const totalAmount = selectedOption?.price || 0;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
   // Generate URLs - use custom_slug if available
@@ -141,11 +155,19 @@ const ContestantDetail = () => {
   const contestantUrl = contestant 
     ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
     : '';
-  const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
-  const ogImage = contestant?.photo_url
+  const contestantPageSlug = contestant ? createContestantSlug(contestant.name) : '';
+  const contestantImageUrl = contestant?.photo_url
     ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
-    : DEFAULT_OG_IMAGE;
-  const contestantShareUrl = contestantUrl;
+    : '';
+  const ogImage = contestantImageUrl;
+  const contestantShareUrl = contest && contestantPageSlug
+    ? `${getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestantPageSlug, true)}?${new URLSearchParams({
+        name: contestant?.name || '',
+        contest: contest?.title || '',
+        description: `Vote and support ${contestant?.name || ''} on ${contest?.title || ''}`.trim(),
+        ...(contestantImageUrl ? { image: contestantImageUrl } : {}),
+      }).toString()}`
+    : contestantUrl;
   
   // Back link path - use short URL if accessed via slug route
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
@@ -175,7 +197,7 @@ const ContestantDetail = () => {
       });
       return;
     }
-    setVoteQuantity(1);
+    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setIsVoteSelectionOpen(true);
   };
 
@@ -344,11 +366,11 @@ const ContestantDetail = () => {
         <meta property="og:url" content={contestantUrl} />
         <meta property="og:title" content={`Vote for ${contestant.name} in ${contest.title}`} />
         <meta property="og:description" content={`Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`} />
-        <meta property="og:image" content={ogImage} />
-        <meta property="og:image:secure_url" content={ogImage} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content={contestant.name} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:secure_url" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
+        {ogImage && <meta property="og:image:alt" content={contestant.name} />}
         <meta property="og:site_name" content="USEQIV" />
 
         {/* Twitter Card */}
@@ -357,8 +379,8 @@ const ContestantDetail = () => {
         <meta name="twitter:url" content={contestantUrl} />
         <meta name="twitter:title" content={`Vote for ${contestant.name}`} />
         <meta name="twitter:description" content={`Support ${contestant.name} in ${contest.title}. Cast your votes now!`} />
-        <meta name="twitter:image" content={ogImage} />
-        <meta name="twitter:image:alt" content={contestant.name} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
+        {ogImage && <meta name="twitter:image:alt" content={contestant.name} />}
       </Helmet>
 
       <Navbar />
@@ -829,15 +851,15 @@ const ContestantDetail = () => {
           </DialogHeader>
           
           <div className="grid grid-cols-3 gap-2 py-3 sm:py-4">
-            {voteOptions.map((option) => (
+            {normalizedVoteOptions.map((option) => (
               <Button
-                key={option}
-                variant={voteQuantity === option ? "default" : "outline"}
-                onClick={() => setVoteQuantity(option)}
+                key={option.vote_quantity}
+                variant={voteQuantity === option.vote_quantity ? "default" : "outline"}
+                onClick={() => setVoteQuantity(option.vote_quantity)}
                 className="h-12 sm:h-16 text-base sm:text-lg font-semibold"
-                style={voteQuantity === option ? { backgroundColor: primaryColor } : undefined}
+                style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
               >
-                {option}
+                {option.vote_quantity}
               </Button>
             ))}
           </div>

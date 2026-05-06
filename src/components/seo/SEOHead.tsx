@@ -21,7 +21,7 @@ export const SEOHead = ({
   title,
   description,
   canonicalUrl,
-  ogImage = 'https://www.useqiv.com/og-image.png',
+  ogImage,
   ogType = 'website',
   keywords,
   noIndex = false,
@@ -56,10 +56,10 @@ export const SEOHead = ({
       <meta property="og:site_name" content={siteName} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={ogImage} />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="og:image:alt" content={title} />
+      {ogImage && <meta property="og:image" content={ogImage} />}
+      {ogImage && <meta property="og:image:width" content="1200" />}
+      {ogImage && <meta property="og:image:height" content="630" />}
+      {ogImage && <meta property="og:image:alt" content={title} />}
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:locale" content="en_US" />
       
@@ -74,8 +74,8 @@ export const SEOHead = ({
       <meta name="twitter:creator" content={twitterHandle} />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={ogImage} />
-      <meta name="twitter:image:alt" content={title} />
+      {ogImage && <meta name="twitter:image" content={ogImage} />}
+      {ogImage && <meta name="twitter:image:alt" content={title} />}
       {canonicalUrl && <meta name="twitter:url" content={canonicalUrl} />}
       
       {/* Additional SEO Meta */}

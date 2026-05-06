@@ -12,7 +12,7 @@ import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
 import { AIDescriptionGenerator } from '@/components/org/AIDescriptionGenerator';
 import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
-import { Calendar, DollarSign, FileText, Users, Layers, Check, Radio } from 'lucide-react';
+import { Calendar, DollarSign, FileText, Users, Layers, Check, Radio, Plus, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +53,9 @@ const CreateContest = () => {
     brand_logo_url: '',
     is_live_voting: false,
   });
+  const [voteOptions, setVoteOptions] = useState<Array<{ vote_quantity: number; price: number }>>([
+    { vote_quantity: 1, price: 1 },
+  ]);
 
   // Set default currency from org settings when loaded
   useEffect(() => {
@@ -72,6 +75,17 @@ const CreateContest = () => {
     e.preventDefault();
     
     try {
+      const sanitizedVoteOptions = voteOptions
+        .map((option) => ({
+          vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
+          price: Number(option.price) || 0,
+        }))
+        .filter((option) => option.price > 0);
+
+      if (sanitizedVoteOptions.length === 0) {
+        throw new Error('Add at least one valid voting option');
+      }
+
       const result = await createContest.mutateAsync({
         title: formData.title,
         description: formData.description,
@@ -79,8 +93,9 @@ const CreateContest = () => {
         image_url: formData.image_url || undefined,
         start_date: formData.start_date,
         end_date: formData.end_date,
-        vote_price: Number(formData.vote_price),
-        vote_amount: Number(formData.vote_amount),
+        vote_price: sanitizedVoteOptions[0].price,
+        vote_amount: sanitizedVoteOptions[0].vote_quantity,
+        vote_options: sanitizedVoteOptions,
         vote_currency: formData.vote_currency,
         custom_slug: formData.custom_slug || undefined,
         brand_primary_color: formData.brand_primary_color,
@@ -100,6 +115,27 @@ const CreateContest = () => {
       console.error('Failed to create contest:', error);
     }
   };
+  const handleVoteOptionChange = (index: number, field: 'vote_quantity' | 'price', value: string) => {
+    setVoteOptions((prev) =>
+      prev.map((option, idx) =>
+        idx === index
+          ? {
+              ...option,
+              [field]: field === 'vote_quantity' ? Math.max(1, Math.floor(Number(value) || 0)) : Number(value),
+            }
+          : option
+      )
+    );
+  };
+
+  const addVoteOption = () => {
+    setVoteOptions((prev) => [...prev, { vote_quantity: 1, price: 1 }]);
+  };
+
+  const removeVoteOption = (index: number) => {
+    setVoteOptions((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)));
+  };
+
 
   const handleChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -317,22 +353,10 @@ const CreateContest = () => {
                 <DollarSign className="h-5 w-5" />
                 Vote Pricing
               </CardTitle>
-              <CardDescription>Set the price and currency per vote</CardDescription>
+              <CardDescription>Set vote bundles (number of votes and price)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="vote_amount">Voting Amount *</Label>
-                  <Input
-                    id="vote_amount"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={formData.vote_amount}
-                    onChange={(e) => handleChange('vote_amount', e.target.value)}
-                    required
-                  />
-                </div>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="vote_currency">Currency *</Label>
                   <CurrencySelector
@@ -340,21 +364,45 @@ const CreateContest = () => {
                     onValueChange={(value) => handleChange('vote_currency', value)}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="vote_price">Price per Vote *</Label>
-                  <Input
-                    id="vote_price"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={formData.vote_price}
-                    onChange={(e) => handleChange('vote_price', e.target.value)}
-                    required
-                  />
+                <div className="space-y-3">
+                  <Label>Voting Options *</Label>
+                  {voteOptions.map((option, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                      <div className="space-y-1">
+                        <Label>Number of Votes</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={option.vote_quantity}
+                          onChange={(e) => handleVoteOptionChange(index, 'vote_quantity', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Price</Label>
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={option.price}
+                          onChange={(e) => handleVoteOptionChange(index, 'price', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <Button type="button" variant="outline" size="icon" onClick={() => removeVoteOption(index)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="secondary" onClick={addVoteOption}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Voting Option
+                  </Button>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Set the base voting amount and the price charged per vote.
+                Voters will choose from these vote bundles when paying.
               </p>
             </CardContent>
           </Card>

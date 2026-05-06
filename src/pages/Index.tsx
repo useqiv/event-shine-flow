@@ -42,9 +42,6 @@ const Index = () => {
         <meta property="og:description" content="Secure, scalable platform for contest voting, event ticketing, and crowdfunding. Power pageants, competitions, and award shows." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.useqiv.com" />
-        <meta property="og:image" content="https://www.useqiv.com/og-image.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="USEQIV" />
         <meta property="og:locale" content="en_US" />
         
@@ -53,7 +50,6 @@ const Index = () => {
         <meta name="twitter:site" content="@useqiv" />
         <meta name="twitter:title" content="USEQIV - Contest Voting & Event Ticketing" />
         <meta name="twitter:description" content="The all-in-one platform for secure contest voting, event ticketing, and crowdfunding." />
-        <meta name="twitter:image" content="https://www.useqiv.com/og-image.png" />
 
         {/* Structured Data */}
         <script type="application/ld+json">
