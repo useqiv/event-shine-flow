@@ -177,10 +177,26 @@ serve(async (req) => {
       });
     }
 
-    // For non-crawlers, return JSON
+    // Optional JSON response for debugging only
+    if (url.searchParams.get("format") === "json") {
+      return new Response(
+        JSON.stringify({ title, description, image, url: pageUrl }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // For non-crawlers, redirect to the actual app page.
+    // This allows us to share the og-meta URL while still landing users on the intended route.
     return new Response(
-      JSON.stringify({ title, description, image, url: pageUrl }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      null,
+      {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          "Location": pageUrl,
+          "Cache-Control": "no-store",
+        },
+      }
     );
 
   } catch (error: unknown) {

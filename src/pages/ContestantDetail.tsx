@@ -40,7 +40,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, createContestantSlug, getOgShareUrl } from '@/lib/urlHelpers';
 
 const voteOptions = [1, 5, 10, 25, 50, 100];
 
@@ -141,6 +141,13 @@ const ContestantDetail = () => {
   const contestantUrl = contestant 
     ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
     : '';
+  const contestantPageSlug = contestant ? createContestantSlug(contestant.name) : '';
+  const contestantShareSlug = contest
+    ? `${(contest as any)?.custom_slug || contestId}/${contestantPageSlug}`
+    : '';
+  const contestantShareUrl = contestantShareSlug
+    ? getOgShareUrl('contestant', contestantShareSlug)
+    : contestantUrl;
   const DEFAULT_OG_IMAGE = 'https://www.useqiv.com/og-image.png';
   const ogImage = contestant?.photo_url
     ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
@@ -150,10 +157,10 @@ const ContestantDetail = () => {
   const backLinkPath = contestSlug ? `/c/${contestSlug}` : `/contests/${contestId}`;
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(contestantUrl);
+    navigator.clipboard.writeText(contestantShareUrl);
     toast({
       title: "Link Copied!",
-      description: "Contestant page link copied to clipboard."
+      description: "Contestant share link copied to clipboard."
     });
   };
 
@@ -271,14 +278,14 @@ const ContestantDetail = () => {
               files: [file]
             });
           } catch (e) {
-            navigator.clipboard.writeText(contestantUrl);
+            navigator.clipboard.writeText(contestantShareUrl);
             toast({
               title: "Link Copied!",
               description: "QR code link copied to clipboard."
             });
           }
         } else {
-          navigator.clipboard.writeText(contestantUrl);
+          navigator.clipboard.writeText(contestantShareUrl);
           toast({
             title: "Link Copied!",
             description: "QR code link copied to clipboard."
@@ -730,7 +737,7 @@ const ContestantDetail = () => {
               <ShareButtons 
                 title={`Vote for ${contestant.name} in ${contest.title}`}
                 description={contestant.bio || `Support ${contestant.name} by voting!`}
-                url={contestantUrl}
+                url={contestantShareUrl}
                 imageUrl={contestant.photo_url}
               />
             </div>

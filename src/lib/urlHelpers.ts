@@ -2,6 +2,7 @@
 
 // Production domain for absolute URLs
 const PRODUCTION_DOMAIN = 'https://www.useqiv.com';
+const SUPABASE_FUNCTIONS_BASE = 'https://tirqmqzgksclsjxfiham.supabase.co/functions/v1';
 
 /**
  * Get the origin for URLs - uses production domain for absolute URLs or current origin
@@ -53,6 +54,16 @@ export const getContestantUrl = (
     return `${origin}/c/${contestCustomSlug}/contestant/${contestantSlug}`;
   }
   return `${origin}/contests/${contestId}/contestant/${contestantSlug}`;
+};
+
+/**
+ * Generate share URL that serves crawler-specific OG tags and redirects humans.
+ */
+export const getOgShareUrl = (
+  type: 'event' | 'contest' | 'contestant' | 'campaign' | 'form',
+  slug: string
+): string => {
+  return `${SUPABASE_FUNCTIONS_BASE}/og-meta?type=${encodeURIComponent(type)}&slug=${encodeURIComponent(slug)}`;
 };
 
 /**
