@@ -286,12 +286,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <span>+{formatCurrency(feeBreakdown.paymentMethodFee, effectiveCurrency)}</span>
               </div>
             )}
-            {feeBreakdown.convenienceFee > 0 && (
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Convenience Fee</span>
-                <span>+{formatCurrency(feeBreakdown.convenienceFee, effectiveCurrency)}</span>
-              </div>
-            )}
             <div className="flex justify-between pt-2 border-t">
               <span className="font-medium">You Pay</span>
               <span className="text-xl font-bold">{formatCurrency(finalAmount, effectiveCurrency)}</span>
