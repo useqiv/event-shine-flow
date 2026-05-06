@@ -306,11 +306,7 @@ const ContestDetail = () => {
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
     : '';
   const contestShareUrl = contest
-    ? `${getContestShareUrl((contest as any)?.custom_slug || contest.id, true)}?${new URLSearchParams({
-        title: contest.title || '',
-        description: ogDescription,
-        ...(ogImage ? { image: ogImage } : {}),
-      }).toString()}`
+    ? getContestShareUrl((contest as any)?.custom_slug || contest.id, true)
     : contestUrl;
 
   return (

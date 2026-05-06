@@ -89,11 +89,7 @@ const PublicContest = () => {
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
     : '';
   const contestShareUrl = contest
-    ? `${getContestShareUrl(contest.custom_slug || contest.id, true)}?${new URLSearchParams({
-        title: contest.title || '',
-        description: contest.description || `Vote now in ${contest.title}`,
-        ...(ogImage ? { image: ogImage } : {}),
-      }).toString()}`
+    ? getContestShareUrl(contest.custom_slug || contest.id, true)
     : contestUrl;
   const normalizedVoteOptions = useMemo(() => {
     if (contestVoteOptions.length > 0) {
