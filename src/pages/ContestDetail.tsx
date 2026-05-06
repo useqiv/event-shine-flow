@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useContest, useContestants, useVote, useMyContestVotes } from '@/hooks/useContests';
 import { useContestCategories, ContestCategory } from '@/hooks/useContestCategories';
@@ -44,8 +45,6 @@ import { useMemo } from 'react';
 import { getContestUrl, getContestantUrl } from '@/lib/urlHelpers';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
-const voteOptions = [1, 5, 10, 25, 50, 100];
-
 const ContestDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -75,6 +74,7 @@ const ContestDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [customVoteAmount, setCustomVoteAmount] = useState('');
   
   // View mode for live voting contests
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
@@ -124,6 +124,11 @@ const ContestDetail = () => {
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
   const isEnded = contest && new Date(contest.end_date) < new Date();
+  const baseVoteAmount = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
+  const voteOptions = useMemo(
+    () => [1, 5, 10, 25, 50, 100].map((multiplier) => baseVoteAmount * multiplier),
+    [baseVoteAmount]
+  );
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
 
   // Group contestants by category
@@ -203,8 +208,18 @@ const ContestDetail = () => {
 
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
-    setVoteQuantity(1);
+    setVoteQuantity(baseVoteAmount);
+    setCustomVoteAmount(String(baseVoteAmount));
     setIsVoteSelectionOpen(true);
+  };
+
+  const handleCustomVoteAmountChange = (value: string) => {
+    setCustomVoteAmount(value);
+    const parsedVotes = Number(value);
+    if (!Number.isFinite(parsedVotes)) return;
+
+    const sanitizedVotes = Math.max(baseVoteAmount, Math.floor(parsedVotes));
+    setVoteQuantity(sanitizedVotes);
   };
 
   const handleProceedToPayment = () => {
@@ -866,11 +881,28 @@ const ContestDetail = () => {
                       key={option}
                       variant={voteQuantity === option ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setVoteQuantity(option)}
+                      onClick={() => {
+                        setVoteQuantity(option);
+                        setCustomVoteAmount(String(option));
+                      }}
                     >
                       {option} {option === 1 ? 'vote' : 'votes'}
                     </Button>
                   ))}
+                </div>
+                <div className="mt-3 space-y-2">
+                  <label className="text-sm font-medium" htmlFor="custom-vote-amount">
+                    Or enter custom votes
+                  </label>
+                  <Input
+                    id="custom-vote-amount"
+                    type="number"
+                    min={baseVoteAmount}
+                    step={1}
+                    value={customVoteAmount}
+                    onChange={(event) => handleCustomVoteAmountChange(event.target.value)}
+                    placeholder={`Minimum ${baseVoteAmount}`}
+                  />
                 </div>
               </div>
 

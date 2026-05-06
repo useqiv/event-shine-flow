@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import { ShareButtons } from '@/components/ui/share-buttons';
@@ -19,8 +20,6 @@ import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { useAuth } from '@/contexts/AuthContext';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
-
-const voteOptions = [1, 5, 10, 25, 50, 100];
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -35,6 +34,7 @@ const PublicContest = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
   const [paymentCurrency, setPaymentCurrency] = useState<string>('');
+  const [customVoteAmount, setCustomVoteAmount] = useState('');
 
   // Fetch contest by slug
   const { data: contest, isLoading: contestLoading } = useQuery({
@@ -87,6 +87,11 @@ const PublicContest = () => {
     ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
     : 'https://www.useqiv.com/og-image.png';
   const totalAmount = contest ? voteQuantity * Number(contest.vote_price) : 0;
+  const baseVoteAmount = Math.max(1, Number(contest?.vote_amount ?? 1));
+  const voteOptions = useMemo(
+    () => [1, 5, 10, 25, 50, 100].map((multiplier) => baseVoteAmount * multiplier),
+    [baseVoteAmount]
+  );
   
   // Calculate converted amount for payment
   const effectivePaymentCurrency = paymentCurrency || contestCurrency;
@@ -102,9 +107,19 @@ const PublicContest = () => {
 
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
-    setVoteQuantity(1);
+    setVoteQuantity(baseVoteAmount);
+    setCustomVoteAmount(String(baseVoteAmount));
     setPaymentCurrency(''); // Reset to contest currency
     setIsVoteSelectionOpen(true);
+  };
+
+  const handleCustomVoteAmountChange = (value: string) => {
+    setCustomVoteAmount(value);
+    const parsedVotes = Number(value);
+    if (!Number.isFinite(parsedVotes)) return;
+
+    const sanitizedVotes = Math.max(baseVoteAmount, Math.floor(parsedVotes));
+    setVoteQuantity(sanitizedVotes);
   };
 
   const handleProceedToPayment = () => {
@@ -444,12 +459,30 @@ const PublicContest = () => {
                 <Button
                   key={option}
                   variant={voteQuantity === option ? 'default' : 'outline'}
-                  onClick={() => setVoteQuantity(option)}
+                  onClick={() => {
+                    setVoteQuantity(option);
+                    setCustomVoteAmount(String(option));
+                  }}
                   style={voteQuantity === option ? { backgroundColor: primaryColor } : undefined}
                 >
                   {option} {option === 1 ? 'Vote' : 'Votes'}
                 </Button>
               ))}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="custom-vote-amount">
+                Or enter custom votes
+              </label>
+              <Input
+                id="custom-vote-amount"
+                type="number"
+                min={baseVoteAmount}
+                step={1}
+                value={customVoteAmount}
+                onChange={(event) => handleCustomVoteAmountChange(event.target.value)}
+                placeholder={`Minimum ${baseVoteAmount}`}
+              />
             </div>
             
             {/* Currency Selection */}
