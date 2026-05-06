@@ -7,13 +7,13 @@ const corsHeaders = {
 };
 
 interface PaymentRequest {
-  type: "vote" | "ticket" | "wallet" | "donation";
+  type: "vote" | "ticket" | "wallet" | "donation" | "form";
   amount: number;
   currency: string;
   email: string;
   phone?: string;
-  name: string;
-  user_id: string;
+  name?: string;
+  user_id?: string;
   // Vote specific
   contest_id?: string;
   contestant_id?: string;
@@ -26,6 +26,8 @@ interface PaymentRequest {
   campaign_id?: string;
   is_anonymous?: boolean;
   donor_message?: string;
+  // Form specific
+  form_id?: string;
   redirect_url?: string;
   // Influencer tracking
   influencer_link_id?: string;
@@ -147,11 +149,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    const requiresUserId = payload.type !== "form";
+
     // Validate required fields (server-side)
-    if (!payload.user_id || !purchaserEmail || !emailRegex.test(purchaserEmail)) {
+    if ((requiresUserId && !payload.user_id) || !purchaserEmail || !emailRegex.test(purchaserEmail)) {
       console.error("Missing/invalid required fields");
       return new Response(
-        JSON.stringify({ error: "Missing or invalid required fields: user_id, email" }),
+        JSON.stringify({ error: requiresUserId ? "Missing or invalid required fields: user_id, email" : "Missing or invalid required fields: email" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -240,7 +244,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Build meta data based on payment type
     const meta: Record<string, any> = {
-      user_id: payload.user_id,
+      user_id: payload.user_id || "",
       type: payload.type,
       // Always include purchaser identity in meta so we can trust it later
       // even if Flutterwave normalizes/overwrites `customer.name`.
@@ -268,6 +272,8 @@ const handler = async (req: Request): Promise<Response> => {
       meta.campaign_id = payload.campaign_id;
       meta.is_anonymous = payload.is_anonymous;
       meta.donor_message = payload.donor_message;
+    } else if (payload.type === "form") {
+      meta.form_id = payload.form_id;
     }
 
     // Use the redirect URL from the client request - this should be the origin where the payment was initiated
@@ -280,6 +286,7 @@ const handler = async (req: Request): Promise<Response> => {
         case "ticket": return "Ticket Purchase";
         case "wallet": return "Wallet Funding";
         case "donation": return "Campaign Donation";
+        case "form": return "Form Submission Payment";
         default: return "Payment";
       }
     };
@@ -290,6 +297,7 @@ const handler = async (req: Request): Promise<Response> => {
         case "ticket": return `Purchase ${payload.ticket_quantity || 1} ticket(s)`;
         case "wallet": return `Fund wallet with ${payload.currency || defaultCurrency} ${payload.amount}`;
         case "donation": return `Donate ${payload.currency || defaultCurrency} ${payload.amount} to campaign`;
+        case "form": return "Payment required to submit form";
         default: return "Payment";
       }
     };
@@ -391,7 +399,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Store pending transaction in database
     // Check if this is a guest user
-    const isGuestUser = String(payload.user_id).startsWith("guest_");
+    const isGuestUser = !payload.user_id || String(payload.user_id).startsWith("guest_");
     
     let walletId: string | null = null;
     
@@ -436,12 +444,14 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    const { error: txError } = await supabase.from("wallet_transactions").insert(txInsertData);
+    if (payload.type !== "form") {
+      const { error: txError } = await supabase.from("wallet_transactions").insert(txInsertData);
 
-    if (txError) {
-      console.log("Transaction insert error (non-critical):", txError.message);
-    } else {
-      console.log("Pending transaction recorded for tx_ref:", tx_ref, isGuestUser ? "(guest)" : "(authenticated)");
+      if (txError) {
+        console.log("Transaction insert error (non-critical):", txError.message);
+      } else {
+        console.log("Pending transaction recorded for tx_ref:", tx_ref, isGuestUser ? "(guest)" : "(authenticated)");
+      }
     }
 
     console.log("Payment initialized successfully, returning link:", data.data.link);

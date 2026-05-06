@@ -132,34 +132,36 @@ const PublicForm = () => {
     try {
       // Get user email for payment
       const email = respondentEmail || 'guest@example.com';
-      const tx_ref = `FORM-${form.id}-${Date.now()}`;
+      const guestUserId = `guest_form_${Date.now()}`;
 
       const { data, error } = await supabase.functions.invoke('process-flutterwave-payment', {
         body: {
+          type: 'form',
           amount: form.payment_amount,
           currency: form.payment_currency,
           email,
           name: respondentName || 'Form Respondent',
-          tx_ref,
+          user_id: guestUserId,
+          form_id: form.id,
           meta: {
             form_id: form.id,
             type: 'form_submission',
           },
-          redirect_url: `${window.location.origin}/payment-callback?type=form&form_id=${form.id}&tx_ref=${tx_ref}`,
+          redirect_url: `${window.location.origin}/payment-callback?type=form&form_id=${form.id}`,
         },
       });
 
       if (error) throw new Error(error.message);
-      if (data?.data?.link) {
+      if (data?.payment_link && data?.tx_ref) {
         // Store pending form data in localStorage
-        localStorage.setItem(`form_pending_${tx_ref}`, JSON.stringify({
+        localStorage.setItem(`form_pending_${data.tx_ref}`, JSON.stringify({
           form_id: form.id,
           respondent_name: respondentName,
           respondent_email: respondentEmail,
           response_data: formData,
           payment_amount: form.payment_amount,
         }));
-        window.location.href = data.data.link;
+        window.location.href = data.payment_link;
       } else {
         throw new Error('Payment link not received');
       }
