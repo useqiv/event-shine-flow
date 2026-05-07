@@ -63,7 +63,7 @@ export const useRevenueTrends = (days: number = 30, currency?: string) => {
           
           tickets?.forEach(ticket => {
             const dateKey = format(new Date(ticket.created_at), 'yyyy-MM-dd');
-            const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? Number((ticket as any).amount_paid);
+            const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? 0;
             ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + Number(baseAmount || 0);
           });
         }
@@ -82,7 +82,7 @@ export const useRevenueTrends = (days: number = 30, currency?: string) => {
         
         votes?.forEach(vote => {
           const dateKey = format(new Date(vote.created_at), 'yyyy-MM-dd');
-          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? Number((vote as any).amount_paid);
+          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? 0;
           votesByDate[dateKey] = (votesByDate[dateKey] || 0) + Number(baseAmount || 0);
         });
       }

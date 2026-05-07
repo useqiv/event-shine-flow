@@ -85,7 +85,7 @@ const ManageCampaigns: React.FC = () => {
 
       const sums: Record<string, number> = {};
       (donations || []).forEach((d: any) => {
-        const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
+        const baseAmount = baseAmountMap.get(d.transaction_id) ?? 0;
         sums[d.campaign_id] = (sums[d.campaign_id] || 0) + Number(baseAmount || 0);
       });
 

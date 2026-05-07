@@ -48,7 +48,7 @@ const TopPerformersWidget = () => {
           if (!revenueMap[v.contest_id]) {
             revenueMap[v.contest_id] = { revenue: 0, votes: 0 };
           }
-          const baseAmount = baseAmountMap.get(v.transaction_id) ?? Number(v.amount_paid);
+          const baseAmount = baseAmountMap.get(v.transaction_id) ?? 0;
           revenueMap[v.contest_id].revenue += Number(baseAmount);
           revenueMap[v.contest_id].votes += v.quantity;
         });
@@ -102,7 +102,7 @@ const TopPerformersWidget = () => {
           if (!revenueMap[t.event_id]) {
             revenueMap[t.event_id] = { revenue: 0, tickets: 0, currency: ticketTypeCurrencyMap[t.ticket_type_id] || 'USD' };
           }
-          const baseAmount = baseAmountMap.get(t.transaction_id) ?? Number(t.amount_paid);
+          const baseAmount = baseAmountMap.get(t.transaction_id) ?? 0;
           revenueMap[t.event_id].revenue += Number(baseAmount);
           revenueMap[t.event_id].tickets += t.quantity;
         });

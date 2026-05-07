@@ -392,14 +392,16 @@ export const useOrganizationStats = () => {
         // Get tickets with their ticket_type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency), transaction_id')
+          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency, price), transaction_id')
           .in('event_id', eventIds);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
         
         tickets?.forEach((t: any) => {
           const currency = t.ticket_types?.currency || 'USD';
-          const baseAmount = baseAmountMap.get(t.transaction_id) ?? Number(t.amount_paid);
+          const pricePerTicket = Number(t.ticket_types?.price) || 0;
+          const ticketPriceAmount = pricePerTicket > 0 ? pricePerTicket * Number(t.quantity || 0) : undefined;
+          const baseAmount = baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0;
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -434,8 +436,7 @@ export const useOrganizationStats = () => {
         const { data: voteOptions } = await supabase
           .from('contest_vote_options')
           .select('contest_id, vote_quantity, price')
-          .in('contest_id', contestIds)
-          .eq('is_active', true);
+          .in('contest_id', contestIds);
 
         const voteOptionPriceMap = new Map<string, number>();
         voteOptions?.forEach((option: any) => {
@@ -445,7 +446,7 @@ export const useOrganizationStats = () => {
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
           const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
-          const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? Number(v.amount_paid);
+          const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0;
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
@@ -476,7 +477,7 @@ export const useOrganizationStats = () => {
         
         donations?.forEach((d: any) => {
           const currency = d.currency || 'USD';
-          const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
+          const baseAmount = baseAmountMap.get(d.transaction_id) ?? 0;
           campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });

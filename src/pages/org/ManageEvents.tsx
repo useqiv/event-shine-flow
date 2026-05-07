@@ -70,7 +70,7 @@ const ManageEvents = () => {
         if (!revenues[ticket.event_id]) {
           revenues[ticket.event_id] = { revenue: 0, ticketsSold: 0, currency: ticketTypeCurrencyMap[ticket.ticket_type_id] || 'USD' };
         }
-        const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? Number(ticket.amount_paid);
+        const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? 0;
         revenues[ticket.event_id].revenue += Number(baseAmount);
         revenues[ticket.event_id].ticketsSold += ticket.quantity;
       });

@@ -134,7 +134,7 @@ const OrgWallet = () => {
         ...tickets.map(t => ({
           category: 'Ticket Sale',
           item: t.events?.title || 'Unknown Event',
-          amount: ticketBaseAmountMap.get((t as any).transaction_id) ?? t.amount_paid,
+          amount: ticketBaseAmountMap.get((t as any).transaction_id) ?? 0,
           currency: t.ticket_types?.currency || 'USD',
           date: formatDateForExport(t.created_at),
           details: `${t.quantity}x ${t.ticket_types?.name || 'Standard'}`
@@ -143,7 +143,7 @@ const OrgWallet = () => {
         ...votes.map(v => ({
           category: 'Vote',
           item: v.contests?.title || 'Unknown Contest',
-          amount: voteBaseAmountMap.get((v as any).transaction_id) ?? v.amount_paid,
+          amount: voteBaseAmountMap.get((v as any).transaction_id) ?? 0,
           currency: v.contests?.vote_currency || 'NGN',
           date: formatDateForExport(v.created_at),
           details: `${v.quantity} votes for ${v.contestants?.name || 'Unknown'}`

@@ -58,7 +58,7 @@ const ManageContests = () => {
         if (!revenues[vote.contest_id]) {
           revenues[vote.contest_id] = { revenue: 0, totalVotes: 0 };
         }
-        const baseAmount = baseAmountMap.get(vote.transaction_id) ?? Number(vote.amount_paid);
+        const baseAmount = baseAmountMap.get(vote.transaction_id) ?? 0;
         revenues[vote.contest_id].revenue += Number(baseAmount);
         revenues[vote.contest_id].totalVotes += vote.quantity;
       });

@@ -90,8 +90,7 @@ const ContestAnalytics = () => {
         const { data: voteOptions } = await supabase
           .from('contest_vote_options')
           .select('vote_quantity, price')
-          .eq('contest_id', id)
-          .eq('is_active', true);
+          .eq('contest_id', id);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(
           votes?.map((v: any) => v.transaction_id) || []
@@ -105,7 +104,7 @@ const ContestAnalytics = () => {
         const totalRevenue =
           votes?.reduce((sum, v: any) => {
             const optionPrice = voteOptionPriceMap.get(Number(v.quantity));
-            const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? Number(v.amount_paid);
+            const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0;
             return sum + Number(baseAmount || 0);
           }, 0) || 0;
         const totalVotes = votes?.reduce((sum, v) => sum + v.quantity, 0) || 0;
@@ -136,7 +135,7 @@ const ContestAnalytics = () => {
 
         votes?.forEach(vote => {
           const optionPrice = voteOptionPriceMap.get(Number((vote as any).quantity));
-          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? optionPrice ?? Number(vote.amount_paid);
+          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? optionPrice ?? 0;
           const date = format(new Date(vote.created_at), 'yyyy-MM-dd');
           if (dailyMap.has(date)) {
             const current = dailyMap.get(date)!;

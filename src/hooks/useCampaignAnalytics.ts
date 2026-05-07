@@ -71,7 +71,7 @@ export const useCampaignDonationTrends = (campaignId: string, days: number = 30)
       
       (data || []).forEach(donation => {
         const date = new Date(donation.created_at).toLocaleDateString('en-CA');
-        const baseAmount = baseAmountMap.get(donation.transaction_id) ?? Number(donation.amount);
+        const baseAmount = baseAmountMap.get(donation.transaction_id) ?? 0;
         const existing = trendMap.get(date) || { donations: 0, amount: 0 };
         trendMap.set(date, {
           donations: existing.donations + 1,
@@ -119,7 +119,7 @@ export const useCampaignDonorStats = (campaignId: string) => {
       const donorMap = new Map<string, { total: number; count: number; firstDonation: string }>();
       
       (donations || []).forEach(d => {
-        const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
+        const baseAmount = baseAmountMap.get(d.transaction_id) ?? 0;
         const existing = donorMap.get(d.donor_id);
         if (existing) {
           donorMap.set(d.donor_id, {
@@ -147,7 +147,7 @@ export const useCampaignDonorStats = (campaignId: string) => {
       const totalDonationsAmount = donors.reduce((sum, d) => sum + d.total, 0);
       
       // Donation size distribution
-      const amounts = (donations || []).map(d => baseAmountMap.get(d.transaction_id) ?? Number(d.amount));
+      const amounts = (donations || []).map(d => baseAmountMap.get(d.transaction_id) ?? 0);
       const distribution = {
         small: amounts.filter(a => a < 5000).length,
         medium: amounts.filter(a => a >= 5000 && a < 20000).length,
