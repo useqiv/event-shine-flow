@@ -600,6 +600,215 @@ export const generateDonationReceiptPdf = (donation: {
 };
 
 /**
+ * Generate a contest report PDF (admin).
+ * Note: This is a summary-style report meant for quick downloads.
+ */
+export const generateContestReportPdf = (input: {
+  contestTitle: string;
+  contestCategory?: string | null;
+  organizationName?: string | null;
+  organizationEmail?: string | null;
+  statusLabel: string;
+  startDate: string;
+  endDate: string;
+  currency: string;
+  votePrice?: number | null;
+  totalVotes: number;
+  totalRevenue: number;
+  commissionRate: number;
+  commissionAmount: number;
+  netRevenue: number;
+  topContestants: Array<{ name: string; votes: number; revenue: number }>;
+}) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: input.currency || 'NGN',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const rows = input.topContestants
+    .map(
+      (c, idx) => `
+    <tr>
+      <td style="padding: 10px 8px; border: 1px solid #e5e7eb;">${idx + 1}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e5e7eb;">${escapeHtml(c.name)}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e5e7eb; text-align: right;">${Number(c.votes || 0).toLocaleString()}</td>
+      <td style="padding: 10px 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${escapeHtml(formatCurrency(c.revenue || 0))}</td>
+    </tr>
+  `
+    )
+    .join('');
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Contest Report - ${escapeHtml(input.contestTitle)}</title>
+      <style>
+        @page { size: portrait; margin: 18mm; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          padding: 30px;
+          color: #111827;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 28px;
+          padding-bottom: 16px;
+          border-bottom: 3px solid #2563eb;
+        }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; }
+        .header .sub { margin-top: 8px; color: #6b7280; font-size: 13px; }
+        .pill {
+          display: inline-block;
+          margin-top: 10px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-weight: 700;
+          font-size: 12px;
+        }
+        .grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin: 20px 0 26px 0;
+        }
+        .card {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 10px;
+          padding: 14px 16px;
+        }
+        .card h3 {
+          margin: 0 0 6px 0;
+          font-size: 11px;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+        }
+        .card .val { font-size: 18px; font-weight: 800; color: #0f172a; }
+        .card .val.negative { color: #dc2626; }
+        .card .val.positive { color: #16a34a; }
+        .section-title {
+          font-size: 14px;
+          font-weight: 800;
+          color: #374151;
+          margin: 20px 0 10px 0;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .kv {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px 18px;
+          font-size: 13px;
+          color: #111827;
+        }
+        .kv .k { color: #6b7280; }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+          margin-top: 10px;
+        }
+        th {
+          background: #1d4ed8;
+          color: white;
+          padding: 10px 8px;
+          text-align: left;
+          font-weight: 700;
+        }
+        th:nth-child(3), th:nth-child(4) { text-align: right; }
+        .footer {
+          margin-top: 26px;
+          padding-top: 14px;
+          border-top: 1px solid #e5e7eb;
+          text-align: center;
+          color: #9ca3af;
+          font-size: 11px;
+        }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Contest Report</h1>
+        <div class="sub">${escapeHtml(input.contestTitle)}${input.contestCategory ? ` • ${escapeHtml(input.contestCategory)}` : ''}</div>
+        <div class="pill">${escapeHtml(input.statusLabel)}</div>
+        <div class="sub">Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+      </div>
+
+      <div class="kv">
+        <div><span class="k">Organization</span><br />${escapeHtml(input.organizationName || 'N/A')}</div>
+        <div><span class="k">Email</span><br />${escapeHtml(input.organizationEmail || 'N/A')}</div>
+        <div><span class="k">Start date</span><br />${escapeHtml(input.startDate)}</div>
+        <div><span class="k">End date</span><br />${escapeHtml(input.endDate)}</div>
+        <div><span class="k">Vote price</span><br />${escapeHtml(input.votePrice != null ? formatCurrency(Number(input.votePrice) || 0) : 'N/A')}</div>
+        <div><span class="k">Currency</span><br />${escapeHtml(input.currency || 'NGN')}</div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Total Votes</h3>
+          <div class="val">${Number(input.totalVotes || 0).toLocaleString()}</div>
+        </div>
+        <div class="card">
+          <h3>Total Revenue</h3>
+          <div class="val">${escapeHtml(formatCurrency(input.totalRevenue || 0))}</div>
+        </div>
+        <div class="card">
+          <h3>Commission (${Number(input.commissionRate || 0).toFixed(2)}%)</h3>
+          <div class="val negative">${escapeHtml(formatCurrency(input.commissionAmount || 0))}</div>
+        </div>
+        <div class="card">
+          <h3>Net Revenue</h3>
+          <div class="val positive">${escapeHtml(formatCurrency(input.netRevenue || 0))}</div>
+        </div>
+      </div>
+
+      <div class="section-title">Top Contestants</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Contestant</th>
+            <th style="width: 120px;">Votes</th>
+            <th style="width: 160px;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || `<tr><td colspan="4" style="padding: 10px 8px; border: 1px solid #e5e7eb; color: #6b7280; text-align: center;">No contestants found</td></tr>`}
+        </tbody>
+      </table>
+
+      <div class="footer">
+        Useqiv Admin • Confidential
+      </div>
+    </body>
+    </html>
+  `;
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+  }
+};
+
+/**
  * Export revenue analytics data as a PDF report
  */
 interface RevenueDataPoint {

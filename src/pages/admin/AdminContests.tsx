@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,23 +19,31 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAdminContests } from '@/hooks/useAdminData';
-import { Search, MoreHorizontal, Eye, Pause, Play, BarChart3 } from 'lucide-react';
+import { Search, MoreHorizontal, Eye, Pause, Play, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import { generateContestReportPdf } from '@/lib/exportPdf';
 
 const AdminContests: React.FC = () => {
   const { data: contests, isLoading } = useAdminContests();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [generatingContestReport, setGeneratingContestReport] = useState<string | null>(null);
 
-  const filteredContests = contests?.filter(contest => 
-    contest.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contest.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredContests = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return (
+      contests?.filter(
+        (contest) =>
+          contest.title?.toLowerCase().includes(q) || contest.category?.toLowerCase().includes(q)
+      ) || []
+    );
+  }, [contests, searchQuery]);
 
   const toggleContestStatus = async (contestId: string, currentStatus: boolean) => {
     const { error } = await supabase
@@ -51,12 +59,129 @@ const AdminContests: React.FC = () => {
     }
   };
 
+  const getContestStatusLabel = (contest: any) => {
+    const now = new Date();
+    const startDate = new Date(contest.start_date);
+    const endDate = new Date(contest.end_date);
+
+    if (!contest.is_active) return 'Paused';
+    if (now < startDate) return 'Upcoming';
+    if (now > endDate) return 'Ended';
+    return 'Active';
+  };
+
   const formatCurrency = (amount: number, currency: string = 'NGN') => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const handleDownloadContestReportPdf = async (contestId: string) => {
+    setGeneratingContestReport(contestId);
+    try {
+      const { data: contest, error: contestError } = await supabase
+        .from('contests')
+        .select('id, title, category, start_date, end_date, is_active, vote_price, vote_currency, organization_id, commission_rate')
+        .eq('id', contestId)
+        .single();
+
+      if (contestError) throw contestError;
+      if (!contest) throw new Error('Contest not found');
+
+      const { data: org } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', contest.organization_id)
+        .maybeSingle();
+
+      // Fetch votes (fee-free base amount when available)
+      const { data: votes, error: votesError } = await supabase
+        .from('votes')
+        .select('quantity, amount_paid, transaction_id')
+        .eq('contest_id', contest.id);
+      if (votesError) throw votesError;
+
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        votes?.map((v: any) => v.transaction_id) || []
+      );
+
+      const totalVotes = (votes || []).reduce((sum: number, v: any) => sum + (Number(v.quantity) || 0), 0);
+      const totalRevenue = (votes || []).reduce((sum: number, v: any) => {
+        const base = baseAmountMap.get(v.transaction_id) ?? v.amount_paid;
+        return sum + (Number(base) || 0);
+      }, 0);
+
+      // Commission rate: contest override -> org approval -> platform default
+      let commissionRate =
+        contest.commission_rate != null ? Number(contest.commission_rate) || 0 : NaN;
+
+      if (!Number.isFinite(commissionRate)) {
+        const { data: approval } = await supabase
+          .from('organization_approvals')
+          .select('vote_commission_rate, special_commission_rate')
+          .eq('organization_id', contest.organization_id)
+          .maybeSingle();
+        commissionRate = Number(approval?.vote_commission_rate ?? approval?.special_commission_rate);
+      }
+
+      if (!Number.isFinite(commissionRate)) {
+        const { data: commissionSettings } = await supabase
+          .from('platform_settings')
+          .select('setting_key, setting_value')
+          .eq('category', 'commission');
+        commissionRate =
+          Number(
+            commissionSettings?.find((s: any) => s.setting_key === 'platform_commission_percentage')
+              ?.setting_value
+          ) || 10;
+      }
+
+      const commissionAmount = totalRevenue * (commissionRate / 100);
+      const netRevenue = totalRevenue - commissionAmount;
+
+      // Top contestants
+      const { data: contestants, error: contestantsError } = await supabase
+        .from('contestants')
+        .select('name, vote_count')
+        .eq('contest_id', contest.id)
+        .order('vote_count', { ascending: false })
+        .limit(10);
+      if (contestantsError) throw contestantsError;
+
+      const votePrice = Number(contest.vote_price) || 0;
+      const topContestants =
+        contestants?.map((c: any) => ({
+          name: c.name || 'Unknown',
+          votes: Number(c.vote_count) || 0,
+          revenue: (Number(c.vote_count) || 0) * votePrice,
+        })) || [];
+
+      generateContestReportPdf({
+        contestTitle: contest.title || 'Untitled Contest',
+        contestCategory: contest.category,
+        organizationName: org?.full_name || null,
+        organizationEmail: org?.email || null,
+        statusLabel: getContestStatusLabel(contest),
+        startDate: format(new Date(contest.start_date), 'MMM d, yyyy'),
+        endDate: format(new Date(contest.end_date), 'MMM d, yyyy'),
+        currency: contest.vote_currency || 'NGN',
+        votePrice,
+        totalVotes,
+        totalRevenue,
+        commissionRate,
+        commissionAmount,
+        netRevenue,
+        topContestants,
+      });
+      toast.success('Contest report ready for download');
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Failed to generate contest report');
+    } finally {
+      setGeneratingContestReport(null);
+    }
   };
 
   const getStatusBadge = (contest: any) => {
@@ -212,6 +337,13 @@ const AdminContests: React.FC = () => {
                                 View Details
                               </Link>
                             </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadContestReportPdf(contest.id)}
+                            disabled={generatingContestReport === contest.id}
+                          >
+                            <FileText className="mr-2 h-4 w-4" />
+                            {generatingContestReport === contest.id ? 'Generating PDF...' : 'Download PDF report'}
+                          </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toggleContestStatus(contest.id, contest.is_active)}>
                               {contest.is_active ? (
                                 <>
