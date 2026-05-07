@@ -408,7 +408,11 @@ export const useOrganizationStats = () => {
               ? netAmount + platformCommission
               : 0;
           const recordedAmount = Number(t.amount_paid) || 0;
-          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0);
+          // Prefer canonical product pricing first so convenience/payment fees are never counted as revenue.
+          const baseAmount =
+            (ticketPriceAmount ?? settledBaseAmount) ||
+            recordedAmount ||
+            (baseAmountMap.get(t.transaction_id) ?? 0);
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -460,7 +464,11 @@ export const useOrganizationStats = () => {
               ? netAmount + platformCommission
               : 0;
           const recordedAmount = Number(v.amount_paid) || 0;
-          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0);
+          // Prefer configured vote package price first so fees do not affect revenue totals.
+          const baseAmount =
+            (optionPrice ?? settledBaseAmount) ||
+            recordedAmount ||
+            (baseAmountMap.get(v.transaction_id) ?? 0);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
