@@ -177,12 +177,7 @@ const ContestantDetail = () => {
     : '';
   const ogImage = contestantImageUrl;
   const contestantShareUrl = contest && contestantPageSlug
-    ? `${getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestantPageSlug, true)}?${new URLSearchParams({
-        name: contestant?.name || '',
-        contest: contest?.title || '',
-        description: `Vote and support ${contestant?.name || ''} on ${contest?.title || ''}`.trim(),
-        ...(contestantImageUrl ? { image: contestantImageUrl } : {}),
-      }).toString()}`
+    ? getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestantPageSlug, true)
     : contestantUrl;
   
   // Back link path - use short URL if accessed via slug route
