@@ -136,16 +136,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   const location = useLocation();
   
-  if (loading || profileLoading || roleLoading || scannerCheckLoading) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
+  // If MFA is pending, send user directly to auth verification flow.
+  // Do this before profile/role loading checks to avoid loader deadlocks.
   if (mfaState.required && location.pathname !== "/auth") {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (profileLoading || roleLoading || scannerCheckLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
   if (profile && !profile.account_type_selected && location.pathname !== "/account-setup") {
@@ -212,13 +218,17 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   
-  if (loading || (user && (roleLoading || scannerCheckLoading))) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
   if (user) {
     if (mfaState.required) {
       return <>{children}</>;
+    }
+
+    if (roleLoading || scannerCheckLoading) {
+      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
 
     // Scanner-only staff always go to /scanner
