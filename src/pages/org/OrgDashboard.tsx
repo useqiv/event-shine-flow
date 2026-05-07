@@ -18,6 +18,7 @@ import GoalTrackingWidget from '@/components/org/GoalTrackingWidget';
 import PayoutStatusAlert from '@/components/org/PayoutStatusAlert';
 import RevenueForecastWidget from '@/components/org/RevenueForecastWidget';
 import ExportRevenueButton from '@/components/org/ExportRevenueButton';
+import OrganizationPinGate from '@/components/org/OrganizationPinGate';
 import { formatCurrency, currencies } from '@/components/ui/currency-selector';
 import { 
   Wallet, 
@@ -226,8 +227,9 @@ const OrgDashboard = () => {
   }
 
   return (
-    <OrganizationLayout>
-      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
+    <OrganizationPinGate>
+      <OrganizationLayout>
+        <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
         {/* Welcome Section */}
         <div className="flex flex-col gap-3 sm:gap-4">
           <div>
@@ -610,8 +612,9 @@ const OrgDashboard = () => {
             </CardContent>
           </Card>
         )}
-      </div>
-    </OrganizationLayout>
+        </div>
+      </OrganizationLayout>
+    </OrganizationPinGate>
   );
 };
 

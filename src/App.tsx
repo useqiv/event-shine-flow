@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
 import { isAdminVerificationComplete } from "@/components/admin/AdminMfaGate";
+import { isOrganizationPinVerificationComplete } from "@/components/org/OrganizationPinGate";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
 import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
@@ -160,6 +161,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = role === 'admin';
   const isInfluencer = (role as string) === 'influencer';
   const isAdminRoute = location.pathname.startsWith('/admin/');
+  const isOrganizationRoute = location.pathname.startsWith('/org/');
 
   // Admin must complete PIN verification before accessing ANY route.
   // Until verified, force them to /admin/dashboard where the PIN gate is rendered.
@@ -170,6 +172,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   // Once verified, admin is locked to /admin/* routes
   if (isAdmin && isAdminVerificationComplete() && !isAdminRoute) {
     return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Organization must complete PIN verification before accessing /org/* routes.
+  // Until verified, force them to /org/dashboard where the gate is rendered.
+  if (isOrganization && isOrganizationRoute && !isOrganizationPinVerificationComplete() && location.pathname !== '/org/dashboard') {
+    return <Navigate to="/org/dashboard" replace />;
   }
   
   if (isOrganization && location.pathname === '/dashboard') {

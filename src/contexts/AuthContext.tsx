@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError, Factor } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { resetAdminVerification } from '@/components/admin/AdminMfaGate';
+import { resetOrganizationPinVerification } from '@/components/org/OrganizationPinGate';
 
 interface MfaState {
   required: boolean;
@@ -73,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear MFA state on sign out
         if (event === 'SIGNED_OUT') {
           setMfaState({ required: false, factorId: null });
+          resetAdminVerification();
+          resetOrganizationPinVerification();
           return;
         }
 
@@ -194,6 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setMfaState({ required: false, factorId: null });
+      resetAdminVerification();
+      resetOrganizationPinVerification();
       
       // Sign out from Supabase (this clears tokens from storage)
       const { error } = await supabase.auth.signOut({ scope: 'global' });
@@ -207,6 +213,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setMfaState({ required: false, factorId: null });
+      resetAdminVerification();
+      resetOrganizationPinVerification();
     }
   };
 
