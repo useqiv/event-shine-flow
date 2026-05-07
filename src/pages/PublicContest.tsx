@@ -33,6 +33,7 @@ const PublicContest = () => {
   // Voting state
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
   const [voteQuantity, setVoteQuantity] = useState(1);
+  const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,6 +140,7 @@ const PublicContest = () => {
   const handleVoteClick = (contestant: any) => {
     setSelectedContestant(contestant);
     setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+    setVoteQuantityDraft('');
     setPaymentCurrency(''); // Reset to contest currency
     setIsVoteSelectionOpen(true);
   };
@@ -501,6 +503,7 @@ const PublicContest = () => {
                   variant={voteQuantity === option.vote_quantity ? 'default' : 'outline'}
                   onClick={() => {
                     setVoteQuantity(option.vote_quantity);
+                    setVoteQuantityDraft(String(option.vote_quantity));
                   }}
                   style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
                 >
@@ -518,15 +521,18 @@ const PublicContest = () => {
               <Input
                 id="custom-vote-quantity-public"
                 type="number"
-                min={minimumVoteQuantity}
+                min={1}
                 step={1}
-                value={voteQuantity}
+                value={voteQuantityDraft}
+                placeholder={String(minimumVoteQuantity)}
                 onChange={(event) => {
-                  const rawValue = Number(event.target.value);
-                  if (!Number.isFinite(rawValue)) return;
-                  const parsed = Math.floor(rawValue);
-                  if (parsed <= 0) return;
-                  setVoteQuantity(Math.max(parsed, minimumVoteQuantity));
+                  const next = event.target.value;
+                  setVoteQuantityDraft(next);
+
+                  if (!next) return;
+                  const parsed = Math.floor(Number(next));
+                  if (!Number.isFinite(parsed) || parsed <= 0) return;
+                  setVoteQuantity(parsed);
                 }}
               />
             </div>

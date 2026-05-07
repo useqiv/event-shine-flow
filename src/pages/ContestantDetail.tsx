@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { useContest, useContestants, useVote, useContestVoteOptions } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
@@ -86,6 +87,7 @@ const ContestantDetail = () => {
   const { data: contestants, isLoading: contestantsLoading } = useContestants(contestId || '');
   
   const [voteQuantity, setVoteQuantity] = useState(1);
+  const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [showVotePulse, setShowVotePulse] = useState(false);
@@ -134,10 +136,12 @@ const ContestantDetail = () => {
   const isVotingLocked = isEnded || hasNotStarted;
   const normalizedVoteOptions = useMemo(() => {
     if (contestVoteOptions.length > 0) {
-      return contestVoteOptions.map((option) => ({
-        vote_quantity: Number(option.vote_quantity),
-        price: Number(option.price),
-      }));
+      return contestVoteOptions
+        .map((option) => ({
+          vote_quantity: Number(option.vote_quantity),
+          price: Number(option.price),
+        }))
+        .sort((a, b) => a.vote_quantity - b.vote_quantity);
     }
     const fallbackQuantity = Math.max(1, Number((contest as any)?.vote_amount ?? 1));
     return [{ vote_quantity: fallbackQuantity, price: Number(contest?.vote_price ?? 1) * fallbackQuantity }];
@@ -147,7 +151,19 @@ const ContestantDetail = () => {
       normalizedVoteOptions.find((option) => option.vote_quantity === voteQuantity) || normalizedVoteOptions[0],
     [normalizedVoteOptions, voteQuantity]
   );
-  const totalAmount = selectedOption?.price || 0;
+  const minimumVoteQuantity = normalizedVoteOptions[0]?.vote_quantity || 1;
+  const fallbackUnitPrice = useMemo(() => {
+    if (contest?.vote_price) {
+      return Number(contest.vote_price);
+    }
+
+    const baseOption = normalizedVoteOptions[0];
+    if (!baseOption || !baseOption.vote_quantity) return 0;
+    return Number(baseOption.price) / Number(baseOption.vote_quantity);
+  }, [contest?.vote_price, normalizedVoteOptions]);
+  const totalAmount = selectedOption?.vote_quantity === voteQuantity
+    ? selectedOption.price
+    : voteQuantity * fallbackUnitPrice;
   const contestCurrency = contest?.vote_currency || 'NGN';
 
   // Generate URLs - use custom_slug if available
@@ -198,16 +214,34 @@ const ContestantDetail = () => {
       return;
     }
     setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+    setVoteQuantityDraft('');
     setIsVoteSelectionOpen(true);
   };
 
   const handleProceedToPayment = () => {
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsVoteSelectionOpen(false);
     setIsPaymentModalOpen(true);
   };
 
   const handleWalletPayment = async () => {
     if (!contestant || !contest || !user) return;
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     
     const balance = currencyBalances?.find(b => b.currency === contestCurrency);
     const walletBalance = balance?.balance || 0;
@@ -855,13 +889,41 @@ const ContestantDetail = () => {
               <Button
                 key={option.vote_quantity}
                 variant={voteQuantity === option.vote_quantity ? "default" : "outline"}
-                onClick={() => setVoteQuantity(option.vote_quantity)}
+                onClick={() => {
+                  setVoteQuantity(option.vote_quantity);
+                  setVoteQuantityDraft(String(option.vote_quantity));
+                }}
                 className="h-12 sm:h-16 text-base sm:text-lg font-semibold"
                 style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
               >
                 {option.vote_quantity}
               </Button>
             ))}
+          </div>
+          <div className="space-y-2 pb-3 sm:pb-4">
+            <label className="text-sm font-medium" htmlFor="custom-vote-quantity-contestant">
+              Custom votes (minimum {minimumVoteQuantity})
+            </label>
+            <p className="text-xs text-muted-foreground">
+              You can enter any number of votes, but it must be at least {minimumVoteQuantity}.
+            </p>
+            <Input
+              id="custom-vote-quantity-contestant"
+              type="number"
+              min={1}
+              step={1}
+              value={voteQuantityDraft}
+              placeholder={String(minimumVoteQuantity)}
+              onChange={(event) => {
+                const next = event.target.value;
+                setVoteQuantityDraft(next);
+
+                if (!next) return;
+                const parsed = Math.floor(Number(next));
+                if (!Number.isFinite(parsed) || parsed <= 0) return;
+                setVoteQuantity(parsed);
+              }}
+            />
           </div>
           
           <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
@@ -880,7 +942,7 @@ const ContestantDetail = () => {
                   onClick={handleWalletPayment} 
                   className="flex-1 h-10 sm:h-11 text-sm"
                   variant="outline"
-                  disabled={vote.isPending}
+                  disabled={vote.isPending || voteQuantity < minimumVoteQuantity}
                 >
                   <Wallet className="mr-1.5 sm:mr-2 h-4 w-4" />
                   Wallet
@@ -890,6 +952,7 @@ const ContestantDetail = () => {
                 onClick={handleProceedToPayment} 
                 className="flex-1 h-10 sm:h-11 text-sm"
                 style={{ backgroundColor: primaryColor, color: 'white' }}
+                disabled={voteQuantity < minimumVoteQuantity}
               >
                 {user ? 'Pay with Card' : 'Proceed to Pay'}
               </Button>
