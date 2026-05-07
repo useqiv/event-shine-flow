@@ -26,7 +26,10 @@ const PaymentCallback = () => {
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   
-  const paymentStatus = searchParams.get('payment_status') || searchParams.get('status');
+  const rawPaymentStatus = searchParams.get('payment_status') || searchParams.get('status');
+  // Normalize because some providers use different casing.
+  // (Flutterwave commonly returns `successful` or `completed`.)
+  const paymentStatus = rawPaymentStatus ? rawPaymentStatus.toLowerCase() : null;
   const txRef = searchParams.get('tx_ref');
 
   const isVote = txRef?.startsWith('vote_');
@@ -35,7 +38,7 @@ const PaymentCallback = () => {
 
   useEffect(() => {
     // Determine status from URL params
-    if (paymentStatus === 'successful' || paymentStatus === 'success') {
+    if (paymentStatus === 'successful' || paymentStatus === 'success' || paymentStatus === 'completed') {
       setStatus('success');
       // Trigger confetti
       confetti({

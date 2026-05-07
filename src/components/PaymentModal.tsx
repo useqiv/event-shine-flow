@@ -280,16 +280,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <span>-{formatCurrency(discountAmount, effectiveCurrency)}</span>
               </div>
             )}
-            {feeBreakdown.paymentMethodFee > 0 && (
+            {feeBreakdown.paymentMethodFee + feeBreakdown.convenienceFee > 0 && (
               <div className="flex justify-between text-sm text-muted-foreground">
-                <span>{paymentMethod === 'flutterwave' ? 'Processing Fee' : 'Crypto Fee'}</span>
-                <span>+{formatCurrency(feeBreakdown.paymentMethodFee, effectiveCurrency)}</span>
-              </div>
-            )}
-            {feeBreakdown.convenienceFee > 0 && (
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Convenience Fee</span>
-                <span>+{formatCurrency(feeBreakdown.convenienceFee, effectiveCurrency)}</span>
+                <span>Processing Fee</span>
+                <span>+{formatCurrency(feeBreakdown.paymentMethodFee + feeBreakdown.convenienceFee, effectiveCurrency)}</span>
               </div>
             )}
             <div className="flex justify-between pt-2 border-t">
