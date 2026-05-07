@@ -48,9 +48,13 @@ export const ShareCardGenerator: React.FC<ShareCardGeneratorProps> = ({
     let logoCleanup: (() => void) | null = null;
 
     try {
-      const canvas = canvasRef.current;
+      // Use the hidden canvas if available, otherwise create an offscreen canvas.
+      // This avoids timing issues where the dialog renders before the ref is set.
+      const canvas =
+        canvasRef.current ??
+        (typeof document !== 'undefined' ? document.createElement('canvas') : null);
       if (!canvas) {
-        toast.error('Unable to generate card (canvas not ready). Please try again.');
+        toast.error('Unable to generate card (canvas unavailable). Please try again.');
         return;
       }
 
