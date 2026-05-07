@@ -55,6 +55,18 @@ const TwoFactorEnforcement: React.FC<TwoFactorEnforcementProps> = ({
   const handleEnroll = async () => {
     setIsEnrolling(true);
     try {
+      // Clean up abandoned unverified factors to avoid enroll conflicts.
+      const { data: factorsData, error: listError } = await supabase.auth.mfa.listFactors();
+      if (listError) {
+        toast.error(listError.message);
+        return;
+      }
+
+      const unverifiedTotpFactors = (factorsData?.totp || []).filter((factor) => factor.status === 'unverified');
+      for (const factor of unverifiedTotpFactors) {
+        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+      }
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         friendlyName: 'Useqiv Authenticator',
@@ -108,6 +120,7 @@ const TwoFactorEnforcement: React.FC<TwoFactorEnforcementProps> = ({
 
       setIs2FAEnabled(true);
       setStep('complete');
+      setVerifyCode('');
       toast.success('Two-factor authentication enabled successfully!');
       onComplete?.();
     } catch (error: any) {

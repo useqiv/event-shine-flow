@@ -129,7 +129,7 @@ import ScannerEventPage from "./pages/scanner/ScannerEventPage";
 import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, mfaState } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
@@ -140,6 +140,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (mfaState.required && location.pathname !== "/auth") {
     return <Navigate to="/auth" replace />;
   }
   
@@ -196,7 +200,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, mfaState } = useAuth();
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   
@@ -205,6 +209,10 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (user) {
+    if (mfaState.required) {
+      return <>{children}</>;
+    }
+
     // Scanner-only staff always go to /scanner
     if (isScannerOnly) return <Navigate to="/scanner" replace />;
     
