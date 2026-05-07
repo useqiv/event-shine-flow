@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 // Types
 export interface OrganizationSettings {
@@ -391,12 +392,15 @@ export const useOrganizationStats = () => {
         // Get tickets with their ticket_type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency)')
+          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency), transaction_id')
           .in('event_id', eventIds);
+
+        const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
         
         tickets?.forEach((t: any) => {
           const currency = t.ticket_types?.currency || 'USD';
-          ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(t.amount_paid);
+          const baseAmount = baseAmountMap.get(t.transaction_id) ?? Number(t.amount_paid);
+          ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
       }
@@ -423,12 +427,15 @@ export const useOrganizationStats = () => {
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, quantity, contest_id')
+          .select('amount_paid, quantity, contest_id, transaction_id')
           .in('contest_id', contestIds);
+
+        const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
         
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
-          voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(v.amount_paid);
+          const baseAmount = baseAmountMap.get(v.transaction_id) ?? Number(v.amount_paid);
+          voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
       }
@@ -1213,12 +1220,14 @@ export const useEventTickets = (eventId: string) => {
       // Fetch tickets with ticket_types
       const { data: tickets, error } = await supabase
         .from('tickets')
-        .select('*, ticket_types(name, price)')
+        .select('*, ticket_types(name, price), transaction_id')
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       if (!tickets || tickets.length === 0) return [];
+
+      const baseAmountMap = await getBaseAmountsByTransactionId(tickets.map((t: any) => t.transaction_id));
 
       // Fetch profiles for all user_ids
       const userIds = [...new Set(tickets.map(t => t.user_id))];
@@ -1234,6 +1243,7 @@ export const useEventTickets = (eventId: string) => {
         const profile = profileMap.get(ticket.user_id);
         return {
           ...ticket,
+          base_amount: baseAmountMap.get((ticket as any).transaction_id) ?? null,
           profiles: {
             full_name: ticket.guest_name || profile?.full_name || null,
             email: ticket.guest_email || profile?.email || null,

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { subDays, format } from 'date-fns';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 interface DailyRevenue {
   date: string;
@@ -54,13 +55,16 @@ export const useRevenueTrends = (days: number = 30, currency?: string) => {
         if (filteredTicketTypeIds && filteredTicketTypeIds.length > 0) {
           const { data: tickets } = await supabase
             .from('tickets')
-            .select('amount_paid, created_at, ticket_type_id')
+            .select('amount_paid, created_at, ticket_type_id, transaction_id')
             .in('ticket_type_id', filteredTicketTypeIds)
             .gte('created_at', startDate.toISOString());
+
+          const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
           
           tickets?.forEach(ticket => {
             const dateKey = format(new Date(ticket.created_at), 'yyyy-MM-dd');
-            ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + Number(ticket.amount_paid);
+            const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? Number((ticket as any).amount_paid);
+            ticketsByDate[dateKey] = (ticketsByDate[dateKey] || 0) + Number(baseAmount || 0);
           });
         }
       }
@@ -70,13 +74,16 @@ export const useRevenueTrends = (days: number = 30, currency?: string) => {
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, created_at')
+          .select('amount_paid, created_at, transaction_id')
           .in('contest_id', contestIds)
           .gte('created_at', startDate.toISOString());
+
+        const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
         
         votes?.forEach(vote => {
           const dateKey = format(new Date(vote.created_at), 'yyyy-MM-dd');
-          votesByDate[dateKey] = (votesByDate[dateKey] || 0) + Number(vote.amount_paid);
+          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? Number((vote as any).amount_paid);
+          votesByDate[dateKey] = (votesByDate[dateKey] || 0) + Number(baseAmount || 0);
         });
       }
       

@@ -217,7 +217,7 @@ const EventManagement = () => {
 
     const exportData = tickets.map((t: any) => ({
       ...t,
-      amount_paid: formatCurrencyForExport(t.amount_paid),
+      amount_paid: formatCurrencyForExport(Number(t.base_amount ?? t.amount_paid ?? 0)),
       created_at: formatDateForExport(t.created_at),
     }));
 
@@ -247,7 +247,7 @@ const EventManagement = () => {
   };
 
   const totalTicketsSold = ticketTypes?.reduce((sum: number, t: any) => sum + (t.quantity_sold || 0), 0) || 0;
-  const totalRevenue = tickets?.reduce((sum: number, t: any) => sum + Number(t.amount_paid || 0), 0) || 0;
+  const totalRevenue = tickets?.reduce((sum: number, t: any) => sum + Number(t.base_amount ?? t.amount_paid ?? 0), 0) || 0;
   const netRevenue = totalRevenue * (1 - ticketCommission / 100);
   const commissionDeducted = totalRevenue - netRevenue;
 
@@ -569,7 +569,7 @@ const EventManagement = () => {
                             <TableCell>{ticket.guest_name || ticket.profiles?.full_name || 'N/A'}</TableCell>
                             <TableCell>{ticket.guest_email || ticket.profiles?.email || 'N/A'}</TableCell>
                             <TableCell>{ticket.ticket_types?.name}</TableCell>
-                            <TableCell>{formatCurrency(Number(ticket.amount_paid), ticket.ticket_types?.currency || 'NGN')}</TableCell>
+                            <TableCell>{formatCurrency(Number(ticket.base_amount ?? ticket.amount_paid ?? 0), ticket.ticket_types?.currency || 'NGN')}</TableCell>
                             <TableCell>{format(new Date(ticket.created_at), 'MMM d, yyyy')}</TableCell>
                             <TableCell>
                               <Badge variant={ticket.status === 'active' ? 'default' : 'secondary'}>

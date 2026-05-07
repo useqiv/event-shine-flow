@@ -26,6 +26,7 @@ import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 const OrgWallet = () => {
   const { data: stats, isLoading: statsLoading } = useOrganizationStats();
@@ -99,7 +100,7 @@ const OrgWallet = () => {
       if (eventIds.length > 0) {
         const { data } = await supabase
           .from('tickets')
-          .select('*, events(title), ticket_types(name, currency)')
+          .select('*, events(title), ticket_types(name, currency), transaction_id')
           .in('event_id', eventIds);
         tickets = data || [];
       }
@@ -107,10 +108,13 @@ const OrgWallet = () => {
       if (contestIds.length > 0) {
         const { data } = await supabase
           .from('votes')
-          .select('*, contests(title, vote_currency), contestants(name)')
+          .select('*, contests(title, vote_currency), contestants(name), transaction_id')
           .in('contest_id', contestIds);
         votes = data || [];
       }
+
+      const ticketBaseAmountMap = await getBaseAmountsByTransactionId(tickets.map((t) => (t as any).transaction_id));
+      const voteBaseAmountMap = await getBaseAmountsByTransactionId(votes.map((v) => (v as any).transaction_id));
 
       // Prepare comprehensive report data with currency info
       const reportData = [
@@ -130,7 +134,7 @@ const OrgWallet = () => {
         ...tickets.map(t => ({
           category: 'Ticket Sale',
           item: t.events?.title || 'Unknown Event',
-          amount: t.amount_paid,
+          amount: ticketBaseAmountMap.get((t as any).transaction_id) ?? t.amount_paid,
           currency: t.ticket_types?.currency || 'USD',
           date: formatDateForExport(t.created_at),
           details: `${t.quantity}x ${t.ticket_types?.name || 'Standard'}`
@@ -139,7 +143,7 @@ const OrgWallet = () => {
         ...votes.map(v => ({
           category: 'Vote',
           item: v.contests?.title || 'Unknown Contest',
-          amount: v.amount_paid,
+          amount: voteBaseAmountMap.get((v as any).transaction_id) ?? v.amount_paid,
           currency: v.contests?.vote_currency || 'NGN',
           date: formatDateForExport(v.created_at),
           details: `${v.quantity} votes for ${v.contestants?.name || 'Unknown'}`

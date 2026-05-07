@@ -11,6 +11,7 @@ import { formatCurrency } from '@/components/ui/currency-selector';
 import { format } from 'date-fns';
 import { Download, Filter, CreditCard, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 type EntityType = 'contest' | 'event' | 'campaign';
 type StatusFilter = 'all' | 'completed' | 'pending' | 'failed' | 'cancelled';
@@ -71,7 +72,8 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             payment_method,
             created_at,
             contestant_id,
-            user_id
+            user_id,
+            transaction_id
           `)
           .eq('contest_id', entityId)
           .order('created_at', { ascending: false })
@@ -95,10 +97,13 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const contestantsMap = new Map((contestantsRes.data || []).map(c => [c.id, c]));
         const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
         
+        const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((v: any) => v.transaction_id) || []);
+
         const enrichedData = data?.map(v => ({
           ...v,
           contestant: contestantsMap.get(v.contestant_id),
           user: usersMap.get(v.user_id),
+          base_amount: baseAmountMap.get((v as any).transaction_id) ?? null,
         }));
         
         return { transactions: enrichedData || [] };
@@ -116,7 +121,8 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             guest_name,
             guest_email,
             ticket_type_id,
-            user_id
+            user_id,
+            transaction_id
           `)
           .eq('event_id', entityId)
           .order('created_at', { ascending: false });
@@ -150,10 +156,13 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const ticketTypesMap = new Map((ticketTypesRes.data || []).map(tt => [tt.id, tt]));
         const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
         
+        const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((t: any) => t.transaction_id) || []);
+
         const enrichedData = data?.map(t => ({
           ...t,
           ticket_type: ticketTypesMap.get(t.ticket_type_id),
           user: usersMap.get(t.user_id),
+          base_amount: baseAmountMap.get((t as any).transaction_id) ?? null,
         }));
         
         return { transactions: enrichedData || [] };
@@ -216,7 +225,7 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           id: t.id,
           user_name: t.user?.full_name || 'Anonymous',
           user_email: t.user?.email || '',
-          amount: t.amount_paid || 0,
+          amount: Number(t.base_amount ?? t.amount_paid ?? 0),
           quantity: t.quantity || 1,
           payment_method: t.payment_method || 'unknown',
           status: 'completed', // Votes are always completed
@@ -228,7 +237,7 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           id: t.id,
           user_name: t.guest_name || t.user?.full_name || 'Guest',
           user_email: t.guest_email || t.user?.email || '',
-          amount: t.amount_paid || 0,
+          amount: Number(t.base_amount ?? t.amount_paid ?? 0),
           quantity: t.quantity || 1,
           payment_method: t.payment_method || 'unknown',
           status: t.status || 'active',
