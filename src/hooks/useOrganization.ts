@@ -431,10 +431,21 @@ export const useOrganizationStats = () => {
           .in('contest_id', contestIds);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
+        const { data: voteOptions } = await supabase
+          .from('contest_vote_options')
+          .select('contest_id, vote_quantity, price')
+          .in('contest_id', contestIds)
+          .eq('is_active', true);
+
+        const voteOptionPriceMap = new Map<string, number>();
+        voteOptions?.forEach((option: any) => {
+          voteOptionPriceMap.set(`${option.contest_id}:${option.vote_quantity}`, Number(option.price) || 0);
+        });
         
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
-          const baseAmount = baseAmountMap.get(v.transaction_id) ?? Number(v.amount_paid);
+          const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
+          const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? Number(v.amount_paid);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
