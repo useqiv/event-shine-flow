@@ -4,6 +4,42 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
+type ConvenienceFeeType = 'none' | 'percentage' | 'fixed';
+
+interface ConvenienceFeeSettings {
+  type: ConvenienceFeeType;
+  value: number;
+  cap: number | null;
+}
+
+function stripConvenienceFeeFromGross(grossAmount: number, settings: ConvenienceFeeSettings): number {
+  const gross = Number(grossAmount) || 0;
+  if (gross <= 0) return 0;
+
+  const feeValue = Number(settings.value) || 0;
+  const cap = settings.cap != null ? Number(settings.cap) : null;
+
+  if (settings.type === 'fixed') {
+    return Math.max(0, gross - feeValue);
+  }
+
+  if (settings.type === 'percentage' && feeValue > 0) {
+    const rate = feeValue / 100;
+
+    if (cap && cap > 0) {
+      const baseAtCap = cap / rate;
+      const grossAtCap = baseAtCap + cap;
+      if (gross > grossAtCap) {
+        return Math.max(0, gross - cap);
+      }
+    }
+
+    return Math.max(0, gross / (1 + rate));
+  }
+
+  return gross;
+}
+
 // Types
 export interface OrganizationSettings {
   id: string;
@@ -375,6 +411,24 @@ export const useOrganizationStats = () => {
   return useQuery({
     queryKey: ['organization-stats', user?.id],
     queryFn: async () => {
+      const { data: paymentSettingsRows } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value')
+        .eq('category', 'payment')
+        .in('setting_key', ['convenience_fee_type', 'convenience_fee_value', 'convenience_fee_cap']);
+
+      const convenienceFeeSettings: ConvenienceFeeSettings = {
+        type: (paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_type')?.setting_value ||
+          'none') as ConvenienceFeeType,
+        value: Number(paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_value')?.setting_value) || 0,
+        cap: (() => {
+          const raw = paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_cap')?.setting_value;
+          if (raw == null || raw === '') return null;
+          const parsed = Number(raw);
+          return Number.isFinite(parsed) ? parsed : null;
+        })(),
+      };
+
       // Get all events with their ticket types for currency info
       const { data: events } = await supabase
         .from('events')
@@ -407,9 +461,15 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
+          const normalizedSettledAmount = stripConvenienceFeeFromGross(settledBaseAmount, convenienceFeeSettings);
+          const normalizedRecordedAmount = stripConvenienceFeeFromGross(Number(t.amount_paid) || 0, convenienceFeeSettings);
           // Never rely on raw amount_paid here since it may include convenience fees.
           const baseAmount =
-            (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? settledBaseAmount ?? 0);
+            (baseAmountMap.get(t.transaction_id) ??
+              ticketPriceAmount ??
+              normalizedSettledAmount ??
+              normalizedRecordedAmount ??
+              0);
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -460,9 +520,15 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
+          const normalizedSettledAmount = stripConvenienceFeeFromGross(settledBaseAmount, convenienceFeeSettings);
+          const normalizedRecordedAmount = stripConvenienceFeeFromGross(Number(v.amount_paid) || 0, convenienceFeeSettings);
           // Never rely on raw amount_paid here since it may include convenience fees.
           const baseAmount =
-            (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? settledBaseAmount ?? 0);
+            (baseAmountMap.get(v.transaction_id) ??
+              optionPrice ??
+              normalizedSettledAmount ??
+              normalizedRecordedAmount ??
+              0);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
@@ -499,8 +565,11 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
+          const normalizedSettledAmount = stripConvenienceFeeFromGross(settledBaseAmount, convenienceFeeSettings);
+          const normalizedRecordedAmount = stripConvenienceFeeFromGross(Number(d.amount) || 0, convenienceFeeSettings);
           // Never rely on raw donation amount here since it may include convenience fees.
-          const baseAmount = baseAmountMap.get(d.transaction_id) ?? settledBaseAmount ?? 0;
+          const baseAmount =
+            baseAmountMap.get(d.transaction_id) ?? normalizedSettledAmount ?? normalizedRecordedAmount ?? 0;
           campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });
