@@ -478,7 +478,7 @@ export const useOrganizationStats = () => {
       // Get all contests with their currency
       const { data: contests } = await supabase
         .from('contests')
-        .select('id, is_active, end_date, vote_currency')
+        .select('id, is_active, end_date, vote_currency, vote_price')
         .eq('organization_id', user!.id);
       
       const contestIds = contests?.map(c => c.id) || [];
@@ -486,8 +486,10 @@ export const useOrganizationStats = () => {
       
       // Create a map of contest_id -> vote_currency
       const contestCurrencyMap: Record<string, string> = {};
+      const contestVotePriceMap: Record<string, number> = {};
       contests?.forEach(c => {
         contestCurrencyMap[c.id] = c.vote_currency || 'NGN';
+        contestVotePriceMap[c.id] = Number((c as any).vote_price) || 0;
       });
       
       // Revenue by currency for votes
@@ -514,6 +516,9 @@ export const useOrganizationStats = () => {
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
           const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
+          const contestVotePrice = contestVotePriceMap[v.contest_id] || 0;
+          const contestVotePriceAmount =
+            contestVotePrice > 0 ? contestVotePrice * Number(v.quantity || 0) : undefined;
           const netAmount = Number(v.net_amount);
           const platformCommission = Number(v.platform_commission);
           const settledBaseAmount =
@@ -526,6 +531,7 @@ export const useOrganizationStats = () => {
           const baseAmount =
             (baseAmountMap.get(v.transaction_id) ??
               optionPrice ??
+              contestVotePriceAmount ??
               normalizedSettledAmount ??
               normalizedRecordedAmount ??
               0);
