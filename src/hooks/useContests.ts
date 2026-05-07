@@ -240,7 +240,7 @@ export const useVote = () => {
       // Enforce contest start_date — voting is locked until contest starts
       const { data: contestWindow, error: contestWindowError } = await supabase
         .from('contests')
-        .select('start_date, end_date, is_active, title')
+        .select('start_date, end_date, is_active, title, vote_currency')
         .eq('id', contestId)
         .maybeSingle();
 
@@ -261,6 +261,8 @@ export const useVote = () => {
         throw new Error('Voting is currently closed for this contest.');
       }
 
+      const resolvedCurrency = currency || contestWindow.vote_currency || 'NGN';
+
       // If paying with wallet, atomically debit balance (server-side, race-safe)
       if (paymentMethod === 'wallet') {
         const { data: debitResult, error: debitError } = await supabase.rpc(
@@ -268,7 +270,7 @@ export const useVote = () => {
           {
             p_user_id: user.id,
             p_amount: amountPaid,
-            p_currency: currency || 'NGN',
+            p_currency: resolvedCurrency,
             p_type: 'vote',
             p_description: `Vote for contestant (${quantity})`,
             p_reference_id: contestantId,
@@ -291,7 +293,7 @@ export const useVote = () => {
           contest_id: contestId,
           quantity,
           amount_paid: amountPaid,
-          currency: currency || 'NGN',
+          currency: resolvedCurrency,
           payment_method: paymentMethod
         })
         .select()
@@ -325,7 +327,7 @@ export const useVote = () => {
               type: 'vote',
               organization_id: contest.organization_id,
               amount: amountPaid,
-              currency: currency || 'NGN',
+              currency: resolvedCurrency,
               quantity,
               contest_title: contest.title || 'Contest',
               contestant_name: contestant?.name || 'Contestant',

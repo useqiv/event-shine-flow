@@ -269,6 +269,7 @@ const ContestDetail = () => {
         contestId: contest.id,
         quantity: voteQuantity,
         amountPaid: totalAmount,
+        currency: contest.vote_currency || 'NGN',
         paymentMethod: 'wallet',
       });
 

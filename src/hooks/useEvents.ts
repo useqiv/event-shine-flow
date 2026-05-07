@@ -202,7 +202,7 @@ export const usePurchaseTicket = () => {
       // Enforce event activation & event_date — purchases lock once event has passed or while inactive
       const { data: eventRow, error: eventRowError } = await supabase
         .from('events')
-        .select('event_date, is_active, title')
+        .select('event_date, is_active, title, currency')
         .eq('id', eventId)
         .maybeSingle();
 
@@ -266,16 +266,17 @@ export const usePurchaseTicket = () => {
       // Generate unique QR code
       const qrCode = `TICKET-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
+      const resolvedCurrency = eventDetails?.currency || eventRow.currency || 'NGN';
+
       // If paying with wallet (only for authenticated users with paid tickets)
       // Atomically debit the wallet on the server (race-safe, currency-aware)
       if (paymentMethod === 'wallet' && !isFreeTicket && user?.id) {
-        const ticketCurrency = eventDetails?.currency || 'NGN';
         const { data: debitResult, error: debitError } = await supabase.rpc(
           'debit_wallet_safely',
           {
             p_user_id: user.id,
             p_amount: amountPaid,
-            p_currency: ticketCurrency,
+            p_currency: resolvedCurrency,
             p_type: 'ticket',
             p_description: `Ticket purchase (${quantity}x ${eventDetails?.ticketTypeName || 'ticket'})`,
             p_reference_id: eventId,
