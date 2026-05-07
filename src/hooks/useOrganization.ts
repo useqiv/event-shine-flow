@@ -392,7 +392,7 @@ export const useOrganizationStats = () => {
         // Get tickets with their ticket_type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid, quantity, ticket_type_id, ticket_types(currency, price), transaction_id')
+          .select('amount_paid, net_amount, platform_commission, quantity, ticket_type_id, ticket_types(currency, price), transaction_id')
           .in('event_id', eventIds);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
@@ -401,8 +401,14 @@ export const useOrganizationStats = () => {
           const currency = t.ticket_types?.currency || 'USD';
           const pricePerTicket = Number(t.ticket_types?.price) || 0;
           const ticketPriceAmount = pricePerTicket > 0 ? pricePerTicket * Number(t.quantity || 0) : undefined;
+          const netAmount = Number(t.net_amount);
+          const platformCommission = Number(t.platform_commission);
+          const settledBaseAmount =
+            Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+              ? netAmount + platformCommission
+              : 0;
           const recordedAmount = Number(t.amount_paid) || 0;
-          const baseAmount = recordedAmount || (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0);
+          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0);
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -430,7 +436,7 @@ export const useOrganizationStats = () => {
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, quantity, contest_id, transaction_id')
+          .select('amount_paid, net_amount, platform_commission, quantity, contest_id, transaction_id')
           .in('contest_id', contestIds);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
@@ -447,8 +453,14 @@ export const useOrganizationStats = () => {
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
           const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
+          const netAmount = Number(v.net_amount);
+          const platformCommission = Number(v.platform_commission);
+          const settledBaseAmount =
+            Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+              ? netAmount + platformCommission
+              : 0;
           const recordedAmount = Number(v.amount_paid) || 0;
-          const baseAmount = recordedAmount || (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0);
+          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
@@ -469,7 +481,7 @@ export const useOrganizationStats = () => {
       if (campaignIds.length > 0) {
         const { data: donations } = await supabase
           .from('donations')
-          .select('amount, currency, transaction_id')
+          .select('amount, net_amount, platform_commission, currency, transaction_id')
           .in('campaign_id', campaignIds)
           .eq('status', 'completed');
 
@@ -479,8 +491,14 @@ export const useOrganizationStats = () => {
         
         donations?.forEach((d: any) => {
           const currency = d.currency || 'USD';
+          const netAmount = Number(d.net_amount);
+          const platformCommission = Number(d.platform_commission);
+          const settledBaseAmount =
+            Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+              ? netAmount + platformCommission
+              : 0;
           const recordedAmount = Number(d.amount) || 0;
-          const baseAmount = recordedAmount || (baseAmountMap.get(d.transaction_id) ?? 0);
+          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(d.transaction_id) ?? 0);
           campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });
