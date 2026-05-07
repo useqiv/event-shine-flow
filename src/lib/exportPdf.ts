@@ -675,7 +675,7 @@ export const generateContestReportPdf = (input: {
         }
         .grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 12px;
           margin: 20px 0 26px 0;
         }

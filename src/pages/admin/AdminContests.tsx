@@ -107,9 +107,25 @@ const AdminContests: React.FC = () => {
         votes?.map((v: any) => v.transaction_id) || []
       );
 
+      // Fallback pricing that is fee-free (do not fall back to amount_paid, which may include convenience fee)
+      const { data: voteOptions } = await supabase
+        .from('contest_vote_options')
+        .select('vote_quantity, price')
+        .eq('contest_id', contest.id);
+      const voteOptionPriceMap = new Map<string, number>();
+      voteOptions?.forEach((o: any) => {
+        voteOptionPriceMap.set(String(o.vote_quantity), Number(o.price) || 0);
+      });
+
       const totalVotes = (votes || []).reduce((sum: number, v: any) => sum + (Number(v.quantity) || 0), 0);
       const totalRevenue = (votes || []).reduce((sum: number, v: any) => {
-        const base = baseAmountMap.get(v.transaction_id) ?? v.amount_paid;
+        const qty = Number(v.quantity) || 0;
+        const optionPrice = voteOptionPriceMap.get(String(qty));
+        const votePrice = Number(contest.vote_price) || 0;
+        const base =
+          baseAmountMap.get(v.transaction_id) ??
+          optionPrice ??
+          (votePrice > 0 ? votePrice * qty : 0);
         return sum + (Number(base) || 0);
       }, 0);
 
