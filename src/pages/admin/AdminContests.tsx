@@ -324,41 +324,53 @@ const AdminContests: React.FC = () => {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{format(new Date(contest.end_date), 'MMM d, yyyy')}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/contests/${contest.id}`}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-                          <DropdownMenuItem
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleDownloadContestReportPdf(contest.id)}
                             disabled={generatingContestReport === contest.id}
+                            title="Download PDF report"
                           >
-                            <FileText className="mr-2 h-4 w-4" />
-                            {generatingContestReport === contest.id ? 'Generating PDF...' : 'Download PDF report'}
-                          </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleContestStatus(contest.id, contest.is_active)}>
-                              {contest.is_active ? (
-                                <>
-                                  <Pause className="mr-2 h-4 w-4" />
-                                  Pause Contest
-                                </>
-                              ) : (
-                                <>
-                                  <Play className="mr-2 h-4 w-4" />
-                                  Activate Contest
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                            <FileText className="h-4 w-4" />
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" title="More actions">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/contests/${contest.id}`}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDownloadContestReportPdf(contest.id)}
+                                disabled={generatingContestReport === contest.id}
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                {generatingContestReport === contest.id ? 'Generating PDF...' : 'Download PDF report'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => toggleContestStatus(contest.id, contest.is_active)}>
+                                {contest.is_active ? (
+                                  <>
+                                    <Pause className="mr-2 h-4 w-4" />
+                                    Pause Contest
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="mr-2 h-4 w-4" />
+                                    Activate Contest
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
