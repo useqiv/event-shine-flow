@@ -21,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import TwoFactorEnforcement from '@/components/auth/TwoFactorEnforcement';
 import DatabaseBackupManager from '@/components/admin/DatabaseBackupManager';
 import { FraudRulesManager } from '@/components/admin/FraudRulesManager';
 import { AdminRoleManager } from '@/components/admin/AdminRoleManager';
@@ -1342,8 +1341,6 @@ const AdminSettings: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6 mt-6">
-            <TwoFactorEnforcement isRequired={true} />
-            
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

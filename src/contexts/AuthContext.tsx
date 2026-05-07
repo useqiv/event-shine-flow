@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session, AuthError, Factor } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { resetAdminVerification } from '@/components/admin/AdminMfaGate';
-import { resetOrganizationPinVerification } from '@/components/org/OrganizationPinGate';
 
 interface MfaState {
   required: boolean;
@@ -38,32 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [mfaState, setMfaState] = useState<MfaState>({ required: false, factorId: null });
 
-  const syncMfaState = async () => {
-    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aalError) {
-      setMfaState({ required: false, factorId: null });
-      return;
-    }
-
-    const requiresMfaStep = aalData.currentLevel === 'aal1' && aalData.nextLevel === 'aal2';
-    if (!requiresMfaStep) {
-      setMfaState({ required: false, factorId: null });
-      return;
-    }
-
-    const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-    if (factorsError) {
-      setMfaState({ required: false, factorId: null });
-      return;
-    }
-
-    const totpFactor = factorsData?.totp?.find((f) => f.status === 'verified') ?? null;
-    setMfaState({
-      required: !!totpFactor,
-      factorId: totpFactor?.id ?? null,
-    });
-  };
-
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,12 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_OUT') {
           setMfaState({ required: false, factorId: null });
           resetAdminVerification();
-          resetOrganizationPinVerification();
           return;
-        }
-
-        if (session?.user) {
-          await syncMfaState();
         }
       }
     );
@@ -90,9 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
-        await syncMfaState();
-      }
       setLoading(false);
     });
 
@@ -127,25 +92,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (error) {
       return { error: error as Error | null };
-    }
-
-    // Check if MFA is required (AAL1 = password only, AAL2 = password + MFA)
-    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aalError) {
-      return { error: aalError as Error | null };
-    }
-
-    if (aalData.currentLevel === 'aal1' && aalData.nextLevel === 'aal2') {
-      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
-      if (factorsError) {
-        return { error: factorsError as Error | null };
-      }
-
-      const totpFactor = factorsData?.totp?.find((f) => f.status === 'verified');
-      if (totpFactor) {
-        setMfaState({ required: true, factorId: totpFactor.id });
-        return { error: null, mfaRequired: true, factorId: totpFactor.id };
-      }
     }
 
     return { error: null };
@@ -199,7 +145,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setMfaState({ required: false, factorId: null });
       resetAdminVerification();
-      resetOrganizationPinVerification();
       
       // Sign out from Supabase (this clears tokens from storage)
       const { error } = await supabase.auth.signOut({ scope: 'global' });
@@ -214,7 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setMfaState({ required: false, factorId: null });
       resetAdminVerification();
-      resetOrganizationPinVerification();
     }
   };
 

@@ -9,7 +9,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRole } from "@/hooks/useUserRole";
 import { isAdminVerificationComplete } from "@/components/admin/AdminMfaGate";
-import { isOrganizationPinVerificationComplete } from "@/components/org/OrganizationPinGate";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
 import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
@@ -130,7 +129,7 @@ import ScannerEventPage from "./pages/scanner/ScannerEventPage";
 import { useState } from "react";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, mfaState } = useAuth();
+  const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
@@ -141,12 +140,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // If MFA is pending, send user directly to auth verification flow.
-  // Do this before profile/role loading checks to avoid loader deadlocks.
-  if (mfaState.required && location.pathname !== "/auth") {
     return <Navigate to="/auth" replace />;
   }
 
@@ -167,7 +160,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAdmin = role === 'admin';
   const isInfluencer = (role as string) === 'influencer';
   const isAdminRoute = location.pathname.startsWith('/admin/');
-  const isOrganizationRoute = location.pathname.startsWith('/org/');
 
   // Admin must complete PIN verification before accessing ANY route.
   // Until verified, force them to /admin/dashboard where the PIN gate is rendered.
@@ -180,12 +172,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // Organization must complete PIN verification before accessing /org/* routes.
-  // Until verified, force them to /org/dashboard where the gate is rendered.
-  if (isOrganization && isOrganizationRoute && !isOrganizationPinVerificationComplete() && location.pathname !== '/org/dashboard') {
-    return <Navigate to="/org/dashboard" replace />;
-  }
-  
   if (isOrganization && location.pathname === '/dashboard') {
     return <Navigate to="/org/dashboard" replace />;
   }
@@ -214,7 +200,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, mfaState } = useAuth();
+  const { user, loading } = useAuth();
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
   
@@ -223,10 +209,6 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   if (user) {
-    if (mfaState.required) {
-      return <>{children}</>;
-    }
-
     if (roleLoading || scannerCheckLoading) {
       return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     }
