@@ -401,7 +401,8 @@ export const useOrganizationStats = () => {
           const currency = t.ticket_types?.currency || 'USD';
           const pricePerTicket = Number(t.ticket_types?.price) || 0;
           const ticketPriceAmount = pricePerTicket > 0 ? pricePerTicket * Number(t.quantity || 0) : undefined;
-          const baseAmount = baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0;
+          const recordedAmount = Number(t.amount_paid) || 0;
+          const baseAmount = recordedAmount || (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? 0);
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -446,7 +447,8 @@ export const useOrganizationStats = () => {
         votes?.forEach((v: any) => {
           const currency = contestCurrencyMap[v.contest_id] || 'NGN';
           const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
-          const baseAmount = baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0;
+          const recordedAmount = Number(v.amount_paid) || 0;
+          const baseAmount = recordedAmount || (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? 0);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
@@ -477,7 +479,8 @@ export const useOrganizationStats = () => {
         
         donations?.forEach((d: any) => {
           const currency = d.currency || 'USD';
-          const baseAmount = baseAmountMap.get(d.transaction_id) ?? 0;
+          const recordedAmount = Number(d.amount) || 0;
+          const baseAmount = recordedAmount || (baseAmountMap.get(d.transaction_id) ?? 0);
           campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });
