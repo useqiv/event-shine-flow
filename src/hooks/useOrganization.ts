@@ -407,12 +407,9 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
-          const recordedAmount = Number(t.amount_paid) || 0;
-          // Prefer canonical product pricing first so convenience/payment fees are never counted as revenue.
+          // Never rely on raw amount_paid here since it may include convenience fees.
           const baseAmount =
-            (ticketPriceAmount ?? settledBaseAmount) ||
-            recordedAmount ||
-            (baseAmountMap.get(t.transaction_id) ?? 0);
+            (baseAmountMap.get(t.transaction_id) ?? ticketPriceAmount ?? settledBaseAmount ?? 0);
           ticketRevenueByCurrency[currency] = (ticketRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           ticketsSold += t.quantity;
         });
@@ -463,12 +460,9 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
-          const recordedAmount = Number(v.amount_paid) || 0;
-          // Prefer configured vote package price first so fees do not affect revenue totals.
+          // Never rely on raw amount_paid here since it may include convenience fees.
           const baseAmount =
-            (optionPrice ?? settledBaseAmount) ||
-            recordedAmount ||
-            (baseAmountMap.get(v.transaction_id) ?? 0);
+            (baseAmountMap.get(v.transaction_id) ?? optionPrice ?? settledBaseAmount ?? 0);
           voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
@@ -505,8 +499,8 @@ export const useOrganizationStats = () => {
             Number.isFinite(netAmount) && Number.isFinite(platformCommission)
               ? netAmount + platformCommission
               : 0;
-          const recordedAmount = Number(d.amount) || 0;
-          const baseAmount = settledBaseAmount || recordedAmount || (baseAmountMap.get(d.transaction_id) ?? 0);
+          // Never rely on raw donation amount here since it may include convenience fees.
+          const baseAmount = baseAmountMap.get(d.transaction_id) ?? settledBaseAmount ?? 0;
           campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });
