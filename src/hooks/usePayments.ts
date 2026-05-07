@@ -76,22 +76,23 @@ export const useFlutterwavePayment = () => {
       });
 
       if (error) {
-        // Supabase Functions errors (non-2xx) often include a response body in `context`
-        const maybeBody = (error as any)?.context?.body;
-        const bodyString =
-          typeof maybeBody === 'string'
-            ? maybeBody
-            : maybeBody
-              ? JSON.stringify(maybeBody)
-              : '';
-
         let message = error.message;
-        if (bodyString) {
+        const response = (error as any)?.context;
+
+        // Supabase FunctionsHttpError exposes the original Response via `context`.
+        if (response && typeof response.text === 'function') {
           try {
-            const parsed = JSON.parse(bodyString);
-            message = parsed?.error || parsed?.message || message;
+            const bodyText = await response.text();
+            if (bodyText) {
+              try {
+                const parsed = JSON.parse(bodyText);
+                message = parsed?.error || parsed?.message || bodyText || message;
+              } catch {
+                message = bodyText;
+              }
+            }
           } catch {
-            // bodyString wasn't JSON
+            // Keep original message if parsing the response fails.
           }
         }
 

@@ -185,7 +185,32 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
       
-      const expectedBaseAmount = contest.vote_price * payload.vote_quantity;
+      const { data: voteOptions } = await supabase
+        .from("contest_vote_options")
+        .select("vote_quantity, price")
+        .eq("contest_id", payload.contest_id);
+
+      const normalizedOptions = (voteOptions || [])
+        .map((option) => ({
+          vote_quantity: Number(option.vote_quantity),
+          price: Number(option.price),
+        }))
+        .filter((option) => Number.isFinite(option.vote_quantity) && option.vote_quantity > 0 && Number.isFinite(option.price))
+        .sort((a, b) => a.vote_quantity - b.vote_quantity);
+
+      const matchingOption = normalizedOptions.find((option) => option.vote_quantity === payload.vote_quantity);
+
+      let fallbackUnitPrice = Number(contest.vote_price);
+      if (!Number.isFinite(fallbackUnitPrice) || fallbackUnitPrice <= 0) {
+        const smallestOption = normalizedOptions[0];
+        if (smallestOption) {
+          fallbackUnitPrice = smallestOption.price / smallestOption.vote_quantity;
+        }
+      }
+
+      const expectedBaseAmount = matchingOption
+        ? matchingOption.price
+        : fallbackUnitPrice * payload.vote_quantity;
       const isCrossCurrency = contest.vote_currency !== payload.currency;
       const tolerance = isCrossCurrency ? 0.05 : 0.01;
       const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
