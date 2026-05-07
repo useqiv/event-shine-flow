@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
@@ -48,7 +49,7 @@ const ManageEvents = () => {
       // Fetch tickets with ticket_type to get currency
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('event_id, amount_paid, quantity, ticket_type_id')
+        .select('event_id, amount_paid, quantity, ticket_type_id, transaction_id')
         .in('event_id', eventIds);
 
       // Fetch ticket types to get currencies
@@ -64,11 +65,13 @@ const ManageEvents = () => {
       });
 
       const revenues: Record<string, { revenue: number; ticketsSold: number; currency: string }> = {};
+      const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
       tickets?.forEach(ticket => {
         if (!revenues[ticket.event_id]) {
           revenues[ticket.event_id] = { revenue: 0, ticketsSold: 0, currency: ticketTypeCurrencyMap[ticket.ticket_type_id] || 'USD' };
         }
-        revenues[ticket.event_id].revenue += Number(ticket.amount_paid);
+        const baseAmount = baseAmountMap.get((ticket as any).transaction_id) ?? Number(ticket.amount_paid);
+        revenues[ticket.event_id].revenue += Number(baseAmount);
         revenues[ticket.event_id].ticketsSold += ticket.quantity;
       });
 

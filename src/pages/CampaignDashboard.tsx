@@ -92,8 +92,10 @@ const CampaignDashboard: React.FC = () => {
     );
   }
 
+  const baseRaised = donorStats?.totalDonationsAmount ?? 0;
+
   const progress = campaign.goal_amount > 0 
-    ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100) 
+    ? Math.min((baseRaised / campaign.goal_amount) * 100, 100) 
     : 0;
 
   const pageUrl = `${window.location.origin}/campaigns/${campaign.id}`;
@@ -146,7 +148,7 @@ const CampaignDashboard: React.FC = () => {
             <AdjustGoalDialog
               campaignId={campaign.id}
               currentGoal={campaign.goal_amount}
-              currentAmount={campaign.current_amount}
+              currentAmount={baseRaised}
               currency={campaign.currency}
             />
             <ExtendDeadlineDialog 
@@ -172,7 +174,7 @@ const CampaignDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Raised</p>
-                  <p className="text-xl font-bold">₦{campaign.current_amount.toLocaleString()}</p>
+                  <p className="text-xl font-bold">₦{baseRaised.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -239,12 +241,12 @@ const CampaignDashboard: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex justify-between text-sm mb-2">
-              <span className="font-medium">₦{campaign.current_amount.toLocaleString()} raised</span>
+              <span className="font-medium">₦{baseRaised.toLocaleString()} raised</span>
               <span className="text-muted-foreground">of ₦{campaign.goal_amount.toLocaleString()} goal</span>
             </div>
             <Progress value={progress} className="h-3" />
             <p className="text-sm text-muted-foreground mt-2">
-              {Math.max(0, campaign.goal_amount - campaign.current_amount).toLocaleString()} {campaign.currency} to go
+              {Math.max(0, campaign.goal_amount - baseRaised).toLocaleString()} {campaign.currency} to go
             </p>
           </CardContent>
         </Card>

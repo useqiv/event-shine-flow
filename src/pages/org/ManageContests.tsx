@@ -24,6 +24,7 @@ import CurrencyDisplay from '@/components/ui/currency-display';
 import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 const ManageContests = () => {
   const { data: contests, isLoading } = useOrganizationContests();
@@ -47,15 +48,18 @@ const ManageContests = () => {
 
       const { data: votes } = await supabase
         .from('votes')
-        .select('contest_id, amount_paid, quantity')
+        .select('contest_id, amount_paid, quantity, transaction_id')
         .in('contest_id', contestIds);
 
       const revenues: Record<string, { revenue: number; totalVotes: number }> = {};
+
+      const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
       votes?.forEach(vote => {
         if (!revenues[vote.contest_id]) {
           revenues[vote.contest_id] = { revenue: 0, totalVotes: 0 };
         }
-        revenues[vote.contest_id].revenue += Number(vote.amount_paid);
+        const baseAmount = baseAmountMap.get(vote.transaction_id) ?? Number(vote.amount_paid);
+        revenues[vote.contest_id].revenue += Number(baseAmount);
         revenues[vote.contest_id].totalVotes += vote.quantity;
       });
 

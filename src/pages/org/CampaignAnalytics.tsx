@@ -109,13 +109,16 @@ const CampaignAnalytics: React.FC = () => {
     );
   }
 
-  const progress = campaign.goal_amount > 0 
-    ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100) 
+  // Use fee-free base totals for any "raised" / "revenue" calculations.
+  const baseRaised = donorStats?.totalDonationsAmount ?? 0;
+
+  const progress = campaign.goal_amount > 0
+    ? Math.min((baseRaised / campaign.goal_amount) * 100, 100)
     : 0;
 
   const commissionRate = commissionData?.commissionRate ?? 10;
-  const commissionDeducted = (campaign.current_amount * commissionRate) / 100;
-  const netRevenue = campaign.current_amount - commissionDeducted;
+  const commissionDeducted = (baseRaised * commissionRate) / 100;
+  const netRevenue = baseRaised - commissionDeducted;
 
   const distributionData = donorStats ? [
     { name: '< ₦5,000', value: donorStats.distribution.small },
@@ -150,7 +153,7 @@ const CampaignAnalytics: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Raised</p>
-                  <p className="text-2xl font-bold">₦{campaign.current_amount.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">₦{baseRaised.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -230,7 +233,7 @@ const CampaignAnalytics: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex justify-between text-sm mb-2">
-              <span className="font-medium">₦{campaign.current_amount.toLocaleString()} raised</span>
+              <span className="font-medium">₦{baseRaised.toLocaleString()} raised</span>
               <span className="text-muted-foreground">of ₦{campaign.goal_amount.toLocaleString()} goal</span>
             </div>
             <Progress value={progress} className="h-3" />

@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 import { Trophy, Calendar, TrendingUp, Crown } from 'lucide-react';
 
 interface TopPerformer {
@@ -38,15 +39,17 @@ const TopPerformersWidget = () => {
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('contest_id, amount_paid, quantity')
+          .select('contest_id, amount_paid, quantity, transaction_id')
           .in('contest_id', contestIds);
 
         const revenueMap: Record<string, { revenue: number; votes: number }> = {};
+        const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
         votes?.forEach(v => {
           if (!revenueMap[v.contest_id]) {
             revenueMap[v.contest_id] = { revenue: 0, votes: 0 };
           }
-          revenueMap[v.contest_id].revenue += Number(v.amount_paid);
+          const baseAmount = baseAmountMap.get(v.transaction_id) ?? Number(v.amount_paid);
+          revenueMap[v.contest_id].revenue += Number(baseAmount);
           revenueMap[v.contest_id].votes += v.quantity;
         });
 
@@ -90,15 +93,17 @@ const TopPerformersWidget = () => {
         // Get tickets
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('event_id, amount_paid, quantity, ticket_type_id')
+          .select('event_id, amount_paid, quantity, ticket_type_id, transaction_id')
           .in('event_id', eventIds);
 
         const revenueMap: Record<string, { revenue: number; tickets: number; currency: string }> = {};
+        const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
         tickets?.forEach(t => {
           if (!revenueMap[t.event_id]) {
             revenueMap[t.event_id] = { revenue: 0, tickets: 0, currency: ticketTypeCurrencyMap[t.ticket_type_id] || 'USD' };
           }
-          revenueMap[t.event_id].revenue += Number(t.amount_paid);
+          const baseAmount = baseAmountMap.get(t.transaction_id) ?? Number(t.amount_paid);
+          revenueMap[t.event_id].revenue += Number(baseAmount);
           revenueMap[t.event_id].tickets += t.quantity;
         });
 

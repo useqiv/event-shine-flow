@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMyCampaigns, useUpdateCampaign, useDeleteCampaign, Campaign } from '@/hooks/useCampaigns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -64,9 +67,45 @@ const ManageCampaigns: React.FC = () => {
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [campaignToDuplicate, setCampaignToDuplicate] = useState<Campaign | null>(null);
 
-  const filteredCampaigns = campaigns?.filter(c => {
+  const campaignIds = useMemo(() => (campaigns || []).map(c => c.id), [campaigns]);
+
+  // Replace `current_amount` (which can include convenience fee) with fee-free base totals.
+  const { data: campaignBaseAmounts } = useQuery({
+    queryKey: ['campaign-base-amounts', campaignIds.join(',')],
+    queryFn: async () => {
+      if (!campaignIds.length) return {};
+
+      const { data: donations } = await supabase
+        .from('donations')
+        .select('campaign_id, transaction_id, amount')
+        .eq('status', 'completed')
+        .in('campaign_id', campaignIds);
+
+      const baseAmountMap = await getBaseAmountsByTransactionId(donations?.map(d => d.transaction_id) || []);
+
+      const sums: Record<string, number> = {};
+      (donations || []).forEach((d: any) => {
+        const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
+        sums[d.campaign_id] = (sums[d.campaign_id] || 0) + Number(baseAmount || 0);
+      });
+
+      return sums;
+    },
+    enabled: !isLoading && campaignIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  const campaignsWithBaseAmounts = useMemo(() => {
+    return (campaigns || []).map(c => ({
+      ...c,
+      current_amount: campaignBaseAmounts?.[c.id] ?? c.current_amount,
+    })) as Campaign[];
+  }, [campaigns, campaignBaseAmounts]);
+
+  const filteredCampaigns = campaignsWithBaseAmounts.filter(c => {
     const matchesTab = activeTab === 'all' || c.status === activeTab;
-    const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });

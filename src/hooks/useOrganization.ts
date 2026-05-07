@@ -455,13 +455,18 @@ export const useOrganizationStats = () => {
       if (campaignIds.length > 0) {
         const { data: donations } = await supabase
           .from('donations')
-          .select('amount, currency')
+          .select('amount, currency, transaction_id')
           .in('campaign_id', campaignIds)
           .eq('status', 'completed');
+
+        const baseAmountMap = await getBaseAmountsByTransactionId(
+          donations?.map((d: any) => d.transaction_id) || []
+        );
         
         donations?.forEach((d: any) => {
           const currency = d.currency || 'USD';
-          campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(d.amount);
+          const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
+          campaignRevenueByCurrency[currency] = (campaignRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
           totalDonations += 1;
         });
       }

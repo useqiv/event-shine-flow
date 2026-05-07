@@ -20,6 +20,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 interface ContestDetails {
   id: string;
@@ -76,7 +77,7 @@ const ContestAnalytics = () => {
         // Use votes_public view for secure access (org owners still see guest info)
         const { data: votes } = await supabase
           .from('votes_public')
-          .select('id, user_id, guest_email, guest_name, quantity, amount_paid, payment_method, created_at, contestant_id')
+          .select('id, user_id, guest_email, guest_name, quantity, amount_paid, payment_method, created_at, contestant_id, transaction_id')
           .eq('contest_id', id);
 
         // Fetch contestants
@@ -86,8 +87,16 @@ const ContestAnalytics = () => {
           .eq('contest_id', id)
           .order('vote_count', { ascending: false });
 
-        // Calculate analytics
-        const totalRevenue = votes?.reduce((sum, v) => sum + Number(v.amount_paid), 0) || 0;
+        const baseAmountMap = await getBaseAmountsByTransactionId(
+          votes?.map((v: any) => v.transaction_id) || []
+        );
+
+        // Calculate analytics (use fee-free base amounts where possible)
+        const totalRevenue =
+          votes?.reduce((sum, v: any) => {
+            const baseAmount = baseAmountMap.get(v.transaction_id) ?? Number(v.amount_paid);
+            return sum + Number(baseAmount || 0);
+          }, 0) || 0;
         const totalVotes = votes?.reduce((sum, v) => sum + v.quantity, 0) || 0;
         // Count unique voters: use user_id for authenticated users, guest_email for guests
         const uniqueVoters = new Set(votes?.map(v => v.user_id || v.guest_email || v.id)).size;
@@ -115,12 +124,13 @@ const ContestAnalytics = () => {
         });
 
         votes?.forEach(vote => {
+          const baseAmount = baseAmountMap.get((vote as any).transaction_id) ?? Number(vote.amount_paid);
           const date = format(new Date(vote.created_at), 'yyyy-MM-dd');
           if (dailyMap.has(date)) {
             const current = dailyMap.get(date)!;
             dailyMap.set(date, {
               votes: current.votes + vote.quantity,
-              revenue: current.revenue + Number(vote.amount_paid),
+              revenue: current.revenue + Number(baseAmount || 0),
             });
           }
         });

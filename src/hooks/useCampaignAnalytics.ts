@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 export interface CampaignAnalytics {
   id: string;
@@ -53,7 +54,7 @@ export const useCampaignDonationTrends = (campaignId: string, days: number = 30)
       
       const { data, error } = await supabase
         .from('donations')
-        .select('amount, created_at')
+        .select('amount, created_at, transaction_id')
         .eq('campaign_id', campaignId)
         .eq('status', 'completed')
         .gte('created_at', startDate.toISOString())
@@ -61,15 +62,20 @@ export const useCampaignDonationTrends = (campaignId: string, days: number = 30)
       
       if (error) throw error;
       
-      // Group by date
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        (data || []).map(d => d.transaction_id)
+      );
+
+      // Group by date (use fee-free base donation amounts)
       const trendMap = new Map<string, { donations: number; amount: number }>();
       
       (data || []).forEach(donation => {
         const date = new Date(donation.created_at).toLocaleDateString('en-CA');
+        const baseAmount = baseAmountMap.get(donation.transaction_id) ?? Number(donation.amount);
         const existing = trendMap.get(date) || { donations: 0, amount: 0 };
         trendMap.set(date, {
           donations: existing.donations + 1,
-          amount: existing.amount + Number(donation.amount),
+          amount: existing.amount + Number(baseAmount || 0),
         });
       });
       
@@ -100,25 +106,30 @@ export const useCampaignDonorStats = (campaignId: string) => {
       // Use donations_safe view to protect anonymous donor identities
       const { data: donations, error } = await supabase
         .from('donations_safe')
-        .select('donor_id, amount, is_anonymous, created_at')
+        .select('donor_id, amount, transaction_id, is_anonymous, created_at')
         .eq('campaign_id', campaignId)
         .eq('status', 'completed');
       
       if (error) throw error;
       
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        (donations || []).map(d => d.transaction_id)
+      );
+
       const donorMap = new Map<string, { total: number; count: number; firstDonation: string }>();
       
       (donations || []).forEach(d => {
+        const baseAmount = baseAmountMap.get(d.transaction_id) ?? Number(d.amount);
         const existing = donorMap.get(d.donor_id);
         if (existing) {
           donorMap.set(d.donor_id, {
-            total: existing.total + Number(d.amount),
+            total: existing.total + Number(baseAmount || 0),
             count: existing.count + 1,
             firstDonation: existing.firstDonation,
           });
         } else {
           donorMap.set(d.donor_id, {
-            total: Number(d.amount),
+            total: Number(baseAmount || 0),
             count: 1,
             firstDonation: d.created_at,
           });
@@ -128,12 +139,15 @@ export const useCampaignDonorStats = (campaignId: string) => {
       const donors = Array.from(donorMap.values());
       const totalDonors = donors.length;
       const repeatDonors = donors.filter(d => d.count > 1).length;
-      const averageDonation = donations?.length 
-        ? donations.reduce((sum, d) => sum + Number(d.amount), 0) / donations.length 
-        : 0;
+      const averageDonation =
+        donations?.length
+          ? donors.reduce((sum, d) => sum + d.total, 0) / donations.length
+          : 0;
+
+      const totalDonationsAmount = donors.reduce((sum, d) => sum + d.total, 0);
       
       // Donation size distribution
-      const amounts = donations?.map(d => Number(d.amount)) || [];
+      const amounts = (donations || []).map(d => baseAmountMap.get(d.transaction_id) ?? Number(d.amount));
       const distribution = {
         small: amounts.filter(a => a < 5000).length,
         medium: amounts.filter(a => a >= 5000 && a < 20000).length,
@@ -146,6 +160,7 @@ export const useCampaignDonorStats = (campaignId: string) => {
         repeatDonors,
         repeatDonorRate: totalDonors ? (repeatDonors / totalDonors) * 100 : 0,
         averageDonation,
+        totalDonationsAmount,
         distribution,
         anonymousDonations: donations?.filter(d => d.is_anonymous).length || 0,
       };
