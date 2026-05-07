@@ -286,65 +286,7 @@ const OrgDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 w-full min-w-0">
-          {/* Total Revenue */}
-          <Card>
-            <CardContent className="p-3 sm:pt-6 sm:px-6">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Revenue</p>
-                  {statsLoading ? (
-                    <Skeleton className="h-6 sm:h-8 w-16 sm:w-24 mt-1" />
-                  ) : (
-                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground truncate">
-                      {formatCurrency(displayTotalRevenue, displayCurrency)}
-                    </p>
-                  )}
-                </div>
-                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Net Revenue */}
-          <Card className="border-green-200 dark:border-green-800">
-            <CardContent className="p-3 sm:pt-6 sm:px-6">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Net Revenue</p>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p className="text-xs">
-                            After platform commission:<br/>
-                            • Votes: {voteCommission}% commission<br/>
-                            • Tickets: {ticketCommission}% commission<br/>
-                            Total deducted: {formatCurrency(displayTotalCommission, displayCurrency)}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  {statsLoading ? (
-                    <Skeleton className="h-6 sm:h-8 w-16 sm:w-24 mt-1" />
-                  ) : (
-                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-green-600 dark:text-green-400 truncate">
-                      {formatCurrency(displayNetRevenue, displayCurrency)}
-                    </p>
-                  )}
-                </div>
-                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full min-w-0">
 
           {/* Total Votes */}
           <Card>
