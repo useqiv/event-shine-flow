@@ -209,6 +209,8 @@ export const useBulkApprovePayouts = () => {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
       toast.success(`Successfully approved ${count} payouts`);
     },
     onError: () => {
@@ -243,6 +245,8 @@ export const useBulkRejectPayouts = () => {
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
       toast.success(`Successfully rejected ${count} payouts`);
     },
     onError: () => {

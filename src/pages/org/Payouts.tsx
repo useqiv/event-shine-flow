@@ -74,11 +74,11 @@ const Payouts = () => {
 
   // Get available currencies with positive available balance (for payout request)
   const availableCurrencies = React.useMemo(() => {
-    if (!stats?.availableBalanceByCurrency) return [];
-    return Object.entries(stats.availableBalanceByCurrency)
+    if (!stats?.requestableBalanceByCurrency) return [];
+    return Object.entries(stats.requestableBalanceByCurrency)
       .filter(([_, amount]) => (amount as number) > 0)
       .map(([currency, amount]) => ({ currency, availableBalance: amount as number }));
-  }, [stats?.availableBalanceByCurrency]);
+  }, [stats?.requestableBalanceByCurrency]);
 
   // Set default view currency when available currencies load
   React.useEffect(() => {
@@ -101,7 +101,7 @@ const Payouts = () => {
   const viewCurrencyAvailable = stats?.availableBalanceByCurrency?.[viewCurrency] || 0;
 
   // Get available balance for selected payout currency
-  const selectedCurrencyAvailable = stats?.availableBalanceByCurrency?.[payoutCurrency] || 0;
+  const selectedCurrencyAvailable = stats?.requestableBalanceByCurrency?.[payoutCurrency] || 0;
 
   const handleRequestPayout = async () => {
     const amount = Number(payoutAmount);

@@ -585,6 +585,8 @@ export const useApprovePayout = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
       toast.success('Payout approved and notification sent');
     },
     onError: () => {
@@ -653,6 +655,8 @@ export const useRejectPayout = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-all-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['payouts'] });
       toast.success('Payout rejected and notification sent');
     },
     onError: () => {

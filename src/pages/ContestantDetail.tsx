@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useContest, useContestants, useVote, useContestVoteOptions } from '@/hooks/useContests';
+import { useContest, useContestant, useContestants, useVote, useContestVoteOptions } from '@/hooks/useContests';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,7 +41,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID } from '@/lib/urlHelpers';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
 
@@ -75,8 +75,13 @@ const ContestantDetail = () => {
     enabled: !!contestSlug && !contestIdFromParams,
   });
   
+  const contestantKeyIsId = !!contestantSlug && isValidUUID(contestantSlug);
+  const { data: contestantById, isLoading: contestantByIdLoading } = useContestant(
+    contestantKeyIsId ? contestantSlug : ''
+  );
+
   // Determine the actual contest ID to use
-  const contestId = contestIdFromParams || contestBySlug?.id;
+  const contestId = contestIdFromParams || contestBySlug?.id || contestantById?.contest_id;
   
   // Use the standard hook if we have a contestId from params, otherwise use the slug-fetched contest
   const { data: contestFromHook, isLoading: contestHookLoading } = useContest(contestIdFromParams || '');
@@ -93,11 +98,12 @@ const ContestantDetail = () => {
   const [showVotePulse, setShowVotePulse] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  // Find contestant by slug
+  // Find contestant (supports stable ID-based links and legacy name-slug links)
   const contestant = useMemo(() => {
+    if (contestantKeyIsId) return contestantById || null;
     if (!contestants || !contestantSlug) return null;
-    return contestants.find((c: any) => createContestantSlug(c.name) === contestantSlug);
-  }, [contestants, contestantSlug]);
+    return contestants.find((c: any) => createContestantSlug(c.name) === contestantSlug) || null;
+  }, [contestantById, contestantKeyIsId, contestants, contestantSlug]);
 
   // Enable real-time updates
   const { initializeVoteCounts } = useRealtimeContestants(contestId || '', () => {
@@ -168,16 +174,18 @@ const ContestantDetail = () => {
 
   // Generate URLs - use custom_slug if available
   const contestUrl = contest ? getContestUrl(contest.id, (contest as any)?.custom_slug) : '';
-  const contestantUrl = contestant 
-    ? getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true)
+  const contestantUrl = contestant
+    ? (contestantKeyIsId
+        ? `${getContestUrl(contestId!, (contest as any)?.custom_slug, true)}/contestant/${contestant.id}`
+        : getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true))
     : '';
   const contestantPageSlug = contestant ? createContestantSlug(contestant.name) : '';
   const contestantImageUrl = contestant?.photo_url
     ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
     : '';
   const ogImage = contestantImageUrl;
-  const contestantShareUrl = contest && contestantPageSlug
-    ? getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestantPageSlug, true)
+  const contestantShareUrl = contest && contestant
+    ? getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestant.id, true)
     : contestantUrl;
   
   // Back link path - use short URL if accessed via slug route
@@ -342,7 +350,7 @@ const ContestantDetail = () => {
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
-  if (contestLoading || contestantsLoading) {
+  if (contestLoading || contestantsLoading || (contestantKeyIsId && contestantByIdLoading)) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />

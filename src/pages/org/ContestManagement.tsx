@@ -57,7 +57,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
-import { getContestUrl, getContestantUrl } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrlById } from '@/lib/urlHelpers';
 
 const categories = [
   'Music', 'Beauty', 'Fashion', 'Sports', 'Talent',
@@ -477,7 +477,7 @@ const ContestManagement = () => {
   };
 
   const handleCopyContestantLink = (contestantId: string, contestantName: string) => {
-    const url = getContestantUrl(id!, contestantName, (contest as any)?.custom_slug);
+    const url = getContestantUrlById(id!, contestantId, (contest as any)?.custom_slug);
     navigator.clipboard.writeText(url);
     toast.success(`Link for ${contestantName} copied!`);
   };

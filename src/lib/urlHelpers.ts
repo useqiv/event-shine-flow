@@ -56,15 +56,33 @@ export const getContestantUrl = (
 };
 
 /**
+ * Generate contestant URL using a stable contestant identifier (UUID).
+ * This prevents links breaking when contestant names are edited.
+ */
+export const getContestantUrlById = (
+  contestId: string,
+  contestantId: string,
+  contestCustomSlug?: string | null,
+  useAbsolute = false
+): string => {
+  const origin = getOrigin(useAbsolute);
+
+  if (contestCustomSlug) {
+    return `${origin}/c/${contestCustomSlug}/contestant/${contestantId}`;
+  }
+  return `${origin}/contests/${contestId}/contestant/${contestantId}`;
+};
+
+/**
  * Generate domain-based contestant share URL for OG previews.
  */
 export const getContestantShareUrl = (
   contestKey: string,
-  contestantSlug: string,
+  contestantKey: string,
   useAbsolute = true
 ): string => {
   const origin = getOrigin(useAbsolute);
-  return `${origin}/share/contestant/${encodeURIComponent(contestKey)}/${encodeURIComponent(contestantSlug)}`;
+  return `${origin}/share/contestant/${encodeURIComponent(contestKey)}/${encodeURIComponent(contestantKey)}`;
 };
 
 /**

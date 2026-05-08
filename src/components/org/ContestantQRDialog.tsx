@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Download, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import { getContestantUrlById } from '@/lib/urlHelpers';
 
 interface ContestantQRDialogProps {
   open: boolean;
@@ -29,9 +30,7 @@ export const ContestantQRDialog: React.FC<ContestantQRDialogProps> = ({
   contestTitle,
 }) => {
   const qrRef = useRef<HTMLDivElement>(null);
-  // Create URL-friendly slug from contestant name
-  const contestantSlug = contestantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  const votingUrl = `${window.location.origin}/contests/${contestId}/contestant/${contestantSlug}`;
+  const votingUrl = getContestantUrlById(contestId, contestantId, null, false);
 
   const handleDownload = () => {
     const svg = qrRef.current?.querySelector('svg');

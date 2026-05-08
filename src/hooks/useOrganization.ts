@@ -624,6 +624,7 @@ export const useOrganizationStats = () => {
       // Calculate net revenue after platform commission PER CURRENCY
       const netRevenueByCurrency: Record<string, number> = {};
       const availableBalanceByCurrency: Record<string, number> = {};
+      const requestableBalanceByCurrency: Record<string, number> = {};
       
       // Get all unique currencies (including those with payouts)
       const allCurrencies = new Set([
@@ -646,10 +647,15 @@ export const useOrganizationStats = () => {
         const netRev = netTicket + netVote + netCampaign;
         netRevenueByCurrency[currency] = netRev;
         
-        // Available balance = net revenue - pending payouts - completed payouts
         const pending = pendingPayoutsByCurrency[currency] || 0;
         const completed = completedPayoutsByCurrency[currency] || 0;
-        availableBalanceByCurrency[currency] = netRev - pending - completed;
+        // Dashboard available balance = net revenue - completed payouts.
+        // This makes admin approval visibly deduct from balance at completion time.
+        availableBalanceByCurrency[currency] = netRev - completed;
+
+        // Requestable balance = net revenue - pending payouts - completed payouts.
+        // This prevents over-requesting while withdrawals are still pending.
+        requestableBalanceByCurrency[currency] = netRev - pending - completed;
       });
       
       // Calculate total net revenue (mixed currencies - for backwards compatibility)
@@ -657,7 +663,8 @@ export const useOrganizationStats = () => {
       const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
       const netCampaignRevenue = campaignRevenue * (1 - ticketCommissionRate / 100);
       const netRevenue = netTicketRevenue + netVoteRevenue + netCampaignRevenue;
-      const availableBalance = netRevenue - completedPayouts - pendingPayouts;
+      const availableBalance = netRevenue - completedPayouts;
+      const requestableBalance = netRevenue - completedPayouts - pendingPayouts;
       
       return {
         totalRevenue,
@@ -678,8 +685,10 @@ export const useOrganizationStats = () => {
         campaignRevenueByCurrency,
         netRevenueByCurrency,
         availableBalanceByCurrency,
+        requestableBalanceByCurrency,
         pendingPayoutsByCurrency,
         completedPayoutsByCurrency,
+        requestableBalance,
         ticketCommissionRate,
         voteCommissionRate,
       };

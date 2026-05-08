@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateRevenueReportPdf } from '@/lib/exportPdf';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 import { 
   Search, 
   FileText, 
@@ -78,8 +79,12 @@ const AdminOrgReports: React.FC = () => {
       
       const { data: votes } = await supabase
         .from('votes')
-        .select('contest_id, quantity, amount_paid')
+        .select('contest_id, quantity, amount_paid, transaction_id')
         .in('contest_id', contestIds);
+
+      const voteBaseAmountMap = await getBaseAmountsByTransactionId(
+        votes?.map((v: any) => v.transaction_id) || []
+      );
 
       // Get all tickets for these orgs
       const { data: events } = await supabase
@@ -91,8 +96,12 @@ const AdminOrgReports: React.FC = () => {
       
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('event_id, quantity, amount_paid')
+        .select('event_id, quantity, amount_paid, transaction_id')
         .in('event_id', eventIds);
+
+      const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
+        tickets?.map((t: any) => t.transaction_id) || []
+      );
 
       // Get payouts
       const { data: payouts } = await supabase
@@ -126,8 +135,18 @@ const AdminOrgReports: React.FC = () => {
         const orgEventIds = orgEvents.map(e => e.id);
         const orgTickets = tickets?.filter(t => orgEventIds.includes(t.event_id)) || [];
 
-        const voteRevenue = orgVotes.reduce((sum, v) => sum + v.amount_paid, 0);
-        const ticketRevenue = orgTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+        // Use fee-free base amounts when available; fall back to stored amounts.
+        // This ensures convenience fees never inflate revenue/commission/net in admin reports.
+        const voteRevenue = orgVotes.reduce((sum, v: any) => {
+          const base = voteBaseAmountMap.get(v.transaction_id) ?? v.amount_paid;
+          return sum + (Number(base) || 0);
+        }, 0);
+
+        const ticketRevenue = orgTickets.reduce((sum, t: any) => {
+          const base = ticketBaseAmountMap.get(t.transaction_id) ?? t.amount_paid;
+          return sum + (Number(base) || 0);
+        }, 0);
+
         const totalRevenue = voteRevenue + ticketRevenue;
         
         // Get org-specific commission rate or use platform default
