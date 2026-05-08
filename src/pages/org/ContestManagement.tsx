@@ -29,7 +29,7 @@ import { useContestCategories } from '@/hooks/useContestCategories';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
 
 import { useContest, useContestants } from '@/hooks/useContests';
-import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants } from '@/hooks/useOrganization';
+import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants, useOrganizationStats } from '@/hooks/useOrganization';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import CurrencySelector, { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
@@ -71,6 +71,7 @@ const ContestManagement = () => {
   const { data: contest, isLoading } = useContest(id || '');
   const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
   const { data: contestCategories } = useContestCategories(id || '');
+  const { data: orgStats } = useOrganizationStats();
   const updateContest = useUpdateContest();
   const createContestant = useCreateContestant();
   const updateContestant = useUpdateContestant();
@@ -120,6 +121,9 @@ const ContestManagement = () => {
   // Calculate revenue with commission
   const totalRevenue = contest ? contest.total_votes * Number(contest.vote_price) : 0;
   const netRevenue = totalRevenue * (1 - voteCommission / 100);
+  const contestCurrency = contest?.vote_currency || 'NGN';
+  const requestableByCurrency = orgStats?.requestableBalanceByCurrency?.[contestCurrency] || 0;
+  const withdrawableBalance = Math.max(0, Math.min(netRevenue, requestableByCurrency));
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
   const [isEditContestantOpen, setIsEditContestantOpen] = useState(false);
@@ -777,16 +781,19 @@ const ContestManagement = () => {
                     </TooltipProvider>
                   </div>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {formatCurrency(netRevenue, contest.vote_currency || 'NGN')}
+                    {formatCurrency(netRevenue, contestCurrency)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Available Balance: {formatCurrency(withdrawableBalance, contestCurrency)}
                   </p>
                   <div className="mt-2">
                     <EventPayoutRequest
                       mode="dialog"
-                      netRevenue={netRevenue}
-                      currency={contest.vote_currency || 'NGN'}
+                      netRevenue={withdrawableBalance}
+                      currency={contestCurrency}
                       itemType="contest"
                       itemTitle={contest.title}
-                      triggerLabel="Request payout"
+                      triggerLabel={`Available: ${formatCurrency(withdrawableBalance, contestCurrency)}`}
                       triggerVariant="outline"
                       triggerSize="sm"
                       triggerClassName="w-full"
@@ -1284,8 +1291,8 @@ const ContestManagement = () => {
 
           <TabsContent value="payout" className="space-y-6">
             <EventPayoutRequest
-              netRevenue={netRevenue}
-              currency={contest.vote_currency || 'NGN'}
+              netRevenue={withdrawableBalance}
+              currency={contestCurrency}
               itemType="contest"
               itemTitle={contest.title}
             />
