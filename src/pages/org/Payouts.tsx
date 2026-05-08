@@ -102,6 +102,12 @@ const Payouts = () => {
 
   // Get available balance for selected payout currency
   const selectedCurrencyAvailable = stats?.requestableBalanceByCurrency?.[payoutCurrency] || 0;
+  const enteredPayoutAmount = Number(payoutAmount);
+  const exceedsAvailableBalance = !!payoutCurrency && (
+    !Number.isFinite(enteredPayoutAmount) ||
+    enteredPayoutAmount <= 0 ||
+    enteredPayoutAmount > Math.max(0, selectedCurrencyAvailable)
+  );
 
   const handleRequestPayout = async () => {
     const amount = Number(payoutAmount);
@@ -248,6 +254,7 @@ const Payouts = () => {
                   disabled={
                     requestPayout.isPending || 
                     !payoutCurrency ||
+                    exceedsAvailableBalance ||
                     (payoutMethod === 'bank' && !hasBankSetup) || 
                     (payoutMethod === 'usdt' && !hasUsdtSetup)
                   }
