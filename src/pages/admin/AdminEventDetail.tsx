@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import EditEventDialog from '@/components/admin/EditEventDialog';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 const AdminEventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,7 +85,16 @@ const AdminEventDetail: React.FC = () => {
         .limit(20);
       
       if (error) throw error;
-      return data;
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        data?.map((t: any) => t.transaction_id) || []
+      );
+
+      return (data || []).map((ticket: any) => ({
+        ...ticket,
+        base_amount:
+          baseAmountMap.get(ticket.transaction_id) ??
+          ((Number(ticket.ticket_types?.price) || 0) * (Number(ticket.quantity) || 0)),
+      }));
     },
     enabled: !!id
   });
@@ -191,7 +201,7 @@ const AdminEventDetail: React.FC = () => {
   }
 
   const totalTicketsSold = ticketTypes?.reduce((sum, t) => sum + (t.quantity_sold || 0), 0) || 0;
-  const totalRevenue = tickets?.reduce((sum, t) => sum + (t.amount_paid || 0), 0) || 0;
+  const totalRevenue = tickets?.reduce((sum, t: any) => sum + (Number(t.base_amount) || 0), 0) || 0;
   const totalCapacity = ticketTypes?.reduce((sum, t) => sum + (t.quantity_available || 0), 0) || 0;
   const scannedCount = scanLogs?.filter(s => s.scan_result === 'success').length || 0;
 
@@ -465,7 +475,7 @@ const AdminEventDetail: React.FC = () => {
                         </TableCell>
                         <TableCell>{ticket.ticket_types?.name || 'Unknown'}</TableCell>
                         <TableCell>{ticket.quantity}</TableCell>
-                        <TableCell>{formatCurrency(ticket.amount_paid, event?.currency)}</TableCell>
+                        <TableCell>{formatCurrency(Number((ticket as any).base_amount) || 0, event?.currency)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{ticket.payment_method}</Badge>
                         </TableCell>

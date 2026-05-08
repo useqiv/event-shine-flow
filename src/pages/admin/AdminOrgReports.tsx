@@ -79,12 +79,27 @@ const AdminOrgReports: React.FC = () => {
       
       const { data: votes } = await supabase
         .from('votes')
-        .select('contest_id, quantity, amount_paid, transaction_id')
+        .select('contest_id, quantity, transaction_id')
         .in('contest_id', contestIds);
 
       const voteBaseAmountMap = await getBaseAmountsByTransactionId(
         votes?.map((v: any) => v.transaction_id) || []
       );
+      const { data: voteOptions } =
+        contestIds.length > 0
+          ? await supabase
+              .from('contest_vote_options')
+              .select('contest_id, vote_quantity, price')
+              .in('contest_id', contestIds)
+          : { data: [] as any[] };
+
+      const voteOptionPriceMap = new Map<string, number>();
+      voteOptions?.forEach((option: any) => {
+        voteOptionPriceMap.set(
+          `${option.contest_id}:${Number(option.vote_quantity) || 0}`,
+          Number(option.price) || 0
+        );
+      });
 
       // Get all tickets for these orgs
       const { data: events } = await supabase
@@ -96,12 +111,27 @@ const AdminOrgReports: React.FC = () => {
       
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('event_id, quantity, amount_paid, transaction_id')
+        .select('event_id, quantity, transaction_id, ticket_type_id')
         .in('event_id', eventIds);
 
       const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
         tickets?.map((t: any) => t.transaction_id) || []
       );
+      const ticketTypeIds = Array.from(
+        new Set((tickets || []).map((t: any) => t.ticket_type_id).filter((id: any) => !!id))
+      );
+      const { data: ticketTypes } =
+        ticketTypeIds.length > 0
+          ? await supabase
+              .from('ticket_types')
+              .select('id, price')
+              .in('id', ticketTypeIds)
+          : { data: [] as any[] };
+
+      const ticketTypePriceMap = new Map<string, number>();
+      ticketTypes?.forEach((tt: any) => {
+        ticketTypePriceMap.set(tt.id, Number(tt.price) || 0);
+      });
 
       // Get payouts
       const { data: payouts } = await supabase
@@ -138,12 +168,21 @@ const AdminOrgReports: React.FC = () => {
         // Use fee-free base amounts when available; fall back to stored amounts.
         // This ensures convenience fees never inflate revenue/commission/net in admin reports.
         const voteRevenue = orgVotes.reduce((sum, v: any) => {
-          const base = voteBaseAmountMap.get(v.transaction_id) ?? v.amount_paid;
+          const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${Number(v.quantity) || 0}`);
+          const votePrice = Number(
+            orgContests.find((c: any) => c.id === v.contest_id)?.vote_price
+          ) || 0;
+          const base =
+            voteBaseAmountMap.get(v.transaction_id) ??
+            optionPrice ??
+            (votePrice > 0 ? votePrice * (Number(v.quantity) || 0) : 0);
           return sum + (Number(base) || 0);
         }, 0);
 
         const ticketRevenue = orgTickets.reduce((sum, t: any) => {
-          const base = ticketBaseAmountMap.get(t.transaction_id) ?? t.amount_paid;
+          const ticketPrice = ticketTypePriceMap.get(t.ticket_type_id) || 0;
+          const qty = Number(t.quantity) || 0;
+          const base = ticketBaseAmountMap.get(t.transaction_id) ?? (ticketPrice > 0 ? ticketPrice * qty : 0);
           return sum + (Number(base) || 0);
         }, 0);
 

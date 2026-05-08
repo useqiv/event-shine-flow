@@ -10,6 +10,7 @@ import { useRealtimePayments } from '@/hooks/useRealtimePayments';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 import RevenueForecast from '@/components/admin/RevenueForecast';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -38,17 +39,26 @@ const AdminPaymentAnalytics = () => {
         .from('votes')
         .select(`
           id,
-          amount_paid,
+          transaction_id,
           payment_method,
           created_at,
           quantity,
-          contest:contests(vote_currency)
+          contest:contests(vote_currency, vote_price)
         `)
         .gte('created_at', startDate)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
-      return data;
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        data?.map((v: any) => v.transaction_id) || []
+      );
+
+      return (data || []).map((v: any) => ({
+        ...v,
+        base_amount:
+          baseAmountMap.get(v.transaction_id) ??
+          ((Number(v.contest?.vote_price) || 0) * (Number(v.quantity) || 0)),
+      }));
     },
   });
 
@@ -63,18 +73,27 @@ const AdminPaymentAnalytics = () => {
         .from('tickets')
         .select(`
           id,
-          amount_paid,
+          transaction_id,
           payment_method,
           created_at,
           quantity,
           status,
-          ticket_type:ticket_types(currency)
+          ticket_type:ticket_types(currency, price)
         `)
         .gte('created_at', startDate)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
-      return data;
+      const baseAmountMap = await getBaseAmountsByTransactionId(
+        data?.map((t: any) => t.transaction_id) || []
+      );
+
+      return (data || []).map((t: any) => ({
+        ...t,
+        base_amount:
+          baseAmountMap.get(t.transaction_id) ??
+          ((Number(t.ticket_type?.price) || 0) * (Number(t.quantity) || 0)),
+      }));
     },
   });
 
@@ -135,8 +154,8 @@ const AdminPaymentAnalytics = () => {
       if (!byCurrency[currency]) {
         byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
       }
-      byCurrency[currency].votes += v.amount_paid;
-      byCurrency[currency].total += v.amount_paid;
+      byCurrency[currency].votes += Number(v.base_amount) || 0;
+      byCurrency[currency].total += Number(v.base_amount) || 0;
       byCurrency[currency].count += 1;
     });
     
@@ -146,8 +165,8 @@ const AdminPaymentAnalytics = () => {
       if (!byCurrency[currency]) {
         byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
       }
-      byCurrency[currency].tickets += t.amount_paid;
-      byCurrency[currency].total += t.amount_paid;
+      byCurrency[currency].tickets += Number(t.base_amount) || 0;
+      byCurrency[currency].total += Number(t.base_amount) || 0;
       byCurrency[currency].count += 1;
     });
 
@@ -192,12 +211,12 @@ const AdminPaymentAnalytics = () => {
       const voteRevenue = votes?.filter((v: any) => {
         const date = new Date(v.created_at);
         return date >= dayStart && date < dayEnd;
-      }).reduce((sum: number, v: any) => sum + v.amount_paid, 0) || 0;
+      }).reduce((sum: number, v: any) => sum + (Number(v.base_amount) || 0), 0) || 0;
 
       const ticketRevenue = tickets?.filter((t: any) => {
         const date = new Date(t.created_at);
         return date >= dayStart && date < dayEnd && successStatuses.includes(t.status);
-      }).reduce((sum: number, t: any) => sum + t.amount_paid, 0) || 0;
+      }).reduce((sum: number, t: any) => sum + (Number(t.base_amount) || 0), 0) || 0;
 
       const donationRevenue = donations?.filter((d: any) => {
         const date = new Date(d.created_at);
@@ -226,13 +245,13 @@ const AdminPaymentAnalytics = () => {
     
     votes?.forEach((v: any) => {
       const method = v.payment_method || 'unknown';
-      methods[method] = (methods[method] || 0) + v.amount_paid;
+      methods[method] = (methods[method] || 0) + (Number(v.base_amount) || 0);
     });
     
     tickets?.forEach((t: any) => {
       if (!successStatuses.includes(t.status)) return;
       const method = t.payment_method || 'unknown';
-      methods[method] = (methods[method] || 0) + t.amount_paid;
+      methods[method] = (methods[method] || 0) + (Number(t.base_amount) || 0);
     });
 
     donations?.forEach((d: any) => {
@@ -262,14 +281,14 @@ const AdminPaymentAnalytics = () => {
     votes?.forEach((v: any) => {
       const hour = new Date(v.created_at).getHours();
       hours[hour].transactions += 1;
-      hours[hour].amount += v.amount_paid;
+      hours[hour].amount += Number(v.base_amount) || 0;
     });
 
     tickets?.forEach((t: any) => {
       if (!successStatuses.includes(t.status)) return;
       const hour = new Date(t.created_at).getHours();
       hours[hour].transactions += 1;
-      hours[hour].amount += t.amount_paid;
+      hours[hour].amount += Number(t.base_amount) || 0;
     });
 
     donations?.forEach((d: any) => {
@@ -289,9 +308,9 @@ const AdminPaymentAnalytics = () => {
 
   // Summary stats
   const summaryStats = useMemo(() => {
-    const totalVoteRevenue = votes?.reduce((sum: number, v: any) => sum + v.amount_paid, 0) || 0;
+    const totalVoteRevenue = votes?.reduce((sum: number, v: any) => sum + (Number(v.base_amount) || 0), 0) || 0;
     const totalTicketRevenue = tickets?.filter((t: any) => successStatuses.includes(t.status))
-      .reduce((sum: number, t: any) => sum + t.amount_paid, 0) || 0;
+      .reduce((sum: number, t: any) => sum + (Number(t.base_amount) || 0), 0) || 0;
     const totalDonationRevenue = donations?.reduce((sum: number, d: any) => sum + d.amount, 0) || 0;
     const totalFormRevenue = formPayments?.reduce((sum: number, f: any) => sum + (f.payment_amount || 0), 0) || 0;
     

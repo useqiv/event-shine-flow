@@ -34,6 +34,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
 const AdminFinance: React.FC = () => {
   const { data: stats, isLoading: statsLoading } = useAdminStatistics();
@@ -64,7 +65,7 @@ const AdminFinance: React.FC = () => {
         // Get votes revenue for this month - filter by vote currency
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, contests!inner(vote_currency)')
+          .select('transaction_id, quantity, contests!inner(vote_currency, vote_price)')
           .eq('contests.vote_currency', selectedCurrency)
           .gte('created_at', start.toISOString())
           .lte('created_at', end.toISOString());
@@ -72,13 +73,26 @@ const AdminFinance: React.FC = () => {
         // Get tickets revenue for this month - filter by ticket type currency
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('amount_paid, ticket_types!inner(currency)')
+          .select('transaction_id, quantity, ticket_types!inner(currency, price)')
           .eq('ticket_types.currency', selectedCurrency)
           .gte('created_at', start.toISOString())
           .lte('created_at', end.toISOString());
-        
-        const votesRevenue = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
-        const ticketsRevenue = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+
+        const voteBaseAmountMap = await getBaseAmountsByTransactionId(
+          votes?.map((v: any) => v.transaction_id) || []
+        );
+        const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
+          tickets?.map((t: any) => t.transaction_id) || []
+        );
+
+        const votesRevenue = votes?.reduce((sum, v: any) => {
+          const fallback = (Number(v.contests?.vote_price) || 0) * (Number(v.quantity) || 0);
+          return sum + (voteBaseAmountMap.get(v.transaction_id) ?? fallback);
+        }, 0) || 0;
+        const ticketsRevenue = tickets?.reduce((sum, t: any) => {
+          const fallback = (Number(t.ticket_types?.price) || 0) * (Number(t.quantity) || 0);
+          return sum + (ticketBaseAmountMap.get(t.transaction_id) ?? fallback);
+        }, 0) || 0;
         
         months.push({
           month: format(date, 'MMM'),
@@ -97,17 +111,30 @@ const AdminFinance: React.FC = () => {
       // Get votes revenue in selected currency
       const { data: votes } = await supabase
         .from('votes')
-        .select('amount_paid, contests!inner(vote_currency)')
+        .select('transaction_id, quantity, contests!inner(vote_currency, vote_price)')
         .eq('contests.vote_currency', selectedCurrency);
       
       // Get tickets revenue in selected currency
       const { data: tickets } = await supabase
         .from('tickets')
-        .select('amount_paid, ticket_types!inner(currency)')
+        .select('transaction_id, quantity, ticket_types!inner(currency, price)')
         .eq('ticket_types.currency', selectedCurrency);
-      
-      const votesTotal = votes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
-      const ticketsTotal = tickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+
+      const voteBaseAmountMap = await getBaseAmountsByTransactionId(
+        votes?.map((v: any) => v.transaction_id) || []
+      );
+      const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
+        tickets?.map((t: any) => t.transaction_id) || []
+      );
+
+      const votesTotal = votes?.reduce((sum, v: any) => {
+        const fallback = (Number(v.contests?.vote_price) || 0) * (Number(v.quantity) || 0);
+        return sum + (voteBaseAmountMap.get(v.transaction_id) ?? fallback);
+      }, 0) || 0;
+      const ticketsTotal = tickets?.reduce((sum, t: any) => {
+        const fallback = (Number(t.ticket_types?.price) || 0) * (Number(t.quantity) || 0);
+        return sum + (ticketBaseAmountMap.get(t.transaction_id) ?? fallback);
+      }, 0) || 0;
       const total = votesTotal + ticketsTotal;
       
       // Get pending payouts filtered by currency
