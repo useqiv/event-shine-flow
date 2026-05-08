@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Trash2, Search, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Trash2, Search, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,6 +40,13 @@ const AdminVoteReconciliation: React.FC = () => {
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingGroup, setDeletingGroup] = useState<DuplicateVoteGroup | null>(null);
+  const [reconcileResult, setReconcileResult] = useState<{
+    checked_transactions: number;
+    orphan_transactions: number;
+    alerts_created: number;
+    contestant_counters_reconciled: number;
+    contest_counters_reconciled: number;
+  } | null>(null);
 
   // Query to find duplicate votes
   const { data: duplicates, isLoading, refetch, isFetching } = useQuery({
@@ -244,6 +251,30 @@ const AdminVoteReconciliation: React.FC = () => {
     },
   });
 
+  const runReconciliationMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('check-orphan-transactions', {
+        body: {},
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      setReconcileResult({
+        checked_transactions: Number(data?.checked_transactions || 0),
+        orphan_transactions: Number(data?.orphan_transactions || 0),
+        alerts_created: Number(data?.alerts_created || 0),
+        contestant_counters_reconciled: Number(data?.contestant_counters_reconciled || 0),
+        contest_counters_reconciled: Number(data?.contest_counters_reconciled || 0),
+      });
+      toast.success('Reconciliation job completed');
+      queryClient.invalidateQueries({ queryKey: ['duplicate-votes'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Reconciliation failed: ${error.message}`);
+    },
+  });
+
   const handleSelectGroup = (groupKey: string, checked: boolean) => {
     const newSelected = new Set(selectedGroups);
     if (checked) {
@@ -296,6 +327,57 @@ const AdminVoteReconciliation: React.FC = () => {
         </div>
 
         {/* Summary Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5" />
+              Auto Retry / Reconciliation Job
+            </CardTitle>
+            <CardDescription>
+              Checks orphaned completed payments, alerts admins for missing vote/ticket records, and reconciles vote counters.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Run this after payment incidents or before finance reviews.
+              </p>
+              <Button
+                onClick={() => runReconciliationMutation.mutate()}
+                disabled={runReconciliationMutation.isPending}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${runReconciliationMutation.isPending ? 'animate-spin' : ''}`} />
+                Run Reconciliation Job
+              </Button>
+            </div>
+
+            {reconcileResult && (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Checked TXs</p>
+                  <p className="text-lg font-semibold">{reconcileResult.checked_transactions}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Orphans Found</p>
+                  <p className="text-lg font-semibold">{reconcileResult.orphan_transactions}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Alerts Created</p>
+                  <p className="text-lg font-semibold">{reconcileResult.alerts_created}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Contestant Fixes</p>
+                  <p className="text-lg font-semibold">{reconcileResult.contestant_counters_reconciled}</p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-muted-foreground">Contest Fixes</p>
+                  <p className="text-lg font-semibold">{reconcileResult.contest_counters_reconciled}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

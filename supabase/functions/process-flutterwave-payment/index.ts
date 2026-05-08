@@ -473,10 +473,14 @@ const handler = async (req: Request): Promise<Response> => {
       const { error: txError } = await supabase.from("wallet_transactions").insert(txInsertData);
 
       if (txError) {
-        console.log("Transaction insert error (non-critical):", txError.message);
-      } else {
-        console.log("Pending transaction recorded for tx_ref:", tx_ref, isGuestUser ? "(guest)" : "(authenticated)");
+        console.error("Failed to record pending transaction:", txError.message);
+        return new Response(
+          JSON.stringify({ error: "Unable to initialize payment tracking. Please try again." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+
+      console.log("Pending transaction recorded for tx_ref:", tx_ref, isGuestUser ? "(guest)" : "(authenticated)");
     }
 
     console.log("Payment initialized successfully, returning link:", data.data.link);

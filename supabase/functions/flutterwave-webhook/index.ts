@@ -614,6 +614,28 @@ async function processSuccessfulPayment(paymentData: any) {
 
   const payment_method = resolvePaymentMethod(paymentData);
 
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const runWithRetry = async <T>(
+    label: string,
+    operation: () => Promise<T>,
+    maxAttempts = 3,
+    delayMs = 400
+  ): Promise<T> => {
+    let lastError: unknown = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        console.error(`${label} attempt ${attempt}/${maxAttempts} failed:`, error);
+        if (attempt < maxAttempts) {
+          await sleep(delayMs * attempt);
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(`${label} failed after ${maxAttempts} attempts`);
+  };
+
   // Find the wallet transaction created during payment initialization
   const { data: walletTx, error: walletTxError } = await supabase
     .from("wallet_transactions")
@@ -625,19 +647,24 @@ async function processSuccessfulPayment(paymentData: any) {
     console.error("Failed to load wallet transaction:", walletTxError.message);
   }
 
-  // Update transaction status (if it exists)
-  if (walletTx?.id) {
+  const updateWalletTxStatus = async (status: "pending" | "completed" | "failed") => {
+    if (!walletTx?.id) {
+      console.log("No wallet_transactions row found for tx_ref:", paymentData.tx_ref);
+      return;
+    }
+
     const { error: updateError } = await supabase
       .from("wallet_transactions")
-      .update({ status: "completed" })
+      .update({ status })
       .eq("id", walletTx.id);
 
     if (updateError) {
-      console.log("Transaction update error:", updateError.message);
+      console.log(`Transaction status update error (${status}):`, updateError.message);
+      return;
     }
-  } else {
-    console.log("No wallet_transactions row found for tx_ref:", paymentData.tx_ref);
-  }
+
+    console.log(`Transaction marked as ${status}:`, walletTx.id);
+  };
 
   // IMPORTANT: votes.transaction_id & tickets.transaction_id reference wallet_transactions.id (UUID)
   const db_transaction_id: string | null = walletTx?.id ?? null;
@@ -674,6 +701,7 @@ async function processSuccessfulPayment(paymentData: any) {
 
       if (existingVote?.id) {
         console.log("Vote already recorded for wallet transaction:", db_transaction_id);
+        await updateWalletTxStatus("completed");
         return;
       }
     }
@@ -695,28 +723,38 @@ async function processSuccessfulPayment(paymentData: any) {
     console.log("Is guest vote purchase:", isGuestVotePurchase, "User ID:", actualVoteUserId);
 
     // Record vote – use wallet_transactions.id for idempotency/FK
-    const { error: voteError } = await supabase.from("votes").insert({
-      user_id: actualVoteUserId,
-      contest_id,
-      contestant_id,
-      quantity: toPositiveInt(vote_quantity, 1),
-      amount_paid: baseAmount,
-      currency: paymentData.currency || "NGN",
-      payment_method,
-      transaction_id: db_transaction_id,
-      platform_commission: voteCommission.commission,
-      net_amount: voteCommission.netAmount,
-      guest_email: voteGuestEmail,
-      guest_name: voteGuestName,
-    });
+    let voteError: any = null;
+    try {
+      await runWithRetry("Vote insert", async () => {
+        const { error } = await supabase.from("votes").insert({
+          user_id: actualVoteUserId,
+          contest_id,
+          contestant_id,
+          quantity: toPositiveInt(vote_quantity, 1),
+          amount_paid: baseAmount,
+          currency: paymentData.currency || "NGN",
+          payment_method,
+          transaction_id: db_transaction_id,
+          platform_commission: voteCommission.commission,
+          net_amount: voteCommission.netAmount,
+          guest_email: voteGuestEmail,
+          guest_name: voteGuestName,
+        });
+        if (error) throw error;
+      });
+    } catch (error) {
+      voteError = error;
+    }
 
     if (voteError) {
       // Check if duplicate (unique constraint violation)
       const isDuplicate = voteError.message.includes("duplicate") || voteError.code === "23505";
       if (isDuplicate) {
         console.log("Vote already recorded for this transaction (idempotency check)");
+        await updateWalletTxStatus("completed");
       } else {
         console.error("Error recording vote:", voteError.message);
+        await updateWalletTxStatus("failed");
         // Alert admins about the failure
         await notifyAdminsOfFailure(supabase, "vote", voteError.message, paymentData, meta);
       }
@@ -767,6 +805,8 @@ async function processSuccessfulPayment(paymentData: any) {
           voter_email: voteGuestEmail || customer.email || "",
         });
       }
+
+      await updateWalletTxStatus("completed");
     }
   } else if (type === "ticket" && event_id && ticket_type_id) {
     console.log("Recording ticket purchase...");
@@ -833,6 +873,7 @@ async function processSuccessfulPayment(paymentData: any) {
 
       if (existingTicket?.id) {
         console.log("Ticket already recorded for wallet transaction:", db_transaction_id);
+        await updateWalletTxStatus("completed");
         return;
       }
     }
@@ -842,30 +883,40 @@ async function processSuccessfulPayment(paymentData: any) {
     const ticketCommission = calculateCommission(baseAmount, ticketCommissionRate);
     console.log("Ticket commission calculated:", ticketCommission.commission, "Net amount:", ticketCommission.netAmount);
 
-    const { error: ticketError } = await supabase.from("tickets").insert({
-      user_id: actualUserId,
-      event_id,
-      ticket_type_id,
-      quantity: toPositiveInt(ticket_quantity, 1),
-      amount_paid: baseAmount,
-      payment_method,
-      qr_code,
-      status: "active",
-      transaction_id: db_transaction_id,
-      payment_reference_id: paymentData.tx_ref,
-      guest_email: ticketHolderEmail,
-      guest_name: ticketHolderName,
-      platform_commission: ticketCommission.commission,
-      net_amount: ticketCommission.netAmount,
-    });
+    let ticketError: any = null;
+    try {
+      await runWithRetry("Ticket insert", async () => {
+        const { error } = await supabase.from("tickets").insert({
+          user_id: actualUserId,
+          event_id,
+          ticket_type_id,
+          quantity: toPositiveInt(ticket_quantity, 1),
+          amount_paid: baseAmount,
+          payment_method,
+          qr_code,
+          status: "active",
+          transaction_id: db_transaction_id,
+          payment_reference_id: paymentData.tx_ref,
+          guest_email: ticketHolderEmail,
+          guest_name: ticketHolderName,
+          platform_commission: ticketCommission.commission,
+          net_amount: ticketCommission.netAmount,
+        });
+        if (error) throw error;
+      });
+    } catch (error) {
+      ticketError = error;
+    }
 
     if (ticketError) {
       // Check if duplicate (unique constraint violation)
       const isDuplicate = ticketError.message.includes("duplicate") || ticketError.code === "23505";
       if (isDuplicate) {
         console.log("Ticket already recorded for this transaction (idempotency check)");
+        await updateWalletTxStatus("completed");
       } else {
         console.error("Error recording ticket:", ticketError.message);
+        await updateWalletTxStatus("failed");
         // Alert admins about the failure
         await notifyAdminsOfFailure(supabase, "ticket", ticketError.message, paymentData, meta);
       }
@@ -928,6 +979,8 @@ async function processSuccessfulPayment(paymentData: any) {
           buyer_email: ticketHolderEmail || customer.email || "",
         });
       }
+
+      await updateWalletTxStatus("completed");
     }
   } else if (type === "wallet" && user_id) {
     console.log("Processing wallet funding...");
@@ -1019,6 +1072,7 @@ async function processSuccessfulPayment(paymentData: any) {
 
     if (!updateOrInsertError) {
       console.log("Wallet funded successfully with", paymentCurrency, amountToAdd);
+      await updateWalletTxStatus("completed");
 
       // Create notification
       await supabase.from("notifications").insert({
@@ -1043,6 +1097,8 @@ async function processSuccessfulPayment(paymentData: any) {
         total_charged: paymentData.amount,
         total_credited: amountToAdd,
       }, user_id, supabase);
+    } else {
+      await updateWalletTxStatus("failed");
     }
   } else if (type === "donation" && campaign_id && user_id) {
     console.log("Processing donation...");
@@ -1092,28 +1148,40 @@ async function processSuccessfulPayment(paymentData: any) {
     console.log("Is guest donation:", isGuestDonation, "Donor ID:", actualDonorId);
 
     // Record donation
-    const { data: donationData, error: donationError } = await supabase.from("donations").insert({
-      campaign_id,
-      donor_id: actualDonorId,
-      amount: baseAmount,
-      currency: paymentData.currency || campaign.currency || "NGN",
-      payment_method: payment_method,
-      is_anonymous: is_anonymous || false,
-      donor_message: donor_message || null,
-      status: "completed",
-      transaction_id: db_transaction_id,
-      platform_commission: donationCommission.commission,
-      net_amount: donationCommission.netAmount,
-      guest_email: donorGuestEmail,
-      guest_name: donorGuestName,
-    }).select().single();
+    let donationData: any = null;
+    let donationError: any = null;
+    try {
+      donationData = await runWithRetry("Donation insert", async () => {
+        const { data, error } = await supabase.from("donations").insert({
+          campaign_id,
+          donor_id: actualDonorId,
+          amount: baseAmount,
+          currency: paymentData.currency || campaign.currency || "NGN",
+          payment_method: payment_method,
+          is_anonymous: is_anonymous || false,
+          donor_message: donor_message || null,
+          status: "completed",
+          transaction_id: db_transaction_id,
+          platform_commission: donationCommission.commission,
+          net_amount: donationCommission.netAmount,
+          guest_email: donorGuestEmail,
+          guest_name: donorGuestName,
+        }).select().single();
+        if (error) throw error;
+        return data;
+      });
+    } catch (error) {
+      donationError = error;
+    }
 
     if (donationError) {
       const isDuplicate = donationError.message.includes("duplicate") || donationError.code === "23505";
       if (isDuplicate) {
         console.log("Donation already recorded for this transaction (idempotency check)");
+        await updateWalletTxStatus("completed");
       } else {
         console.error("Error recording donation:", donationError.message);
+        await updateWalletTxStatus("failed");
       }
     } else {
       console.log("Donation recorded successfully");
@@ -1185,9 +1253,12 @@ async function processSuccessfulPayment(paymentData: any) {
           donor_email: is_anonymous ? "" : (donorGuestEmail || customer.email || ""),
         });
       }
+
+      await updateWalletTxStatus("completed");
     }
   } else {
     console.log("Unable to process payment - missing required meta fields");
+    await updateWalletTxStatus("failed");
   }
 }
 
