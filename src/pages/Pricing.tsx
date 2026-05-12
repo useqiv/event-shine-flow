@@ -28,7 +28,7 @@ import {
 type CountryCode = "NG" | "GH" | "KE" | "ZA" | "US" | "GB";
 
 const COUNTRIES: Record<CountryCode, { name: string; currency: string; symbol: string; flat: number }> = {
-  NG: { name: "Nigeria", currency: "NGN", symbol: "₦", flat: 100 },
+  NG: { name: "Nigeria", currency: "NGN", symbol: "₦", flat: 500 },
   GH: { name: "Ghana", currency: "GHS", symbol: "₵", flat: 2 },
   KE: { name: "Kenya", currency: "KES", symbol: "KSh", flat: 30 },
   ZA: { name: "South Africa", currency: "ZAR", symbol: "R", flat: 5 },
@@ -67,7 +67,7 @@ const PRODUCTS: Record<ProductKey, {
     label: "Contest Voting",
     icon: Vote,
     tagline: "Run paid voting contests with anti-fraud built in.",
-    percent: 10,
+    percent: 20,
     unit: "per paid vote",
     freeTier: "No setup fees. You only pay when votes are cast.",
     features: [
