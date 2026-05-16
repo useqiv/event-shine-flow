@@ -2,43 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
-
-type ConvenienceFeeType = 'none' | 'percentage' | 'fixed';
-
-interface ConvenienceFeeSettings {
-  type: ConvenienceFeeType;
-  value: number;
-  cap: number | null;
-}
-
-function stripConvenienceFeeFromGross(grossAmount: number, settings: ConvenienceFeeSettings): number {
-  const gross = Number(grossAmount) || 0;
-  if (gross <= 0) return 0;
-
-  const feeValue = Number(settings.value) || 0;
-  const cap = settings.cap != null ? Number(settings.cap) : null;
-
-  if (settings.type === 'fixed') {
-    return Math.max(0, gross - feeValue);
-  }
-
-  if (settings.type === 'percentage' && feeValue > 0) {
-    const rate = feeValue / 100;
-
-    if (cap && cap > 0) {
-      const baseAtCap = cap / rate;
-      const grossAtCap = baseAtCap + cap;
-      if (gross > grossAtCap) {
-        return Math.max(0, gross - cap);
-      }
-    }
-
-    return Math.max(0, gross / (1 + rate));
-  }
-
-  return gross;
-}
+import {
+  getBaseAmountsByTransactionId,
+  getConvenienceFeeSettings,
+  stripConvenienceFeeFromGross,
+  type ConvenienceFeeSettings,
+} from '@/lib/baseAmount';
 
 // Types
 export interface OrganizationSettings {
@@ -411,23 +380,7 @@ export const useOrganizationStats = () => {
   return useQuery({
     queryKey: ['organization-stats', user?.id],
     queryFn: async () => {
-      const { data: paymentSettingsRows } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'payment')
-        .in('setting_key', ['convenience_fee_type', 'convenience_fee_value', 'convenience_fee_cap']);
-
-      const convenienceFeeSettings: ConvenienceFeeSettings = {
-        type: (paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_type')?.setting_value ||
-          'none') as ConvenienceFeeType,
-        value: Number(paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_value')?.setting_value) || 0,
-        cap: (() => {
-          const raw = paymentSettingsRows?.find((s: any) => s.setting_key === 'convenience_fee_cap')?.setting_value;
-          if (raw == null || raw === '') return null;
-          const parsed = Number(raw);
-          return Number.isFinite(parsed) ? parsed : null;
-        })(),
-      };
+      const convenienceFeeSettings = await getConvenienceFeeSettings();
 
       // Get all events with their ticket types for currency info
       const { data: events } = await supabase

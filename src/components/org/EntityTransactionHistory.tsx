@@ -12,7 +12,11 @@ import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Download, Filter, CreditCard, CheckCircle, Clock, XCircle, AlertCircle, Search } from 'lucide-react';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
-import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import {
+  getBaseAmountsByTransactionId,
+  getConvenienceFeeSettings,
+  resolveVoteBaseAmount,
+} from '@/lib/baseAmount';
 
 type EntityType = 'contest' | 'event' | 'campaign';
 type StatusFilter = 'all' | 'completed' | 'pending' | 'failed' | 'cancelled';
@@ -108,6 +112,8 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
                 id,
                 quantity,
                 amount_paid,
+                net_amount,
+                platform_commission,
                 payment_method,
                 created_at,
                 contestant_id,
@@ -142,27 +148,54 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const contestantIds = [...new Set(data?.map(v => v.contestant_id).filter(Boolean))];
         const userIds = [...new Set(data?.map(v => v.user_id).filter(Boolean))];
         
-        const [contestantsRes, usersRes] = await Promise.all([
+        const [contestantsRes, usersRes, convenienceFeeSettings, contestRes, voteOptionsRes] = await Promise.all([
           contestantIds.length > 0 
             ? supabase.from('contestants').select('id, name').in('id', contestantIds)
             : { data: [] },
           userIds.length > 0 
             ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
             : { data: [] },
+          getConvenienceFeeSettings(),
+          supabase.from('contests').select('vote_price').eq('id', entityId).maybeSingle(),
+          supabase
+            .from('contest_vote_options')
+            .select('vote_quantity, price')
+            .eq('contest_id', entityId),
         ]);
         
         const contestantsMap = new Map((contestantsRes.data || []).map(c => [c.id, c]));
         const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
         
         const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((v: any) => v.transaction_id) || []);
+        const voteOptionPriceMap = new Map(
+          (voteOptionsRes.data || []).map((option) => [
+            option.vote_quantity,
+            Number(option.price) || 0,
+          ])
+        );
+        const contestVotePrice = Number(contestRes.data?.vote_price) || 0;
 
         const enrichedData = data?.map(v => {
           const voteCounts = voteCountMap.get(v.id);
+          const transactionId = (v as { transaction_id?: string | null }).transaction_id;
+          const walletBaseAmount = transactionId ? baseAmountMap.get(transactionId) : undefined;
+          const base_amount = resolveVoteBaseAmount({
+            transactionId,
+            walletBaseAmount,
+            amountPaid: v.amount_paid,
+            netAmount: v.net_amount,
+            platformCommission: v.platform_commission,
+            quantity: v.quantity,
+            voteOptionPrice: voteOptionPriceMap.get(v.quantity) ?? null,
+            contestVotePrice,
+            convenienceFeeSettings,
+          });
+
           return {
             ...v,
             contestant: contestantsMap.get(v.contestant_id),
             user: usersMap.get(v.user_id),
-            base_amount: baseAmountMap.get((v as any).transaction_id) ?? null,
+            base_amount,
             votes_before: voteCounts?.votesBefore ?? null,
             votes_after: voteCounts?.votesAfter ?? null,
           };
@@ -283,13 +316,13 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
     
     return data.transactions.map((t: any) => {
       if (entityType === 'contest') {
-        const baseAmount = t.base_amount != null ? Number(t.base_amount) : Number(t.amount_paid ?? 0);
+        const baseAmount = Number(t.base_amount ?? 0);
         return {
           id: t.id,
           user_name: t.user?.full_name || 'Anonymous',
           user_email: t.user?.email || '',
           amount: baseAmount,
-          base_amount: t.base_amount != null ? Number(t.base_amount) : null,
+          base_amount: baseAmount,
           quantity: t.quantity || 1,
           votes_before: t.votes_before ?? null,
           votes_after: t.votes_after ?? null,
