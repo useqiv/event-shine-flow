@@ -707,7 +707,7 @@ const ContestManagement = () => {
             <ShareButtons
               title={contest.title}
               description={contest.description || `Vote now in ${contest.title}`}
-              url={`${window.location.origin}/contests/${id}`}
+              url={getContestUrl(id!, (contest as any)?.custom_slug)}
             />
             <Button variant="outline" size="sm" onClick={handleCopyLink}>
               <Copy className="h-4 w-4 sm:mr-2" />
@@ -1224,7 +1224,9 @@ const ContestManagement = () => {
               <CardContent>
                 {contestants && contestants.length > 0 ? (
                   <div className="space-y-2">
-                    {contestants.map((contestant: any, index: number) => (
+                    {[...contestants]
+                      .sort((a: any, b: any) => b.vote_count - a.vote_count)
+                      .map((contestant: any, index: number) => (
                       <div 
                         key={contestant.id} 
                         className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 transition-all"

@@ -11,13 +11,21 @@ import { ContestShareCards } from '@/components/org/ContestShareCards';
 import { EntityInfluencerLinks } from '@/components/org/EntityInfluencerLinks';
 import { EntityPromoCodes } from '@/components/org/EntityPromoCodes';
 import { useContest, useContestants } from '@/hooks/useContests';
-import { ArrowLeft, Send, Calendar, BarChart3, Image, Link2, Tag } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
+import { useUserRole } from '@/hooks/useUserRole';
+import { ArrowLeft, Send, Calendar, BarChart3, Image, Link2, Tag, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ContestMarketing = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { data: role } = useUserRole();
+  const { data: permissions } = useOrgPermissions();
+  const orgId = permissions?.organizationId ?? (role === 'organization' ? user?.id : undefined);
+
   const { data: contest, isLoading: contestLoading } = useContest(id || '');
-  const { data: contestants } = useContestants(id || '');
+  const { data: contestants, isLoading: contestantsLoading } = useContestants(id || '');
 
   if (contestLoading) {
     return (
@@ -48,39 +56,57 @@ const ContestMarketing = () => {
   const contestWithBranding = {
     id: contest.id,
     title: contest.title,
-    custom_slug: (contest as any).custom_slug || null,
-    brand_primary_color: (contest as any).brand_primary_color || '#6366f1',
-    brand_logo_url: (contest as any).brand_logo_url || null,
+    custom_slug: (contest as { custom_slug?: string | null }).custom_slug || null,
+    brand_primary_color: (contest as { brand_primary_color?: string }).brand_primary_color || '#6366f1',
+    brand_logo_url: (contest as { brand_logo_url?: string | null }).brand_logo_url || null,
   };
 
-  const contestantsList = contestants?.map((c: any) => ({
-    id: c.id,
-    name: c.name,
-    vote_count: c.vote_count,
-    photo_url: c.photo_url,
-  })) || [];
+  const contestantsList =
+    contestants?.map((c) => ({
+      id: c.id,
+      name: c.name,
+      vote_count: c.vote_count,
+      photo_url: c.photo_url,
+    })) || [];
+
+  const organizationId =
+    (contest as { organization_id?: string }).organization_id || orgId || '';
+  const currency = contest.vote_currency || 'NGN';
 
   return (
     <OrganizationLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link to={`/org/contests/${id}`}>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" aria-label="Back to contest">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Marketing Hub</h1>
               <p className="text-muted-foreground">
-                {contest.title} • {format(new Date(contest.start_date), 'MMM d')} - {format(new Date(contest.end_date), 'MMM d, yyyy')}
+                {contest.title} • {format(new Date(contest.start_date), 'MMM d')} -{' '}
+                {format(new Date(contest.end_date), 'MMM d, yyyy')}
               </p>
             </div>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/org/contests/${id}`}>
+              <Button variant="outline" size="sm">
+                <Trophy className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Manage Contest</span>
+              </Button>
+            </Link>
+            <Link to={`/org/contests/${id}/analytics`}>
+              <Button variant="outline" size="sm">
+                <BarChart3 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Contest Analytics</span>
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        {/* Tabs */}
         <Tabs defaultValue="posting" className="space-y-6">
           <TabsList className="flex flex-wrap h-auto gap-1 w-full lg:w-auto">
             <TabsTrigger value="posting" className="gap-2">
@@ -110,26 +136,28 @@ const ContestMarketing = () => {
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
+              <span className="hidden sm:inline">Social Analytics</span>
               <span className="sm:hidden">Stats</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* Quick Post Tab */}
           <TabsContent value="posting" className="space-y-6">
-            {contestantsList.length > 0 ? (
-              <SocialPostingCard
-                contest={contestWithBranding}
-                contestants={contestantsList}
-              />
+            {contestantsLoading ? (
+              <Skeleton className="h-64 w-full" />
+            ) : contestantsList.length > 0 ? (
+              <SocialPostingCard contest={contestWithBranding} contestants={contestantsList} />
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                Add contestants to enable social posting features.
+              <div className="text-center py-12 rounded-lg border border-dashed border-border">
+                <p className="text-muted-foreground mb-4">
+                  Add contestants to enable social posting and leaderboard updates.
+                </p>
+                <Button asChild variant="outline">
+                  <Link to={`/org/contests/${id}`}>Go to Contest Management</Link>
+                </Button>
               </div>
             )}
           </TabsContent>
 
-          {/* Auto-Posting Tab */}
           <TabsContent value="auto-posting" className="space-y-6">
             <SocialAutoPostManager
               entityId={contest.id}
@@ -138,41 +166,37 @@ const ContestMarketing = () => {
             />
           </TabsContent>
 
-          {/* Share Cards Tab */}
           <TabsContent value="cards" className="space-y-6">
-            <ContestShareCards
-              contest={contestWithBranding}
-              contestants={contestantsList}
-            />
+            {contestantsList.length > 0 ? (
+              <ContestShareCards contest={contestWithBranding} contestants={contestantsList} />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                Add contestants to generate share cards.
+              </div>
+            )}
           </TabsContent>
 
-          {/* Influencer Links Tab */}
           <TabsContent value="influencers" className="space-y-6">
             <EntityInfluencerLinks
               entityId={contest.id}
               entityType="contest"
               entityTitle={contest.title}
-              customSlug={(contest as any).custom_slug}
-              currency={(contest as any).vote_currency || 'NGN'}
+              customSlug={contestWithBranding.custom_slug}
+              currency={currency}
             />
           </TabsContent>
 
-          {/* Promo Codes Tab */}
           <TabsContent value="promos" className="space-y-6">
             <EntityPromoCodes
               entityId={contest.id}
               entityType="contest"
               entityTitle={contest.title}
-              currency={(contest as any).vote_currency || 'NGN'}
+              currency={currency}
             />
           </TabsContent>
 
-          {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
-            <SocialAnalyticsCard
-              contestId={contest.id}
-              organizationId={(contest as any).organization_id || ''}
-            />
+            <SocialAnalyticsCard contestId={contest.id} organizationId={organizationId} />
           </TabsContent>
         </Tabs>
       </div>

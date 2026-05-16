@@ -11,9 +11,14 @@ export interface VoteRecord {
   guest_email?: string | null;
   quantity: number;
   amount_paid: number;
+  /** Fee-free org revenue; falls back to amount_paid when unset */
+  base_amount?: number;
   payment_method?: string | null;
   created_at: string;
 }
+
+const voteRevenue = (vote: VoteRecord): number =>
+  Number(vote.base_amount ?? vote.amount_paid) || 0;
 
 export interface ContestantRecord {
   id: string;
@@ -73,7 +78,7 @@ export const calculateTotalVotes = (votes: VoteRecord[]): number => {
  * Calculate total revenue
  */
 export const calculateTotalRevenue = (votes: VoteRecord[]): number => {
-  return votes.reduce((sum, v) => sum + Number(v.amount_paid), 0);
+  return votes.reduce((sum, v) => sum + voteRevenue(v), 0);
 };
 
 /**
@@ -115,7 +120,7 @@ export const calculateDailyVotes = (votes: VoteRecord[], days: number = 14): Dai
       const current = dailyMap.get(date)!;
       dailyMap.set(date, {
         votes: current.votes + vote.quantity,
-        revenue: current.revenue + Number(vote.amount_paid),
+        revenue: current.revenue + voteRevenue(vote),
       });
     }
   });
