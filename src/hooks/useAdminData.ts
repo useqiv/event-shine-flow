@@ -522,6 +522,66 @@ export const useRejectOrganization = () => {
   });
 };
 
+export const useUnblacklistOrganization = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const logAttempt = async (
+    orgId: string,
+    outcome: 'success' | 'failure',
+    errorMessage?: string,
+  ) => {
+    if (!user) return;
+    try {
+      await supabase.from('admin_activity_logs').insert({
+        admin_id: user.id,
+        action_type: `organization_unblacklist_${outcome}`,
+        entity_type: 'organization',
+        entity_id: orgId,
+        description: `Admin unblacklist attempt for organization ${orgId} — ${outcome}${errorMessage ? `: ${errorMessage}` : ''}`,
+        metadata: {
+          organization_id: orgId,
+          outcome,
+          error: errorMessage ?? null,
+          attempted_at: new Date().toISOString(),
+        },
+      } as any);
+    } catch (e) {
+      console.error('Failed to write admin activity log', e);
+    }
+  };
+
+  return useMutation({
+    mutationFn: async (orgId: string) => {
+      const { data, error } = await (supabase as any).rpc('admin_unblacklist_organization', {
+        p_organization_id: orgId,
+      });
+
+      if (error) {
+        await logAttempt(orgId, 'failure', error.message);
+        throw error;
+      }
+
+      if (data && data.success === false) {
+        const msg = data.error || 'Failed to remove organization from blacklist';
+        await logAttempt(orgId, 'failure', msg);
+        throw new Error(msg);
+      }
+
+      await logAttempt(orgId, 'success');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-all-organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-activity-logs'] });
+      toast.success('Organization removed from blacklist');
+    },
+    onError: (err: any) => {
+      console.error('Unblacklist organization failed:', err);
+      toast.error(err?.message || 'Failed to remove organization from blacklist');
+    },
+  });
+};
+
 export const useApprovePayout = () => {
   const queryClient = useQueryClient();
 
@@ -784,10 +844,19 @@ export const useSendOrgBroadcastEmail = () => {
         body: { subject, message, recipientFilter },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const response = data as {
+        error?: string;
+        success?: boolean;
+        emailsSent?: number;
+        recipientCount?: number;
+        failedCount?: number;
+        errors?: string[];
+      } | null;
 
-      return data as {
+      if (response?.error) throw new Error(response.error);
+      if (error) throw error;
+
+      return response as {
         success: boolean;
         emailsSent: number;
         recipientCount: number;
@@ -798,10 +867,14 @@ export const useSendOrgBroadcastEmail = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-activity-logs'] });
       const failed = data.failedCount ?? 0;
-      if (failed > 0) {
-        toast.warning(`Sent ${data.emailsSent} of ${data.recipientCount} emails (${failed} failed)`);
+      const sent = data.emailsSent ?? 0;
+      const total = data.recipientCount ?? 0;
+      if (sent === 0 && total > 0) {
+        toast.error('No emails were delivered. Check ZeptoMail configuration or recipient addresses.');
+      } else if (failed > 0) {
+        toast.warning(`Sent ${sent} of ${total} emails (${failed} failed)`);
       } else {
-        toast.success(`Email sent to ${data.emailsSent} organization${data.emailsSent === 1 ? '' : 's'}`);
+        toast.success(`Email sent to ${sent} organization${sent === 1 ? '' : 's'}`);
       }
     },
     onError: (err: Error) => {

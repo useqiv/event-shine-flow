@@ -34,6 +34,7 @@ import {
   useAllOrganizations, 
   useApproveOrganization, 
   useRejectOrganization,
+  useUnblacklistOrganization,
   useUpdateOrganizationCommission 
 } from '@/hooks/useAdminData';
 import { 
@@ -58,6 +59,7 @@ const AdminOrganizations: React.FC = () => {
   const { data: organizations, isLoading } = useAllOrganizations();
   const approveOrg = useApproveOrganization();
   const rejectOrg = useRejectOrganization();
+  const unblacklistOrg = useUnblacklistOrganization();
   const updateCommission = useUpdateOrganizationCommission();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +67,7 @@ const AdminOrganizations: React.FC = () => {
   const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [unblacklistDialogOpen, setUnblacklistDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -100,6 +103,16 @@ const AdminOrganizations: React.FC = () => {
     setRejectReason('');
     setSelectedOrg(null);
   };
+
+  const handleUnblacklist = async () => {
+    if (!selectedOrg) return;
+    await unblacklistOrg.mutateAsync(selectedOrg.id);
+    setUnblacklistDialogOpen(false);
+    setSelectedOrg(null);
+  };
+
+  const isBlacklistAction =
+    selectedOrg?.approval?.status === 'approved' && !selectedOrg?.approval?.is_blacklisted;
 
   const handleUpdateCommission = async () => {
     if (!selectedOrg) return;
@@ -324,6 +337,18 @@ const AdminOrganizations: React.FC = () => {
                                 </DropdownMenuItem>
                               </>
                             )}
+                            {org.approval?.is_blacklisted && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedOrg(org);
+                                  setUnblacklistDialogOpen(true);
+                                }}
+                                className="text-green-600"
+                              >
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Remove from Blacklist
+                              </DropdownMenuItem>
+                            )}
                             {org.approval?.status === 'approved' && !org.approval?.is_blacklisted && (
                               <>
                                 <DropdownMenuItem 
@@ -414,13 +439,57 @@ const AdminOrganizations: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Reject Dialog */}
+        {/* Unblacklist Dialog */}
+        <Dialog open={unblacklistDialogOpen} onOpenChange={setUnblacklistDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove from Blacklist</DialogTitle>
+              <DialogDescription>
+                Restore this organization&apos;s access. They will remain approved and can use the platform again.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={selectedOrg?.avatar_url || ''} />
+                  <AvatarFallback><Building2 className="h-4 w-4" /></AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{selectedOrg?.full_name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedOrg?.email}</p>
+                </div>
+              </div>
+              {selectedOrg?.approval?.blacklist_reason && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                  <p className="font-medium text-destructive">Blacklist reason</p>
+                  <p className="mt-1 text-muted-foreground">{selectedOrg.approval.blacklist_reason}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUnblacklistDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600"
+                onClick={handleUnblacklist}
+                disabled={unblacklistOrg.isPending}
+              >
+                Remove from Blacklist
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reject / Blacklist Dialog */}
         <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reject Organization</DialogTitle>
+              <DialogTitle>{isBlacklistAction ? 'Blacklist Organization' : 'Reject Organization'}</DialogTitle>
               <DialogDescription>
-                Provide a reason for rejecting this organization.
+                {isBlacklistAction
+                  ? 'Blacklist this approved organization. They will lose platform access until removed from the blacklist.'
+                  : 'Provide a reason for rejecting this organization.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -435,11 +504,11 @@ const AdminOrganizations: React.FC = () => {
                 </div>
               </div>
               <div>
-                <Label>Rejection Reason</Label>
+                <Label>{isBlacklistAction ? 'Blacklist Reason' : 'Rejection Reason'}</Label>
                 <Textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Enter reason for rejection..."
+                  placeholder={isBlacklistAction ? 'Enter reason for blacklisting...' : 'Enter reason for rejection...'}
                   className="mt-2"
                 />
               </div>
@@ -453,7 +522,7 @@ const AdminOrganizations: React.FC = () => {
                 onClick={handleReject}
                 disabled={!rejectReason || rejectOrg.isPending}
               >
-                Reject Organization
+                {isBlacklistAction ? 'Blacklist Organization' : 'Reject Organization'}
               </Button>
             </DialogFooter>
           </DialogContent>

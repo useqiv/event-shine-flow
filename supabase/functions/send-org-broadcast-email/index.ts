@@ -126,9 +126,18 @@ async function verifyAdmin(req: Request) {
   return { user, serviceClient };
 }
 
+const VALID_FILTERS: RecipientFilter[] = ["all", "approved", "pending"];
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -140,7 +149,11 @@ const handler = async (req: Request): Promise<Response> => {
     if (auth.error) return auth.error;
     const { user, serviceClient } = auth;
 
-    const { subject, message, recipientFilter = "all" }: BroadcastRequest = await req.json();
+    const body: BroadcastRequest = await req.json();
+    const { subject, message } = body;
+    const recipientFilter: RecipientFilter = VALID_FILTERS.includes(body.recipientFilter as RecipientFilter)
+      ? (body.recipientFilter as RecipientFilter)
+      : "all";
 
     if (!subject?.trim() || !message?.trim()) {
       return new Response(JSON.stringify({ error: "Subject and message are required" }), {
@@ -225,20 +238,24 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    await serviceClient.from("admin_activity_logs").insert({
-      admin_id: user.id,
-      action_type: "org_broadcast_email",
-      entity_type: "organization",
-      description: `Sent broadcast email to ${emailsSent} organization(s)`,
-      metadata: {
-        subject: subject.trim(),
-        recipientFilter,
-        emailsSent,
-        recipientCount: eligibleProfiles.length,
-        failedCount: errors.length,
-        errors: errors.length > 0 ? errors.slice(0, 20) : undefined,
-      },
-    });
+    try {
+      await serviceClient.from("admin_activity_logs").insert({
+        admin_id: user.id,
+        action_type: "org_broadcast_email",
+        entity_type: "organization",
+        description: `Sent broadcast email to ${emailsSent} organization(s)`,
+        metadata: {
+          subject: subject.trim(),
+          recipientFilter,
+          emailsSent,
+          recipientCount: eligibleProfiles.length,
+          failedCount: errors.length,
+          errors: errors.length > 0 ? errors.slice(0, 20) : undefined,
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to write admin activity log:", logError);
+    }
 
     return new Response(
       JSON.stringify({

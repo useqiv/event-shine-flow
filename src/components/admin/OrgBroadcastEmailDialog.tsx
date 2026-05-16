@@ -64,13 +64,17 @@ const OrgBroadcastEmailDialog: React.FC<OrgBroadcastEmailDialogProps> = ({
   };
 
   const handleSend = async () => {
-    await sendBroadcast.mutateAsync({
-      subject: subject.trim(),
-      message: message.trim(),
-      recipientFilter,
-    });
-    resetForm();
-    onOpenChange(false);
+    try {
+      await sendBroadcast.mutateAsync({
+        subject: subject.trim(),
+        message: message.trim(),
+        recipientFilter,
+      });
+      resetForm();
+      onOpenChange(false);
+    } catch {
+      // Toast handled by mutation; keep confirm dialog open for retry
+    }
   };
 
   const canProceed = subject.trim().length > 0 && message.trim().length > 0;
