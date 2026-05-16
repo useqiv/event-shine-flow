@@ -766,3 +766,46 @@ export const useModerateContent = () => {
     }
   });
 };
+
+export const useSendOrgBroadcastEmail = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      subject,
+      message,
+      recipientFilter = 'all',
+    }: {
+      subject: string;
+      message: string;
+      recipientFilter?: 'all' | 'approved' | 'pending';
+    }) => {
+      const { data, error } = await supabase.functions.invoke('send-org-broadcast-email', {
+        body: { subject, message, recipientFilter },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      return data as {
+        success: boolean;
+        emailsSent: number;
+        recipientCount: number;
+        failedCount?: number;
+        errors?: string[];
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-activity-logs'] });
+      const failed = data.failedCount ?? 0;
+      if (failed > 0) {
+        toast.warning(`Sent ${data.emailsSent} of ${data.recipientCount} emails (${failed} failed)`);
+      } else {
+        toast.success(`Email sent to ${data.emailsSent} organization${data.emailsSent === 1 ? '' : 's'}`);
+      }
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Failed to send broadcast email');
+    },
+  });
+};

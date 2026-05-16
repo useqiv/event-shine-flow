@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.send-weekly-org-report]
 verify_jwt = false
+
+[functions.send-org-broadcast-email]
+verify_jwt = true

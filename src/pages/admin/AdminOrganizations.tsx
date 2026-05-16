@@ -45,12 +45,14 @@ import {
   Building2,
   Ban,
   Percent,
-  Bell
+  Bell,
+  Mail
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import OrganizationDetailsDialog from '@/components/admin/OrganizationDetailsDialog';
 import OrgNotificationSettingsDialog from '@/components/admin/OrgNotificationSettingsDialog';
+import OrgBroadcastEmailDialog from '@/components/admin/OrgBroadcastEmailDialog';
 
 const AdminOrganizations: React.FC = () => {
   const { data: organizations, isLoading } = useAllOrganizations();
@@ -69,6 +71,11 @@ const AdminOrganizations: React.FC = () => {
   const [specialRate, setSpecialRate] = useState('');
   const [voteCommissionRate, setVoteCommissionRate] = useState('');
   const [ticketCommissionRate, setTicketCommissionRate] = useState('');
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
+
+  const orgsWithEmail = organizations?.filter((o) => o.email?.trim()) || [];
+  const approvedWithEmail = orgsWithEmail.filter((o) => o.approval?.status === 'approved').length;
+  const pendingWithEmail = orgsWithEmail.filter((o) => o.approval?.status !== 'approved').length;
 
   const filteredOrgs = organizations?.filter(org => 
     org.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -154,9 +161,20 @@ const AdminOrganizations: React.FC = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">Organization Management</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">Manage company accounts</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Organization Management</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage company accounts</p>
+          </div>
+          <Button
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setBroadcastDialogOpen(true)}
+            disabled={orgsWithEmail.length === 0}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Email All Organizations
+          </Button>
         </div>
 
         {/* Stats */}
@@ -535,6 +553,14 @@ const AdminOrganizations: React.FC = () => {
           open={notificationDialogOpen}
           onOpenChange={setNotificationDialogOpen}
           organization={selectedOrg}
+        />
+
+        <OrgBroadcastEmailDialog
+          open={broadcastDialogOpen}
+          onOpenChange={setBroadcastDialogOpen}
+          totalOrgs={orgsWithEmail.length}
+          approvedCount={approvedWithEmail}
+          pendingCount={pendingWithEmail}
         />
       </div>
     </AdminLayout>
