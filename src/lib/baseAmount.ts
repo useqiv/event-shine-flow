@@ -131,8 +131,8 @@ export function resolveVoteBaseAmount(params: {
     walletBase ??
     params.voteOptionPrice ??
     contestVotePriceAmount ??
-    normalizedSettledAmount ||
-    normalizedRecordedAmount ||
+    normalizedSettledAmount ??
+    normalizedRecordedAmount ??
     0
   );
 }
