@@ -53,8 +53,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [isManageOpen, setIsManageOpen] = React.useState(false);
 
-  // Check if user is owner (has all permissions)
-  const isOwner = permissions?.isOwner ?? true;
+  const isOwner = permissions?.isOwner === true;
 
   const handleSignOut = async () => {
     await signOut();
@@ -117,6 +116,23 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsManageOpen(true);
     }
   }, [isCreateActive, isManageActive]);
+
+  // Close mobile menu on route change
+  React.useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  React.useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <div className="min-h-screen bg-background flex w-full overflow-x-hidden">
@@ -283,25 +299,29 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {/* Top Header */}
         <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur-xl">
           <div className="px-3 sm:px-4 md:px-6">
-            <div className="flex h-16 items-center justify-between">
-              {/* Mobile Menu Toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-
-              {/* Mobile Logo */}
-              <Link to="/org/dashboard" className="flex items-center gap-2 md:hidden">
-                <img src={appLogo} alt="USEQIV" className="h-8" />
-              </Link>
+            <div className="flex h-14 sm:h-16 items-center justify-between gap-2 min-w-0">
+              {/* Mobile: menu + centered logo */}
+              <div className="flex items-center gap-1 min-w-0 flex-1 md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-9 w-9"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                >
+                  {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+                <Link
+                  to="/org/dashboard"
+                  className="flex items-center justify-center flex-1 min-w-0"
+                >
+                  <img src={appLogo} alt="USEQIV" className="h-7 sm:h-8 max-w-[120px] object-contain" />
+                </Link>
+              </div>
 
               {/* Page Title - Desktop */}
-              <div className="hidden md:block">
-                <h1 className="text-lg font-semibold text-foreground">
+              <div className="hidden md:block min-w-0 flex-1">
+                <h1 className="text-lg font-semibold text-foreground truncate">
                   {mainNavItems.find(item => isActive(item.path))?.label || 
                    bottomNavItems.find(item => isActive(item.path))?.label || 
                    'Organization Dashboard'}
@@ -309,10 +329,10 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               </div>
 
               {/* Right Section */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {/* Notifications */}
                 <Link to="/org/notifications">
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10">
                     <Bell className="h-5 w-5" />
                     {unreadCount && unreadCount > 0 && (
                       <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
@@ -362,7 +382,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         {isMobileMenuOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
             <aside 
-              className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-lg flex flex-col"
+              className="fixed left-0 top-0 h-full max-h-[100dvh] w-[min(280px,85vw)] bg-card border-r border-border shadow-lg flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Mobile Logo */}
@@ -531,7 +551,7 @@ const OrganizationLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Main Content */}
-        <main className="p-3 sm:p-4 md:p-6 w-full min-w-0 overflow-hidden">
+        <main className="p-3 sm:p-4 md:p-6 w-full min-w-0 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

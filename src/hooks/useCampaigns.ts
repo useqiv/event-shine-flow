@@ -16,6 +16,7 @@ export interface Campaign {
   category: string;
   status: string;
   is_featured: boolean;
+  custom_slug: string | null;
   start_date: string;
   end_date: string | null;
   donor_count: number;
@@ -155,6 +156,62 @@ export const useMyCampaigns = () => {
   });
 };
 
+/** Campaigns owned by the organization (creator_id = org owner). Used in org manage UI. */
+export const useOrganizationCampaigns = (organizationId: string | null | undefined) => {
+  return useQuery({
+    queryKey: ['organization-campaigns', organizationId],
+    queryFn: async () => {
+      if (!organizationId) return [];
+
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select(selectColumns.campaignCard)
+        .eq('creator_id', organizationId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as Campaign[];
+    },
+    enabled: !!organizationId,
+    ...queryCache.moderate,
+  });
+};
+
+/**
+ * Resolve creator_id for new campaigns: org owners and delegated team editors
+ * create under the organization owner's id so campaigns appear in org manage lists.
+ */
+export async function resolveCampaignCreatorId(): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: roleData } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'organization')
+    .maybeSingle();
+
+  if (roleData) {
+    return user.id;
+  }
+
+  const { data: teamMember } = await supabase
+    .from('team_members')
+    .select('organization_id, permissions, status')
+    .eq('user_id', user.id)
+    .eq('status', 'accepted')
+    .maybeSingle();
+
+  if (teamMember) {
+    const permissions = teamMember.permissions as { can_edit_campaigns?: boolean };
+    if (permissions?.can_edit_campaigns && teamMember.organization_id) {
+      return teamMember.organization_id;
+    }
+  }
+
+  return user.id;
+}
+
 export const useCampaignDonations = (campaignId: string) => {
   return useQuery({
     queryKey: ['campaign-donations', campaignId],
@@ -208,8 +265,7 @@ export const useCreateCampaign = () => {
 
   return useMutation({
     mutationFn: async (campaign: CreateCampaignInput) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const creatorId = await resolveCampaignCreatorId();
 
       const { data, error } = await supabase
         .from('campaigns')
@@ -223,7 +279,7 @@ export const useCreateCampaign = () => {
           image_url: campaign.image_url,
           end_date: campaign.end_date,
           status: campaign.status || 'draft',
-          creator_id: user.id,
+          creator_id: creatorId,
         })
         .select()
         .single();
@@ -233,6 +289,7 @@ export const useCreateCampaign = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['my-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-campaigns'] });
       toast.success('Campaign created successfully!');
     },
     onError: (error: Error) => {
@@ -242,14 +299,30 @@ export const useCreateCampaign = () => {
 };
 
 
+export type UpdateCampaignInput = {
+  id: string;
+  title?: string;
+  short_description?: string | null;
+  description?: string | null;
+  goal_amount?: number;
+  category?: string;
+  end_date?: string | null;
+  image_url?: string | null;
+  status?: string;
+  custom_slug?: string | null;
+};
+
 export const useUpdateCampaign = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Campaign> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: UpdateCampaignInput) => {
+      const allowed: UpdateCampaignInput = { id, ...updates };
+      const { id: _id, ...payload } = allowed;
+
       const { data, error } = await supabase
         .from('campaigns')
-        .update(updates)
+        .update(payload)
         .eq('id', id)
         .select()
         .single();
@@ -260,6 +333,7 @@ export const useUpdateCampaign = () => {
       // Invalidate all campaign-related queries to ensure fresh data across the app
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['my-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['campaign', data.id] });
       queryClient.invalidateQueries({ queryKey: ['admin-campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['featured-campaigns'] });
@@ -288,6 +362,7 @@ export const useDeleteCampaign = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
       queryClient.invalidateQueries({ queryKey: ['my-campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-campaigns'] });
     },
     onError: (error: Error) => {
       toast.error(error.message);

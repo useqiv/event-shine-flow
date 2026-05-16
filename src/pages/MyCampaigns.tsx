@@ -30,6 +30,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
 import { ShareButtons } from '@/components/ui/share-buttons';
+import { getCampaignUrl } from '@/lib/urlHelpers';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -65,7 +66,7 @@ const MyCampaigns: React.FC = () => {
   };
 
   const handleShare = (campaign: Campaign) => {
-    const url = `${window.location.origin}/campaigns/${campaign.id}`;
+    const url = getCampaignUrl(campaign.id, campaign.custom_slug);
     if (navigator.share) {
       navigator.share({
         title: campaign.title,

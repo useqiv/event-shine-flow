@@ -73,10 +73,10 @@ const GoalTrackingWidget = ({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Target className="h-5 w-5" />
+      <CardHeader className="pb-3 px-3 sm:px-6">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
             Monthly Goals
           </CardTitle>
           {hasStreak && (
@@ -105,9 +105,9 @@ const GoalTrackingWidget = ({
                     {goal.format(goal.current)} / {goal.format(goal.target)}
                   </span>
                 </div>
-                <div className="relative">
-                  <Progress value={progress} className="h-3" />
-                  <span className="absolute right-0 -top-0.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Progress value={progress} className="h-2.5 sm:h-3 flex-1" />
+                  <span className="text-xs text-muted-foreground shrink-0 tabular-nums">
                     {progress.toFixed(0)}%
                   </span>
                 </div>

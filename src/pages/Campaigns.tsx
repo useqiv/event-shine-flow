@@ -25,17 +25,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { getBreadcrumbSchema } from '@/lib/structuredData';
+import { CAMPAIGN_CATEGORIES } from '@/lib/campaignConstants';
 
 const CATEGORIES = [
   { value: 'all', label: 'All Categories' },
-  { value: 'medical', label: 'Medical & Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'community', label: 'Community' },
-  { value: 'emergency', label: 'Emergency' },
-  { value: 'creative', label: 'Creative Projects' },
-  { value: 'charity', label: 'Charity' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'other', label: 'Other' },
+  ...CAMPAIGN_CATEGORIES,
 ];
 
 const SORT_OPTIONS = [

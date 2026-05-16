@@ -20,17 +20,8 @@ import Footer from '@/components/landing/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CampaignPreview } from '@/components/CampaignPreview';
-
-const CATEGORIES = [
-  { value: 'medical', label: 'Medical & Health' },
-  { value: 'education', label: 'Education' },
-  { value: 'community', label: 'Community' },
-  { value: 'emergency', label: 'Emergency' },
-  { value: 'creative', label: 'Creative Projects' },
-  { value: 'charity', label: 'Charity' },
-  { value: 'sports', label: 'Sports' },
-  { value: 'other', label: 'Other' },
-];
+import { CAMPAIGN_CATEGORIES, getMinGoalAmount } from '@/lib/campaignConstants';
+import CampaignPermissionGate from '@/components/auth/CampaignPermissionGate';
 
 const CURRENCIES = ['USD', 'NGN', 'GBP', 'EUR'];
 
@@ -73,12 +64,19 @@ const CreateCampaign: React.FC = () => {
       return;
     }
 
+    const goalAmount = parseFloat(formData.goal_amount);
+    const minGoal = getMinGoalAmount(formData.currency);
+    if (!Number.isFinite(goalAmount) || goalAmount < minGoal) {
+      toast.error(`Goal amount must be at least ${formData.currency} ${minGoal.toLocaleString()}`);
+      return;
+    }
+
     try {
       const campaign = await createCampaign.mutateAsync({
         title: formData.title,
         short_description: formData.short_description || null,
         description: formData.description || null,
-        goal_amount: parseFloat(formData.goal_amount),
+        goal_amount: goalAmount,
         currency: formData.currency,
         category: formData.category,
         image_url: formData.image_url || null,
@@ -86,7 +84,7 @@ const CreateCampaign: React.FC = () => {
         status: asDraft ? 'draft' : 'active',
       });
 
-      navigate(`/campaigns/${campaign.id}`);
+      navigate(`/campaigns/${campaign.id}/dashboard`);
     } catch (error) {
       // Error handled by mutation
     }
@@ -97,6 +95,7 @@ const CreateCampaign: React.FC = () => {
   };
 
   return (
+    <CampaignPermissionGate mode="create" redirectTo="/dashboard">
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
@@ -170,7 +169,7 @@ const CreateCampaign: React.FC = () => {
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CATEGORIES.map(cat => (
+                        {CAMPAIGN_CATEGORIES.map(cat => (
                           <SelectItem key={cat.value} value={cat.value}>
                             {cat.label}
                           </SelectItem>
@@ -404,7 +403,7 @@ const CreateCampaign: React.FC = () => {
                             </div>
                             <div className="flex justify-between">
                               <dt className="text-muted-foreground">Category:</dt>
-                              <dd>{CATEGORIES.find(c => c.value === formData.category)?.label}</dd>
+                              <dd>{CAMPAIGN_CATEGORIES.find(c => c.value === formData.category)?.label}</dd>
                             </div>
                             <div className="flex justify-between">
                               <dt className="text-muted-foreground">Goal:</dt>
@@ -459,6 +458,7 @@ const CreateCampaign: React.FC = () => {
 
       <Footer />
     </div>
+    </CampaignPermissionGate>
   );
 };
 

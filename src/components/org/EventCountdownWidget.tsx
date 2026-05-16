@@ -85,9 +85,9 @@ const EventCountdownWidget = ({ events }: EventCountdownWidgetProps) => {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Upcoming Events Countdown
+        <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          <Clock className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+          <span className="truncate">Upcoming Events</span>
         </CardTitle>
       </CardHeader>
       <CardContent>

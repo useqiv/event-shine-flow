@@ -54,6 +54,8 @@ import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
 import { AdjustGoalDialog } from '@/components/AdjustGoalDialog';
 import { CampaignStatusToggle } from '@/components/CampaignStatusToggle';
 import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
+import { getCampaignUrl } from '@/lib/urlHelpers';
+import { getCurrencySymbol } from '@/lib/campaignConstants';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -98,7 +100,8 @@ const CampaignDashboard: React.FC = () => {
     ? Math.min((baseRaised / campaign.goal_amount) * 100, 100) 
     : 0;
 
-  const pageUrl = `${window.location.origin}/campaigns/${campaign.id}`;
+  const pageUrl = getCampaignUrl(campaign.id, campaign.custom_slug);
+  const currencySymbol = getCurrencySymbol(campaign.currency);
 
   const distributionData = donorStats ? [
     { name: '< ₦5K', value: donorStats.distribution.small },
@@ -174,7 +177,7 @@ const CampaignDashboard: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Raised</p>
-                  <p className="text-xl font-bold">₦{baseRaised.toLocaleString()}</p>
+                  <p className="text-xl font-bold">{currencySymbol}{baseRaised.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>

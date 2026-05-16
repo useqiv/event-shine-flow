@@ -161,10 +161,10 @@ const RevenueForecastWidget = ({ currency = 'USD' }: RevenueForecastWidgetProps)
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="px-3 sm:px-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
           Revenue Forecast
         </CardTitle>
         <CardDescription>
@@ -213,9 +213,9 @@ const RevenueForecastWidget = ({ currency = 'USD' }: RevenueForecastWidgetProps)
         </div>
 
         {/* Chart */}
-        <div className="h-[250px]">
+        <div className="h-[200px] sm:h-[250px] w-full min-w-0">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+            <AreaChart data={forecastData} margin={{ top: 10, right: 4, left: -8, bottom: 0 }}>
               <defs>
                 <linearGradient id="orgActualGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -297,7 +297,7 @@ const RevenueForecastWidget = ({ currency = 'USD' }: RevenueForecastWidgetProps)
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-0.5 bg-primary" />
             <span>Actual</span>

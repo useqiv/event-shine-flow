@@ -190,8 +190,8 @@ const TopPerformersWidget = () => {
               to={item.type === 'contest' ? `/org/contests/${item.id}` : `/org/events/${item.id}`}
               className="block"
             >
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+              <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors min-w-0">
+                <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 text-primary font-bold text-xs sm:text-sm shrink-0">
                   {index + 1}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -207,11 +207,11 @@ const TopPerformersWidget = () => {
                     {item.itemCount.toLocaleString()} {item.itemLabel}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-green-600 dark:text-green-400">
+                <div className="text-right shrink-0">
+                  <p className="font-semibold text-green-600 dark:text-green-400 text-xs sm:text-sm">
                     {formatCurrency(item.revenue, item.currency)}
                   </p>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-[10px] sm:text-xs">
                     {item.type}
                   </Badge>
                 </div>

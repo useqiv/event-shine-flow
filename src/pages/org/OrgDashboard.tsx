@@ -241,9 +241,10 @@ const OrgDashboard = () => {
             <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Manage your contests, events, and finances.</p>
           </div>
           
-          {/* Currency Selector - Full width on mobile */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">Display:</span>
+          {/* Currency + export toolbar */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs sm:text-sm text-muted-foreground shrink-0">Display:</span>
             <Select value={displayCurrency} onValueChange={setDisplayCurrency}>
               <SelectTrigger className="w-[90px] sm:w-[120px] h-8 sm:h-10 text-xs sm:text-sm">
                 <SelectValue placeholder="Currency" />
@@ -270,7 +271,8 @@ const OrgDashboard = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <div className="ml-auto">
+            </div>
+            <div className="ml-auto shrink-0">
               <ExportRevenueButton currency={displayCurrency} />
             </div>
           </div>
@@ -338,43 +340,43 @@ const OrgDashboard = () => {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full min-w-0">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 sm:gap-4 w-full min-w-0">
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                <div>
-                  <p className="text-[10px] sm:text-sm text-muted-foreground">Active Contests</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Active Contests</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">
                     {stats?.activeContests || 0}
                   </p>
                 </div>
-                <Trophy className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
+                <Trophy className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground shrink-0" />
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
-                <div>
-                  <p className="text-[10px] sm:text-sm text-muted-foreground">Active Events</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Active Events</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">
                     {stats?.activeEvents || 0}
                   </p>
                 </div>
-                <Calendar className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
+                <Calendar className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground shrink-0" />
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] sm:text-sm text-muted-foreground">Pending Payouts</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-sm sm:text-2xl font-bold text-foreground truncate">
                     {formatCurrency(displayPendingPayouts, displayCurrency)}
                   </p>
                 </div>
-                <CreditCard className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground hidden sm:block" />
+                <CreditCard className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -402,14 +404,14 @@ const OrgDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
           {/* Recent Contests */}
           <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Trophy className="h-5 w-5" />
-                  Your Contests
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 min-w-0">
+                  <Trophy className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  <span className="truncate">Your Contests</span>
                 </CardTitle>
-                <Link to="/org/contests">
-                  <Button variant="ghost" size="sm">View All</Button>
+                <Link to="/org/contests" className="shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm">View All</Button>
                 </Link>
               </div>
             </CardHeader>
@@ -424,8 +426,8 @@ const OrgDashboard = () => {
                 <div className="space-y-3">
                   {contests.slice(0, 4).map((contest: any) => (
                     <Link key={contest.id} to={`/org/contests/${contest.id}`}>
-                      <div className="flex gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors border border-border">
-                        <div className="h-12 w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                      <div className="flex gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg hover:bg-secondary/50 transition-colors border border-border items-center min-w-0">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
                           {contest.image_url ? (
                             <img src={contest.image_url} alt={contest.title} className="h-full w-full object-cover" />
                           ) : (
@@ -440,7 +442,7 @@ const OrgDashboard = () => {
                             {contest.total_votes.toLocaleString()} votes
                           </p>
                         </div>
-                        <Badge variant={contest.is_active ? "default" : "secondary"}>
+                        <Badge variant={contest.is_active ? "default" : "secondary"} className="shrink-0 text-[10px] sm:text-xs">
                           {contest.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
@@ -463,14 +465,14 @@ const OrgDashboard = () => {
 
           {/* Recent Events */}
           <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Your Events
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 min-w-0">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  <span className="truncate">Your Events</span>
                 </CardTitle>
-                <Link to="/org/events">
-                  <Button variant="ghost" size="sm">View All</Button>
+                <Link to="/org/events" className="shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm">View All</Button>
                 </Link>
               </div>
             </CardHeader>
@@ -485,8 +487,8 @@ const OrgDashboard = () => {
                 <div className="space-y-3">
                   {events.slice(0, 4).map((event: any) => (
                     <Link key={event.id} to={`/org/events/${event.id}`}>
-                      <div className="flex gap-3 p-3 rounded-lg hover:bg-secondary/50 transition-colors border border-border">
-                        <div className="h-12 w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                      <div className="flex gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg hover:bg-secondary/50 transition-colors border border-border items-center min-w-0">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
                           {event.image_url ? (
                             <img src={event.image_url} alt={event.title} className="h-full w-full object-cover" />
                           ) : (
@@ -501,7 +503,7 @@ const OrgDashboard = () => {
                             {format(new Date(event.event_date), 'MMM d, yyyy')}
                           </p>
                         </div>
-                        <Badge variant={event.is_active ? "default" : "secondary"}>
+                        <Badge variant={event.is_active ? "default" : "secondary"} className="shrink-0 text-[10px] sm:text-xs">
                           {event.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
@@ -538,9 +540,9 @@ const OrgDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {pendingPayouts.slice(0, 3).map((payout) => (
-                  <div key={payout.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                    <div>
-                      <p className="font-medium">{formatCurrency(payout.amount, orgSettings?.default_currency || 'USD')}</p>
+                  <div key={payout.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg bg-secondary/30 min-w-0">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{formatCurrency(payout.amount, orgSettings?.default_currency || 'USD')}</p>
                       <p className="text-xs text-muted-foreground">
                         Requested {format(new Date(payout.created_at), 'MMM d, yyyy')}
                       </p>

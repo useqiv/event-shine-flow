@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Heart, Users, Calendar, Share2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { getCampaignCategoryLabel } from '@/lib/campaignConstants';
 
 interface CampaignPreviewProps {
   title: string;
@@ -18,17 +19,6 @@ interface CampaignPreviewProps {
   image_url: string;
   end_date?: Date;
 }
-
-const CATEGORY_LABELS: Record<string, string> = {
-  medical: 'Medical & Health',
-  education: 'Education',
-  community: 'Community',
-  emergency: 'Emergency',
-  creative: 'Creative Projects',
-  charity: 'Charity',
-  sports: 'Sports',
-  other: 'Other',
-};
 
 export const CampaignPreview: React.FC<CampaignPreviewProps> = ({
   title,
@@ -73,7 +63,7 @@ export const CampaignPreview: React.FC<CampaignPreviewProps> = ({
           {/* Header */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="secondary">{CATEGORY_LABELS[category] || category}</Badge>
+              <Badge variant="secondary">{getCampaignCategoryLabel(category)}</Badge>
               {end_date && (
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />

@@ -54,7 +54,7 @@ export const DuplicateCampaignDialog: React.FC<DuplicateCampaignDialogProps> = (
         currency: campaign.currency,
         category: campaign.category,
         image_url: campaign.image_url,
-        end_date: format(newEndDate, 'yyyy-MM-dd'),
+        end_date: newEndDate.toISOString(),
         status: 'draft',
       });
       

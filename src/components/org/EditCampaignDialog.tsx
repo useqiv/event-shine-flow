@@ -20,19 +20,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-
-const CATEGORIES = [
-  'Medical',
-  'Education',
-  'Emergency',
-  'Community',
-  'Creative',
-  'Business',
-  'Sports',
-  'Environment',
-  'Animal',
-  'Other',
-];
+import {
+  CAMPAIGN_CATEGORIES,
+  getCurrencySymbol,
+  getMinGoalAmount,
+  normalizeCampaignCategory,
+} from '@/lib/campaignConstants';
 
 interface EditCampaignDialogProps {
   campaign: Campaign | null;
@@ -63,7 +56,7 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
         short_description: campaign.short_description || '',
         description: campaign.description || '',
         goal_amount: campaign.goal_amount,
-        category: campaign.category,
+        category: normalizeCampaignCategory(campaign.category),
         end_date: campaign.end_date ? campaign.end_date.split('T')[0] : '',
         image_url: campaign.image_url || '',
       });
@@ -74,6 +67,11 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
     e.preventDefault();
     if (!campaign) return;
 
+    const minGoal = getMinGoalAmount(campaign.currency);
+    if (!formData.goal_amount || formData.goal_amount < minGoal) {
+      return;
+    }
+
     try {
       await updateCampaign.mutateAsync({
         id: campaign.id,
@@ -82,7 +80,7 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
         description: formData.description || null,
         goal_amount: formData.goal_amount,
         category: formData.category,
-        end_date: formData.end_date || null,
+        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
         image_url: formData.image_url || null,
       });
       onOpenChange(false);
@@ -90,6 +88,9 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
       // Error handled by mutation
     }
   };
+
+  const currencySymbol = campaign ? getCurrencySymbol(campaign.currency) : '₦';
+  const minGoal = campaign ? getMinGoalAmount(campaign.currency) : 1000;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,11 +138,12 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="goal_amount">Goal Amount ({campaign?.currency === 'USD' ? '$' : campaign?.currency === 'EUR' ? '€' : campaign?.currency === 'GBP' ? '£' : '₦'}) *</Label>
+              <Label htmlFor="goal_amount">Goal Amount ({currencySymbol}) *</Label>
               <Input
                 id="goal_amount"
                 type="number"
-                min="1000"
+                min={minGoal}
+                step="any"
                 value={formData.goal_amount}
                 onChange={(e) => setFormData({ ...formData, goal_amount: Number(e.target.value) })}
                 required
@@ -158,9 +160,9 @@ const EditCampaignDialog: React.FC<EditCampaignDialogProps> = ({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {CAMPAIGN_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

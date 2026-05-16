@@ -127,12 +127,15 @@ import ScannerDashboard from "./pages/scanner/ScannerDashboard";
 import ScannerEventPage from "./pages/scanner/ScannerEventPage";
 
 import { useState } from "react";
+import { useOrgPermissions } from "@/hooks/useOrgPermissions";
+import { canTeamMemberAccessOrgPath } from "@/lib/orgRouteAccess";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: role, isLoading: roleLoading } = useUserRole();
   const { data: isScannerOnly, isLoading: scannerCheckLoading } = useIsScannerOnly();
+  const { data: orgPermissions, isLoading: orgPermsLoading } = useOrgPermissions();
   const location = useLocation();
   
   if (loading) {
@@ -185,7 +188,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!isOrganization && !isAdmin && location.pathname.startsWith('/org/')) {
-    return <Navigate to="/dashboard" replace />;
+    if (orgPermsLoading) {
+      return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+    if (!canTeamMemberAccessOrgPath(location.pathname, orgPermissions)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
   
   if (!isAdmin && location.pathname.startsWith('/admin/')) {

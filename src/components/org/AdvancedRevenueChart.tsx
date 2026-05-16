@@ -98,8 +98,8 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
   const hasData = currentTotal > 0;
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="pb-2 px-3 sm:px-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -206,10 +206,10 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
       </CardHeader>
       <CardContent>
         {hasData ? (
-          <div className="h-[280px] w-full">
+          <div className="h-[220px] sm:h-[280px] w-full min-w-0 -mx-1 sm:mx-0">
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'area' ? (
-                <AreaChart data={currentTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <AreaChart data={currentTrends} margin={{ top: 10, right: 4, left: -8, bottom: 0 }}>
                   <defs>
                     <linearGradient id="ticketGradientAdv" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -265,7 +265,7 @@ const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your 
                   />
                 </AreaChart>
               ) : (
-                <BarChart data={currentTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <BarChart data={currentTrends} margin={{ top: 10, right: 4, left: -8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis 
                     dataKey="date" 

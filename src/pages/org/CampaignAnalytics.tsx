@@ -9,6 +9,9 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
+import CampaignPermissionGate from '@/components/auth/CampaignPermissionGate';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,20 +54,25 @@ const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 const CampaignAnalytics: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { data: role } = useUserRole();
+  const { data: permissions } = useOrgPermissions();
+  const orgId = permissions?.organizationId ?? (role === 'organization' ? user?.id : undefined);
   const { data: campaign, isLoading: campaignLoading } = useCampaign(id!);
   const { data: donationTrends, isLoading: trendsLoading } = useCampaignDonationTrends(id!, 30);
   const { data: donorStats, isLoading: statsLoading } = useCampaignDonorStats(id!);
 
   // Fetch commission rates
   const { data: commissionData } = useQuery({
-    queryKey: ['campaign-commission', user?.id],
+    queryKey: ['campaign-commission', orgId],
     queryFn: async () => {
+      if (!orgId) return { commissionRate: 10 };
+
       // Get org-specific rate
       const { data: orgApproval } = await supabase
         .from('organization_approvals')
         .select('special_commission_rate')
-        .eq('organization_id', user?.id)
-        .single();
+        .eq('organization_id', orgId)
+        .maybeSingle();
       
       // Get platform default rate
       const { data: platformSettings } = await supabase
@@ -80,8 +88,10 @@ const CampaignAnalytics: React.FC = () => {
       
       return { commissionRate };
     },
-    enabled: !!user?.id,
+    enabled: !!orgId,
   });
+
+  const campaignBelongsToOrg = campaign && orgId && campaign.creator_id === orgId;
 
   if (campaignLoading) {
     return (
@@ -96,15 +106,17 @@ const CampaignAnalytics: React.FC = () => {
     );
   }
 
-  if (!campaign) {
+  if (!campaign || !campaignBelongsToOrg) {
     return (
       <OrganizationLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Campaign not found</p>
-          <Button asChild className="mt-4">
-            <Link to="/org/campaigns">Back to Campaigns</Link>
-          </Button>
-        </div>
+        <CampaignPermissionGate mode="view" redirectTo="/org/campaigns">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Campaign not found</p>
+            <Button asChild className="mt-4">
+              <Link to="/org/campaigns">Back to Campaigns</Link>
+            </Button>
+          </div>
+        </CampaignPermissionGate>
       </OrganizationLayout>
     );
   }
@@ -129,6 +141,7 @@ const CampaignAnalytics: React.FC = () => {
 
   return (
     <OrganizationLayout>
+      <CampaignPermissionGate mode="view" redirectTo="/org/campaigns">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -431,6 +444,7 @@ const CampaignAnalytics: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      </CampaignPermissionGate>
     </OrganizationLayout>
   );
 };

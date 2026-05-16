@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCampaign, useCampaignDonations } from '@/hooks/useCampaigns';
@@ -24,6 +24,9 @@ import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
+import { trackCampaignView } from '@/hooks/useCampaignAnalytics';
+import { getCampaignUrl } from '@/lib/urlHelpers';
+import { canAcceptDonations } from '@/lib/campaignConstants';
 
 const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
@@ -36,6 +39,14 @@ const CampaignDetail: React.FC = () => {
   const flutterwavePayment = useFlutterwavePayment();
   
   const isOwner = user && campaign?.creator_id === user.id;
+
+  useEffect(() => {
+    if (campaign?.id) {
+      const params = new URLSearchParams(window.location.search);
+      const source = params.get('ref') || params.get('utm_source') || 'direct';
+      trackCampaignView(campaign.id, source);
+    }
+  }, [campaign?.id]);
   
   const [donationAmount, setDonationAmount] = useState<number>(25);
   const [customAmount, setCustomAmount] = useState('');
@@ -87,11 +98,29 @@ const CampaignDetail: React.FC = () => {
     : 0;
   
   const isEnded = campaign.end_date && isPast(new Date(campaign.end_date));
+  const acceptingDonations = canAcceptDonations(campaign.status, campaign.end_date);
   const timeLeft = campaign.end_date 
     ? formatDistanceToNow(new Date(campaign.end_date), { addSuffix: true })
     : null;
 
+  const donationDisabledReason = isEnded
+    ? 'Campaign Ended'
+    : campaign.status === 'completed'
+      ? 'Campaign Completed'
+      : campaign.status === 'paused'
+        ? 'Campaign Paused'
+        : campaign.status === 'draft'
+          ? 'Campaign Not Published'
+          : campaign.status === 'cancelled'
+            ? 'Campaign Cancelled'
+            : null;
+
   const handleDonate = async () => {
+    if (!acceptingDonations) {
+      toast.error('This campaign is not accepting donations right now');
+      return;
+    }
+
     if (!user) {
       toast.error('Please sign in to donate');
       return;
@@ -139,9 +168,7 @@ const CampaignDetail: React.FC = () => {
     }
   };
 
-  const pageUrl = (campaign as any).custom_slug 
-    ? `https://www.useqiv.com/campaigns/${(campaign as any).custom_slug}` 
-    : `https://www.useqiv.com/campaigns/${campaign.id}`;
+  const pageUrl = getCampaignUrl(campaign.id, campaign.custom_slug, true);
   const ogImage = campaign.image_url
     ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
     : '';
@@ -338,9 +365,9 @@ const CampaignDetail: React.FC = () => {
                   {/* Donate Button */}
                   <Dialog open={showDonateDialog} onOpenChange={setShowDonateDialog}>
                     <DialogTrigger asChild>
-                      <Button className="w-full" size="lg" disabled={isEnded}>
+                      <Button className="w-full" size="lg" disabled={!acceptingDonations}>
                         <Heart className="h-5 w-5 mr-2" />
-                        {isEnded ? 'Campaign Ended' : 'Donate Now'}
+                        {donationDisabledReason || 'Donate Now'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>

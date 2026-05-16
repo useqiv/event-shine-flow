@@ -1,6 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMyCampaigns, useUpdateCampaign, useDeleteCampaign, Campaign } from '@/hooks/useCampaigns';
+import { useOrganizationCampaigns, useUpdateCampaign, useDeleteCampaign, Campaign } from '@/hooks/useCampaigns';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
+import { useUserRole } from '@/hooks/useUserRole';
+import { canEditOrgCampaigns } from '@/lib/orgRouteAccess';
+import CampaignPermissionGate from '@/components/auth/CampaignPermissionGate';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,6 +50,8 @@ import EditCampaignDialog from '@/components/org/EditCampaignDialog';
 import { DuplicateCampaignDialog } from '@/components/DuplicateCampaignDialog';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
+import { getCampaignUrl } from '@/lib/urlHelpers';
+import { getCampaignCategoryLabel } from '@/lib/campaignConstants';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -55,7 +62,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const ManageCampaigns: React.FC = () => {
-  const { data: campaigns, isLoading } = useMyCampaigns();
+  const { user } = useAuth();
+  const { data: role } = useUserRole();
+  const { data: permissions } = useOrgPermissions();
+  const orgId = permissions?.organizationId ?? (role === 'organization' ? user?.id : undefined);
+  const { data: campaigns, isLoading } = useOrganizationCampaigns(orgId);
+  const canEdit = canEditOrgCampaigns(permissions, role === 'organization');
   const updateCampaign = useUpdateCampaign();
   const deleteCampaign = useDeleteCampaign();
   const [activeTab, setActiveTab] = useState('all');
@@ -113,7 +125,6 @@ const ManageCampaigns: React.FC = () => {
   const handleStatusChange = async (campaign: Campaign, newStatus: string) => {
     try {
       await updateCampaign.mutateAsync({ id: campaign.id, status: newStatus });
-      toast.success(`Campaign ${newStatus === 'active' ? 'published' : newStatus}`);
     } catch (error) {
       // Error handled by mutation
     }
@@ -132,7 +143,7 @@ const ManageCampaigns: React.FC = () => {
   };
 
   const handleShare = (campaign: Campaign) => {
-    const url = `${window.location.origin}/campaigns/${campaign.id}`;
+    const url = getCampaignUrl(campaign.id, campaign.custom_slug);
     if (navigator.share) {
       navigator.share({
         title: campaign.title,
@@ -152,6 +163,7 @@ const ManageCampaigns: React.FC = () => {
 
   return (
     <OrganizationLayout>
+      <CampaignPermissionGate mode="view" redirectTo="/dashboard">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -159,13 +171,15 @@ const ManageCampaigns: React.FC = () => {
             <h1 className="text-xl sm:text-2xl font-bold">Manage Campaigns</h1>
             <p className="text-sm text-muted-foreground">View, edit, and manage your fundraising campaigns</p>
           </div>
-          <Button size="sm" className="sm:size-default" asChild>
-            <Link to="/campaigns/create">
-              <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">New Campaign</span>
-              <span className="sm:hidden">Create</span>
-            </Link>
-          </Button>
+          {canEdit && (
+            <Button size="sm" className="sm:size-default" asChild>
+              <Link to="/campaigns/create">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">New Campaign</span>
+                <span className="sm:hidden">Create</span>
+              </Link>
+            </Button>
+          )}
         </div>
 
 
@@ -217,6 +231,7 @@ const ManageCampaigns: React.FC = () => {
               <CampaignCard 
                 key={campaign.id} 
                 campaign={campaign}
+                canEdit={canEdit}
                 onStatusChange={handleStatusChange}
                 onShare={handleShare}
                 onDelete={openDeleteDialog}
@@ -241,7 +256,7 @@ const ManageCampaigns: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 {searchQuery ? 'Try adjusting your search query' : 'Start a fundraising campaign to support your cause'}
               </p>
-              {!searchQuery && (
+              {!searchQuery && canEdit && (
                 <Button asChild>
                   <Link to="/campaigns/create">Create Campaign</Link>
                 </Button>
@@ -286,12 +301,14 @@ const ManageCampaigns: React.FC = () => {
           onOpenChange={setDuplicateDialogOpen}
         />
       </div>
+      </CampaignPermissionGate>
     </OrganizationLayout>
   );
 };
 
 interface CampaignCardProps {
   campaign: Campaign;
+  canEdit: boolean;
   onStatusChange: (campaign: Campaign, status: string) => void;
   onShare: (campaign: Campaign) => void;
   onDelete: (campaign: Campaign) => void;
@@ -300,7 +317,8 @@ interface CampaignCardProps {
 }
 
 const CampaignCard: React.FC<CampaignCardProps> = ({ 
-  campaign, 
+  campaign,
+  canEdit,
   onStatusChange,
   onShare,
   onDelete,
@@ -350,7 +368,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                   <Badge className={STATUS_COLORS[campaign.status] || ''}>
                     {campaign.status}
                   </Badge>
-                  <Badge variant="outline">{campaign.category}</Badge>
+                  <Badge variant="outline">{getCampaignCategoryLabel(campaign.category)}</Badge>
                 </div>
               </div>
 
@@ -367,10 +385,12 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                       View Campaign
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(campaign)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Campaign
-                  </DropdownMenuItem>
+                  {canEdit && (
+                    <DropdownMenuItem onClick={() => onEdit(campaign)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Campaign
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to={`/org/campaigns/${campaign.id}/analytics`}>
                       <BarChart3 className="h-4 w-4 mr-2" />
@@ -381,43 +401,47 @@ const CampaignCard: React.FC<CampaignCardProps> = ({
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDuplicate(campaign)}>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Duplicate
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {campaign.status === 'active' && (
-                    <DropdownMenuItem onClick={() => onStatusChange(campaign, 'paused')}>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Pause Campaign
-                    </DropdownMenuItem>
+                  {canEdit && (
+                    <>
+                      <DropdownMenuItem onClick={() => onDuplicate(campaign)}>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {campaign.status === 'active' && (
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign, 'paused')}>
+                          <Pause className="h-4 w-4 mr-2" />
+                          Pause Campaign
+                        </DropdownMenuItem>
+                      )}
+                      {campaign.status === 'paused' && (
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign, 'active')}>
+                          <Play className="h-4 w-4 mr-2" />
+                          Resume Campaign
+                        </DropdownMenuItem>
+                      )}
+                      {campaign.status === 'draft' && (
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign, 'active')}>
+                          <Play className="h-4 w-4 mr-2" />
+                          Publish Campaign
+                        </DropdownMenuItem>
+                      )}
+                      {campaign.status === 'active' && (
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign, 'completed')}>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Mark as Completed
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => onDelete(campaign)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Campaign
+                      </DropdownMenuItem>
+                    </>
                   )}
-                  {campaign.status === 'paused' && (
-                    <DropdownMenuItem onClick={() => onStatusChange(campaign, 'active')}>
-                      <Play className="h-4 w-4 mr-2" />
-                      Resume Campaign
-                    </DropdownMenuItem>
-                  )}
-                  {campaign.status === 'draft' && (
-                    <DropdownMenuItem onClick={() => onStatusChange(campaign, 'active')}>
-                      <Play className="h-4 w-4 mr-2" />
-                      Publish Campaign
-                    </DropdownMenuItem>
-                  )}
-                  {campaign.status === 'active' && (
-                    <DropdownMenuItem onClick={() => onStatusChange(campaign, 'completed')}>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Mark as Completed
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => onDelete(campaign)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Campaign
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
