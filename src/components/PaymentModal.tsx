@@ -391,7 +391,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                       </div>
                     )}
                     <p className="text-sm text-muted-foreground">
-                      Pay with card, bank transfer, or mobile money via Flutterwave
+                      Pay with card, bank transfer, or mobile money
                     </p>
                     <Button 
                       onClick={handleFlutterwavePayment} 
