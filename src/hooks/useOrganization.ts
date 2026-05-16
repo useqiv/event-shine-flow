@@ -215,9 +215,9 @@ export const useHasPayoutPin = () => {
   });
 };
 
-const getPayoutRpcErrorMessage = (error: unknown) => {
+const getPayoutPinErrorMessage = (error: unknown, fallback: string) => {
   if (!error || typeof error !== 'object') {
-    return 'Failed to request payout';
+    return fallback;
   }
 
   const { message, details, hint } = error as {
@@ -228,7 +228,7 @@ const getPayoutRpcErrorMessage = (error: unknown) => {
 
   const combined = [details, hint, message].filter(Boolean).join(' ').trim();
   if (!combined) {
-    return 'Failed to request payout';
+    return fallback;
   }
 
   if (combined.includes('row-level security')) {
@@ -267,7 +267,35 @@ export const useRequestPayout = () => {
       toast.success('Payout request submitted');
     },
     onError: (error) => {
-      toast.error(getPayoutRpcErrorMessage(error));
+      toast.error(getPayoutPinErrorMessage(error, 'Failed to request payout'));
+      console.error(error);
+    },
+  });
+};
+
+export const useChangePayoutPin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (pinData: {
+      currentPin: string;
+      newPin: string;
+      confirmNewPin: string;
+    }) => {
+      const { error } = await supabase.rpc('change_organization_payout_pin', {
+        p_current_pin: pinData.currentPin,
+        p_new_pin: pinData.newPin,
+        p_confirm_new_pin: pinData.confirmNewPin,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-has-payout-pin'] });
+      toast.success('Payout PIN updated successfully');
+    },
+    onError: (error) => {
+      toast.error(getPayoutPinErrorMessage(error, 'Failed to change payout PIN'));
       console.error(error);
     },
   });

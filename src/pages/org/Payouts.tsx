@@ -13,12 +13,13 @@ import {
   usePayouts, 
   useRequestPayout,
   useHasPayoutPin,
+  useChangePayoutPin,
   useOrganizationSettings,
   useUpdateOrganizationSettings
 } from '@/hooks/useOrganization';
 import PayoutPinFields, { isValidPayoutPin } from '@/components/org/PayoutPinFields';
 import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
-import { CreditCard, Wallet, Building, Bitcoin, PlusCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, Wallet, Building, Bitcoin, PlusCircle, AlertCircle, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -28,11 +29,16 @@ const Payouts = () => {
   const { data: settings, isLoading: settingsLoading } = useOrganizationSettings();
   const requestPayout = useRequestPayout();
   const { data: hasPayoutPin, isLoading: hasPayoutPinLoading } = useHasPayoutPin();
+  const changePayoutPin = useChangePayoutPin();
   const updateSettings = useUpdateOrganizationSettings();
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [isChangePinOpen, setIsChangePinOpen] = useState(false);
   const [payoutPin, setPayoutPin] = useState('');
   const [confirmPayoutPin, setConfirmPayoutPin] = useState('');
+  const [currentPayoutPin, setCurrentPayoutPin] = useState('');
+  const [newPayoutPin, setNewPayoutPin] = useState('');
+  const [confirmNewPayoutPin, setConfirmNewPayoutPin] = useState('');
   const [isBankSettingsOpen, setIsBankSettingsOpen] = useState(false);
   const [isUsdtSettingsOpen, setIsUsdtSettingsOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
@@ -118,6 +124,53 @@ const Payouts = () => {
     setPayoutAmount('');
     setPayoutPin('');
     setConfirmPayoutPin('');
+  };
+
+  const resetChangePinDialog = () => {
+    setCurrentPayoutPin('');
+    setNewPayoutPin('');
+    setConfirmNewPayoutPin('');
+  };
+
+  const currentPinReady = isValidPayoutPin(currentPayoutPin);
+  const newPinReady = isValidPayoutPin(newPayoutPin);
+  const confirmNewPinReady = isValidPayoutPin(confirmNewPayoutPin);
+  const newPinsMatch = newPayoutPin === confirmNewPayoutPin;
+  const newPinDifferent = !currentPinReady || !newPinReady || currentPayoutPin !== newPayoutPin;
+
+  const handleChangePayoutPin = async () => {
+    if (!currentPinReady) {
+      toast.error('Enter your current 6-digit payout PIN');
+      return;
+    }
+    if (!newPinReady) {
+      toast.error('Enter a valid new 6-digit payout PIN');
+      return;
+    }
+    if (!confirmNewPinReady) {
+      toast.error('Confirm your new 6-digit payout PIN');
+      return;
+    }
+    if (!newPinsMatch) {
+      toast.error('New PIN confirmation does not match');
+      return;
+    }
+    if (!newPinDifferent) {
+      toast.error('New PIN must be different from your current PIN');
+      return;
+    }
+
+    try {
+      await changePayoutPin.mutateAsync({
+        currentPin: currentPayoutPin,
+        newPin: newPayoutPin,
+        confirmNewPin: confirmNewPayoutPin,
+      });
+      setIsChangePinOpen(false);
+      resetChangePinDialog();
+    } catch (error) {
+      console.error('Failed to change payout PIN:', error);
+    }
   };
 
   const isFirstPayoutPinSetup = hasPayoutPin === false;
@@ -565,6 +618,63 @@ const Payouts = () => {
             </CardContent>
           </Card>
         </div>
+
+        {hasPayoutPin && !hasPayoutPinLoading && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Payout Security PIN
+              </CardTitle>
+              <CardDescription>
+                Your 6-digit PIN is required for every payout request. You can change it here.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Dialog
+                open={isChangePinOpen}
+                onOpenChange={(open) => {
+                  setIsChangePinOpen(open);
+                  if (!open) resetChangePinDialog();
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button variant="outline">Change Payout PIN</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Change Payout PIN</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <PayoutPinFields
+                      mode="change"
+                      currentPin={currentPayoutPin}
+                      onCurrentPinChange={setCurrentPayoutPin}
+                      pin={newPayoutPin}
+                      confirmPin={confirmNewPayoutPin}
+                      onPinChange={setNewPayoutPin}
+                      onConfirmPinChange={setConfirmNewPayoutPin}
+                    />
+                    <Button
+                      className="w-full"
+                      onClick={handleChangePayoutPin}
+                      disabled={
+                        changePayoutPin.isPending ||
+                        !currentPinReady ||
+                        !newPinReady ||
+                        !confirmNewPinReady ||
+                        !newPinsMatch ||
+                        !newPinDifferent
+                      }
+                    >
+                      {changePayoutPin.isPending ? 'Updating...' : 'Update Payout PIN'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Payout History */}
         <Card>

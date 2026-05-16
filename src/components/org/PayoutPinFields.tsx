@@ -8,11 +8,13 @@ const PIN_LENGTH = 6;
 export const isValidPayoutPin = (pin: string) => /^\d{6}$/.test(pin);
 
 interface PayoutPinFieldsProps {
-  mode: 'setup' | 'verify';
+  mode: 'setup' | 'verify' | 'change';
   pin: string;
   confirmPin: string;
   onPinChange: (value: string) => void;
   onConfirmPinChange: (value: string) => void;
+  currentPin?: string;
+  onCurrentPinChange?: (value: string) => void;
 }
 
 const PinInputField: React.FC<{
@@ -48,40 +50,65 @@ const PayoutPinFields: React.FC<PayoutPinFieldsProps> = ({
   confirmPin,
   onPinChange,
   onConfirmPinChange,
+  currentPin = '',
+  onCurrentPinChange,
 }) => {
   const pinsMismatch =
-    mode === 'setup' &&
+    (mode === 'setup' || mode === 'change') &&
     confirmPin.length === PIN_LENGTH &&
     pin.length === PIN_LENGTH &&
     pin !== confirmPin;
+
+  const title =
+    mode === 'setup'
+      ? 'Set your payout security PIN'
+      : mode === 'change'
+        ? 'Change your payout PIN'
+        : 'Verify your payout PIN';
+
+  const description =
+    mode === 'setup'
+      ? 'This is your first payout request. Create a 6-digit PIN you will enter for every future payout.'
+      : mode === 'change'
+        ? 'Enter your current PIN, then choose a new 6-digit PIN for future payout requests.'
+        : 'Enter the 6-digit PIN you created to authorize this payout request.';
 
   return (
     <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/30">
       <div className="flex items-start gap-2">
         <Shield className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
         <div>
-          <p className="text-sm font-medium">
-            {mode === 'setup' ? 'Set your payout security PIN' : 'Verify your payout PIN'}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {mode === 'setup'
-              ? 'This is your first payout request. Create a 6-digit PIN you will enter for every future payout.'
-              : 'Enter the 6-digit PIN you created to authorize this payout request.'}
-          </p>
+          <p className="text-sm font-medium">{title}</p>
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
         </div>
       </div>
 
+      {mode === 'change' && onCurrentPinChange && (
+        <PinInputField
+          id="payout-pin-current"
+          label="Current payout PIN"
+          value={currentPin}
+          onChange={onCurrentPinChange}
+        />
+      )}
+
       <PinInputField
         id="payout-pin"
-        label={mode === 'setup' ? 'Create 6-digit payout PIN' : 'Enter payout PIN'}
+        label={
+          mode === 'setup'
+            ? 'Create 6-digit payout PIN'
+            : mode === 'change'
+              ? 'New payout PIN'
+              : 'Enter payout PIN'
+        }
         value={pin}
         onChange={onPinChange}
       />
 
-      {mode === 'setup' && (
+      {(mode === 'setup' || mode === 'change') && (
         <PinInputField
           id="payout-pin-confirm"
-          label="Confirm payout PIN"
+          label={mode === 'change' ? 'Confirm new payout PIN' : 'Confirm payout PIN'}
           value={confirmPin}
           onChange={onConfirmPinChange}
         />
