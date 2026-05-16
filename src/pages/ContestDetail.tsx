@@ -22,7 +22,6 @@ import { ShareButtons, ContestantShareButton } from '@/components/ui/share-butto
 import { CountdownTimer } from '@/components/ui/countdown-timer';
 import PaymentModal from '@/components/PaymentModal';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
-import confetti from 'canvas-confetti';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
@@ -64,9 +63,6 @@ const ContestDetail = () => {
   const contestantRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
   const [pulsingContestants, setPulsingContestants] = useState<Set<string>>(new Set());
-  const previousLeaderRef = useRef<string | null>(null);
-  
-
   // Category navigation state (for drill-down UX)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -81,7 +77,7 @@ const ContestDetail = () => {
   // View mode for live voting contests
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('live');
 
-  // Handle vote updates with pulse animation and confetti
+  // Handle vote updates with pulse animation
   const handleVoteUpdate = useCallback((contestantId: string, newVoteCount: number, previousVoteCount: number) => {
     setPulsingContestants(prev => new Set(prev).add(contestantId));
     setTimeout(() => {
@@ -97,20 +93,10 @@ const ContestDetail = () => {
   const { initializeVoteCounts } = useRealtimeContestants(id || '', handleVoteUpdate);
   useRealtimeContest(id || '');
 
-  // Initialize vote counts and check for leader changes
+  // Seed realtime vote baselines when contestants load
   useEffect(() => {
     if (contestants && contestants.length > 0) {
       initializeVoteCounts(contestants);
-      
-      const currentLeader = contestants[0]?.id;
-      if (previousLeaderRef.current && previousLeaderRef.current !== currentLeader) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
-      }
-      previousLeaderRef.current = currentLeader;
     }
   }, [contestants, initializeVoteCounts]);
 

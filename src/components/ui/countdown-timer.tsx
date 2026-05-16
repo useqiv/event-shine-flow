@@ -14,52 +14,61 @@ interface TimeLeft {
   seconds: number;
 }
 
+const calculateTimeLeft = (
+  endDate: string,
+  startDate?: string
+): { timeLeft: TimeLeft | null; status: 'upcoming' | 'active' | 'ended' } => {
+  const now = new Date().getTime();
+  const end = new Date(endDate).getTime();
+  const start = startDate ? new Date(startDate).getTime() : now;
+
+  if (now < start) {
+    const difference = start - now;
+    return {
+      status: 'upcoming',
+      timeLeft: {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      },
+    };
+  }
+
+  if (now > end) {
+    return { status: 'ended', timeLeft: null };
+  }
+
+  const difference = end - now;
+  return {
+    status: 'active',
+    timeLeft: {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((difference % (1000 * 60)) / 1000),
+    },
+  };
+};
+
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ 
   endDate, 
   startDate,
   className = '' 
 }) => {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
-  const [status, setStatus] = useState<'upcoming' | 'active' | 'ended'>('active');
+  const initial = calculateTimeLeft(endDate, startDate);
+  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(initial.timeLeft);
+  const [status, setStatus] = useState<'upcoming' | 'active' | 'ended'>(initial.status);
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = new Date(endDate).getTime();
-      const start = startDate ? new Date(startDate).getTime() : now;
-
-      if (now < start) {
-        // Contest hasn't started
-        const difference = start - now;
-        setStatus('upcoming');
-        return {
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((difference % (1000 * 60)) / 1000),
-        };
-      }
-
-      if (now > end) {
-        setStatus('ended');
-        return null;
-      }
-
-      // Contest is active
-      const difference = end - now;
-      setStatus('active');
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      };
+    const tick = () => {
+      const next = calculateTimeLeft(endDate, startDate);
+      setStatus(next.status);
+      setTimeLeft(next.timeLeft);
     };
 
-    setTimeLeft(calculateTimeLeft());
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    tick();
+    const timer = setInterval(tick, 1000);
 
     return () => clearInterval(timer);
   }, [endDate, startDate]);

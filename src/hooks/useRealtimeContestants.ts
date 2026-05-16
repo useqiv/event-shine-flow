@@ -24,14 +24,19 @@ export const useRealtimeContestants = (contestId: string, onVoteUpdate?: VoteUpd
         (payload) => {
           console.log('Contestant update received:', payload);
           const newData = payload.new as any;
-          const previousVoteCount = previousVotesRef.current[newData.id] || 0;
-          
-          // Call the callback if vote count changed
-          if (onVoteUpdate && newData.vote_count !== previousVoteCount) {
+          const hasBaseline = newData.id in previousVotesRef.current;
+          const previousVoteCount = previousVotesRef.current[newData.id];
+
+          if (!hasBaseline) {
+            previousVotesRef.current[newData.id] = newData.vote_count;
+            return;
+          }
+
+          // Call the callback only for real vote increases after baseline is set
+          if (onVoteUpdate && newData.vote_count > previousVoteCount) {
             onVoteUpdate(newData.id, newData.vote_count, previousVoteCount);
           }
-          
-          // Update the reference
+
           previousVotesRef.current[newData.id] = newData.vote_count;
           
           // Invalidate queries to trigger refetch with new data

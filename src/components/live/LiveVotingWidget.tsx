@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Activity, TrendingUp, Users, Zap, Trophy } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 
 interface VoteSurge {
@@ -62,12 +61,18 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
     }
   }, [totalVotes]);
 
-  // Detect vote surges
+  // Detect vote surges (skip first snapshot so existing totals don't animate on page load)
   useEffect(() => {
     contestants.forEach((contestant) => {
-      const prevCount = previousVotesRef.current[contestant.id] || 0;
+      const hasPriorCount = contestant.id in previousVotesRef.current;
+      const prevCount = previousVotesRef.current[contestant.id] ?? contestant.vote_count;
       const newCount = contestant.vote_count;
-      
+
+      if (!hasPriorCount) {
+        previousVotesRef.current[contestant.id] = newCount;
+        return;
+      }
+
       if (newCount > prevCount) {
         const voteDiff = newCount - prevCount;
         
@@ -87,16 +92,6 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
         
         setRecentSurges(prev => [surge, ...prev].slice(0, 5));
         onVoteSurge?.(surge);
-
-        // Trigger confetti for large surges (10+ votes)
-        if (voteDiff >= 10) {
-          confetti({
-            particleCount: voteDiff * 5,
-            spread: 60,
-            origin: { y: 0.7 },
-            colors: ['#7c3aed', '#f97316', '#22c55e'],
-          });
-        }
       }
       
       previousVotesRef.current[contestant.id] = newCount;
@@ -131,7 +126,7 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
             <Trophy className="h-4 w-4" />
             Top Contestants
           </div>
-          <div className="overflow-x-auto pb-2">
+          <div className="overflow-x-auto overscroll-x-contain pb-2">
             <div className="flex gap-3 min-w-max">
               {rankedContestants.map((contestant, index) => {
                 const percentage = (contestant.vote_count / maxVotes) * 100;
@@ -143,7 +138,7 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
                     className={cn(
                       "relative rounded-lg p-2 transition-all duration-300 w-[220px] shrink-0",
                       "border border-border bg-card/70",
-                      isAnimating && "ring-2 ring-green-500 ring-offset-2 ring-offset-background scale-[1.02]",
+                      isAnimating && "ring-2 ring-green-500 bg-green-500/10",
                       index === 0 && "bg-yellow-500/10"
                     )}
                   >
@@ -199,7 +194,7 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
                 <div
                   key={`${surge.contestantId}-${surge.timestamp}`}
                   className={cn(
-                    "flex items-center justify-between text-xs p-2 rounded bg-secondary/50 animate-in slide-in-from-left duration-300",
+                    "flex items-center justify-between text-xs p-2 rounded bg-secondary/50 animate-in fade-in duration-300",
                     index === 0 && "bg-green-500/10"
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
