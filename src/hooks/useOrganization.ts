@@ -201,39 +201,73 @@ export const usePayouts = () => {
   });
 };
 
+export const useHasPayoutPin = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['org-has-payout-pin', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('org_has_payout_pin');
+      if (error) throw error;
+      return data === true;
+    },
+    enabled: !!user,
+  });
+};
+
+const getPayoutRpcErrorMessage = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return 'Failed to request payout';
+  }
+
+  const { message, details, hint } = error as {
+    message?: string;
+    details?: string;
+    hint?: string;
+  };
+
+  const combined = [details, hint, message].filter(Boolean).join(' ').trim();
+  if (!combined) {
+    return 'Failed to request payout';
+  }
+
+  if (combined.includes('row-level security')) {
+    return 'Payout could not be submitted due to a permissions error. Please try again or contact support.';
+  }
+
+  return combined;
+};
+
 export const useRequestPayout = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (payoutData: { amount: number; payment_method: string; currency: string }) => {
-      const { data: settings } = await supabase
-        .from('organization_settings')
-        .select('*')
-        .eq('organization_id', user!.id)
-        .single();
-
-      const { error } = await supabase
-        .from('payouts')
-        .insert({
-          organization_id: user!.id,
-          amount: payoutData.amount,
-          payment_method: payoutData.payment_method,
-          currency: payoutData.currency,
-          bank_name: settings?.bank_name,
-          account_number: settings?.account_number,
-          account_name: settings?.account_name,
-          usdt_address: settings?.usdt_address,
-        });
+    mutationFn: async (payoutData: {
+      amount: number;
+      payment_method: string;
+      currency: string;
+      pin: string;
+      confirmPin?: string;
+    }) => {
+      const { error } = await supabase.rpc('request_organization_payout', {
+        p_amount: payoutData.amount,
+        p_payment_method: payoutData.payment_method,
+        p_currency: payoutData.currency,
+        p_pin: payoutData.pin,
+        p_confirm_pin: payoutData.confirmPin ?? null,
+      });
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['org-has-payout-pin'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-stats'] });
       toast.success('Payout request submitted');
     },
     onError: (error) => {
-      toast.error('Failed to request payout');
+      toast.error(getPayoutRpcErrorMessage(error));
       console.error(error);
     },
   });

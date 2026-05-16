@@ -12,9 +12,11 @@ import {
   useOrganizationStats, 
   usePayouts, 
   useRequestPayout,
+  useHasPayoutPin,
   useOrganizationSettings,
   useUpdateOrganizationSettings
 } from '@/hooks/useOrganization';
+import PayoutPinFields, { isValidPayoutPin } from '@/components/org/PayoutPinFields';
 import { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import { CreditCard, Wallet, Building, Bitcoin, PlusCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -25,9 +27,12 @@ const Payouts = () => {
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
   const { data: settings, isLoading: settingsLoading } = useOrganizationSettings();
   const requestPayout = useRequestPayout();
+  const { data: hasPayoutPin, isLoading: hasPayoutPinLoading } = useHasPayoutPin();
   const updateSettings = useUpdateOrganizationSettings();
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [payoutPin, setPayoutPin] = useState('');
+  const [confirmPayoutPin, setConfirmPayoutPin] = useState('');
   const [isBankSettingsOpen, setIsBankSettingsOpen] = useState(false);
   const [isUsdtSettingsOpen, setIsUsdtSettingsOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
@@ -109,6 +114,17 @@ const Payouts = () => {
     enteredPayoutAmount > Math.max(0, selectedCurrencyAvailable)
   );
 
+  const resetPayoutDialog = () => {
+    setPayoutAmount('');
+    setPayoutPin('');
+    setConfirmPayoutPin('');
+  };
+
+  const isFirstPayoutPinSetup = hasPayoutPin === false;
+  const pinReady = isValidPayoutPin(payoutPin);
+  const confirmPinReady = !isFirstPayoutPinSetup || isValidPayoutPin(confirmPayoutPin);
+  const pinsMatch = !isFirstPayoutPinSetup || payoutPin === confirmPayoutPin;
+
   const handleRequestPayout = async () => {
     const amount = Number(payoutAmount);
     
@@ -137,14 +153,32 @@ const Payouts = () => {
       return;
     }
 
+    if (!pinReady) {
+      toast.error('Enter a valid 6-digit payout PIN');
+      return;
+    }
+
+    if (isFirstPayoutPinSetup) {
+      if (!confirmPinReady) {
+        toast.error('Confirm your 6-digit payout PIN');
+        return;
+      }
+      if (!pinsMatch) {
+        toast.error('PIN confirmation does not match');
+        return;
+      }
+    }
+
     try {
       await requestPayout.mutateAsync({
         amount,
         payment_method: payoutMethod,
         currency: payoutCurrency,
+        pin: payoutPin,
+        confirmPin: isFirstPayoutPinSetup ? confirmPayoutPin : undefined,
       });
       setIsRequestOpen(false);
-      setPayoutAmount('');
+      resetPayoutDialog();
     } catch (error) {
       console.error('Failed to request payout:', error);
     }
@@ -163,7 +197,13 @@ const Payouts = () => {
             <h1 className="text-2xl font-bold text-foreground">Payouts</h1>
             <p className="text-muted-foreground">Request payouts and manage your payment details.</p>
           </div>
-          <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+          <Dialog
+            open={isRequestOpen}
+            onOpenChange={(open) => {
+              setIsRequestOpen(open);
+              if (!open) resetPayoutDialog();
+            }}
+          >
             <DialogTrigger asChild>
               <Button disabled={availableCurrencies.length === 0}>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -248,13 +288,27 @@ const Payouts = () => {
                   </div>
                 )}
 
+                {!hasPayoutPinLoading && (
+                  <PayoutPinFields
+                    mode={isFirstPayoutPinSetup ? 'setup' : 'verify'}
+                    pin={payoutPin}
+                    confirmPin={confirmPayoutPin}
+                    onPinChange={setPayoutPin}
+                    onConfirmPinChange={setConfirmPayoutPin}
+                  />
+                )}
+
                 <Button 
                   onClick={handleRequestPayout} 
                   className="w-full" 
                   disabled={
                     requestPayout.isPending || 
+                    hasPayoutPinLoading ||
                     !payoutCurrency ||
                     exceedsAvailableBalance ||
+                    !pinReady ||
+                    !confirmPinReady ||
+                    !pinsMatch ||
                     (payoutMethod === 'bank' && !hasBankSetup) || 
                     (payoutMethod === 'usdt' && !hasUsdtSetup)
                   }

@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useRequestPayout, useOrganizationSettings } from '@/hooks/useOrganization';
+import { useRequestPayout, useHasPayoutPin, useOrganizationSettings } from '@/hooks/useOrganization';
+import PayoutPinFields, { isValidPayoutPin } from '@/components/org/PayoutPinFields';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import { Wallet, AlertCircle, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
@@ -44,11 +45,25 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
   triggerClassName,
 }) => {
   const { data: settings, isLoading: settingsLoading } = useOrganizationSettings();
+  const { data: hasPayoutPin, isLoading: hasPayoutPinLoading } = useHasPayoutPin();
   const requestPayout = useRequestPayout();
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutMethod, setPayoutMethod] = useState('bank');
+  const [payoutPin, setPayoutPin] = useState('');
+  const [confirmPayoutPin, setConfirmPayoutPin] = useState('');
+
+  const resetPayoutDialog = () => {
+    setPayoutAmount('');
+    setPayoutPin('');
+    setConfirmPayoutPin('');
+  };
+
+  const isFirstPayoutPinSetup = hasPayoutPin === false;
+  const pinReady = isValidPayoutPin(payoutPin);
+  const confirmPinReady = !isFirstPayoutPinSetup || isValidPayoutPin(confirmPayoutPin);
+  const pinsMatch = !isFirstPayoutPinSetup || payoutPin === confirmPayoutPin;
 
   const hasBankSetup = settings?.bank_name && settings?.account_number;
   const hasUsdtSetup = settings?.usdt_address;
@@ -76,15 +91,32 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
       return;
     }
 
+    if (!pinReady) {
+      toast.error('Enter a valid 6-digit payout PIN');
+      return;
+    }
+
+    if (isFirstPayoutPinSetup) {
+      if (!confirmPinReady) {
+        toast.error('Confirm your 6-digit payout PIN');
+        return;
+      }
+      if (!pinsMatch) {
+        toast.error('PIN confirmation does not match');
+        return;
+      }
+    }
+
     try {
       await requestPayout.mutateAsync({
         amount,
         payment_method: payoutMethod,
         currency,
+        pin: payoutPin,
+        confirmPin: isFirstPayoutPinSetup ? confirmPayoutPin : undefined,
       });
       setIsRequestOpen(false);
-      setPayoutAmount('');
-      toast.success(`Payout request for ${formatCurrency(amount, currency)} submitted successfully`);
+      resetPayoutDialog();
     } catch (error) {
       console.error('Failed to request payout:', error);
     }
@@ -176,16 +208,30 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
           </div>
         )}
 
+        {!hasPayoutPinLoading && (
+          <PayoutPinFields
+            mode={isFirstPayoutPinSetup ? 'setup' : 'verify'}
+            pin={payoutPin}
+            confirmPin={confirmPayoutPin}
+            onPinChange={setPayoutPin}
+            onConfirmPinChange={setConfirmPayoutPin}
+          />
+        )}
+
         <Button
           onClick={handleRequestPayout}
           className="w-full"
           disabled={
             requestPayout.isPending ||
+            hasPayoutPinLoading ||
             (payoutMethod === 'bank' && !hasBankSetup) ||
             (payoutMethod === 'usdt' && !hasUsdtSetup) ||
             !payoutAmount ||
             Number(payoutAmount) <= 0 ||
-            Number(payoutAmount) > netRevenue
+            Number(payoutAmount) > netRevenue ||
+            !pinReady ||
+            !confirmPinReady ||
+            !pinsMatch
           }
         >
           {requestPayout.isPending ? 'Processing...' : 'Submit Payout Request'}
@@ -196,7 +242,13 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
 
   if (mode === 'dialog') {
     return (
-      <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+      <Dialog
+        open={isRequestOpen}
+        onOpenChange={(open) => {
+          setIsRequestOpen(open);
+          if (!open) resetPayoutDialog();
+        }}
+      >
         <DialogTrigger asChild>
           <Button
             variant={triggerVariant}
@@ -229,7 +281,13 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
           <p className="text-xs text-muted-foreground mt-1">From: {itemTitle}</p>
         </div>
 
-        <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+        <Dialog
+          open={isRequestOpen}
+          onOpenChange={(open) => {
+            setIsRequestOpen(open);
+            if (!open) resetPayoutDialog();
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="w-full" disabled={netRevenue <= 0}>
               <Wallet className="mr-2 h-4 w-4" />
