@@ -404,7 +404,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                           Processing...
                         </>
                       ) : (
-                        'Pay with Flutterwave'
+                        'Make Payment'
                       )}
                     </Button>
                   </CardContent>

@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID } from '@/lib/urlHelpers';
+import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
 
@@ -137,9 +138,8 @@ const ContestantDetail = () => {
     '--brand-secondary': secondaryColor,
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
-  const isEnded = contest && new Date(contest.end_date) < new Date();
-  const hasNotStarted = contest && new Date(contest.start_date) > new Date();
-  const isVotingLocked = isEnded || hasNotStarted;
+  const { hasNotStarted, isEnded, isVotingLocked, voteButtonLabel, shortVoteButtonLabel } =
+    getContestVotingStatus(contest);
   const normalizedVoteOptions = useMemo(() => {
     if (contestVoteOptions.length > 0) {
       return contestVoteOptions
@@ -211,7 +211,7 @@ const ContestantDetail = () => {
     if (hasNotStarted) {
       toast({
         title: "Voting Not Open Yet",
-        description: `Voting opens on ${new Date(contest!.start_date).toLocaleString()}.`,
+        description: getVotingNotOpenMessage(contest!.start_date),
         variant: "destructive"
       });
       return;
@@ -740,7 +740,7 @@ const ContestantDetail = () => {
                     }}
                   >
                     <Vote className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    {isEnded ? 'Contest Ended' : hasNotStarted ? 'Voting Not Open Yet' : 'Vote Now'}
+                    {isEnded ? 'Contest Ended' : voteButtonLabel}
                   </Button>
                 </div>
               </CardContent>
@@ -872,7 +872,7 @@ const ContestantDetail = () => {
             }}
           >
             <Vote className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            {isEnded ? 'Ended' : hasNotStarted ? 'Not Open' : 'Vote Now'}
+            {shortVoteButtonLabel}
           </Button>
         </div>
       </div>

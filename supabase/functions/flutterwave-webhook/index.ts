@@ -677,9 +677,31 @@ async function processSuccessfulPayment(paymentData: any) {
     // Get contest and contestant details
     const { data: contest } = await supabase
       .from("contests")
-      .select("title, organization_id")
+      .select("title, organization_id, start_date, end_date, is_active")
       .eq("id", contest_id)
       .single();
+
+    if (contest) {
+      const nowTs = new Date();
+      const startTs = contest.start_date ? new Date(contest.start_date) : null;
+      const endTs = contest.end_date ? new Date(contest.end_date) : null;
+
+      if (startTs && nowTs < startTs) {
+        console.error("Vote rejected: contest has not started yet", contest_id);
+        await updateWalletTxStatus("failed");
+        return;
+      }
+      if (endTs && nowTs > endTs) {
+        console.error("Vote rejected: contest has ended", contest_id);
+        await updateWalletTxStatus("failed");
+        return;
+      }
+      if (contest.is_active === false && startTs && nowTs >= startTs) {
+        console.error("Vote rejected: contest voting is closed", contest_id);
+        await updateWalletTxStatus("failed");
+        return;
+      }
+    }
 
     const { data: contestant } = await supabase
       .from("contestants")

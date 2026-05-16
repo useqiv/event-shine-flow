@@ -29,7 +29,7 @@ interface LiveContestViewProps {
   totalVotes: number;
   votePrice: number;
   voteCurrency: string;
-  isEnded: boolean;
+  isVotingLocked: boolean;
   primaryColor: string;
   onVoteClick: (contestant: Contestant) => void;
 }
@@ -44,7 +44,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
   totalVotes,
   votePrice,
   voteCurrency,
-  isEnded,
+  isVotingLocked,
   primaryColor,
   onVoteClick,
 }) => {
@@ -134,7 +134,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                           "hover:bg-secondary/50 cursor-pointer",
                           highlightedContestant === contestant.id && "ring-2 ring-green-500 bg-green-500/10"
                         )}
-                        onClick={() => !isEnded && onVoteClick(contestant)}
+                        onClick={() => !isVotingLocked && onVoteClick(contestant)}
                       >
                         <div className="flex items-center gap-3">
                           {/* Rank & Photo */}
@@ -192,8 +192,8 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                           </div>
                           <Button
                             size="sm"
-                            disabled={isEnded}
-                            style={!isEnded ? { backgroundColor: primaryColor } : undefined}
+                            disabled={isVotingLocked}
+                            style={!isVotingLocked ? { backgroundColor: primaryColor } : undefined}
                             onClick={(e) => {
                               e.stopPropagation();
                               onVoteClick(contestant);

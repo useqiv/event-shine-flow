@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 import { createSlug, getContestShareUrl } from '@/lib/urlHelpers';
+import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { useContestVoteOptions } from '@/hooks/useContests';
 
 const PublicContest = () => {
@@ -84,7 +85,7 @@ const PublicContest = () => {
     '--brand-secondary': secondaryColor,
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
-  const isEnded = contest && new Date(contest.end_date) < new Date();
+  const { hasNotStarted, isEnded, isVotingLocked, shortVoteButtonLabel } = getContestVotingStatus(contest);
   const contestUrl = `https://www.useqiv.com/c/${slug}`;
   const contestCurrency = contest?.vote_currency || 'NGN';
   // Ensure absolute URL for OG image
@@ -138,6 +139,22 @@ const PublicContest = () => {
   }, [contestants, searchTerm]);
 
   const handleVoteClick = (contestant: any) => {
+    if (isEnded) {
+      toast({
+        title: 'Contest Ended',
+        description: 'This contest has ended. Voting is no longer available.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (hasNotStarted && contest?.start_date) {
+      toast({
+        title: 'Voting Not Open Yet',
+        description: getVotingNotOpenMessage(contest.start_date),
+        variant: 'destructive',
+      });
+      return;
+    }
     setSelectedContestant(contestant);
     setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setVoteQuantityDraft('');
@@ -292,6 +309,11 @@ const PublicContest = () => {
                   <Badge variant="destructive" className="text-lg px-4 py-2">Ended</Badge>
                 </div>
               )}
+              {hasNotStarted && !isEnded && (
+                <div className="absolute top-4 right-4">
+                  <Badge variant="secondary" className="text-lg px-4 py-2">Voting opens soon</Badge>
+                </div>
+              )}
             </div>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -353,7 +375,7 @@ const PublicContest = () => {
               totalVotes={contest.total_votes}
               votePrice={Number(contest.vote_price)}
               voteCurrency={contest.vote_currency || 'NGN'}
-              isEnded={isEnded || false}
+              isVotingLocked={isVotingLocked}
               primaryColor={primaryColor}
               onVoteClick={handleVoteClick}
             />
@@ -431,10 +453,10 @@ const PublicContest = () => {
                         <Button
                           className="w-full"
                           style={{ backgroundColor: primaryColor }}
-                          disabled={isEnded}
+                          disabled={isVotingLocked}
                           onClick={() => handleVoteClick(contestant)}
                         >
-                          {isEnded ? 'Ended' : 'Vote Now'}
+                          {shortVoteButtonLabel}
                         </Button>
                       </div>
                     </CardContent>

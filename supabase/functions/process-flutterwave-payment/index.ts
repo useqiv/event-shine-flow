@@ -173,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (payload.type === "vote" && payload.contest_id && payload.vote_quantity) {
       const { data: contest, error: contestErr } = await supabase
         .from("contests")
-        .select("vote_price, vote_currency")
+        .select("vote_price, vote_currency, start_date, end_date, is_active")
         .eq("id", payload.contest_id)
         .single();
       
@@ -182,6 +182,31 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response(
           JSON.stringify({ error: "Contest not found" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const nowTs = new Date();
+      const startTs = contest.start_date ? new Date(contest.start_date) : null;
+      const endTs = contest.end_date ? new Date(contest.end_date) : null;
+
+      if (startTs && nowTs < startTs) {
+        return new Response(
+          JSON.stringify({
+            error: `Voting has not started yet. Voting opens on ${startTs.toLocaleString()}.`,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (endTs && nowTs > endTs) {
+        return new Response(
+          JSON.stringify({ error: "Voting has ended for this contest." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (contest.is_active === false && startTs && nowTs >= startTs) {
+        return new Response(
+          JSON.stringify({ error: "Voting is currently closed for this contest." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       

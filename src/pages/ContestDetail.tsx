@@ -43,6 +43,7 @@ import {
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 import { getContestUrl, getContestantUrl, getContestShareUrl } from '@/lib/urlHelpers';
+import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 
 const ContestDetail = () => {
@@ -124,7 +125,7 @@ const ContestDetail = () => {
     '--brand-secondary': secondaryColor,
   } as React.CSSProperties), [primaryColor, secondaryColor]);
 
-  const isEnded = contest && new Date(contest.end_date) < new Date();
+  const { hasNotStarted, isEnded, isVotingLocked, voteButtonLabel } = getContestVotingStatus(contest);
   const normalizedVoteOptions = useMemo(() => {
     if (contestVoteOptions.length > 0) {
       return contestVoteOptions
@@ -232,6 +233,22 @@ const ContestDetail = () => {
   }, [voteForContestant, contestants]);
 
   const handleVoteClick = (contestant: any) => {
+    if (isEnded) {
+      toast({
+        title: 'Contest Ended',
+        description: 'This contest has ended. Voting is no longer available.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (hasNotStarted && contest?.start_date) {
+      toast({
+        title: 'Voting Not Open Yet',
+        description: getVotingNotOpenMessage(contest.start_date),
+        variant: 'destructive',
+      });
+      return;
+    }
     setSelectedContestant(contestant);
     setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setVoteQuantityDraft('');
@@ -417,6 +434,11 @@ const ContestDetail = () => {
                 <Badge variant="destructive" className="text-lg px-4 py-2">Ended</Badge>
               </div>
             )}
+            {hasNotStarted && !isEnded && (
+              <div className="absolute top-4 right-4">
+                <Badge variant="secondary" className="text-lg px-4 py-2">Voting opens soon</Badge>
+              </div>
+            )}
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -486,7 +508,7 @@ const ContestDetail = () => {
             totalVotes={contest.total_votes}
             votePrice={Number(contest.vote_price)}
             voteCurrency={contest.vote_currency || 'NGN'}
-            isEnded={isEnded || false}
+            isVotingLocked={isVotingLocked}
             primaryColor={primaryColor}
             onVoteClick={handleVoteClick}
           />
@@ -581,10 +603,10 @@ const ContestDetail = () => {
                           <Button 
                             className="w-full mt-4" 
                             onClick={() => handleVoteClick(contestant)} 
-                            disabled={isEnded} 
-                            style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
+                            disabled={isVotingLocked} 
+                            style={!isVotingLocked ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                           >
-                            {isEnded ? 'Voting Ended' : 'Vote Now'}
+                            {voteButtonLabel}
                           </Button>
                         </CardContent>
                       </Card>
@@ -690,10 +712,10 @@ const ContestDetail = () => {
                               <Button 
                                 className="w-full mt-4" 
                                 onClick={() => handleVoteClick(contestant)} 
-                                disabled={isEnded} 
-                                style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
+                                disabled={isVotingLocked} 
+                                style={!isVotingLocked ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                               >
-                                {isEnded ? 'Voting Ended' : 'Vote Now'}
+                                {voteButtonLabel}
                               </Button>
                             </CardContent>
                           </Card>
@@ -763,10 +785,10 @@ const ContestDetail = () => {
                           <Button 
                             className="w-full mt-4" 
                             onClick={() => handleVoteClick(contestant)} 
-                            disabled={isEnded} 
-                            style={!isEnded ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
+                            disabled={isVotingLocked} 
+                            style={!isVotingLocked ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                           >
-                            {isEnded ? 'Voting Ended' : 'Vote Now'}
+                            {voteButtonLabel}
                           </Button>
                         </CardContent>
                       </Card>

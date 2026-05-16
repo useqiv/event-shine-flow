@@ -313,10 +313,12 @@ const ContestManagement = () => {
     }
 
     if (contest) {
+      const voteQuantity = Math.max(1, Number((contest as any).vote_amount || 1));
+      const unitPrice = Number(contest.vote_price) || 1;
       setVoteOptions([
         {
-          vote_quantity: Math.max(1, Number((contest as any).vote_amount || 1)),
-          price: Number(contest.vote_price) || 1,
+          vote_quantity: voteQuantity,
+          price: unitPrice * voteQuantity,
         },
       ]);
     }
@@ -518,6 +520,12 @@ const ContestManagement = () => {
       return;
     }
 
+    const votePrice = Number(editForm.vote_price) || 0;
+    if (votePrice <= 0) {
+      toast.error('Vote price must be greater than zero');
+      return;
+    }
+
     try {
       await updateContest.mutateAsync({
         id: contest.id,
@@ -527,8 +535,8 @@ const ContestManagement = () => {
         image_url: editForm.image_url || null,
         start_date: editForm.start_date ? new Date(editForm.start_date).toISOString() : contest.start_date,
         end_date: editForm.end_date ? new Date(editForm.end_date).toISOString() : contest.end_date,
-        vote_price: sanitizedVoteOptions[0].price,
-        vote_amount: sanitizedVoteOptions[0].vote_quantity,
+        vote_price: votePrice,
+        vote_amount: Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity)),
         vote_currency: editForm.vote_currency || 'NGN',
         custom_slug: editForm.custom_slug?.trim() || null,
         brand_primary_color: editForm.brand_primary_color || '#7c3aed',
@@ -1351,8 +1359,26 @@ const ContestManagement = () => {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="edit-vote-price">Vote Price (per vote) *</Label>
+                  <Input
+                    id="edit-vote-price"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={editForm.vote_price}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, vote_price: Number(e.target.value) }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Standard price per vote on contest pages and reports.
+                  </p>
+                </div>
+
                 <div className="space-y-3">
                   <Label>Voting Options ({getCurrencySymbol(editForm.vote_currency)}) *</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Bundles at checkout (votes + total bundle price). Can differ from the per-vote price.
+                  </p>
                   {voteOptions.map((option, index) => (
                     <div key={option.id || index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                       <div className="space-y-1">
@@ -1366,7 +1392,7 @@ const ContestManagement = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Price</Label>
+                        <Label>Bundle price (total)</Label>
                         <Input
                           type="number"
                           min="0.01"

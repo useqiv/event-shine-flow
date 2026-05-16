@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Trophy, User, Vote, ExternalLink, Calendar, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { getContestVotingStatus } from '@/lib/contestVoting';
 
 const EmbedContest = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -66,7 +67,7 @@ const EmbedContest = () => {
   const secondaryColor = contest.brand_secondary_color || '#f97316';
   const contestUrl = `${window.location.origin}/c/${contest.custom_slug || contest.id}`;
   const maxVotes = contestants?.[0]?.vote_count || 1;
-  const isEnded = new Date(contest.end_date) < new Date();
+  const { isEnded, isVotingLocked, shortVoteButtonLabel } = getContestVotingStatus(contest);
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -97,6 +98,9 @@ const EmbedContest = () => {
           </span>
           {isEnded && (
             <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-medium">Ended</span>
+          )}
+          {!isEnded && isVotingLocked && (
+            <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-medium">Opens soon</span>
           )}
         </div>
       </div>
@@ -154,11 +158,11 @@ const EmbedContest = () => {
       </div>
 
       {/* CTA */}
-      {!isEnded && (
+      {!isVotingLocked && (
         <Button asChild className="w-full" size="lg" style={{ backgroundColor: primaryColor }}>
           <a href={contestUrl} target="_blank" rel="noopener noreferrer">
             <Vote className="h-4 w-4 mr-2" />
-            Vote Now
+            {shortVoteButtonLabel}
           </a>
         </Button>
       )}

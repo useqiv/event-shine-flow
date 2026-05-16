@@ -86,6 +86,11 @@ const CreateContest = () => {
         throw new Error('Add at least one valid voting option');
       }
 
+      const votePrice = Number(formData.vote_price) || 0;
+      if (votePrice <= 0) {
+        throw new Error('Vote price must be greater than zero');
+      }
+
       const result = await createContest.mutateAsync({
         title: formData.title,
         description: formData.description,
@@ -93,8 +98,8 @@ const CreateContest = () => {
         image_url: formData.image_url || undefined,
         start_date: formData.start_date,
         end_date: formData.end_date,
-        vote_price: sanitizedVoteOptions[0].price,
-        vote_amount: sanitizedVoteOptions[0].vote_quantity,
+        vote_price: votePrice,
+        vote_amount: Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity)),
         vote_options: sanitizedVoteOptions,
         vote_currency: formData.vote_currency,
         custom_slug: formData.custom_slug || undefined,
@@ -353,7 +358,9 @@ const CreateContest = () => {
                 <DollarSign className="h-5 w-5" />
                 Vote Pricing
               </CardTitle>
-              <CardDescription>Set vote bundles (number of votes and price)</CardDescription>
+              <CardDescription>
+                Set the per-vote price and bundles voters can buy at checkout
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -364,8 +371,26 @@ const CreateContest = () => {
                     onValueChange={(value) => handleChange('vote_currency', value)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vote_price">Vote Price (per vote) *</Label>
+                  <Input
+                    id="vote_price"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={formData.vote_price}
+                    onChange={(e) => handleChange('vote_price', Number(e.target.value))}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Standard price per vote on contest pages and reports.
+                  </p>
+                </div>
                 <div className="space-y-3">
                   <Label>Voting Options *</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Bundles at checkout (votes + total bundle price). Can differ from the per-vote price.
+                  </p>
                   {voteOptions.map((option, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                       <div className="space-y-1">
@@ -380,7 +405,7 @@ const CreateContest = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Price</Label>
+                        <Label>Bundle price (total)</Label>
                         <Input
                           type="number"
                           min="0.01"
