@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import { format } from 'date-fns';
-import { Download, Filter, CreditCard, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Download, Filter, CreditCard, CheckCircle, Clock, XCircle, AlertCircle, Search } from 'lucide-react';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
 
@@ -27,11 +28,30 @@ interface Transaction {
   user_name: string | null;
   user_email: string | null;
   amount: number;
+  base_amount: number | null;
   quantity: number;
+  votes_before: number | null;
+  votes_after: number | null;
   payment_method: string;
   status: string;
   created_at: string;
   item_name?: string;
+}
+
+function buildVoteCountMap(
+  votes: Array<{ id: string; contestant_id: string; quantity: number }>
+) {
+  const map = new Map<string, { votesBefore: number; votesAfter: number }>();
+  const runningByContestant = new Map<string, number>();
+
+  for (const vote of votes) {
+    const before = runningByContestant.get(vote.contestant_id) ?? 0;
+    const after = before + (vote.quantity || 0);
+    map.set(vote.id, { votesBefore: before, votesAfter: after });
+    runningByContestant.set(vote.contestant_id, after);
+  }
+
+  return map;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
@@ -52,34 +72,71 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
   currency = 'NGN',
 }) => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [contestantSearch, setContestantSearch] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
   const { data, isLoading } = useQuery({
-    queryKey: ['entity-transactions', entityType, entityId, statusFilter, page],
+    queryKey: ['entity-transactions', entityType, entityId, statusFilter, page, contestantSearch],
     queryFn: async () => {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
       
       if (entityType === 'contest') {
-        // Votes don't have status, so we treat all as completed
-        const { data, error } = await supabase
-          .from('votes')
-          .select(`
-            id,
-            quantity,
-            amount_paid,
-            payment_method,
-            created_at,
-            contestant_id,
-            user_id,
-            transaction_id
-          `)
-          .eq('contest_id', entityId)
-          .order('created_at', { ascending: false })
-          .range(from, to);
-        
+        const searchTerm = contestantSearch.trim();
+        let contestantIdFilter: string[] | null = null;
+
+        if (searchTerm) {
+          const { data: matchedContestants, error: searchError } = await supabase
+            .from('contestants')
+            .select('id')
+            .eq('contest_id', entityId)
+            .ilike('name', `%${searchTerm}%`);
+
+          if (searchError) throw searchError;
+          contestantIdFilter = matchedContestants?.map((c) => c.id) || [];
+          if (contestantIdFilter.length === 0) {
+            return { transactions: [] };
+          }
+        }
+
+        const [votesRes, allVotesRes] = await Promise.all([
+          (() => {
+            let query = supabase
+              .from('votes')
+              .select(`
+                id,
+                quantity,
+                amount_paid,
+                payment_method,
+                created_at,
+                contestant_id,
+                user_id,
+                transaction_id
+              `)
+              .eq('contest_id', entityId)
+              .order('created_at', { ascending: false })
+              .order('id', { ascending: false });
+
+            if (contestantIdFilter) {
+              query = query.in('contestant_id', contestantIdFilter);
+            }
+
+            return query.range(from, to);
+          })(),
+          supabase
+            .from('votes')
+            .select('id, contestant_id, quantity, created_at')
+            .eq('contest_id', entityId)
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true }),
+        ]);
+
+        const { data, error } = votesRes;
         if (error) throw error;
+        if (allVotesRes.error) throw allVotesRes.error;
+
+        const voteCountMap = buildVoteCountMap(allVotesRes.data || []);
         
         // Fetch related data separately
         const contestantIds = [...new Set(data?.map(v => v.contestant_id).filter(Boolean))];
@@ -99,12 +156,17 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         
         const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((v: any) => v.transaction_id) || []);
 
-        const enrichedData = data?.map(v => ({
-          ...v,
-          contestant: contestantsMap.get(v.contestant_id),
-          user: usersMap.get(v.user_id),
-          base_amount: baseAmountMap.get((v as any).transaction_id) ?? null,
-        }));
+        const enrichedData = data?.map(v => {
+          const voteCounts = voteCountMap.get(v.id);
+          return {
+            ...v,
+            contestant: contestantsMap.get(v.contestant_id),
+            user: usersMap.get(v.user_id),
+            base_amount: baseAmountMap.get((v as any).transaction_id) ?? null,
+            votes_before: voteCounts?.votesBefore ?? null,
+            votes_after: voteCounts?.votesAfter ?? null,
+          };
+        });
         
         return { transactions: enrichedData || [] };
       } else if (entityType === 'event') {
@@ -221,12 +283,16 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
     
     return data.transactions.map((t: any) => {
       if (entityType === 'contest') {
+        const baseAmount = t.base_amount != null ? Number(t.base_amount) : Number(t.amount_paid ?? 0);
         return {
           id: t.id,
           user_name: t.user?.full_name || 'Anonymous',
           user_email: t.user?.email || '',
-          amount: Number(t.base_amount ?? t.amount_paid ?? 0),
+          amount: baseAmount,
+          base_amount: t.base_amount != null ? Number(t.base_amount) : null,
           quantity: t.quantity || 1,
+          votes_before: t.votes_before ?? null,
+          votes_after: t.votes_after ?? null,
           payment_method: t.payment_method || 'unknown',
           status: 'completed', // Votes are always completed
           created_at: t.created_at,
@@ -238,7 +304,10 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           user_name: t.guest_name || t.user?.full_name || 'Guest',
           user_email: t.guest_email || t.user?.email || '',
           amount: Number(t.base_amount ?? t.amount_paid ?? 0),
+          base_amount: t.base_amount != null ? Number(t.base_amount) : null,
           quantity: t.quantity || 1,
+          votes_before: null,
+          votes_after: null,
           payment_method: t.payment_method || 'unknown',
           status: t.status || 'active',
           created_at: t.created_at,
@@ -250,7 +319,10 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           user_name: t.is_anonymous ? 'Anonymous' : (t.donor?.full_name || 'Anonymous'),
           user_email: t.is_anonymous ? '' : (t.donor?.email || ''),
           amount: t.amount || 0,
+          base_amount: null,
           quantity: 1,
+          votes_before: null,
+          votes_after: null,
           payment_method: t.payment_method || 'unknown',
           status: t.status || 'completed',
           created_at: t.created_at,
@@ -273,16 +345,27 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
   const handleExport = () => {
     if (!transactions.length) return;
     
-    const exportData = transactions.map(t => ({
-      Date: formatDateForExport(t.created_at),
-      Name: t.user_name,
-      Email: t.user_email,
-      Item: t.item_name,
-      Quantity: t.quantity,
-      Amount: formatCurrencyForExport(t.amount),
-      'Payment Method': t.payment_method,
-      Status: STATUS_CONFIG[t.status.toLowerCase()]?.label || t.status,
-    }));
+    const exportData = transactions.map(t => {
+      const row: Record<string, string | number> = {
+        Date: formatDateForExport(t.created_at),
+        Name: t.user_name || '',
+        Email: t.user_email || '',
+        Item: t.item_name || '',
+        Quantity: t.quantity,
+        'Payment Method': t.payment_method,
+        Status: STATUS_CONFIG[t.status.toLowerCase()]?.label || t.status,
+      };
+
+      if (entityType === 'contest') {
+        row['Base Amount'] = formatCurrencyForExport(t.amount);
+        row['Previous Votes'] = t.votes_before ?? '';
+        row['Current Votes'] = t.votes_after ?? '';
+      } else {
+        row.Amount = formatCurrencyForExport(t.amount);
+      }
+
+      return row;
+    });
     
     exportToCsv(exportData, `${entityType}-transactions-${format(new Date(), 'yyyy-MM-dd')}`);
   };
@@ -353,6 +436,21 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         </div>
       </CardHeader>
       <CardContent>
+        {entityType === 'contest' && (
+          <div className="relative mb-4 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search contestants..."
+              value={contestantSearch}
+              onChange={(e) => {
+                setContestantSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9"
+            />
+          </div>
+        )}
+
         {/* Status Summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-muted/50 rounded-lg p-3 text-center">
@@ -376,8 +474,16 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         {transactions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No transactions found</p>
-            <p className="text-sm">Transactions will appear here once {entityLabel.toLowerCase()} are made</p>
+            <p>
+              {entityType === 'contest' && contestantSearch.trim()
+                ? 'No transactions match this contestant search'
+                : 'No transactions found'}
+            </p>
+            <p className="text-sm">
+              {entityType === 'contest' && contestantSearch.trim()
+                ? 'Try a different contestant name'
+                : `Transactions will appear here once ${entityLabel.toLowerCase()} are made`}
+            </p>
           </div>
         ) : (
           <>
@@ -388,10 +494,21 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
                     <TableHead>Date</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>{entityType === 'contest' ? 'Contestant' : entityType === 'event' ? 'Ticket Type' : 'Type'}</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Amount</TableHead>
+                    {entityType === 'contest' ? (
+                      <>
+                        <TableHead className="text-right">Votes Added</TableHead>
+                        <TableHead className="text-right">Previous Votes</TableHead>
+                        <TableHead className="text-right">Current Votes</TableHead>
+                        <TableHead className="text-right">Base Amount</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Amount</TableHead>
+                      </>
+                    )}
                     <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
+                    {entityType !== 'contest' && <TableHead>Status</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -409,12 +526,29 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
                         </div>
                       </TableCell>
                       <TableCell>{t.item_name}</TableCell>
-                      <TableCell>{t.quantity}</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(t.amount, currency)}
-                      </TableCell>
+                      {entityType === 'contest' ? (
+                        <>
+                          <TableCell className="text-right">{t.quantity.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">
+                            {t.votes_before != null ? t.votes_before.toLocaleString() : '—'}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {t.votes_after != null ? t.votes_after.toLocaleString() : '—'}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(t.amount, currency)}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>{t.quantity}</TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(t.amount, currency)}
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell className="capitalize">{t.payment_method}</TableCell>
-                      <TableCell>{getStatusBadge(t.status)}</TableCell>
+                      {entityType !== 'contest' && <TableCell>{getStatusBadge(t.status)}</TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>
