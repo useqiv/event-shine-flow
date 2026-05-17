@@ -3,6 +3,12 @@ import { Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import SEOHead from "@/components/seo/SEOHead";
+import { calculatePricingFee, formatFeeFormula } from "@/lib/platformCommission";
+import {
+  PRICING_COMMISSION_DEFAULTS,
+  usePublicCommissionRates,
+  type CommissionProductKey,
+} from "@/hooks/usePublicCommissionRates";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,22 +42,21 @@ const COUNTRIES: Record<CountryCode, { name: string; currency: string; symbol: s
   GB: { name: "United Kingdom", currency: "GBP", symbol: "£", flat: 0.4 },
 };
 
-type ProductKey = "events" | "voting" | "crowdfunding" | "forms";
+type ProductKey = CommissionProductKey;
 
 const PRODUCTS: Record<ProductKey, {
   label: string;
   icon: typeof Ticket;
   tagline: string;
-  percent: number;
   unit: string;
   freeTier: string;
   features: string[];
+  includeFlatFee?: boolean;
 }> = {
   events: {
     label: "Event Ticketin",
     icon: Ticket,
     tagline: "Sell tickets, scan QR codes, manage check-ins.",
-    percent: 10,
     unit: "per transation",
     freeTier: "Free events are 100% free — forever.",
     features: [
@@ -67,8 +72,8 @@ const PRODUCTS: Record<ProductKey, {
     label: "Contest Voting",
     icon: Vote,
     tagline: "Run paid voting contests with anti-fraud built in.",
-    percent: 20,
     unit: "per paid vote",
+    includeFlatFee: false,
     freeTier: "No setup fees. You only pay when votes are cast.",
     features: [
       "Unlimited contestants & categories",
@@ -83,7 +88,6 @@ const PRODUCTS: Record<ProductKey, {
     label: "Crowdfunding",
     icon: HandHeart,
     tagline: "Launch fundraising campaigns and reach your goal.",
-    percent: 4,
     unit: "per donation",
     freeTier: "No platform fee on campaigns under your first $500 raised.",
     features: [
@@ -99,7 +103,6 @@ const PRODUCTS: Record<ProductKey, {
     label: "Smart Forms",
     icon: FileText,
     tagline: "Build forms with payments, logic, and multi-page flows.",
-    percent: 4,
     unit: "per paid submission",
     freeTier: "Unlimited free forms. Pay only when collecting payments.",
     features: [
@@ -113,24 +116,46 @@ const PRODUCTS: Record<ProductKey, {
   },
 };
 
+const UNIT_LABEL: Record<ProductKey, string> = {
+  events: "ticket",
+  voting: "vote",
+  crowdfunding: "donation",
+  forms: "submission",
+};
+
 const Pricing = () => {
   const [country, setCountry] = useState<CountryCode>("NG");
   const [product, setProduct] = useState<ProductKey>("events");
   const [calcAmount, setCalcAmount] = useState<string>("10000");
-  const [calcQty, setCalcQty] = useState<string>("");
+  const [calcQty, setCalcQty] = useState<string>("1");
 
+  const { rates: commissionRates } = usePublicCommissionRates();
   const c = COUNTRIES[country];
   const p = PRODUCTS[product];
+  const ratePercent = commissionRates[product] ?? PRICING_COMMISSION_DEFAULTS[product];
+  const flatFeePerTransaction = p.includeFlatFee === false ? 0 : c.flat;
+  const showFlatFee = p.includeFlatFee !== false && flatFeePerTransaction > 0;
 
   const calc = useMemo(() => {
-    const amount = parseFloat(calcAmount) || 0;
-    const qty = parseInt(calcQty) || 0;
-    const gross = amount * qty;
-    const feePerUnit = (amount * p.percent) / 100 + c.flat;
-    const totalFee = feePerUnit * qty;
-    const net = gross - totalFee;
-    return { gross, totalFee, net, feePerUnit };
-  }, [calcAmount, calcQty, p.percent, c.flat]);
+    const unitPrice = parseFloat(calcAmount);
+    const parsedQty = parseInt(calcQty, 10);
+    const quantity =
+      Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : calcQty.trim() === "" ? 1 : 0;
+
+    return calculatePricingFee({
+      unitPrice: Number.isFinite(unitPrice) ? unitPrice : 0,
+      quantity,
+      ratePercent,
+      flatFeePerTransaction: showFlatFee ? flatFeePerTransaction : 0,
+    });
+  }, [calcAmount, calcQty, ratePercent, flatFeePerTransaction, showFlatFee]);
+
+  const feeFormula = formatFeeFormula({
+    ratePercent,
+    flatFee: flatFeePerTransaction,
+    currencySymbol: c.symbol,
+    includeFlatFee: showFlatFee,
+  });
 
   const fmt = (n: number) =>
     `${c.symbol}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -210,6 +235,10 @@ const Pricing = () => {
 
             {(Object.keys(PRODUCTS) as ProductKey[]).map((key) => {
               const item = PRODUCTS[key];
+              const itemRate = commissionRates[key] ?? PRICING_COMMISSION_DEFAULTS[key];
+              const itemFlat =
+                item.includeFlatFee !== false ? c.flat : 0;
+              const itemShowsFlat = item.includeFlatFee !== false && itemFlat > 0;
               return (
                 <TabsContent key={key} value={key} className="mt-0">
                   <div className="grid lg:grid-cols-5 gap-6">
@@ -222,8 +251,10 @@ const Pricing = () => {
                           <span className="text-sm font-medium text-muted-foreground">{item.label}</span>
                         </div>
                         <div className="mb-2">
-                          <span className="text-5xl md:text-6xl font-bold tracking-tight">{item.percent}%</span>
-                          <span className="text-2xl font-semibold text-muted-foreground"> + {c.symbol}{c.flat}</span>
+                          <span className="text-5xl md:text-6xl font-bold tracking-tight">{itemRate}%</span>
+                          {itemShowsFlat && (
+                            <span className="text-2xl font-semibold text-muted-foreground"> + {c.symbol}{itemFlat}</span>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground mb-6">{item.unit}</p>
                         <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
@@ -279,7 +310,7 @@ const Pricing = () => {
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Price per {product === "crowdfunding" ? "donation" : product === "forms" ? "submission" : product === "voting" ? "vote" : "ticket"}
+                    Price per {UNIT_LABEL[product]}
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{c.symbol}</span>
@@ -301,7 +332,8 @@ const Pricing = () => {
                     value={calcQty}
                     onChange={(e) => setCalcQty(e.target.value)}
                     className="h-12 text-lg"
-                    min="0"
+                    min="1"
+                    placeholder="1"
                   />
                 </div>
               </div>
@@ -321,7 +353,16 @@ const Pricing = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-4 text-center">
-                Fee: {p.percent}% + {c.symbol}{c.flat} = {fmt(calc.feePerUnit)} per {product === "crowdfunding" ? "donation" : product === "forms" ? "submission" : product === "voting" ? "vote" : "ticket"}
+                {calc.gross > 0 ? (
+                  <>
+                    Fee ({feeFormula} on {fmt(calc.gross)} gross): {fmt(calc.totalFee)} total
+                    {calc.quantity > 1 && (
+                      <> · avg {fmt(calc.feePerUnit)} per {UNIT_LABEL[product]}</>
+                    )}
+                  </>
+                ) : (
+                  <>Enter a price and quantity to estimate your {feeFormula} fee per transaction.</>
+                )}
               </p>
             </Card>
           </div>
