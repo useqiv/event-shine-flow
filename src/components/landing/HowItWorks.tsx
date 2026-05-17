@@ -182,13 +182,18 @@ const ServiceStepsGrid = ({ steps }: { steps: ServiceStep[] }) => (
   </div>
 );
 
-const HowItWorks = () => {
+type HowItWorksProps = {
+  showIntro?: boolean;
+};
+
+const HowItWorks = ({ showIntro = true }: HowItWorksProps) => {
   return (
-    <section id="how-it-works" className="py-10 sm:py-14 lg:py-20 bg-card relative overflow-hidden">
+    <div className="py-10 sm:py-14 lg:py-20 bg-card relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] lg:w-[800px] h-[400px] sm:h-[600px] lg:h-[800px] bg-primary/5 rounded-full blur-3xl" />
 
       <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-[1600px] mx-auto">
+          {showIntro && (
           <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-14">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-full mb-4 sm:mb-6">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -201,6 +206,7 @@ const HowItWorks = () => {
               Ticketing, voting, campaigns, forms, and influencer marketing — each with a clear path from setup to payout.
             </p>
           </div>
+          )}
 
           <Tabs defaultValue="ticketing" className="mb-12 sm:mb-16 lg:mb-20">
             <TabsList className="flex h-auto w-full flex-wrap justify-center gap-1 bg-muted/80 p-1.5 rounded-xl sm:rounded-2xl mb-6 sm:mb-8">
@@ -312,7 +318,7 @@ const HowItWorks = () => {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 

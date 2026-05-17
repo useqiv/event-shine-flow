@@ -88,7 +88,7 @@ const Navbar = () => {
   const navLinks = [
     { name: "Campaigns", href: "/campaigns" },
     { name: "Features", href: "#features" },
-    { name: "How It Works", href: "#how-it-works" },
+    { name: "How It Works", href: "/how-it-works" },
   ];
 
   const productLinks = [
@@ -158,7 +158,7 @@ const Navbar = () => {
 
           {/* Desktop Nav Links */}
           <div className="hidden lg:flex items-center gap-1 shrink-0">
-            <a href="/#how-it-works" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">How It Works</a>
+            <Link to="/how-it-works" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">How It Works</Link>
             <Link to="/pricing" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">Pricing</Link>
             <Link to="/about" className="px-3 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors">About USEQIV</Link>
           </div>
@@ -298,6 +298,28 @@ const Navbar = () => {
                     <span className="font-medium text-foreground">{link.name}</span>
                   </Link>
                 ))}
+              </div>
+
+              {/* Platform Links */}
+              <div className="space-y-1 mb-6">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Platform</p>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="block hover:bg-muted/50 transition-colors py-3 px-3 rounded-lg -mx-3 font-medium text-foreground"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                <Link
+                  to="/pricing"
+                  className="block hover:bg-muted/50 transition-colors py-3 px-3 rounded-lg -mx-3 font-medium text-foreground"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Pricing
+                </Link>
               </div>
 
               {/* Company Links */}

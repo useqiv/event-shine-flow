@@ -6,6 +6,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
   const footerLinks = {
     product: [
       { name: "Features", href: "/features" },
+      { name: "How It Works", href: "/how-it-works" },
       { name: "For Organizers", href: "/for-organizers" },
       { name: "For Participants", href: "/for-participants" },
       { name: "For Influencers", href: "/for-influencers" }
