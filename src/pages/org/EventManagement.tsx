@@ -350,10 +350,10 @@ const EventManagement = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="col-span-2 lg:col-span-1">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
                     <p className="text-sm text-muted-foreground">Net Revenue</p>
                     <TooltipProvider>
@@ -370,11 +370,11 @@ const EventManagement = () => {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(netRevenue, (event as any)?.currency || 'NGN')}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums break-words">{formatCurrency(netRevenue, (event as any)?.currency || 'NGN')}</p>
                   {netRevenue > 0 && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button size="sm" variant="outline" className="mt-2">
+                        <Button size="sm" variant="outline" className="mt-2 w-full sm:w-auto">
                           <Banknote className="mr-1 h-3 w-3" />
                           Request Payout
                         </Button>
@@ -390,7 +390,7 @@ const EventManagement = () => {
                     </Dialog>
                   )}
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <TrendingUp className="h-8 w-8 shrink-0 text-green-600 dark:text-green-400 hidden sm:block" />
               </div>
             </CardContent>
           </Card>

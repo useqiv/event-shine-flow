@@ -749,10 +749,10 @@ const ContestManagement = () => {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">Vote Price</p>
-                  <p className="text-2xl font-bold">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
                 </div>
                 <Trophy className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -760,19 +760,19 @@ const ContestManagement = () => {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}</p>
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">{formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
-          <Card className="border-green-200 dark:border-green-800">
+          <Card className="border-green-200 dark:border-green-800 col-span-2 sm:col-span-3 lg:col-span-1">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex items-center gap-1">
                     <p className="text-sm text-muted-foreground">Net Revenue</p>
                     <TooltipProvider>
@@ -788,27 +788,24 @@ const ContestManagement = () => {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums break-words">
                     {formatCurrency(netRevenue, contestCurrency)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Available Balance: {formatCurrency(withdrawableBalance, contestCurrency)}
+                  <p className="text-xs sm:text-sm text-muted-foreground tabular-nums break-words">
+                    Available: {formatCurrency(withdrawableBalance, contestCurrency)}
                   </p>
-                  <div className="mt-2">
-                    <EventPayoutRequest
-                      mode="dialog"
-                      netRevenue={withdrawableBalance}
-                      currency={contestCurrency}
-                      itemType="contest"
-                      itemTitle={contest.title}
-                      triggerLabel={`Available: ${formatCurrency(withdrawableBalance, contestCurrency)}`}
-                      triggerVariant="outline"
-                      triggerSize="sm"
-                      triggerClassName="w-full"
-                    />
-                  </div>
+                  <EventPayoutRequest
+                    mode="dialog"
+                    netRevenue={withdrawableBalance}
+                    currency={contestCurrency}
+                    itemType="contest"
+                    itemTitle={contest.title}
+                    triggerVariant="outline"
+                    triggerSize="sm"
+                    triggerClassName="w-full mt-2"
+                  />
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <TrendingUp className="h-8 w-8 shrink-0 text-green-600 dark:text-green-400 hidden sm:block" />
               </div>
             </CardContent>
           </Card>

@@ -28,12 +28,7 @@ export interface ContestDetails {
   organization_id?: string;
 }
 
-export interface ContestAnalyticsResult extends AnalyticsResult {
-  /** Sum of contestant vote_count (leaderboard totals) */
-  leaderboardVoteTotal: number;
-  /** Whether vote rows and contest.total_votes disagree */
-  votesMismatch: boolean;
-}
+export type ContestAnalyticsResult = AnalyticsResult;
 
 interface UseContestAnalyticsReturn {
   contest: ContestDetails | null;
@@ -52,8 +47,6 @@ const INITIAL_ANALYTICS: ContestAnalyticsResult = {
   dailyVotes: [],
   topContestants: [],
   voterPaymentMethods: [],
-  leaderboardVoteTotal: 0,
-  votesMismatch: false,
 };
 
 export const useContestAnalyticsData = (contestId: string | undefined): UseContestAnalyticsReturn => {
@@ -162,17 +155,7 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
         }));
 
         const baseAnalytics = calculateFullAnalytics(voteRecords, contestantRecords, 14);
-        const leaderboardVoteTotal = contestants.reduce((sum, c) => sum + c.vote_count, 0);
-        const recordedTotalVotes = contestData?.total_votes ?? 0;
-        const votesMismatch =
-          Math.abs(baseAnalytics.totalVotes - recordedTotalVotes) > 0 ||
-          Math.abs(leaderboardVoteTotal - baseAnalytics.totalVotes) > 0;
-
-        setAnalytics({
-          ...baseAnalytics,
-          leaderboardVoteTotal,
-          votesMismatch,
-        });
+        setAnalytics(baseAnalytics);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch analytics'));
       } finally {

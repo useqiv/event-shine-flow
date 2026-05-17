@@ -11,6 +11,7 @@ import { formatCurrency } from '@/components/ui/currency-selector';
 import { Wallet, AlertCircle, Banknote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 type PayoutRequestMode = 'card' | 'dialog';
 
@@ -253,11 +254,11 @@ const EventPayoutRequest: React.FC<EventPayoutRequestProps> = ({
           <Button
             variant={triggerVariant}
             size={triggerSize}
-            className={triggerClassName}
+            className={cn('min-w-0', triggerClassName)}
             disabled={netRevenue <= 0}
           >
-            <Wallet className="mr-2 h-4 w-4" />
-            {triggerLabel}
+            <Wallet className="h-4 w-4 shrink-0" />
+            <span className="truncate">{triggerLabel}</span>
           </Button>
         </DialogTrigger>
         <DialogContent>{dialogBody}</DialogContent>

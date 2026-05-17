@@ -132,19 +132,6 @@ const ContestAnalytics = () => {
           </div>
         </div>
 
-        {analytics.votesMismatch && !isLoading && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Vote totals may differ slightly</AlertTitle>
-            <AlertDescription>
-              Transaction history shows {analytics.totalVotes.toLocaleString()} votes; the contest
-              summary shows {(contest?.total_votes ?? 0).toLocaleString()}. Leaderboard contestants
-              total {analytics.leaderboardVoteTotal.toLocaleString()} votes. Small gaps can occur
-              during real-time updates or pending payments.
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="pt-6">
