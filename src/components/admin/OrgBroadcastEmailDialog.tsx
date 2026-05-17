@@ -89,8 +89,8 @@ const OrgBroadcastEmailDialog: React.FC<OrgBroadcastEmailDialogProps> = ({
               Email All Organizations
             </DialogTitle>
             <DialogDescription>
-              Send a message to organization signup email addresses via ZeptoMail.
-              Each organization receives a separate email.
+              Send a message to each organization&apos;s signup email address.
+              Uses the same ZeptoMail (Zoho) configuration as your other platform emails.
             </DialogDescription>
           </DialogHeader>
 
