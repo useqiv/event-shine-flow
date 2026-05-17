@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +27,12 @@ const dateRanges = [
 const AdvancedRevenueChart = ({ currency, onCurrencyChange, companyName = 'Your Organization', commissionRate = 10 }: AdvancedRevenueChartProps) => {
   const [displayCurrency, setDisplayCurrency] = useState<string>(currency || 'NGN');
   const [dateRange, setDateRange] = useState<number>(30);
+
+  useEffect(() => {
+    if (currency) {
+      setDisplayCurrency(currency);
+    }
+  }, [currency]);
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
   const [isExporting, setIsExporting] = useState(false);
   

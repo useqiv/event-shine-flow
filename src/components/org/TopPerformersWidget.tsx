@@ -7,7 +7,12 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
-import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import {
+  getBaseAmountsByTransactionId,
+  getConvenienceFeeSettings,
+  resolveTicketBaseAmount,
+  resolveVoteBaseAmount,
+} from '@/lib/baseAmount';
 import { Trophy, Calendar, TrendingUp, Crown } from 'lucide-react';
 
 interface TopPerformer {
@@ -26,34 +31,70 @@ const TopPerformersWidget = () => {
   const { data: topPerformers, isLoading } = useQuery({
     queryKey: ['top-performers', user?.id],
     queryFn: async (): Promise<TopPerformer[]> => {
-      // Fetch contests with their revenue
+      const convenienceFeeSettings = await getConvenienceFeeSettings();
+
       const { data: contests } = await supabase
         .from('contests')
-        .select('id, title, vote_currency')
+        .select('id, title, vote_currency, vote_price')
         .eq('organization_id', user!.id);
 
-      const contestIds = contests?.map(c => c.id) || [];
-      
-      // Fetch votes for contests
+      const contestIds = contests?.map((c) => c.id) || [];
+      const contestVotePriceMap: Record<string, number> = {};
+      contests?.forEach((c) => {
+        contestVotePriceMap[c.id] = Number(c.vote_price) || 0;
+      });
+
       const contestRevenues: TopPerformer[] = [];
       if (contestIds.length > 0) {
-        const { data: votes } = await supabase
-          .from('votes')
-          .select('contest_id, amount_paid, quantity, transaction_id')
-          .in('contest_id', contestIds);
+        const [{ data: votes }, { data: voteOptions }] = await Promise.all([
+          supabase
+            .from('votes')
+            .select(
+              'contest_id, amount_paid, net_amount, platform_commission, quantity, transaction_id'
+            )
+            .in('contest_id', contestIds),
+          supabase
+            .from('contest_vote_options')
+            .select('contest_id, vote_quantity, price')
+            .in('contest_id', contestIds),
+        ]);
+
+        const voteOptionPriceMap = new Map<string, number>();
+        voteOptions?.forEach((option) => {
+          voteOptionPriceMap.set(
+            `${option.contest_id}:${option.vote_quantity}`,
+            Number(option.price) || 0
+          );
+        });
 
         const revenueMap: Record<string, { revenue: number; votes: number }> = {};
-        const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
-        votes?.forEach(v => {
+        const baseAmountMap = await getBaseAmountsByTransactionId(
+          votes?.map((v) => v.transaction_id) || []
+        );
+
+        votes?.forEach((v) => {
           if (!revenueMap[v.contest_id]) {
             revenueMap[v.contest_id] = { revenue: 0, votes: 0 };
           }
-          const baseAmount = baseAmountMap.get(v.transaction_id) ?? 0;
-          revenueMap[v.contest_id].revenue += Number(baseAmount);
+          const walletBaseAmount = v.transaction_id
+            ? baseAmountMap.get(v.transaction_id)
+            : undefined;
+          const baseAmount = resolveVoteBaseAmount({
+            transactionId: v.transaction_id,
+            walletBaseAmount,
+            amountPaid: v.amount_paid,
+            netAmount: v.net_amount,
+            platformCommission: v.platform_commission,
+            quantity: v.quantity,
+            voteOptionPrice: voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`) ?? null,
+            contestVotePrice: contestVotePriceMap[v.contest_id] ?? null,
+            convenienceFeeSettings,
+          });
+          revenueMap[v.contest_id].revenue += baseAmount;
           revenueMap[v.contest_id].votes += v.quantity;
         });
 
-        contests?.forEach(c => {
+        contests?.forEach((c) => {
           const data = revenueMap[c.id] || { revenue: 0, votes: 0 };
           if (data.revenue > 0) {
             contestRevenues.push({
@@ -69,45 +110,66 @@ const TopPerformersWidget = () => {
         });
       }
 
-      // Fetch events with their revenue
       const { data: events } = await supabase
         .from('events')
         .select('id, title')
         .eq('organization_id', user!.id);
 
-      const eventIds = events?.map(e => e.id) || [];
-      
+      const eventIds = events?.map((e) => e.id) || [];
+
       const eventRevenues: TopPerformer[] = [];
       if (eventIds.length > 0) {
-        // Get ticket types with currency
         const { data: ticketTypes } = await supabase
           .from('ticket_types')
-          .select('id, event_id, currency')
+          .select('id, event_id, currency, price')
           .in('event_id', eventIds);
 
         const ticketTypeCurrencyMap: Record<string, string> = {};
-        ticketTypes?.forEach(tt => {
+        const ticketTypePriceMap = new Map<string, number>();
+        ticketTypes?.forEach((tt) => {
           ticketTypeCurrencyMap[tt.id] = tt.currency || 'USD';
+          ticketTypePriceMap.set(tt.id, Number(tt.price) || 0);
         });
 
-        // Get tickets
         const { data: tickets } = await supabase
           .from('tickets')
-          .select('event_id, amount_paid, quantity, ticket_type_id, transaction_id')
+          .select(
+            'event_id, amount_paid, net_amount, platform_commission, quantity, ticket_type_id, transaction_id'
+          )
           .in('event_id', eventIds);
 
-        const revenueMap: Record<string, { revenue: number; tickets: number; currency: string }> = {};
-        const baseAmountMap = await getBaseAmountsByTransactionId(tickets?.map((t: any) => t.transaction_id) || []);
-        tickets?.forEach(t => {
+        const revenueMap: Record<string, { revenue: number; tickets: number; currency: string }> =
+          {};
+        const baseAmountMap = await getBaseAmountsByTransactionId(
+          tickets?.map((t) => t.transaction_id) || []
+        );
+
+        tickets?.forEach((t) => {
           if (!revenueMap[t.event_id]) {
-            revenueMap[t.event_id] = { revenue: 0, tickets: 0, currency: ticketTypeCurrencyMap[t.ticket_type_id] || 'USD' };
+            revenueMap[t.event_id] = {
+              revenue: 0,
+              tickets: 0,
+              currency: ticketTypeCurrencyMap[t.ticket_type_id] || 'USD',
+            };
           }
-          const baseAmount = baseAmountMap.get(t.transaction_id) ?? 0;
-          revenueMap[t.event_id].revenue += Number(baseAmount);
+          const walletBaseAmount = t.transaction_id
+            ? baseAmountMap.get(t.transaction_id)
+            : undefined;
+          const baseAmount = resolveTicketBaseAmount({
+            transactionId: t.transaction_id,
+            walletBaseAmount,
+            amountPaid: t.amount_paid,
+            netAmount: t.net_amount,
+            platformCommission: t.platform_commission,
+            quantity: t.quantity,
+            ticketPrice: ticketTypePriceMap.get(t.ticket_type_id) ?? null,
+            convenienceFeeSettings,
+          });
+          revenueMap[t.event_id].revenue += baseAmount;
           revenueMap[t.event_id].tickets += t.quantity;
         });
 
-        events?.forEach(e => {
+        events?.forEach((e) => {
           const data = revenueMap[e.id] || { revenue: 0, tickets: 0, currency: 'USD' };
           if (data.revenue > 0) {
             eventRevenues.push({
@@ -123,10 +185,9 @@ const TopPerformersWidget = () => {
         });
       }
 
-      // Combine and sort by revenue (descending)
       const allPerformers = [...contestRevenues, ...eventRevenues];
       allPerformers.sort((a, b) => b.revenue - a.revenue);
-      
+
       return allPerformers.slice(0, 5);
     },
     enabled: !!user,
@@ -185,8 +246,8 @@ const TopPerformersWidget = () => {
       <CardContent>
         <div className="space-y-3">
           {topPerformers.map((item, index) => (
-            <Link 
-              key={item.id} 
+            <Link
+              key={item.id}
               to={item.type === 'contest' ? `/org/contests/${item.id}` : `/org/events/${item.id}`}
               className="block"
             >

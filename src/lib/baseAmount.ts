@@ -136,3 +136,53 @@ export function resolveVoteBaseAmount(params: {
     0
   );
 }
+
+export function resolveTicketBaseAmount(params: {
+  transactionId?: string | null;
+  walletBaseAmount?: number | null;
+  amountPaid?: number | null;
+  netAmount?: number | null;
+  platformCommission?: number | null;
+  quantity?: number;
+  ticketPrice?: number | null;
+  convenienceFeeSettings: ConvenienceFeeSettings;
+}): number {
+  const quantity = params.quantity || 1;
+  const netAmount = Number(params.netAmount);
+  const platformCommission = Number(params.platformCommission);
+  const settledBaseAmount =
+    Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+      ? netAmount + platformCommission
+      : 0;
+
+  const normalizedSettledAmount = stripConvenienceFeeFromGross(
+    settledBaseAmount,
+    params.convenienceFeeSettings
+  );
+  const normalizedRecordedAmount = stripConvenienceFeeFromGross(
+    Number(params.amountPaid) || 0,
+    params.convenienceFeeSettings
+  );
+
+  const ticketPriceAmount =
+    params.ticketPrice != null && params.ticketPrice > 0
+      ? params.ticketPrice * quantity
+      : undefined;
+
+  let walletBase =
+    params.walletBaseAmount != null && params.transactionId
+      ? Number(params.walletBaseAmount)
+      : null;
+
+  if (ticketPriceAmount != null && walletBase != null && walletBase > ticketPriceAmount + 0.01) {
+    walletBase = ticketPriceAmount;
+  }
+
+  return (
+    walletBase ??
+    ticketPriceAmount ??
+    normalizedSettledAmount ??
+    normalizedRecordedAmount ??
+    0
+  );
+}
