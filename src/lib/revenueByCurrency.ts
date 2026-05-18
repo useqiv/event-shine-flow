@@ -19,7 +19,7 @@ export function normalizeRevenueByCurrency(
   return out;
 }
 
-/** Currencies with revenue, listing currency first when it has activity. */
+/** Currencies that actually have paid revenue (never invent listing currency). */
 export function getActiveRevenueCurrencies(
   grossByCurrency: Record<string, number> | undefined,
   listingCurrency: string,
@@ -29,9 +29,11 @@ export function getActiveRevenueCurrencies(
     (a, b) => (normalized[b] || 0) - (normalized[a] || 0),
   );
 
-  const listing = (listingCurrency || 'NGN').toUpperCase();
-  if (keys.length === 0) return [listing];
+  if (keys.length === 0) {
+    return [(listingCurrency || 'NGN').toUpperCase()];
+  }
 
+  const listing = (listingCurrency || 'NGN').toUpperCase();
   if (normalized[listing] != null) {
     return [listing, ...keys.filter((k) => k !== listing)];
   }

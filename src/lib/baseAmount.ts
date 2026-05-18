@@ -160,12 +160,12 @@ export function resolveVoteBaseAmount(params: {
     walletBase = catalogBase;
   }
 
-  // Cross-currency payment: never use listing price (e.g. ₦2000) as USD revenue
+  // Cross-currency: prefer vote record amounts (actual charge), not wallet/catalog
   if (crossCurrency) {
     return (
-      walletBase ??
-      normalizedSettledAmount ??
       normalizedRecordedAmount ??
+      normalizedSettledAmount ??
+      (walletBase != null ? walletBase : null) ??
       Number(params.amountPaid) ||
       0
     );
@@ -197,6 +197,33 @@ export function resolveVotePaidRevenue(params: {
   convenienceFeeSettings: ConvenienceFeeSettings;
 }): number {
   const paid = (params.paidCurrency || 'NGN').toUpperCase();
+  const listing = (params.listingCurrency || 'NGN').toUpperCase();
+
+  // Paid in a different currency than the contest listing: use amount_paid only
+  if (paid !== listing) {
+    const netAmount = Number(params.netAmount);
+    const platformCommission = Number(params.platformCommission);
+    const settledBaseAmount =
+      Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+        ? netAmount + platformCommission
+        : 0;
+    const normalizedSettledAmount = stripConvenienceFeeFromGross(
+      settledBaseAmount,
+      params.convenienceFeeSettings,
+    );
+    const normalizedRecordedAmount = stripConvenienceFeeFromGross(
+      Number(params.amountPaid) || 0,
+      params.convenienceFeeSettings,
+    );
+
+    return (
+      normalizedRecordedAmount ??
+      normalizedSettledAmount ??
+      Number(params.amountPaid) ||
+      0
+    );
+  }
+
   const walletCurrency = params.walletCurrency?.toUpperCase();
   const walletAmount =
     params.transactionId &&
@@ -216,7 +243,7 @@ export function resolveVotePaidRevenue(params: {
     contestVotePrice: params.contestVotePrice,
     convenienceFeeSettings: params.convenienceFeeSettings,
     paidCurrency: paid,
-    listingCurrency: (params.listingCurrency || 'NGN').toUpperCase(),
+    listingCurrency: listing,
   });
 }
 

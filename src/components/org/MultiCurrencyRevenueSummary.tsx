@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import {
   applyCommissionToRevenueByCurrency,
-  getActiveRevenueCurrencies,
   hasMultipleRevenueCurrencies,
   normalizeRevenueByCurrency,
 } from '@/lib/revenueByCurrency';
@@ -29,12 +28,15 @@ const MultiCurrencyRevenueSummary: React.FC<MultiCurrencyRevenueSummaryProps> = 
 }) => {
   const gross = normalizeRevenueByCurrency(grossByCurrency);
   const net = applyCommissionToRevenueByCurrency(gross, commissionRatePercent);
-  const currencies = getActiveRevenueCurrencies(gross, listingCurrency);
+  // Only show currencies with real paid revenue (no phantom USD/NGN lines)
+  const currencies = Object.keys(gross).sort(
+    (a, b) => (gross[b] || 0) - (gross[a] || 0),
+  );
   const multi = hasMultipleRevenueCurrencies(gross);
 
   const amountClass = size === 'sm' ? 'text-sm font-semibold' : 'text-lg font-bold';
 
-  if (currencies.length === 0 || Object.keys(gross).length === 0) {
+  if (currencies.length === 0) {
     const code = (listingCurrency || 'NGN').toUpperCase();
     return (
       <div className={`space-y-1 ${className}`}>
