@@ -129,6 +129,42 @@ function isAmountWithinTolerance(actual: number, expected: number, isCrossCurren
   return deviation <= Math.max(expected * relativeTolerance, absoluteTolerance);
 }
 
+/** Flutterwave Standard: meta is limited (~10 keys) and values must be strings. */
+const FLUTTERWAVE_META_LIMIT = 10;
+const FLUTTERWAVE_META_PRIORITY = [
+  "type",
+  "user_id",
+  "contest_id",
+  "contestant_id",
+  "vote_quantity",
+  "event_id",
+  "ticket_type_id",
+  "ticket_quantity",
+  "campaign_id",
+  "influencer_link_id",
+  "purchaser_email",
+  "purchaser_name",
+  "form_id",
+] as const;
+
+function buildFlutterwaveMeta(meta: Record<string, unknown>): Record<string, string> {
+  const fwMeta: Record<string, string> = {};
+  for (const key of FLUTTERWAVE_META_PRIORITY) {
+    if (Object.keys(fwMeta).length >= FLUTTERWAVE_META_LIMIT) break;
+    const value = meta[key];
+    if (value === undefined || value === null || value === "") continue;
+    fwMeta[key] = String(value);
+  }
+  return fwMeta;
+}
+
+function parseEnabledCurrencies(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter(Boolean);
+}
+
 interface PaymentRequest {
   type: "vote" | "ticket" | "wallet" | "donation" | "form";
   amount: number;
@@ -283,8 +319,18 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const paymentCurrency = payload.currency || defaultCurrency;
+    const paymentCurrency = (payload.currency || defaultCurrency).toUpperCase();
     const paymentMinAmount = getPaymentMinAmount(paymentCurrency);
+
+    const enabledCurrencies = parseEnabledCurrencies(getSetting("flutterwave_currencies"));
+    if (enabledCurrencies.length > 0 && !enabledCurrencies.includes(paymentCurrency)) {
+      return new Response(
+        JSON.stringify({
+          error: `Payments in ${paymentCurrency} are not enabled. Supported currencies: ${enabledCurrencies.join(", ")}.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!Number.isFinite(payload.amount) || payload.amount < paymentMinAmount) {
       return new Response(
@@ -572,17 +618,39 @@ const handler = async (req: Request): Promise<Response> => {
     meta.payment_currency = chargeCurrency;
     meta.payment_amount = serverVerifiedAmount;
 
+    if (!Number.isFinite(chargeAmount) || chargeAmount <= 0) {
+      return new Response(
+        JSON.stringify({ error: "Invalid payment amount. Please refresh and try again." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Flutterwave international card checkout typically requires at least 1 unit (USD/EUR/GBP)
+    const internationalCardCurrencies = new Set(["USD", "EUR", "GBP"]);
+    if (internationalCardCurrencies.has(chargeCurrency) && chargeAmount < 1) {
+      return new Response(
+        JSON.stringify({
+          error: `Minimum payment for ${chargeCurrency} is 1. Please select more votes or choose another currency.`,
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const customer: Record<string, string> = {
+      email: purchaserEmail,
+      name: purchaserName || "Customer",
+    };
+    if (payload.phone?.trim()) {
+      customer.phonenumber = payload.phone.trim();
+    }
+
     const flutterwavePayload = {
       tx_ref,
       amount: chargeAmount,
       currency: chargeCurrency,
       redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
-      customer: {
-        email: purchaserEmail,
-        phonenumber: payload.phone || "",
-        name: purchaserName || "Customer",
-      },
-      meta,
+      customer,
+      meta: buildFlutterwaveMeta(meta),
       customizations: {
         title: getPaymentTitle(),
         description: getPaymentDescription(),
@@ -590,7 +658,11 @@ const handler = async (req: Request): Promise<Response> => {
       },
     };
 
-    console.log("Calling Flutterwave API...");
+    console.log("Calling Flutterwave API...", JSON.stringify({
+      currency: chargeCurrency,
+      amount: chargeAmount,
+      metaKeys: Object.keys(flutterwavePayload.meta),
+    }));
 
     const response = await fetch("https://api.flutterwave.com/v3/payments", {
       method: "POST",
@@ -618,9 +690,14 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Flutterwave parsed response:", JSON.stringify(data));
 
     if (data.status !== "success") {
-      console.error("Flutterwave error:", data.message);
+      console.error("Flutterwave error:", data.message, "payload:", JSON.stringify(flutterwavePayload));
+      let errorMessage = data.message || "Failed to initialize payment";
+      if (String(errorMessage).toLowerCase().includes("required parameters")) {
+        errorMessage =
+          `Could not start ${chargeCurrency} checkout. Confirm ${chargeCurrency} is enabled in Admin > Flutterwave settings and on your Flutterwave dashboard.`;
+      }
       return new Response(
-        JSON.stringify({ error: data.message || "Failed to initialize payment" }),
+        JSON.stringify({ error: errorMessage }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
