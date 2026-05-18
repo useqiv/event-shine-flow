@@ -14,6 +14,7 @@ interface TicketData {
   guest_name: string;
   guest_email: string;
   quantity: number;
+  payment_reference_id?: string | null;
   event: { title: string; venue: string; event_date: string } | null;
   ticket_type: { name: string } | null;
 }
@@ -22,8 +23,15 @@ const PaymentCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'cancelled'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'cancelled' | 'pending_fulfillment'>('loading');
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
+  const [ticketConfirmed, setTicketConfirmed] = useState<boolean | null>(null);
+  const [voteConfirmed, setVoteConfirmed] = useState<boolean | null>(null);
+  const [paymentRefs, setPaymentRefs] = useState<{
+    transaction_reference?: string;
+    gateway_transaction_id?: string;
+    gateway_provider_reference?: string;
+  } | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   
   const rawPaymentStatus = searchParams.get('payment_status') || searchParams.get('status');
@@ -36,6 +44,42 @@ const PaymentCallback = () => {
   const isTicket = txRef?.startsWith('ticket_');
   const isGuest = !user;
 
+  const fetchVoteByTxRef = async (transactionRef: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-vote-by-txref', {
+        body: { tx_ref: transactionRef },
+      });
+
+      if (error) {
+        console.error('Error fetching vote via function:', error);
+        setVoteConfirmed(false);
+        return;
+      }
+
+      const payload = data as {
+        data?: unknown;
+        payment_status?: string;
+        transaction_reference?: string;
+        gateway_transaction_id?: string;
+        gateway_provider_reference?: string;
+      } | null;
+      const hasVote = Boolean(payload?.data);
+      setVoteConfirmed(hasVote);
+      setPaymentRefs({
+        transaction_reference: payload?.transaction_reference || transactionRef,
+        gateway_transaction_id: payload?.gateway_transaction_id,
+        gateway_provider_reference: payload?.gateway_provider_reference,
+      });
+
+      if (!hasVote && payload?.payment_status === 'pending') {
+        setStatus('pending_fulfillment');
+      }
+    } catch (error) {
+      console.error('Error fetching vote:', error);
+      setVoteConfirmed(false);
+    }
+  };
+
   useEffect(() => {
     // Determine status from URL params
     if (paymentStatus === 'successful' || paymentStatus === 'success' || paymentStatus === 'completed') {
@@ -47,9 +91,11 @@ const PaymentCallback = () => {
         origin: { y: 0.6 }
       });
       
-      // Fetch ticket data for all users
       if (isTicket && txRef) {
         fetchTicketByTxRef(txRef);
+      }
+      if (isVote && txRef) {
+        fetchVoteByTxRef(txRef);
       }
     } else if (paymentStatus === 'cancelled') {
       setStatus('cancelled');
@@ -74,17 +120,40 @@ const PaymentCallback = () => {
 
       if (error) {
         console.error('Error fetching ticket via function:', error);
+        setTicketConfirmed(false);
         return;
       }
 
-      const ticket = (data as any)?.data;
+      const payload = data as {
+        data?: TicketData | null;
+        payment_status?: string;
+        transaction_reference?: string;
+        gateway_transaction_id?: string;
+        gateway_provider_reference?: string;
+      } | null;
+
+      const ticket = payload?.data;
+      const hasTicket = Boolean(ticket);
+      setTicketConfirmed(hasTicket);
+
       if (ticket) {
-        setTicketData(ticket as TicketData);
+        setTicketData(ticket);
       } else {
         console.log('No ticket found for tx_ref:', transactionRef);
       }
+
+      setPaymentRefs({
+        transaction_reference: payload?.transaction_reference || transactionRef,
+        gateway_transaction_id: payload?.gateway_transaction_id,
+        gateway_provider_reference: payload?.gateway_provider_reference,
+      });
+
+      if (!hasTicket && payload?.payment_status === 'pending') {
+        setStatus('pending_fulfillment');
+      }
     } catch (error) {
       console.error('Error fetching ticket:', error);
+      setTicketConfirmed(false);
     }
   };
 
@@ -124,6 +193,12 @@ const PaymentCallback = () => {
     const ticketHolderDisplay = isGuest
       ? `${escapeHtml(ticketData.guest_name) || 'Guest'}${ticketData.guest_email ? ` (${escapeHtml(ticketData.guest_email)})` : ''}`
       : (escapeHtml(ticketData.guest_email) || escapeHtml(ticketData.guest_name) || 'Guest');
+
+    const transactionRef =
+      paymentRefs?.transaction_reference ||
+      ticketData.payment_reference_id ||
+      txRef ||
+      '';
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
@@ -266,7 +341,7 @@ const PaymentCallback = () => {
                 </div>
               </div>
               <div class="footer-row">
-                <span>Ref: ${escapeHtml(txRef)}</span>
+                <span>Ref: ${escapeHtml(transactionRef)}</span>
                 <span>Useqiv</span>
               </div>
             </div>
@@ -300,12 +375,29 @@ const PaymentCallback = () => {
               </div>
               <CardTitle className="text-green-600">Payment Successful!</CardTitle>
               <CardDescription>
-                {isVote 
+                {isVote && voteConfirmed === false
+                  ? 'Your payment was received. If your votes are not visible shortly, contact support with your transaction reference.'
+                  : isVote
                   ? 'Your votes have been recorded successfully'
-                  : isTicket 
+                  : isTicket && ticketConfirmed === false
+                  ? 'Your payment was received. If your ticket is not visible shortly, contact support with your transaction reference.'
+                  : isTicket
                   ? 'Your tickets have been purchased successfully'
                   : 'Your payment has been processed successfully'
                 }
+              </CardDescription>
+            </>
+          )}
+
+          {status === 'pending_fulfillment' && (
+            <>
+              <div className="mx-auto mb-4">
+                <Loader2 className="h-16 w-16 text-amber-500 animate-spin" />
+              </div>
+              <CardTitle className="text-amber-600">Payment received</CardTitle>
+              <CardDescription>
+                Your payment succeeded. We are still recording your {isVote ? 'vote' : 'ticket'} — this usually completes within a minute.
+                Contact support with your transaction reference below if it does not appear shortly.
               </CardDescription>
             </>
           )}
@@ -336,10 +428,26 @@ const PaymentCallback = () => {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {txRef && (
-            <div className="bg-muted p-3 rounded-lg">
-              <p className="text-xs text-muted-foreground">Transaction Reference</p>
-              <p className="font-mono text-sm">{txRef}</p>
+          {(txRef || paymentRefs?.transaction_reference) && (
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Transaction Reference</p>
+                <p className="font-mono text-sm break-all">
+                  {paymentRefs?.transaction_reference || txRef}
+                </p>
+              </div>
+              {paymentRefs?.gateway_transaction_id && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Payment ID (Flutterwave)</p>
+                  <p className="font-mono text-sm break-all">{paymentRefs.gateway_transaction_id}</p>
+                </div>
+              )}
+              {paymentRefs?.gateway_provider_reference && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Provider Reference</p>
+                  <p className="font-mono text-sm break-all">{paymentRefs.gateway_provider_reference}</p>
+                </div>
+              )}
             </div>
           )}
 

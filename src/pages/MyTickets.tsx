@@ -416,6 +416,7 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
             </div>
             <div class="footer-row">
               <span class="ticket-id">CODE: ${ticket.qr_code?.slice(0, 12) || ticket.id.slice(0, 8).toUpperCase()}</span>
+              ${ticket.payment_reference_id ? `<span class="ticket-id">REF: ${ticket.payment_reference_id}</span>` : ''}
               <span class="amount">₦${Number(ticket.amount_paid).toLocaleString()}</span>
             </div>
           </div>
@@ -619,6 +620,14 @@ const TicketCard = ({ ticket, pendingTransfer, transferHistory, onTransferComple
                   <Hash className="h-3 w-3" />
                   <span className="font-mono">{ticket.id.slice(0, 8).toUpperCase()}</span>
                 </span>
+                {ticket.payment_reference_id && (
+                  <span
+                    className="font-mono truncate max-w-[200px]"
+                    title={ticket.payment_reference_id}
+                  >
+                    Ref: {ticket.payment_reference_id}
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <CreditCard className="h-3 w-3" />
                   ₦{Number(ticket.amount_paid).toLocaleString()}

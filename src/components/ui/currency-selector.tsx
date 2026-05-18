@@ -2,32 +2,53 @@ import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExchangeRates, fallbackRates } from '@/hooks/useExchangeRates';
 
+// Decimal currencies support sub-unit payments (e.g. $0.50)
+const DECIMAL_CURRENCY_CODES = new Set(['USD', 'EUR', 'GBP', 'GHS', 'ZAR']);
+
 export const currencies = [
-  { code: 'USD', symbol: '$', name: 'US Dollar', minAmount: 1 },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', minAmount: 100 },
-  { code: 'EUR', symbol: '€', name: 'Euro', minAmount: 1 },
-  { code: 'GBP', symbol: '£', name: 'British Pound', minAmount: 1 },
-  { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', minAmount: 1 },
-  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', minAmount: 100 },
-  { code: 'ZAR', symbol: 'R', name: 'South African Rand', minAmount: 10 },
-  { code: 'XAF', symbol: 'FCFA', name: 'Central African CFA Franc', minAmount: 100 },
-  { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc', minAmount: 100 },
-  { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling', minAmount: 1000 },
-  { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', minAmount: 1000 },
-  { code: 'RWF', symbol: 'FRw', name: 'Rwandan Franc', minAmount: 100 },
+  { code: 'USD', symbol: '$', name: 'US Dollar', minAmount: 0.01, walletMinAmount: 1 },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', minAmount: 1, walletMinAmount: 100 },
+  { code: 'EUR', symbol: '€', name: 'Euro', minAmount: 0.01, walletMinAmount: 1 },
+  { code: 'GBP', symbol: '£', name: 'British Pound', minAmount: 0.01, walletMinAmount: 1 },
+  { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', minAmount: 0.01, walletMinAmount: 1 },
+  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', minAmount: 1, walletMinAmount: 100 },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand', minAmount: 0.01, walletMinAmount: 10 },
+  { code: 'XAF', symbol: 'FCFA', name: 'Central African CFA Franc', minAmount: 1, walletMinAmount: 100 },
+  { code: 'XOF', symbol: 'CFA', name: 'West African CFA Franc', minAmount: 1, walletMinAmount: 100 },
+  { code: 'TZS', symbol: 'TSh', name: 'Tanzanian Shilling', minAmount: 1, walletMinAmount: 1000 },
+  { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', minAmount: 1, walletMinAmount: 1000 },
+  { code: 'RWF', symbol: 'FRw', name: 'Rwandan Franc', minAmount: 1, walletMinAmount: 100 },
 ];
 
 export const getCurrencySymbol = (code: string): string => {
   return currencies.find(c => c.code === code)?.symbol || code;
 };
 
+/** Minimum for wallet top-ups (higher thresholds). */
 export const getCurrencyMinAmount = (code: string): number => {
-  return currencies.find(c => c.code === code)?.minAmount || 1;
+  const currency = currencies.find(c => c.code === code);
+  return currency?.walletMinAmount ?? currency?.minAmount ?? 0.01;
+};
+
+/** Smallest charge for votes/tickets (supports sub-dollar payments). */
+export const getPaymentMinAmount = (code: string): number => {
+  return currencies.find(c => c.code === code)?.minAmount ?? 0.01;
+};
+
+export const roundPaymentAmount = (amount: number, currencyCode: string): number => {
+  if (DECIMAL_CURRENCY_CODES.has(currencyCode)) {
+    return Math.round(amount * 100) / 100;
+  }
+  return Math.round(amount);
 };
 
 export const formatCurrency = (amount: number, currencyCode: string): string => {
   const symbol = getCurrencySymbol(currencyCode);
-  return `${symbol}${amount.toLocaleString()}`;
+  const fractionDigits = DECIMAL_CURRENCY_CODES.has(currencyCode) ? 2 : 0;
+  return `${symbol}${amount.toLocaleString(undefined, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })}`;
 };
 
 // Percentage markup to apply to all currency conversions (e.g., 0.10 = 10%)
@@ -43,9 +64,13 @@ export const convertCurrency = (amount: number, fromCurrency: string, toCurrency
   const amountInUSD = amount / fromRate;
   const convertedAmount = amountInUSD * toRate;
   
-  // Apply percentage markup to the converted amount and round to 2 decimal places
+  // Apply percentage markup to the converted amount
   const withMarkup = convertedAmount * (1 + CURRENCY_MARKUP_PERCENT);
-  return Math.round(withMarkup * 100) / 100;
+  const rounded = roundPaymentAmount(withMarkup, toCurrency);
+  const minAmount = getPaymentMinAmount(toCurrency);
+  // Never return 0 after conversion (e.g. tiny NGN → USD)
+  if (rounded <= 0) return minAmount;
+  return rounded;
 };
 
 // Format amount with conversion display using provided rates

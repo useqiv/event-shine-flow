@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Flutterwave returns either "successful" or "completed" depending on context
     const isSuccessful = status === "successful" || status === "completed";
     
-    if (isSuccessful && transaction_id) {
+    if (isSuccessful && (transaction_id || tx_ref)) {
       try {
         // Prefer DB setting (platform_settings) to avoid env mismatches
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -119,16 +119,17 @@ const handler = async (req: Request): Promise<Response> => {
           flutterwaveSecretKey = (dbSecret && !dbSecret.includes("****")) ? dbSecret : (Deno.env.get("FLUTTERWAVE_SECRET_KEY") || "");
         }
 
-        console.log("Verifying transaction:", transaction_id);
+        const verifyUrl = transaction_id
+          ? `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`
+          : `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(tx_ref!)}`;
 
-        const verifyResponse = await fetch(
-          `https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`,
-          {
-            headers: {
-              Authorization: `Bearer ${flutterwaveSecretKey}`,
-            },
-          }
-        );
+        console.log("Verifying transaction via:", transaction_id ? "id" : "tx_ref", transaction_id || tx_ref);
+
+        const verifyResponse = await fetch(verifyUrl, {
+          headers: {
+            Authorization: `Bearer ${flutterwaveSecretKey}`,
+          },
+        });
 
         const verifyData = await verifyResponse.json();
         console.log("Verification response:", JSON.stringify(verifyData));
@@ -145,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("Verification error:", error.message);
       }
     } else {
-      console.log("Payment not successful or missing transaction_id:", { status, transaction_id });
+      console.log("Payment not successful or missing transaction_id/tx_ref:", { status, transaction_id, tx_ref });
       
       // Mark transaction as failed/cancelled if we have a tx_ref
       if (tx_ref && (status === "cancelled" || status === "failed" || !isSuccessful)) {
@@ -484,6 +485,79 @@ async function sendOrgTransactionNotification(notificationData: {
   }
 }
 
+/** Flutterwave sometimes returns meta as an object or as [{ meta_name, meta_value }]. */
+function normalizeFlutterwaveMeta(raw: unknown): Record<string, unknown> {
+  if (!raw) return {};
+  if (Array.isArray(raw)) {
+    const out: Record<string, unknown> = {};
+    for (const item of raw) {
+      if (item && typeof item === "object" && "meta_name" in item && "meta_value" in item) {
+        const row = item as { meta_name: string; meta_value: unknown };
+        out[row.meta_name] = row.meta_value;
+      }
+    }
+    return out;
+  }
+  if (typeof raw === "object") return { ...(raw as Record<string, unknown>) };
+  return {};
+}
+
+function inferPaymentType(txRef: string | undefined, storedType: unknown): string | undefined {
+  if (typeof storedType === "string" && storedType) return storedType;
+  if (!txRef) return undefined;
+  const prefix = txRef.split("_")[0];
+  if (["vote", "ticket", "wallet", "donation", "form"].includes(prefix)) return prefix;
+  return undefined;
+}
+
+/** Fields required for vote/ticket fulfillment — DB copy wins over Flutterwave meta. */
+const FULFILLMENT_META_KEYS = [
+  "type",
+  "user_id",
+  "contest_id",
+  "contestant_id",
+  "vote_quantity",
+  "event_id",
+  "ticket_type_id",
+  "ticket_quantity",
+  "base_amount",
+  "base_currency",
+  "payment_amount",
+  "payment_currency",
+  "campaign_id",
+  "funding_amount",
+  "form_id",
+  "purchaser_email",
+  "purchaser_name",
+  "influencer_link_id",
+  "is_anonymous",
+  "donor_message",
+] as const;
+
+function hasMetaValue(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== "";
+}
+
+function mergePaymentMeta(
+  paymentData: { tx_ref?: string; meta?: unknown },
+  walletTx: { payment_metadata?: unknown } | null,
+): Record<string, unknown> {
+  const fromFlutterwave = normalizeFlutterwaveMeta(paymentData.meta);
+  const fromDb = normalizeFlutterwaveMeta(walletTx?.payment_metadata);
+  const merged = { ...fromFlutterwave, ...fromDb };
+
+  // Prefer our stored payment_metadata for fulfillment (Flutterwave may omit or alter meta)
+  for (const key of FULFILLMENT_META_KEYS) {
+    if (hasMetaValue(fromDb[key])) {
+      merged[key] = fromDb[key];
+    }
+  }
+
+  const type = inferPaymentType(paymentData.tx_ref, merged.type);
+  if (type) merged.type = type;
+  return merged;
+}
+
 async function notifyAdminsOfFailure(
   supabase: any,
   errorType: "vote" | "ticket",
@@ -529,7 +603,18 @@ async function processSuccessfulPayment(paymentData: any) {
   const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const meta = paymentData.meta || {};
+  // Find the wallet transaction created during payment initialization (includes stored payment_metadata)
+  const { data: walletTx, error: walletTxError } = await supabase
+    .from("wallet_transactions")
+    .select("id, user_id, wallet_id, status, amount, payment_metadata")
+    .eq("reference_id", paymentData.tx_ref)
+    .maybeSingle();
+
+  if (walletTxError) {
+    console.error("Failed to load wallet transaction:", walletTxError.message);
+  }
+
+  const meta = mergePaymentMeta(paymentData, walletTx);
   const {
     user_id,
     type,
@@ -544,7 +629,21 @@ async function processSuccessfulPayment(paymentData: any) {
     is_anonymous,
     donor_message,
     influencer_link_id,
-  } = meta;
+  } = meta as {
+    user_id?: string;
+    type?: string;
+    contest_id?: string;
+    contestant_id?: string;
+    vote_quantity?: number | string;
+    event_id?: string;
+    ticket_type_id?: string;
+    ticket_quantity?: number | string;
+    funding_amount?: number;
+    campaign_id?: string;
+    is_anonymous?: boolean;
+    donor_message?: string;
+    influencer_link_id?: string;
+  };
   const customer = paymentData.customer || {};
 
   // Flutterwave transaction id (numeric) – useful for logging but NOT a FK to our DB
@@ -636,26 +735,29 @@ async function processSuccessfulPayment(paymentData: any) {
     throw lastError instanceof Error ? lastError : new Error(`${label} failed after ${maxAttempts} attempts`);
   };
 
-  // Find the wallet transaction created during payment initialization
-  const { data: walletTx, error: walletTxError } = await supabase
-    .from("wallet_transactions")
-    .select("id, user_id, wallet_id, status, amount")
-    .eq("reference_id", paymentData.tx_ref)
-    .maybeSingle();
-
-  if (walletTxError) {
-    console.error("Failed to load wallet transaction:", walletTxError.message);
-  }
-
   const updateWalletTxStatus = async (status: "pending" | "completed" | "failed") => {
     if (!walletTx?.id) {
       console.log("No wallet_transactions row found for tx_ref:", paymentData.tx_ref);
       return;
     }
 
+    const updatePayload: Record<string, unknown> = { status };
+    if (status === "completed") {
+      const gateway_transaction_id =
+        paymentData.id != null && paymentData.id !== ""
+          ? String(paymentData.id)
+          : null;
+      const gateway_provider_reference =
+        paymentData.flw_ref != null && paymentData.flw_ref !== ""
+          ? String(paymentData.flw_ref)
+          : null;
+      if (gateway_transaction_id) updatePayload.gateway_transaction_id = gateway_transaction_id;
+      if (gateway_provider_reference) updatePayload.gateway_provider_reference = gateway_provider_reference;
+    }
+
     const { error: updateError } = await supabase
       .from("wallet_transactions")
-      .update({ status })
+      .update(updatePayload)
       .eq("id", walletTx.id);
 
     if (updateError) {
@@ -669,10 +771,26 @@ async function processSuccessfulPayment(paymentData: any) {
   // IMPORTANT: votes.transaction_id & tickets.transaction_id reference wallet_transactions.id (UUID)
   const db_transaction_id: string | null = walletTx?.id ?? null;
 
-  if (type === "vote" && contest_id && contestant_id && user_id) {
+  const hasVoteIdentity = Boolean(
+    user_id ||
+    meta.purchaser_email ||
+    meta.purchaser_name ||
+    customer.email ||
+    customer.name,
+  );
+
+  if (type === "vote" && contest_id && contestant_id && hasVoteIdentity) {
     console.log("Recording vote...");
     const grossAmount = Number(paymentData.amount) || 0;
     const baseAmount = Number(meta.base_amount ?? walletTx?.amount ?? grossAmount);
+    const voteCurrency =
+      (typeof meta.base_currency === "string" && meta.base_currency) ||
+      paymentData.currency ||
+      "NGN";
+    const recordedVoteQuantity = toPositiveInt(vote_quantity, 1);
+    console.log(
+      `Vote fulfillment: quantity=${recordedVoteQuantity}, amount_paid=${baseAmount} ${voteCurrency}, contest=${contest_id}, contestant=${contestant_id}`,
+    );
 
     // Get contest and contestant details
     const { data: contest } = await supabase
@@ -752,11 +870,12 @@ async function processSuccessfulPayment(paymentData: any) {
           user_id: actualVoteUserId,
           contest_id,
           contestant_id,
-          quantity: toPositiveInt(vote_quantity, 1),
+          quantity: recordedVoteQuantity,
           amount_paid: baseAmount,
-          currency: paymentData.currency || "NGN",
+          currency: voteCurrency,
           payment_method,
           transaction_id: db_transaction_id,
+          payment_reference_id: paymentData.tx_ref || null,
           platform_commission: voteCommission.commission,
           net_amount: voteCommission.netAmount,
           guest_email: voteGuestEmail,
@@ -793,7 +912,7 @@ async function processSuccessfulPayment(paymentData: any) {
         await supabase.from("notifications").insert({
           user_id: actualVoteUserId,
           title: "Vote Successful",
-          message: `Your ${vote_quantity || 1} vote(s) have been recorded successfully.`,
+          message: `Your ${recordedVoteQuantity} vote(s) have been recorded successfully.`,
           type: "vote",
           reference_id: contest_id,
         });
@@ -805,8 +924,8 @@ async function processSuccessfulPayment(paymentData: any) {
         user_email: voteGuestEmail || customer.email,
         user_name: voteGuestName || customer.name || "Valued Customer",
         amount: baseAmount,
-        currency: paymentData.currency || "NGN",
-        quantity: vote_quantity || 1,
+        currency: voteCurrency,
+        quantity: recordedVoteQuantity,
         payment_method: `Flutterwave (${payment_method.replace(/_/g, " ")})`,
         transaction_ref: paymentData.tx_ref,
         contest_title: contest?.title || "Contest",
@@ -819,8 +938,8 @@ async function processSuccessfulPayment(paymentData: any) {
           type: 'vote',
           organization_id: contest.organization_id,
           amount: baseAmount,
-          currency: paymentData.currency || "NGN",
-          quantity: vote_quantity || 1,
+          currency: voteCurrency,
+          quantity: recordedVoteQuantity,
           contest_title: contest?.title || "Contest",
           contestant_name: contestant?.name || "Contestant",
           voter_name: voteGuestName || customer.name || "Anonymous",
@@ -1279,8 +1398,30 @@ async function processSuccessfulPayment(paymentData: any) {
       await updateWalletTxStatus("completed");
     }
   } else {
-    console.log("Unable to process payment - missing required meta fields");
-    await updateWalletTxStatus("failed");
+    console.error(
+      "Unable to process payment - missing required meta fields",
+      JSON.stringify({
+        type,
+        tx_ref: paymentData.tx_ref,
+        contest_id: !!contest_id,
+        contestant_id: !!contestant_id,
+        event_id: !!event_id,
+        hasVoteIdentity,
+      }),
+    );
+    await notifyAdminsOfFailure(
+      supabase,
+      type === "ticket" ? "ticket" : "vote",
+      `Missing fulfillment fields for tx_ref ${paymentData.tx_ref}. Meta: ${JSON.stringify(meta)}`,
+      paymentData,
+      meta,
+    );
+    // Keep pending so a retry/webhook replay can still fulfill; do not mark failed while customer was charged.
+    if (walletTx?.status === "pending") {
+      console.log("Leaving wallet transaction pending for manual/retry fulfillment:", walletTx.id);
+    } else {
+      await updateWalletTxStatus("failed");
+    }
   }
 }
 

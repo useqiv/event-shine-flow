@@ -32,6 +32,7 @@ interface PaymentTransaction {
   campaign_title?: string;
   form_title?: string;
   quantity: number;
+  payment_reference_id?: string | null;
 }
 
 const AdminPaymentHistory = () => {
@@ -64,7 +65,8 @@ const AdminPaymentHistory = () => {
           user_id,
           guest_email,
           guest_name,
-          contest_id
+          contest_id,
+          payment_reference_id
         `)
         .order('created_at', { ascending: false });
       
@@ -104,7 +106,8 @@ const AdminPaymentHistory = () => {
           guest_name,
           guest_email,
           event_id,
-          ticket_type_id
+          ticket_type_id,
+          payment_reference_id
         `)
         .order('created_at', { ascending: false });
       
@@ -234,6 +237,7 @@ const AdminPaymentHistory = () => {
         user_email: isGuest ? vote.guest_email : null,
         contest_title: vote.contest?.title,
         quantity: vote.quantity,
+        payment_reference_id: vote.payment_reference_id,
       });
     });
 
@@ -253,6 +257,7 @@ const AdminPaymentHistory = () => {
         user_email: isGuest ? ticket.holder_email : null,
         event_title: ticket.event?.title,
         quantity: ticket.quantity,
+        payment_reference_id: ticket.payment_reference_id,
       });
     });
 
@@ -309,6 +314,7 @@ const AdminPaymentHistory = () => {
         tx.event_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.campaign_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.form_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tx.payment_reference_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.id.toLowerCase().includes(searchTerm.toLowerCase());
 
       // Status filter
@@ -573,13 +579,14 @@ const AdminPaymentHistory = () => {
                     <TableHead className="text-xs sm:text-sm hidden md:table-cell">Currency</TableHead>
                     <TableHead className="text-xs sm:text-sm">Amount</TableHead>
                     <TableHead className="text-xs sm:text-sm hidden lg:table-cell">Method</TableHead>
+                    <TableHead className="text-xs sm:text-sm hidden xl:table-cell">Reference</TableHead>
                     <TableHead className="text-xs sm:text-sm">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTransactions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         No transactions found
                       </TableCell>
                     </TableRow>
@@ -614,6 +621,11 @@ const AdminPaymentHistory = () => {
                             )}
                             <span className="capitalize text-xs sm:text-sm">{tx.payment_method}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell max-w-[140px]">
+                          <span className="font-mono text-xs truncate block" title={tx.payment_reference_id || undefined}>
+                            {tx.payment_reference_id || '—'}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <Badge

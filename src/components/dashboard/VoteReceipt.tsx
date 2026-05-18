@@ -114,13 +114,18 @@ export const VoteReceipt: React.FC<VoteReceiptProps> = ({ vote, children }) => {
               <span class="label">Time</span>
               <span class="value">${voteTime}</span>
             </div>
+            ${vote.payment_reference_id ? `
+            <div class="row">
+              <span class="label">Transaction Reference</span>
+              <span class="value transaction-id">${vote.payment_reference_id}</span>
+            </div>` : ''}
             <div class="total">
               <span class="total-label">Total Amount</span>
               <span class="total-value">₦${Number(vote.amount_paid).toLocaleString()}</span>
             </div>
           </div>
           <div class="footer">
-            <p class="transaction-id">Transaction ID: ${vote.id.slice(0, 16).toUpperCase()}</p>
+            <p class="transaction-id">Receipt ID: ${vote.id.slice(0, 16).toUpperCase()}</p>
             <p style="margin-top: 8px;">Useqiv - Powered by your votes</p>
           </div>
         </div>
@@ -148,7 +153,7 @@ Payment Method: ${vote.payment_method || 'Wallet'}
 Date: ${format(new Date(vote.created_at), 'MMMM d, yyyy')}
 Time: ${format(new Date(vote.created_at), 'h:mm a')}
 
-Transaction ID: ${vote.id}
+${vote.payment_reference_id ? `Transaction Reference: ${vote.payment_reference_id}\n` : ''}Receipt ID: ${vote.id}
 
 Thank you for voting!
 Useqiv

@@ -51,6 +51,15 @@ export const usePromoCodeValidation = () => {
     contestId?: string,
     ticketTypeId?: string
   ): Promise<ValidateResult> => {
+    if (type === 'vote') {
+      return {
+        isValid: false,
+        promoCode: null,
+        discountAmount: 0,
+        errorMessage: 'Promo codes are not available for voting',
+      };
+    }
+
     if (!code.trim()) {
       return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'Please enter a promo code' };
     }
@@ -102,18 +111,7 @@ export const usePromoCodeValidation = () => {
 
         // Check applicable_to category
         if (applicableTo === 'contests') {
-          return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'This promo code is only valid for contests' };
-        }
-      }
-
-      // For vote purchases
-      if (type === 'vote') {
-        if (applicableTo === 'events') {
-          return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'This promo code is only valid for events' };
-        }
-
-        if (promoCode.contest_id && promoCode.contest_id !== contestId) {
-          return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'This promo code is not valid for this contest' };
+          return { isValid: false, promoCode: null, discountAmount: 0, errorMessage: 'This promo code is not valid for tickets' };
         }
       }
 

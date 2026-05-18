@@ -23,7 +23,7 @@ serve(async (req) => {
     const { data: transactions, error: txError } = await supabase
       .from("wallet_transactions")
       .select("*")
-      .eq("status", "completed")
+      .in("status", ["completed", "pending", "failed"])
       .lt("created_at", twoMinutesAgo);
 
     if (txError) {
@@ -74,33 +74,34 @@ serve(async (req) => {
         continue;
       }
 
-      // Check if corresponding record exists within a time window
+      // Prefer authoritative link: votes/tickets.transaction_id -> wallet_transactions.id
       let recordExists = false;
-      const timeWindow = 2 * 60 * 1000; // 2 minute window
-      const txTime = new Date(tx.created_at).getTime();
 
       if (isVote) {
-        const { data: votes } = await supabase
+        const { data: vote } = await supabase
           .from("votes")
           .select("id")
-          .eq("user_id", tx.user_id)
-          .eq("amount_paid", tx.amount)
-          .gte("created_at", new Date(txTime - timeWindow).toISOString())
-          .lte("created_at", new Date(txTime + timeWindow).toISOString())
-          .limit(1);
+          .eq("transaction_id", tx.id)
+          .maybeSingle();
 
-        recordExists = !!(votes && votes.length > 0);
+        recordExists = !!vote?.id;
       } else if (isTicket) {
-        const { data: tickets } = await supabase
+        const { data: ticket } = await supabase
           .from("tickets")
           .select("id")
-          .eq("user_id", tx.user_id)
-          .eq("amount_paid", tx.amount)
-          .gte("created_at", new Date(txTime - timeWindow).toISOString())
-          .lte("created_at", new Date(txTime + timeWindow).toISOString())
-          .limit(1);
+          .eq("transaction_id", tx.id)
+          .maybeSingle();
 
-        recordExists = !!(tickets && tickets.length > 0);
+        recordExists = !!ticket?.id;
+
+        if (!recordExists && referenceId) {
+          const { data: ticketByRef } = await supabase
+            .from("tickets")
+            .select("id")
+            .eq("payment_reference_id", referenceId)
+            .maybeSingle();
+          recordExists = !!ticketByRef?.id;
+        }
       }
 
       if (recordExists) {

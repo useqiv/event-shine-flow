@@ -52,6 +52,11 @@ const MyVotes = () => {
                         {formatCurrency(Number(vote.amount_paid), vote.currency || vote.contest?.vote_currency || 'NGN')}
                       </p>
                       <p className="text-xs text-muted-foreground">{format(new Date(vote.created_at), 'MMM d, HH:mm')}</p>
+                      {vote.payment_reference_id && (
+                        <p className="text-xs font-mono text-muted-foreground mt-1 truncate max-w-[180px]" title={vote.payment_reference_id}>
+                          Ref: {vote.payment_reference_id}
+                        </p>
+                      )}
                     </div>
                   </div>
                   

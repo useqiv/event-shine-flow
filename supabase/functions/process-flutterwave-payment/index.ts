@@ -6,6 +6,129 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Must match client-side conversion in currency-selector.tsx
+const CURRENCY_MARKUP_PERCENT = 0.10;
+const EXCHANGE_RATE_CACHE_MS = 60 * 60 * 1000;
+const DECIMAL_CURRENCIES = new Set(["USD", "EUR", "GBP", "GHS", "ZAR"]);
+
+const PAYMENT_MIN_AMOUNTS: Record<string, number> = {
+  USD: 0.01,
+  EUR: 0.01,
+  GBP: 0.01,
+  GHS: 0.01,
+  ZAR: 0.01,
+  NGN: 1,
+  KES: 1,
+  XAF: 1,
+  XOF: 1,
+  TZS: 1,
+  UGX: 1,
+  RWF: 1,
+};
+
+const FALLBACK_EXCHANGE_RATES: Record<string, number> = {
+  USD: 1,
+  NGN: 1550,
+  EUR: 0.92,
+  GBP: 0.79,
+  GHS: 15.5,
+  KES: 153,
+  ZAR: 18.5,
+  XAF: 605,
+  XOF: 605,
+  TZS: 2500,
+  UGX: 3700,
+  RWF: 1300,
+};
+
+let cachedExchangeRates: { rates: Record<string, number>; timestamp: number } | null = null;
+
+async function getExchangeRates(): Promise<Record<string, number>> {
+  if (cachedExchangeRates && Date.now() - cachedExchangeRates.timestamp < EXCHANGE_RATE_CACHE_MS) {
+    return cachedExchangeRates.rates;
+  }
+
+  try {
+    const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+    if (!response.ok) {
+      throw new Error(`Exchange rate API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const supportedCurrencies = Object.keys(FALLBACK_EXCHANGE_RATES);
+    const rates: Record<string, number> = {};
+
+    for (const currency of supportedCurrencies) {
+      if (data.rates?.[currency]) {
+        rates[currency] = data.rates[currency];
+      }
+    }
+
+    if (Object.keys(rates).length === 0) {
+      throw new Error("No supported exchange rates returned");
+    }
+
+    cachedExchangeRates = { rates, timestamp: Date.now() };
+    return rates;
+  } catch (error) {
+    console.warn("Using fallback exchange rates:", error);
+    return FALLBACK_EXCHANGE_RATES;
+  }
+}
+
+function getPaymentMinAmount(currency: string): number {
+  return PAYMENT_MIN_AMOUNTS[currency] ?? 0.01;
+}
+
+function roundPaymentAmount(amount: number, currency: string): number {
+  if (DECIMAL_CURRENCIES.has(currency)) {
+    return Math.round(amount * 100) / 100;
+  }
+  return Math.round(amount);
+}
+
+function convertCurrency(
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string,
+  rates: Record<string, number>
+): number {
+  if (fromCurrency === toCurrency) return amount;
+
+  const fromRate = rates[fromCurrency] || 1;
+  const toRate = rates[toCurrency] || 1;
+  const amountInUSD = amount / fromRate;
+  const convertedAmount = amountInUSD * toRate;
+  const withMarkup = convertedAmount * (1 + CURRENCY_MARKUP_PERCENT);
+  const rounded = roundPaymentAmount(withMarkup, toCurrency);
+  if (rounded <= 0) return getPaymentMinAmount(toCurrency);
+  return rounded;
+}
+
+function formatChargeAmountForFlutterwave(amount: number, currency: string): number {
+  const rounded = roundPaymentAmount(amount, currency);
+  const minAmount = getPaymentMinAmount(currency);
+  return Math.max(rounded, minAmount);
+}
+
+async function getExpectedPaymentAmount(
+  baseAmount: number,
+  baseCurrency: string,
+  paymentCurrency: string
+): Promise<number> {
+  if (baseCurrency === paymentCurrency) return baseAmount;
+  const rates = await getExchangeRates();
+  return convertCurrency(baseAmount, baseCurrency, paymentCurrency, rates);
+}
+
+function isAmountWithinTolerance(actual: number, expected: number, isCrossCurrency: boolean): boolean {
+  if (expected <= 0) return false;
+  const relativeTolerance = isCrossCurrency ? 0.05 : 0.01;
+  const absoluteTolerance = isCrossCurrency ? 0.02 : 0.01;
+  const deviation = Math.abs(actual - expected);
+  return deviation <= Math.max(expected * relativeTolerance, absoluteTolerance);
+}
+
 interface PaymentRequest {
   type: "vote" | "ticket" | "wallet" | "donation" | "form";
   amount: number;
@@ -160,15 +283,22 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!Number.isFinite(payload.amount) || payload.amount <= 0) {
+    const paymentCurrency = payload.currency || defaultCurrency;
+    const paymentMinAmount = getPaymentMinAmount(paymentCurrency);
+
+    if (!Number.isFinite(payload.amount) || payload.amount < paymentMinAmount) {
       return new Response(
-        JSON.stringify({ error: "Amount must be a positive number" }),
+        JSON.stringify({
+          error: `Amount must be at least ${paymentMinAmount} ${paymentCurrency}`,
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // SERVER-SIDE PRICE VERIFICATION: Recalculate expected price from DB
     let serverVerifiedAmount = payload.amount;
+    let itemBaseCurrency: string | null = null;
+    let itemBaseAmount: number | null = null;
     
     if (payload.type === "vote" && payload.contest_id && payload.vote_quantity) {
       const { data: contest, error: contestErr } = await supabase
@@ -236,11 +366,22 @@ const handler = async (req: Request): Promise<Response> => {
       const expectedBaseAmount = matchingOption
         ? matchingOption.price
         : fallbackUnitPrice * payload.vote_quantity;
-      const isCrossCurrency = contest.vote_currency !== payload.currency;
-      const tolerance = isCrossCurrency ? 0.05 : 0.01;
-      const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
-      if (deviation > tolerance) {
-        console.error(`Price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
+      const baseCurrency = contest.vote_currency || defaultCurrency;
+      itemBaseCurrency = baseCurrency;
+      itemBaseAmount = expectedBaseAmount;
+      const isCrossCurrency = baseCurrency !== payload.currency;
+      const expectedPaymentAmount = await getExpectedPaymentAmount(
+        expectedBaseAmount,
+        baseCurrency,
+        payload.currency
+      );
+      if (!isAmountWithinTolerance(payload.amount, expectedPaymentAmount, isCrossCurrency)) {
+        const deviation = Math.abs(payload.amount - expectedPaymentAmount) / expectedPaymentAmount;
+        console.error(
+          `Price manipulation detected! Expected ${expectedPaymentAmount} ${payload.currency} ` +
+          `(base ${expectedBaseAmount} ${baseCurrency}), got ${payload.amount} ${payload.currency}, ` +
+          `deviation ${(deviation * 100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`
+        );
         return new Response(
           JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -261,12 +402,22 @@ const handler = async (req: Request): Promise<Response> => {
       
       if (!ticketErr && ticketType) {
         const expectedBaseAmount = ticketType.price * payload.ticket_quantity;
-        // Use 5% tolerance for cross-currency, 1% for same currency
-        const isCrossCurrency = ticketType.currency !== payload.currency;
-        const tolerance = isCrossCurrency ? 0.05 : 0.01;
-        const deviation = Math.abs(payload.amount - expectedBaseAmount) / expectedBaseAmount;
-        if (deviation > tolerance) {
-          console.error(`Ticket price manipulation detected! Expected ${expectedBaseAmount}, got ${payload.amount}, deviation ${(deviation*100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`);
+        const baseCurrency = ticketType.currency || defaultCurrency;
+        itemBaseCurrency = baseCurrency;
+        itemBaseAmount = expectedBaseAmount;
+        const isCrossCurrency = baseCurrency !== payload.currency;
+        const expectedPaymentAmount = await getExpectedPaymentAmount(
+          expectedBaseAmount,
+          baseCurrency,
+          payload.currency
+        );
+        if (!isAmountWithinTolerance(payload.amount, expectedPaymentAmount, isCrossCurrency)) {
+          const deviation = Math.abs(payload.amount - expectedPaymentAmount) / expectedPaymentAmount;
+          console.error(
+            `Ticket price manipulation detected! Expected ${expectedPaymentAmount} ${payload.currency} ` +
+            `(base ${expectedBaseAmount} ${baseCurrency}), got ${payload.amount} ${payload.currency}, ` +
+            `deviation ${(deviation * 100).toFixed(2)}%, cross-currency: ${isCrossCurrency}`
+          );
           return new Response(
             JSON.stringify({ error: "Price verification failed. Please refresh and try again." }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -311,7 +462,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (payload.type === "vote") {
       meta.contest_id = payload.contest_id;
       meta.contestant_id = payload.contestant_id;
-      meta.vote_quantity = payload.vote_quantity;
+      meta.vote_quantity = Number(payload.vote_quantity) || 1;
     } else if (payload.type === "ticket") {
       meta.event_id = payload.event_id;
       meta.ticket_type_id = payload.ticket_type_id;
@@ -353,51 +504,92 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // --- Fee Calculation (server-side) ---
-    // Wallet funding keeps its own 3% admin fee logic
     const WALLET_ADMIN_FEE_RATE = 0.03;
-    // Use server-verified amount as the base for fee calculation
-    let chargeAmount = serverVerifiedAmount;
+    const fwFeePercentage = parseFloat(getSetting("flutterwave_fee_percentage")) || 0;
+    const fwFeeFixed = parseFloat(getSetting("flutterwave_fee_fixed")) || 0;
+    const convFeeType = getSetting("convenience_fee_type") || "none";
+    const convFeeValue = parseFloat(getSetting("convenience_fee_value")) || 0;
+    const convFeeCap = parseFloat(getSetting("convenience_fee_cap")) || 0;
 
-    if (payload.type === "wallet") {
-      const adminFee = Math.round(serverVerifiedAmount * WALLET_ADMIN_FEE_RATE * 100) / 100;
-      chargeAmount = Math.round((serverVerifiedAmount + adminFee) * 100) / 100;
-      console.log(`Wallet funding: base=${serverVerifiedAmount}, admin fee(3%)=${adminFee}, total charged=${chargeAmount}`);
-    } else {
-      // Apply platform fee settings for non-wallet payments
-      const fwFeePercentage = parseFloat(getSetting("flutterwave_fee_percentage")) || 0;
-      const fwFeeFixed = parseFloat(getSetting("flutterwave_fee_fixed")) || 0;
-      const convFeeType = getSetting("convenience_fee_type") || "none";
-      const convFeeValue = parseFloat(getSetting("convenience_fee_value")) || 0;
-      const convFeeCap = parseFloat(getSetting("convenience_fee_cap")) || 0;
+    const computeChargeWithFees = (baseAmount: number, currency: string): number => {
+      if (payload.type === "wallet") {
+        const adminFee = Math.round(baseAmount * WALLET_ADMIN_FEE_RATE * 100) / 100;
+        return formatChargeAmountForFlutterwave(baseAmount + adminFee, currency);
+      }
 
-      let paymentMethodFee = (serverVerifiedAmount * fwFeePercentage) / 100 + fwFeeFixed;
-      paymentMethodFee = Math.round(paymentMethodFee * 100) / 100;
+      let paymentMethodFee = (baseAmount * fwFeePercentage) / 100 + fwFeeFixed;
+      paymentMethodFee = roundPaymentAmount(paymentMethodFee, currency);
 
       let convenienceFee = 0;
       if (convFeeType === "percentage") {
-        convenienceFee = (serverVerifiedAmount * convFeeValue) / 100;
+        convenienceFee = (baseAmount * convFeeValue) / 100;
       } else if (convFeeType === "fixed") {
         convenienceFee = convFeeValue;
       }
       if (convFeeCap > 0 && convenienceFee > convFeeCap) {
         convenienceFee = convFeeCap;
       }
-      convenienceFee = Math.round(convenienceFee * 100) / 100;
+      convenienceFee = roundPaymentAmount(convenienceFee, currency);
 
-      const totalFees = Math.round((paymentMethodFee + convenienceFee) * 100) / 100;
-      chargeAmount = Math.round((serverVerifiedAmount + totalFees) * 100) / 100;
-      
+      const totalFees = roundPaymentAmount(paymentMethodFee + convenienceFee, currency);
+      const total = formatChargeAmountForFlutterwave(baseAmount + totalFees, currency);
+
       if (totalFees > 0) {
-        console.log(`Fees applied: method=${paymentMethodFee}, convenience=${convenienceFee}, total fees=${totalFees}, charge=${chargeAmount}`);
         meta.platform_fees = totalFees;
-        meta.base_amount = serverVerifiedAmount;
       }
+      return total;
+    };
+
+    let chargeCurrency = paymentCurrency;
+    let chargeAmount = computeChargeWithFees(serverVerifiedAmount, chargeCurrency);
+
+    if (payload.type === "wallet") {
+      console.log(`Wallet funding: base=${serverVerifiedAmount}, total charged=${chargeAmount} ${chargeCurrency}`);
+    } else if (meta.platform_fees) {
+      console.log(`Fees applied: total fees=${meta.platform_fees}, charge=${chargeAmount} ${chargeCurrency}`);
+    }
+
+    // Flutterwave card rails often reject international amounts below ~$1; charge in item currency instead
+    const internationalCurrencies = new Set(["USD", "EUR", "GBP"]);
+    if (
+      internationalCurrencies.has(chargeCurrency) &&
+      chargeAmount < 1 &&
+      itemBaseCurrency &&
+      itemBaseAmount != null &&
+      itemBaseCurrency !== chargeCurrency
+    ) {
+      chargeCurrency = itemBaseCurrency;
+      serverVerifiedAmount = itemBaseAmount;
+      chargeAmount = computeChargeWithFees(itemBaseAmount, chargeCurrency);
+      meta.charge_currency_fallback = true;
+      meta.requested_payment_currency = paymentCurrency;
+      meta.requested_payment_amount = payload.amount;
+      console.log(
+        `Sub-unit ${paymentCurrency} charge; using ${chargeCurrency} ${chargeAmount} for Flutterwave`
+      );
+    }
+
+    // Accounting amounts for fulfillment (always in contest/ticket listing currency when known)
+    if (
+      itemBaseAmount != null &&
+      itemBaseCurrency &&
+      (payload.type === "vote" || payload.type === "ticket")
+    ) {
+      meta.base_currency = itemBaseCurrency;
+      meta.base_amount = itemBaseAmount;
+      if (paymentCurrency !== itemBaseCurrency) {
+        meta.payment_amount = roundPaymentAmount(payload.amount, paymentCurrency);
+        meta.payment_currency = paymentCurrency;
+      }
+    } else {
+      meta.base_amount = serverVerifiedAmount;
+      meta.base_currency = chargeCurrency;
     }
 
     const flutterwavePayload = {
       tx_ref,
       amount: chargeAmount,
-      currency: payload.currency || defaultCurrency,
+      currency: chargeCurrency,
       redirect_url: `https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/flutterwave-webhook?redirect=${encodeURIComponent(redirectUrl)}`,
       customer: {
         email: purchaserEmail,
@@ -471,16 +663,28 @@ const handler = async (req: Request): Promise<Response> => {
     // Always create a wallet transaction record for tracking (even for guests)
     // Map wallet funding to 'deposit' type for DB constraint
     const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
-    const transactionCurrency = payload.currency || defaultCurrency;
+    const transactionCurrency = chargeCurrency;
+
+    // Persist fulfillment fields so webhook can record votes/tickets if Flutterwave meta is incomplete
+    const paymentMetadata: Record<string, unknown> = {
+      ...meta,
+      base_amount: meta.base_amount ?? serverVerifiedAmount,
+    };
     
     // For guests, we use null user_id since it's a UUID column
     // The transaction is still tracked via reference_id (tx_ref)
+    const accountingAmount =
+      itemBaseAmount != null && (payload.type === "vote" || payload.type === "ticket")
+        ? itemBaseAmount
+        : serverVerifiedAmount;
+
     const txInsertData: Record<string, any> = {
-      amount: payload.amount,
+      amount: accountingAmount,
       type: transactionType,
       status: "pending",
       reference_id: tx_ref,
-      currency: transactionCurrency,
+      currency: (meta.base_currency as string) || transactionCurrency,
+      payment_metadata: paymentMetadata,
       description: payload.type === "wallet" 
         ? `Wallet funding via Flutterwave (${transactionCurrency})`
         : `Pending ${payload.type} payment via Flutterwave${isGuestUser ? ' (guest)' : ''}`,
@@ -488,10 +692,15 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Only set user_id and wallet_id for authenticated users
     if (!isGuestUser) {
-      txInsertData.user_id = payload.user_id;
-      if (walletId) {
-        txInsertData.wallet_id = walletId;
+      if (!walletId) {
+        console.error("Wallet not found for authenticated user:", payload.user_id);
+        return new Response(
+          JSON.stringify({ error: "Wallet not found. Please contact support." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      txInsertData.user_id = payload.user_id;
+      txInsertData.wallet_id = walletId;
     }
     
     if (payload.type !== "form") {

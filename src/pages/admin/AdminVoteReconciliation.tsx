@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertTriangle, Trash2, Search, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ const AdminVoteReconciliation: React.FC = () => {
     contestant_counters_reconciled: number;
     contest_counters_reconciled: number;
   } | null>(null);
+  const [fulfillTxRef, setFulfillTxRef] = useState('');
 
   // Query to find duplicate votes
   const { data: duplicates, isLoading, refetch, isFetching } = useQuery({
@@ -251,6 +253,29 @@ const AdminVoteReconciliation: React.FC = () => {
     },
   });
 
+  const fulfillPaymentMutation = useMutation({
+    mutationFn: async (tx_ref: string) => {
+      const { data, error } = await supabase.functions.invoke('fulfill-payment-by-txref', {
+        body: { tx_ref },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.fulfillment_recorded || data?.vote_recorded || data?.ticket_recorded) {
+        toast.success('Payment fulfilled successfully (vote/ticket recorded)');
+      } else {
+        toast.warning('Payment verified but record still missing — check edge function logs');
+      }
+      setFulfillTxRef('');
+      queryClient.invalidateQueries({ queryKey: ['duplicate-votes'] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Fulfillment failed: ${error.message}`);
+    },
+  });
+
   const runReconciliationMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('check-orphan-transactions', {
@@ -334,10 +359,32 @@ const AdminVoteReconciliation: React.FC = () => {
               Auto Retry / Reconciliation Job
             </CardTitle>
             <CardDescription>
-              Checks orphaned completed payments, alerts admins for missing vote/ticket records, and reconciles vote counters.
+              Checks orphaned payments, alerts admins for missing vote records, and reconciles vote counters.
+              Use manual fulfill when a customer paid but votes were not recorded.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="flex-1 space-y-1">
+                <label className="text-sm font-medium" htmlFor="fulfill-tx-ref">
+                  Retry payment fulfillment (tx_ref)
+                </label>
+                <Input
+                  id="fulfill-tx-ref"
+                  placeholder="vote_... or ticket_..."
+                  value={fulfillTxRef}
+                  onChange={(e) => setFulfillTxRef(e.target.value.trim())}
+                />
+              </div>
+              <Button
+                variant="secondary"
+                disabled={!fulfillTxRef || fulfillPaymentMutation.isPending}
+                onClick={() => fulfillPaymentMutation.mutate(fulfillTxRef)}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${fulfillPaymentMutation.isPending ? 'animate-spin' : ''}`} />
+                Fulfill payment
+              </Button>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Run this after payment incidents or before finance reviews.

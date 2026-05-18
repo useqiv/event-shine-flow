@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type TicketLookupRequest = {
+type VoteLookupRequest = {
   tx_ref: string;
 };
 
@@ -14,7 +14,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { tx_ref } = (await req.json()) as TicketLookupRequest;
+    const { tx_ref } = (await req.json()) as VoteLookupRequest;
 
     if (!tx_ref || typeof tx_ref !== "string") {
       return new Response(JSON.stringify({ error: "Missing tx_ref" }), {
@@ -42,31 +42,34 @@ serve(async (req) => {
       });
     }
 
-    let ticketQuery = supabase
-      .from("tickets")
+    if (!walletTx?.id) {
+      return new Response(JSON.stringify({ data: null, payment_status: "unknown" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: vote, error: voteError } = await supabase
+      .from("votes")
       .select(
         `
         id,
-        qr_code,
+        quantity,
+        amount_paid,
+        currency,
+        payment_reference_id,
         guest_name,
         guest_email,
-        quantity,
-        payment_reference_id,
-        event:events(title, venue, event_date),
-        ticket_type:ticket_types(name)
+        created_at,
+        contest:contests(title),
+        contestant:contestants(name)
       `,
-      );
+      )
+      .eq("transaction_id", walletTx.id)
+      .maybeSingle();
 
-    if (walletTx?.id) {
-      ticketQuery = ticketQuery.eq("transaction_id", walletTx.id);
-    } else {
-      ticketQuery = ticketQuery.eq("payment_reference_id", tx_ref);
-    }
-
-    const { data: ticket, error: ticketError } = await ticketQuery.maybeSingle();
-
-    if (ticketError) {
-      return new Response(JSON.stringify({ error: ticketError.message }), {
+    if (voteError) {
+      return new Response(JSON.stringify({ error: voteError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -74,13 +77,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        data: ticket,
-        payment_status: ticket ? "fulfilled" : walletTx?.status ?? "unknown",
-        wallet_transaction_id: walletTx?.id ?? null,
+        data: vote,
+        payment_status: vote ? "fulfilled" : walletTx.status,
+        wallet_transaction_id: walletTx.id,
         transaction_reference:
-          ticket?.payment_reference_id || walletTx?.reference_id || tx_ref,
-        gateway_transaction_id: walletTx?.gateway_transaction_id ?? null,
-        gateway_provider_reference: walletTx?.gateway_provider_reference ?? null,
+          vote?.payment_reference_id || walletTx.reference_id || tx_ref,
+        gateway_transaction_id: walletTx.gateway_transaction_id,
+        gateway_provider_reference: walletTx.gateway_provider_reference,
       }),
       {
         status: 200,

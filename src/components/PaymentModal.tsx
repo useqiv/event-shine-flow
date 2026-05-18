@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { usePaymentFees } from '@/hooks/usePaymentFees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { usePromoCodeValidation } from '@/hooks/usePromoCode';
-import CurrencySelector, { useConversionDisplay, formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
+import CurrencySelector, { useConversionDisplay, formatCurrency, getCurrencySymbol, roundPaymentAmount } from '@/components/ui/currency-selector';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
 import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -59,7 +59,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [guestName, setGuestName] = useState('');
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency);
-  
+  const supportsPromo = type === 'ticket';
+
   // Determine the base currency (original contest/event currency)
   const baseCurrency = originalCurrency || initialCurrency;
   
@@ -69,21 +70,29 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     return convert(amount, baseCurrency, selectedCurrency);
   }, [amount, baseCurrency, selectedCurrency, rates]);
   const flutterwavePayment = useFlutterwavePayment();
-  const { 
-    isValidating: isValidatingPromo, 
-    appliedPromo, 
-    discountAmount: baseDiscountAmount, 
-    validatePromoCode, 
+  const {
+    isValidating: isValidatingPromo,
+    appliedPromo,
+    discountAmount: baseDiscountAmount,
+    validatePromoCode,
     recordPromoCodeUsage,
-    clearAppliedPromo 
+    clearAppliedPromo,
   } = usePromoCodeValidation();
 
-  // Convert discount amount to selected currency (if currency changed)
+  useEffect(() => {
+    if (open && !supportsPromo) {
+      clearAppliedPromo();
+      setPromoCodeInput('');
+    }
+  }, [open, supportsPromo, clearAppliedPromo]);
+
+  // Convert discount amount to selected currency (tickets only)
   const discountAmount = useMemo(() => {
+    if (!supportsPromo) return 0;
     if (selectedCurrency === baseCurrency) return baseDiscountAmount;
     if (baseDiscountAmount === 0) return 0;
     return convert(baseDiscountAmount, baseCurrency, selectedCurrency);
-  }, [baseDiscountAmount, baseCurrency, selectedCurrency, rates]);
+  }, [supportsPromo, baseDiscountAmount, baseCurrency, selectedCurrency, rates, convert]);
 
   // Calculate final amount after discount (using converted amount)
   const amountAfterDiscount = Math.max(0, convertedAmount - discountAmount);
@@ -104,6 +113,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const canProceed = !isGuest || (guestEmail && isValidEmail && (!isNameRequiredForTicket || guestName.trim()));
 
   const handleApplyPromoCode = async () => {
+    if (!supportsPromo) return;
+
     const result = await validatePromoCode(
       promoCodeInput,
       type,
@@ -143,8 +154,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
-    // Record promo code usage if applied
-    if (appliedPromo) {
+    if (supportsPromo && appliedPromo) {
       await recordPromoCodeUsage(appliedPromo.id, {
         userId,
         email,
@@ -163,7 +173,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
     flutterwavePayment.mutate({
       type,
-      amount: amountAfterDiscount,
+      amount: roundPaymentAmount(amountAfterDiscount, effectiveCurrency),
       currency: effectiveCurrency,
       email,
       name,
@@ -271,7 +281,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               <span className="text-muted-foreground">Subtotal</span>
               <span>{formatCurrency(convertedAmount, effectiveCurrency)}</span>
             </div>
-            {appliedPromo && (
+            {supportsPromo && appliedPromo && (
               <div className="flex justify-between text-sm text-green-600">
                 <span className="flex items-center gap-1">
                   <Tag className="h-3 w-3" />
@@ -297,7 +307,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
           </div>
 
-          {/* Promo Code Input */}
+          {supportsPromo && (
           <div className="mb-4">
             {!appliedPromo ? (
               <div className="flex gap-2">
@@ -336,6 +346,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
             )}
           </div>
+          )}
 
           {!cryptoPaymentData ? (
             <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'flutterwave' | 'crypto')}>

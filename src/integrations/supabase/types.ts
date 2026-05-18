@@ -2840,6 +2840,7 @@ export type Database = {
           id: string
           net_amount: number | null
           payment_method: string
+          payment_reference_id: string | null
           platform_commission: number | null
           quantity: number
           transaction_id: string | null
@@ -2856,6 +2857,7 @@ export type Database = {
           id?: string
           net_amount?: number | null
           payment_method: string
+          payment_reference_id?: string | null
           platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
@@ -2872,6 +2874,7 @@ export type Database = {
           id?: string
           net_amount?: number | null
           payment_method?: string
+          payment_reference_id?: string | null
           platform_commission?: number | null
           quantity?: number
           transaction_id?: string | null
@@ -2972,31 +2975,40 @@ export type Database = {
           created_at: string
           currency: string
           description: string | null
+          gateway_provider_reference: string | null
+          gateway_transaction_id: string | null
           id: string
+          payment_metadata: Json | null
           reference_id: string | null
           status: string
           type: string
-          user_id: string
-          wallet_id: string
+          user_id: string | null
+          wallet_id: string | null
         }
         Insert: {
           amount: number
           created_at?: string
           currency?: string
           description?: string | null
+          gateway_provider_reference?: string | null
+          gateway_transaction_id?: string | null
           id?: string
+          payment_metadata?: Json | null
           reference_id?: string | null
           status?: string
           type: string
-          user_id: string
-          wallet_id: string
+          user_id?: string | null
+          wallet_id?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
           currency?: string
           description?: string | null
+          gateway_provider_reference?: string | null
+          gateway_transaction_id?: string | null
           id?: string
+          payment_metadata?: Json | null
           reference_id?: string | null
           status?: string
           type?: string
@@ -3829,6 +3841,7 @@ export type Database = {
           id: string | null
           net_amount: number | null
           payment_method: string | null
+          payment_reference_id: string | null
           platform_commission: number | null
           quantity: number | null
           transaction_id: string | null

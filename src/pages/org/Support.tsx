@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     question: 'What payment methods do users have?',
-    answer: 'Users can pay using their wallet balance, which they can fund via bank transfer, card payment, or voucher codes. They can also use promo codes for discounts.'
+    answer: 'Users can pay using their wallet balance, which they can fund via bank transfer, card payment, or voucher codes. Promo codes are available for ticket purchases.'
   },
 ];
 

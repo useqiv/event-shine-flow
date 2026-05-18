@@ -9,12 +9,11 @@ import { SocialAutoPostManager } from '@/components/org/SocialAutoPostManager';
 import { SocialAnalyticsCard } from '@/components/org/SocialAnalyticsCard';
 import { ContestShareCards } from '@/components/org/ContestShareCards';
 import { EntityInfluencerLinks } from '@/components/org/EntityInfluencerLinks';
-import { EntityPromoCodes } from '@/components/org/EntityPromoCodes';
 import { useContest, useContestants } from '@/hooks/useContests';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrgPermissions } from '@/hooks/useOrgPermissions';
 import { useUserRole } from '@/hooks/useUserRole';
-import { ArrowLeft, Send, Calendar, BarChart3, Image, Link2, Tag, Trophy } from 'lucide-react';
+import { ArrowLeft, Send, Calendar, BarChart3, Image, Link2, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ContestMarketing = () => {
@@ -129,11 +128,6 @@ const ContestMarketing = () => {
               <span className="hidden sm:inline">Influencers</span>
               <span className="sm:hidden">Links</span>
             </TabsTrigger>
-            <TabsTrigger value="promos" className="gap-2">
-              <Tag className="h-4 w-4" />
-              <span className="hidden sm:inline">Promo Codes</span>
-              <span className="sm:hidden">Promos</span>
-            </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Social Analytics</span>
@@ -182,15 +176,6 @@ const ContestMarketing = () => {
               entityType="contest"
               entityTitle={contest.title}
               customSlug={contestWithBranding.custom_slug}
-              currency={currency}
-            />
-          </TabsContent>
-
-          <TabsContent value="promos" className="space-y-6">
-            <EntityPromoCodes
-              entityId={contest.id}
-              entityType="contest"
-              entityTitle={contest.title}
               currency={currency}
             />
           </TabsContent>
