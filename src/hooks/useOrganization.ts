@@ -11,6 +11,7 @@ import {
   type ConvenienceFeeSettings,
 } from '@/lib/baseAmount';
 import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
+import { normalizeRevenueByCurrency } from '@/lib/revenueByCurrency';
 
 // Types
 export interface OrganizationSettings {
@@ -559,6 +560,8 @@ export const useOrganizationStats = () => {
             (voteRevenueByCurrency[paidCurrency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
+
+        Object.assign(voteRevenueByCurrency, normalizeRevenueByCurrency(voteRevenueByCurrency));
       }
       
       // Revenue by currency for campaigns (donations)

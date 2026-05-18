@@ -11,6 +11,14 @@ interface MultiCurrencyRevenueSummaryProps {
   grossByCurrency: Record<string, number>;
   commissionRatePercent: number;
   listingCurrency: string;
+  /** Vote count from the same aggregation as revenue (not contests.total_votes). */
+  totalVotes?: number;
+  /** Votes paid in listing currency; used with listingCatalogGross for alignment hint. */
+  listingVoteQuantity?: number;
+  /** Sum of vote-price line totals for listing-currency votes. */
+  listingCatalogGross?: number;
+  /** Per-vote listing price when no tiered options (for display only). */
+  voteUnitPrice?: number;
   totalLabel?: string;
   netLabel?: string;
   size?: 'sm' | 'md';
@@ -21,6 +29,10 @@ const MultiCurrencyRevenueSummary: React.FC<MultiCurrencyRevenueSummaryProps> = 
   grossByCurrency,
   commissionRatePercent,
   listingCurrency,
+  totalVotes,
+  listingVoteQuantity,
+  listingCatalogGross,
+  voteUnitPrice,
   totalLabel = 'Total Revenue',
   netLabel = 'Net Revenue',
   size = 'md',
@@ -28,11 +40,19 @@ const MultiCurrencyRevenueSummary: React.FC<MultiCurrencyRevenueSummaryProps> = 
 }) => {
   const gross = normalizeRevenueByCurrency(grossByCurrency);
   const net = applyCommissionToRevenueByCurrency(gross, commissionRatePercent);
-  // Only show currencies with real paid revenue (no phantom USD/NGN lines)
   const currencies = Object.keys(gross).sort(
     (a, b) => (gross[b] || 0) - (gross[a] || 0),
   );
   const multi = hasMultipleRevenueCurrencies(gross);
+  const listing = (listingCurrency || 'NGN').toUpperCase();
+  const listingGross = gross[listing] || 0;
+  const showListingAlignment =
+    listingVoteQuantity != null &&
+    listingVoteQuantity > 0 &&
+    listingCatalogGross != null &&
+    listingCatalogGross > 0 &&
+    listingGross > 0 &&
+    Math.abs(listingGross - listingCatalogGross) <= Math.max(0.02, listingCatalogGross * 0.02);
 
   const amountClass = size === 'sm' ? 'text-sm font-semibold' : 'text-lg font-bold';
 
@@ -45,12 +65,22 @@ const MultiCurrencyRevenueSummary: React.FC<MultiCurrencyRevenueSummaryProps> = 
         <p className="text-xs text-muted-foreground">
           {netLabel}: {formatCurrency(0, code)}
         </p>
+        {totalVotes != null && totalVotes > 0 && (
+          <p className="text-[10px] text-muted-foreground">
+            {totalVotes.toLocaleString()} vote{totalVotes === 1 ? '' : 's'} (no paid revenue yet)
+          </p>
+        )}
       </div>
     );
   }
 
   return (
     <div className={`space-y-3 ${className}`}>
+      {totalVotes != null && totalVotes > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {totalVotes.toLocaleString()} vote{totalVotes === 1 ? '' : 's'} counted in revenue
+        </p>
+      )}
       {multi && (
         <p className="text-xs text-muted-foreground">
           Revenue is shown per paid currency (never mixed).
@@ -67,10 +97,22 @@ const MultiCurrencyRevenueSummary: React.FC<MultiCurrencyRevenueSummaryProps> = 
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-green-700 dark:text-green-400">{netLabel}</span>
-            <span className={`${size === 'sm' ? 'text-sm' : 'text-base'} font-semibold text-green-600 dark:text-green-400`}>
+            <span
+              className={`${size === 'sm' ? 'text-sm' : 'text-base'} font-semibold text-green-600 dark:text-green-400`}
+            >
               {formatCurrency(net[code] || 0, code)}
             </span>
           </div>
+          {code === listing && showListingAlignment && (
+            <p className="text-[10px] text-muted-foreground leading-snug">
+              {listingVoteQuantity!.toLocaleString()} vote{listingVoteQuantity === 1 ? '' : 's'} at listing
+              price
+              {voteUnitPrice != null && voteUnitPrice > 0
+                ? ` (${formatCurrency(voteUnitPrice, listing)})`
+                : ''}{' '}
+              = {formatCurrency(listingCatalogGross!, listing)}
+            </p>
+          )}
         </div>
       ))}
     </div>

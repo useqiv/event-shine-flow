@@ -104,6 +104,21 @@ export function stripConvenienceFeeFromGross(grossAmount: number, settings: Conv
   return gross;
 }
 
+/** Line total from contest vote price or quantity-tier option (listing currency). */
+export function resolveVoteCatalogLineAmount(params: {
+  quantity?: number;
+  voteOptionPrice?: number | null;
+  contestVotePrice?: number | null;
+}): number {
+  const quantity = params.quantity || 1;
+  const optionPrice = params.voteOptionPrice;
+  if (optionPrice != null && optionPrice > 0) {
+    return Number(optionPrice);
+  }
+  const unit = Number(params.contestVotePrice) || 0;
+  return unit > 0 ? unit * quantity : 0;
+}
+
 export function resolveVoteBaseAmount(params: {
   transactionId?: string | null;
   walletBaseAmount?: number | null;
@@ -163,11 +178,31 @@ export function resolveVoteBaseAmount(params: {
   // Cross-currency: prefer vote record amounts (actual charge), not wallet/catalog
   if (crossCurrency) {
     return (
-      normalizedRecordedAmount ??
-      normalizedSettledAmount ??
-      (walletBase != null ? walletBase : null) ??
+      normalizedRecordedAmount ||
+      normalizedSettledAmount ||
+      (walletBase != null ? walletBase : 0) ||
       (Number(params.amountPaid) || 0)
     );
+  }
+
+  // Same currency as listing: align reported revenue with vote price / option tiers
+  if (catalogBase != null && catalogBase > 0) {
+    const paidAmount =
+      walletBase ??
+      normalizedSettledAmount ??
+      normalizedRecordedAmount ??
+      null;
+
+    if (paidAmount == null || paidAmount <= 0) {
+      return catalogBase;
+    }
+
+    const tolerance = Math.max(0.02, catalogBase * 0.08);
+    if (paidAmount <= catalogBase + tolerance) {
+      return catalogBase;
+    }
+
+    return paidAmount;
   }
 
   return (

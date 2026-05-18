@@ -105,6 +105,8 @@ const ManageContests = () => {
               const contestData = contestRevenues?.[contest.id] || {
                 grossByCurrency: {},
                 totalVotes: 0,
+                listingVoteQuantity: 0,
+                listingCatalogGross: 0,
               };
 
               return (
@@ -137,7 +139,7 @@ const ManageContests = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Vote className="h-4 w-4" />
-                        <span>{contest.total_votes.toLocaleString()} votes</span>
+                        <span>{(contestData.totalVotes || contest.total_votes || 0).toLocaleString()} votes</span>
                       </div>
                     </div>
 
@@ -147,6 +149,10 @@ const ManageContests = () => {
                         grossByCurrency={contestData.grossByCurrency}
                         commissionRatePercent={voteCommission}
                         listingCurrency={contest.vote_currency || 'NGN'}
+                        totalVotes={contestData.totalVotes}
+                        listingVoteQuantity={contestData.listingVoteQuantity}
+                        listingCatalogGross={contestData.listingCatalogGross}
+                        voteUnitPrice={Number(contest.vote_price) || 0}
                         size="sm"
                       />
                     </div>

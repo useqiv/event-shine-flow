@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   getConvenienceFeeSettings,
   getWalletTransactionsByTransactionId,
+  resolveVoteCatalogLineAmount,
   resolveVotePaidRevenue,
 } from '@/lib/baseAmount';
 import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
@@ -18,9 +19,19 @@ type VoteRow = {
   currency: string | null;
 };
 
+export type ContestVoteRevenueMetrics = {
+  grossByCurrency: Record<string, number>;
+  /** Sum of vote quantities (same source as revenue aggregation). */
+  totalVotes: number;
+  /** Votes paid in the contest listing currency. */
+  listingVoteQuantity: number;
+  /** Catalog total (vote price × qty / tiers) for listing-currency votes only. */
+  listingCatalogGross: number;
+};
+
 async function aggregateVoteRevenueForContests(contestIds: string[]) {
   if (contestIds.length === 0) {
-    return {} as Record<string, { grossByCurrency: Record<string, number>; totalVotes: number }>;
+    return {} as Record<string, ContestVoteRevenueMetrics>;
   }
 
   const { data: contests } = await supabase
@@ -62,20 +73,26 @@ async function aggregateVoteRevenueForContests(contestIds: string[]) {
     );
   });
 
-  const result: Record<string, { grossByCurrency: Record<string, number>; totalVotes: number }> = {};
+  const result: Record<string, ContestVoteRevenueMetrics> = {};
   contestIds.forEach((id) => {
-    result[id] = { grossByCurrency: {}, totalVotes: 0 };
+    result[id] = {
+      grossByCurrency: {},
+      totalVotes: 0,
+      listingVoteQuantity: 0,
+      listingCatalogGross: 0,
+    };
   });
 
   voteRows.forEach((v) => {
     const walletTx = v.transaction_id ? walletTxMap.get(v.transaction_id) : undefined;
+    const listingCurrency = (contestCurrencyMap[v.contest_id] || 'NGN').toUpperCase();
     const paidCurrency = getPaidTransactionCurrency(
       v.currency,
       walletTx?.currency,
-      contestCurrencyMap[v.contest_id],
+      listingCurrency,
     );
-
-    const listingCurrency = contestCurrencyMap[v.contest_id] || 'NGN';
+    const voteOptionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`) ?? null;
+    const contestVotePrice = contestVotePriceMap[v.contest_id] || 0;
     const baseAmount = resolveVotePaidRevenue({
       paidCurrency,
       listingCurrency,
@@ -86,17 +103,27 @@ async function aggregateVoteRevenueForContests(contestIds: string[]) {
       netAmount: v.net_amount,
       platformCommission: v.platform_commission,
       quantity: v.quantity,
-      voteOptionPrice: voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`) ?? null,
-      contestVotePrice: contestVotePriceMap[v.contest_id] || 0,
+      voteOptionPrice,
+      contestVotePrice,
       convenienceFeeSettings,
     });
 
     const bucket = result[v.contest_id];
     if (!bucket) return;
 
+    const quantity = Number(v.quantity) || 0;
     bucket.grossByCurrency[paidCurrency] =
       (bucket.grossByCurrency[paidCurrency] || 0) + Number(baseAmount || 0);
-    bucket.totalVotes += Number(v.quantity) || 0;
+    bucket.totalVotes += quantity;
+
+    if (paidCurrency === listingCurrency) {
+      bucket.listingVoteQuantity += quantity;
+      bucket.listingCatalogGross += resolveVoteCatalogLineAmount({
+        quantity,
+        voteOptionPrice,
+        contestVotePrice,
+      });
+    }
   });
 
   Object.values(result).forEach((entry) => {
@@ -110,9 +137,23 @@ export function useContestRevenueByCurrency(contestId: string | undefined) {
   const query = useQuery({
     queryKey: ['contest-revenue-by-currency', contestId],
     queryFn: async () => {
-      if (!contestId) return { grossByCurrency: {} as Record<string, number>, totalVotes: 0 };
+      if (!contestId) {
+        return {
+          grossByCurrency: {} as Record<string, number>,
+          totalVotes: 0,
+          listingVoteQuantity: 0,
+          listingCatalogGross: 0,
+        };
+      }
       const map = await aggregateVoteRevenueForContests([contestId]);
-      return map[contestId] || { grossByCurrency: {}, totalVotes: 0 };
+      return (
+        map[contestId] || {
+          grossByCurrency: {},
+          totalVotes: 0,
+          listingVoteQuantity: 0,
+          listingCatalogGross: 0,
+        }
+      );
     },
     enabled: !!contestId,
   });
@@ -120,6 +161,8 @@ export function useContestRevenueByCurrency(contestId: string | undefined) {
   return {
     grossByCurrency: query.data?.grossByCurrency || {},
     totalVotes: query.data?.totalVotes || 0,
+    listingVoteQuantity: query.data?.listingVoteQuantity || 0,
+    listingCatalogGross: query.data?.listingCatalogGross || 0,
     isLoading: query.isLoading,
     error: query.error,
   };

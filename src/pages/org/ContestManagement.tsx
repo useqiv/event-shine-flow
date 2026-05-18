@@ -125,7 +125,12 @@ const ContestManagement = () => {
   const platformVoteCommission = platformSettings?.vote_commission_percentage || platformSettings?.platform_commission_percentage || 10;
   const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
 
-  const { grossByCurrency: contestGrossByCurrency } = useContestRevenueByCurrency(id);
+  const {
+    grossByCurrency: contestGrossByCurrency,
+    totalVotes: revenueTotalVotes,
+    listingVoteQuantity,
+    listingCatalogGross,
+  } = useContestRevenueByCurrency(id);
   const netByCurrency = applyCommissionToRevenueByCurrency(contestGrossByCurrency, voteCommission);
   const contestCurrency = contest?.vote_currency || 'NGN';
   const primaryCurrency = getActiveRevenueCurrencies(contestGrossByCurrency, contestCurrency)[0];
@@ -740,7 +745,9 @@ const ContestManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Votes</p>
-                  <p className="text-2xl font-bold">{contest.total_votes.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">
+                    {(revenueTotalVotes || contest.total_votes || 0).toLocaleString()}
+                  </p>
                 </div>
                 <Vote className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -776,6 +783,10 @@ const ContestManagement = () => {
                     grossByCurrency={contestGrossByCurrency}
                     commissionRatePercent={voteCommission}
                     listingCurrency={contestCurrency}
+                    totalVotes={revenueTotalVotes}
+                    listingVoteQuantity={listingVoteQuantity}
+                    listingCatalogGross={listingCatalogGross}
+                    voteUnitPrice={Number(contest.vote_price) || 0}
                     size="sm"
                   />
                 </div>

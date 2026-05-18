@@ -13,6 +13,7 @@ import { formatCurrency } from '@/components/ui/currency-selector';
 import MultiCurrencyRevenueSummary from '@/components/org/MultiCurrencyRevenueSummary';
 import { getActiveRevenueCurrencies } from '@/lib/revenueByCurrency';
 import { useContestAnalyticsData, useChartMaxValues } from '@/hooks/useContestAnalyticsData';
+import { useContestRevenueByCurrency } from '@/hooks/useContestRevenueByCurrency';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Vote,
@@ -34,8 +35,18 @@ const ContestAnalytics = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { contest, analytics, isLoading, error, refetch } = useContestAnalyticsData(id);
+  const {
+    grossByCurrency: revenueByCurrencyAligned,
+    totalVotes: revenueTotalVotes,
+    listingVoteQuantity,
+    listingCatalogGross,
+  } = useContestRevenueByCurrency(id);
   const { maxHourlyCount, maxDailyVotes } = useChartMaxValues(analytics);
   const currency = contest?.vote_currency || 'NGN';
+  const revenueByCurrency =
+    Object.keys(revenueByCurrencyAligned).length > 0
+      ? revenueByCurrencyAligned
+      : analytics.revenueByCurrency;
 
   const { data: commissionData } = useQuery({
     queryKey: ['contest-analytics-commission', user?.id],
@@ -72,8 +83,8 @@ const ContestAnalytics = () => {
   });
 
   const voteCommission = commissionData?.voteCommission ?? 10;
-  const primaryCurrency = getActiveRevenueCurrencies(analytics.revenueByCurrency, currency)[0];
-  const primaryGross = analytics.revenueByCurrency[primaryCurrency] || 0;
+  const primaryCurrency = getActiveRevenueCurrencies(revenueByCurrency, currency)[0];
+  const primaryGross = revenueByCurrency[primaryCurrency] || 0;
   const peakHour = analytics.peakVotingHours.reduce(
     (max, h) => (h.count > max.count ? h : max),
     { hour: 0, count: 0 }
@@ -145,9 +156,13 @@ const ContestAnalytics = () => {
                     <Skeleton className="h-16 w-full" />
                   ) : (
                     <MultiCurrencyRevenueSummary
-                      grossByCurrency={analytics.revenueByCurrency}
+                      grossByCurrency={revenueByCurrency}
                       commissionRatePercent={voteCommission}
                       listingCurrency={currency}
+                      totalVotes={revenueTotalVotes || analytics.totalVotes}
+                      listingVoteQuantity={listingVoteQuantity}
+                      listingCatalogGross={listingCatalogGross}
+                      voteUnitPrice={Number(contest?.vote_price) || 0}
                       totalLabel="Gross Revenue"
                       netLabel={`Net (${voteCommission}% deducted)`}
                     />
@@ -167,7 +182,7 @@ const ContestAnalytics = () => {
                     <Skeleton className="h-8 w-20 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      {analytics.totalVotes.toLocaleString()}
+                      {(revenueTotalVotes || analytics.totalVotes).toLocaleString()}
                     </p>
                   )}
                 </div>
