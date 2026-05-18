@@ -390,6 +390,9 @@ const handler = async (req: Request): Promise<Response> => {
       if (!isCrossCurrency) {
         serverVerifiedAmount = expectedBaseAmount;
         console.log(`Using server-verified vote amount: ${serverVerifiedAmount}`);
+      } else {
+        serverVerifiedAmount = roundPaymentAmount(payload.amount, payload.currency);
+        console.log(`Using cross-currency vote amount: ${serverVerifiedAmount} ${payload.currency}`);
       }
     }
     
@@ -427,6 +430,9 @@ const handler = async (req: Request): Promise<Response> => {
         if (!isCrossCurrency) {
           serverVerifiedAmount = expectedBaseAmount;
           console.log(`Using server-verified ticket amount: ${serverVerifiedAmount}`);
+        } else {
+          serverVerifiedAmount = roundPaymentAmount(payload.amount, payload.currency);
+          console.log(`Using cross-currency ticket amount: ${serverVerifiedAmount} ${payload.currency}`);
         }
       }
     }
@@ -540,8 +546,10 @@ const handler = async (req: Request): Promise<Response> => {
       return total;
     };
 
-    let chargeCurrency = paymentCurrency;
-    let chargeAmount = computeChargeWithFees(serverVerifiedAmount, chargeCurrency);
+    // Always charge in the currency the user selected
+    const chargeCurrency = paymentCurrency;
+    const chargeAmount = computeChargeWithFees(serverVerifiedAmount, chargeCurrency);
+    meta.charge_currency = chargeCurrency;
 
     if (payload.type === "wallet") {
       console.log(`Wallet funding: base=${serverVerifiedAmount}, total charged=${chargeAmount} ${chargeCurrency}`);
@@ -549,27 +557,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Fees applied: total fees=${meta.platform_fees}, charge=${chargeAmount} ${chargeCurrency}`);
     }
 
-    // Flutterwave card rails often reject international amounts below ~$1; charge in item currency instead
-    const internationalCurrencies = new Set(["USD", "EUR", "GBP"]);
-    if (
-      internationalCurrencies.has(chargeCurrency) &&
-      chargeAmount < 1 &&
-      itemBaseCurrency &&
-      itemBaseAmount != null &&
-      itemBaseCurrency !== chargeCurrency
-    ) {
-      chargeCurrency = itemBaseCurrency;
-      serverVerifiedAmount = itemBaseAmount;
-      chargeAmount = computeChargeWithFees(itemBaseAmount, chargeCurrency);
-      meta.charge_currency_fallback = true;
-      meta.requested_payment_currency = paymentCurrency;
-      meta.requested_payment_amount = payload.amount;
-      console.log(
-        `Sub-unit ${paymentCurrency} charge; using ${chargeCurrency} ${chargeAmount} for Flutterwave`
-      );
-    }
-
-    // Accounting amounts for fulfillment (always in contest/ticket listing currency when known)
+    // Listing currency for org reporting; payment currency is what Flutterwave charges
     if (
       itemBaseAmount != null &&
       itemBaseCurrency &&
@@ -577,14 +565,12 @@ const handler = async (req: Request): Promise<Response> => {
     ) {
       meta.base_currency = itemBaseCurrency;
       meta.base_amount = itemBaseAmount;
-      if (paymentCurrency !== itemBaseCurrency) {
-        meta.payment_amount = roundPaymentAmount(payload.amount, paymentCurrency);
-        meta.payment_currency = paymentCurrency;
-      }
     } else {
       meta.base_amount = serverVerifiedAmount;
       meta.base_currency = chargeCurrency;
     }
+    meta.payment_currency = chargeCurrency;
+    meta.payment_amount = serverVerifiedAmount;
 
     const flutterwavePayload = {
       tx_ref,
@@ -663,27 +649,19 @@ const handler = async (req: Request): Promise<Response> => {
     // Always create a wallet transaction record for tracking (even for guests)
     // Map wallet funding to 'deposit' type for DB constraint
     const transactionType = payload.type === "wallet" ? "deposit" : payload.type;
-    const transactionCurrency = chargeCurrency;
 
     // Persist fulfillment fields so webhook can record votes/tickets if Flutterwave meta is incomplete
     const paymentMetadata: Record<string, unknown> = {
       ...meta,
       base_amount: meta.base_amount ?? serverVerifiedAmount,
     };
-    
-    // For guests, we use null user_id since it's a UUID column
-    // The transaction is still tracked via reference_id (tx_ref)
-    const accountingAmount =
-      itemBaseAmount != null && (payload.type === "vote" || payload.type === "ticket")
-        ? itemBaseAmount
-        : serverVerifiedAmount;
 
     const txInsertData: Record<string, any> = {
-      amount: accountingAmount,
+      amount: serverVerifiedAmount,
       type: transactionType,
       status: "pending",
       reference_id: tx_ref,
-      currency: (meta.base_currency as string) || transactionCurrency,
+      currency: chargeCurrency,
       payment_metadata: paymentMetadata,
       description: payload.type === "wallet" 
         ? `Wallet funding via Flutterwave (${transactionCurrency})`

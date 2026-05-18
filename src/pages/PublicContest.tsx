@@ -626,7 +626,7 @@ const PublicContest = () => {
           onOpenChange={setIsPaymentModalOpen}
           type="vote"
           amount={totalAmount}
-          currency={contestCurrency}
+          currency={paymentCurrency || contestCurrency}
           originalCurrency={contestCurrency}
           itemDetails={{
             contest_id: contest.id,

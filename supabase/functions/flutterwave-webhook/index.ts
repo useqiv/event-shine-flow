@@ -524,6 +524,7 @@ const FULFILLMENT_META_KEYS = [
   "base_currency",
   "payment_amount",
   "payment_currency",
+  "charge_currency",
   "campaign_id",
   "funding_amount",
   "form_id",
@@ -782,11 +783,18 @@ async function processSuccessfulPayment(paymentData: any) {
   if (type === "vote" && contest_id && contestant_id && hasVoteIdentity) {
     console.log("Recording vote...");
     const grossAmount = Number(paymentData.amount) || 0;
-    const baseAmount = Number(meta.base_amount ?? walletTx?.amount ?? grossAmount);
     const voteCurrency =
-      (typeof meta.base_currency === "string" && meta.base_currency) ||
+      (typeof meta.payment_currency === "string" && meta.payment_currency) ||
       paymentData.currency ||
+      (typeof meta.charge_currency === "string" && meta.charge_currency) ||
+      (typeof meta.base_currency === "string" && meta.base_currency) ||
       "NGN";
+    const baseAmount = Number(
+      meta.payment_amount ??
+        meta.base_amount ??
+        walletTx?.amount ??
+        grossAmount,
+    );
     const recordedVoteQuantity = toPositiveInt(vote_quantity, 1);
     console.log(
       `Vote fulfillment: quantity=${recordedVoteQuantity}, amount_paid=${baseAmount} ${voteCurrency}, contest=${contest_id}, contestant=${contestant_id}`,

@@ -61,6 +61,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency);
   const supportsPromo = type === 'ticket';
 
+  useEffect(() => {
+    if (open) {
+      setSelectedCurrency(initialCurrency);
+    }
+  }, [open, initialCurrency]);
+
   // Determine the base currency (original contest/event currency)
   const baseCurrency = originalCurrency || initialCurrency;
   
