@@ -12,9 +12,16 @@ import { usePaymentFees } from '@/hooks/usePaymentFees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { usePromoCodeValidation } from '@/hooks/usePromoCode';
-import CurrencySelector, { useConversionDisplay, formatCurrency, getCurrencySymbol, roundPaymentAmount } from '@/components/ui/currency-selector';
+import CurrencySelector, {
+  useConversionDisplay,
+  formatCurrency,
+  getCurrencySymbol,
+  roundPaymentAmount,
+  getFlutterwaveInternationalMinMessage,
+} from '@/components/ui/currency-selector';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
-import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X, ArrowRightLeft } from 'lucide-react';
+import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X, ArrowRightLeft, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const REFERRAL_LINK_ID_KEY = 'influencer_link_id';
@@ -59,6 +66,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [guestName, setGuestName] = useState('');
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState(initialCurrency);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const supportsPromo = type === 'ticket';
 
   useEffect(() => {
@@ -75,7 +83,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     if (selectedCurrency === baseCurrency) return amount;
     return convert(amount, baseCurrency, selectedCurrency);
   }, [amount, baseCurrency, selectedCurrency, rates]);
-  const flutterwavePayment = useFlutterwavePayment();
+  const flutterwavePayment = useFlutterwavePayment({ showErrorToast: false });
   const {
     isValidating: isValidatingPromo,
     appliedPromo,
@@ -110,6 +118,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   
   const finalAmount = feeBreakdown.totalWithFees;
   const effectiveCurrency = selectedCurrency;
+  const minimumPaymentMessage = useMemo(
+    () => getFlutterwaveInternationalMinMessage(effectiveCurrency, finalAmount),
+    [effectiveCurrency, finalAmount],
+  );
+  const inlinePaymentMessage = paymentError || minimumPaymentMessage;
+
+  useEffect(() => {
+    if (open) {
+      setPaymentError(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setPaymentError(null);
+  }, [effectiveCurrency, finalAmount, paymentMethod]);
   const cryptoPayment = useCryptoPayment();
   const verifyCrypto = useVerifyCryptoPayment();
 
@@ -177,17 +200,31 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     // Get influencer link ID from localStorage for conversion tracking
     const influencerLinkId = localStorage.getItem(REFERRAL_LINK_ID_KEY) || undefined;
 
-    flutterwavePayment.mutate({
-      type,
-      amount: roundPaymentAmount(amountAfterDiscount, effectiveCurrency),
-      currency: effectiveCurrency,
-      email,
-      name,
-      user_id: userId,
-      influencer_link_id: influencerLinkId,
-      redirect_url: `${window.location.origin}/payment-callback?type=${type}${itemDetails.event_id ? `&event_id=${itemDetails.event_id}` : ''}${itemDetails.contest_id ? `&contest_id=${itemDetails.contest_id}` : ''}`,
-      ...itemDetails,
-    });
+    if (minimumPaymentMessage) {
+      setPaymentError(minimumPaymentMessage);
+      return;
+    }
+
+    setPaymentError(null);
+
+    flutterwavePayment.mutate(
+      {
+        type,
+        amount: roundPaymentAmount(amountAfterDiscount, effectiveCurrency),
+        currency: effectiveCurrency,
+        email,
+        name,
+        user_id: userId,
+        influencer_link_id: influencerLinkId,
+        redirect_url: `${window.location.origin}/payment-callback?type=${type}${itemDetails.event_id ? `&event_id=${itemDetails.event_id}` : ''}${itemDetails.contest_id ? `&contest_id=${itemDetails.contest_id}` : ''}`,
+        ...itemDetails,
+      },
+      {
+        onError: (error) => {
+          setPaymentError(error.message);
+        },
+      },
+    );
   };
 
   const handleCryptoPayment = () => {
@@ -313,6 +350,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             )}
           </div>
 
+          {inlinePaymentMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{inlinePaymentMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {supportsPromo && (
           <div className="mb-4">
             {!appliedPromo ? (
@@ -413,7 +457,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     <Button 
                       onClick={handleFlutterwavePayment} 
                       className="w-full"
-                      disabled={flutterwavePayment.isPending || !canProceed}
+                      disabled={flutterwavePayment.isPending || !canProceed || !!minimumPaymentMessage}
                     >
                       {flutterwavePayment.isPending ? (
                         <>

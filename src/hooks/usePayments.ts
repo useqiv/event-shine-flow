@@ -68,7 +68,9 @@ const isValidPaymentUrl = (url: string): boolean => {
   }
 };
 
-export const useFlutterwavePayment = () => {
+export const useFlutterwavePayment = (options?: { showErrorToast?: boolean }) => {
+  const showErrorToast = options?.showErrorToast !== false;
+
   return useMutation({
     mutationFn: async (params: FlutterwavePaymentParams) => {
       const { data, error } = await supabase.functions.invoke('process-flutterwave-payment', {
@@ -114,7 +116,9 @@ export const useFlutterwavePayment = () => {
       }
     },
     onError: (error: Error) => {
-      toast.error('Payment failed: ' + error.message);
+      if (showErrorToast) {
+        toast.error('Payment failed: ' + error.message);
+      }
     },
   });
 };

@@ -35,6 +35,22 @@ export const getPaymentMinAmount = (code: string): number => {
   return currencies.find(c => c.code === code)?.minAmount ?? 0.01;
 };
 
+/** Flutterwave card checkout minimum for USD/EUR/GBP (matches edge function). */
+export const FLUTTERWAVE_INTERNATIONAL_CARD_MIN = 1;
+const FLUTTERWAVE_INTERNATIONAL_CURRENCIES = new Set(['USD', 'EUR', 'GBP']);
+
+export const getFlutterwaveInternationalMinMessage = (
+  currencyCode: string,
+  amount: number,
+): string | null => {
+  const code = currencyCode.toUpperCase();
+  if (!FLUTTERWAVE_INTERNATIONAL_CURRENCIES.has(code)) return null;
+  if (amount > 0 && amount < FLUTTERWAVE_INTERNATIONAL_CARD_MIN) {
+    return `Minimum payment for ${code} is ${FLUTTERWAVE_INTERNATIONAL_CARD_MIN}. Please select more votes or choose another currency.`;
+  }
+  return null;
+};
+
 export const roundPaymentAmount = (amount: number, currencyCode: string): number => {
   if (DECIMAL_CURRENCY_CODES.has(currencyCode)) {
     return Math.round(amount * 100) / 100;
