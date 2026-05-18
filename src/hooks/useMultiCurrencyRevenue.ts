@@ -20,11 +20,12 @@ export const useMultiCurrencyRevenue = () => {
   return useQuery({
     queryKey: ['admin-multi-currency-revenue'],
     queryFn: async (): Promise<CurrencyRevenue[]> => {
-      // Fetch vote revenue by currency (from contest's vote_currency)
+      // Fetch vote revenue by actual paid currency (votes.currency)
       const { data: voteData, error: voteError } = await supabase
         .from('votes')
         .select(`
           amount_paid,
+          currency,
           contests!inner(vote_currency)
         `);
 
@@ -56,7 +57,7 @@ export const useMultiCurrencyRevenue = () => {
 
       // Process votes
       voteData?.forEach((vote: any) => {
-        const currency = vote.contests?.vote_currency || 'NGN';
+        const currency = vote.currency || vote.contests?.vote_currency || 'NGN';
         if (!currencyMap[currency]) {
           currencyMap[currency] = {
             currency,

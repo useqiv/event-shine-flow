@@ -29,7 +29,14 @@ import { useContestCategories } from '@/hooks/useContestCategories';
 import { LiveStreamEmbed } from '@/components/live/LiveStreamEmbed';
 
 import { useContest, useContestants } from '@/hooks/useContests';
+import { useContestRevenueByCurrency } from '@/hooks/useContestRevenueByCurrency';
 import { useUpdateContest, useCreateContestant, useUpdateContestant, useDeleteContestant, useBulkDeleteContestants, useReorderContestants, useOrganizationStats } from '@/hooks/useOrganization';
+import MultiCurrencyRevenueSummary from '@/components/org/MultiCurrencyRevenueSummary';
+import {
+  applyCommissionToRevenueByCurrency,
+  getActiveRevenueCurrencies,
+  hasMultipleRevenueCurrencies,
+} from '@/lib/revenueByCurrency';
 import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeContestants';
 import CurrencySelector, { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
@@ -118,11 +125,14 @@ const ContestManagement = () => {
   const platformVoteCommission = platformSettings?.vote_commission_percentage || platformSettings?.platform_commission_percentage || 10;
   const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
 
-  // Calculate revenue with commission
-  const totalRevenue = contest ? contest.total_votes * Number(contest.vote_price) : 0;
-  const netRevenue = totalRevenue * (1 - voteCommission / 100);
+  const { grossByCurrency: contestGrossByCurrency } = useContestRevenueByCurrency(id);
+  const netByCurrency = applyCommissionToRevenueByCurrency(contestGrossByCurrency, voteCommission);
   const contestCurrency = contest?.vote_currency || 'NGN';
-  const requestableByCurrency = orgStats?.requestableBalanceByCurrency?.[contestCurrency] || 0;
+  const primaryCurrency = getActiveRevenueCurrencies(contestGrossByCurrency, contestCurrency)[0];
+  const totalRevenue = contestGrossByCurrency[primaryCurrency] || 0;
+  const netRevenue = netByCurrency[primaryCurrency] || 0;
+  const multiCurrencyRevenue = hasMultipleRevenueCurrencies(contestGrossByCurrency);
+  const requestableByCurrency = orgStats?.requestableBalanceByCurrency?.[primaryCurrency] || 0;
   const withdrawableBalance = Math.max(0, Math.min(netRevenue, requestableByCurrency));
 
   const [isAddContestantOpen, setIsAddContestantOpen] = useState(false);
@@ -758,14 +768,18 @@ const ContestManagement = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="col-span-2 sm:col-span-1 lg:col-span-2">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">{formatCurrency(totalRevenue, contest.vote_currency || 'NGN')}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <MultiCurrencyRevenueSummary
+                    grossByCurrency={contestGrossByCurrency}
+                    commissionRatePercent={voteCommission}
+                    listingCurrency={contestCurrency}
+                    size="sm"
+                  />
                 </div>
-                <DollarSign className="h-8 w-8 text-muted-foreground" />
+                <DollarSign className="h-8 w-8 text-muted-foreground shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -774,7 +788,9 @@ const ContestManagement = () => {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex items-center gap-1">
-                    <p className="text-sm text-muted-foreground">Net Revenue</p>
+                    <p className="text-sm text-muted-foreground">
+                      {multiCurrencyRevenue ? `Withdraw (${primaryCurrency})` : 'Net Revenue'}
+                    </p>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
@@ -782,22 +798,25 @@ const ContestManagement = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="text-xs">
-                            {voteCommission}% commission deducted
+                            {voteCommission}% commission deducted per currency.
+                            {multiCurrencyRevenue ? ' Use Wallet for other currencies.' : ''}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums break-words">
-                    {formatCurrency(netRevenue, contestCurrency)}
-                  </p>
+                  {!multiCurrencyRevenue && (
+                    <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400 tabular-nums break-words">
+                      {formatCurrency(netRevenue, primaryCurrency)}
+                    </p>
+                  )}
                   <p className="text-xs sm:text-sm text-muted-foreground tabular-nums break-words">
-                    Available: {formatCurrency(withdrawableBalance, contestCurrency)}
+                    Available: {formatCurrency(withdrawableBalance, primaryCurrency)}
                   </p>
                   <EventPayoutRequest
                     mode="dialog"
                     netRevenue={withdrawableBalance}
-                    currency={contestCurrency}
+                    currency={primaryCurrency}
                     itemType="contest"
                     itemTitle={contest.title}
                     triggerVariant="outline"

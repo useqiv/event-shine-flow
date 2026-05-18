@@ -27,6 +27,7 @@ interface DuplicateVoteGroup {
   contest_id: string;
   contestant_id: string;
   amount_paid: number;
+  currency: string;
   vote_ids: string[];
   quantities: number[];
   created_ats: string[];
@@ -64,6 +65,7 @@ const AdminVoteReconciliation: React.FC = () => {
           contest_id,
           contestant_id,
           amount_paid,
+          currency,
           quantity,
           created_at,
           transaction_id,
@@ -123,6 +125,7 @@ const AdminVoteReconciliation: React.FC = () => {
               contest_id: first.contest_id,
               contestant_id: first.contestant_id,
               amount_paid: first.amount_paid,
+              currency: first.currency || 'NGN',
               vote_ids: closeVotes.map(v => v.id),
               quantities: closeVotes.map(v => v.quantity),
               created_ats: closeVotes.map(v => v.created_at),
@@ -515,7 +518,9 @@ const AdminVoteReconciliation: React.FC = () => {
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Amount:</span>
-                                <p className="font-medium"><CurrencyDisplay amount={group.amount_paid} currency={platformCurrency} /></p>
+                                <p className="font-medium">
+                                  <CurrencyDisplay amount={group.amount_paid} currency={group.currency} showConversion={false} showBadge />
+                                </p>
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground">

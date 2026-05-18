@@ -39,6 +39,16 @@ export const getPaymentMinAmount = (code: string): number => {
 export const FLUTTERWAVE_INTERNATIONAL_CARD_MIN = 1;
 const FLUTTERWAVE_INTERNATIONAL_CURRENCIES = new Set(['USD', 'EUR', 'GBP']);
 
+/** Currency the customer actually paid in (not the contest/event listing currency). */
+export const getPaidTransactionCurrency = (
+  paidCurrency?: string | null,
+  listingCurrency?: string | null,
+  fallback = 'NGN',
+): string => {
+  const code = (paidCurrency || listingCurrency || fallback).trim().toUpperCase();
+  return code || fallback;
+};
+
 export const getFlutterwaveInternationalMinMessage = (
   currencyCode: string,
   amount: number,

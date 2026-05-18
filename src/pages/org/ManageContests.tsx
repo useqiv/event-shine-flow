@@ -19,12 +19,11 @@ import {
 import { useOrganizationContests, useDuplicateContest, useDeleteContest } from '@/hooks/useOrganization';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/components/ui/currency-selector';
-import CurrencyDisplay from '@/components/ui/currency-display';
-import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, DollarSign, TrendingUp, Info, Copy, Trash2 } from 'lucide-react';
+import MultiCurrencyRevenueSummary from '@/components/org/MultiCurrencyRevenueSummary';
+import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
-import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import { useContestsRevenueByCurrency } from '@/hooks/useContestRevenueByCurrency';
 
 const ManageContests = () => {
   const { data: contests, isLoading } = useOrganizationContests();
@@ -34,39 +33,8 @@ const ManageContests = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contestToDelete, setContestToDelete] = useState<any>(null);
 
-  // Fetch vote revenue per contest
-  const { data: contestRevenues } = useQuery({
-    queryKey: ['contest-revenues', user?.id],
-    queryFn: async () => {
-      const { data: contestsData } = await supabase
-        .from('contests')
-        .select('id')
-        .eq('organization_id', user!.id);
-
-      const contestIds = contestsData?.map(c => c.id) || [];
-      if (contestIds.length === 0) return {};
-
-      const { data: votes } = await supabase
-        .from('votes')
-        .select('contest_id, amount_paid, quantity, transaction_id')
-        .in('contest_id', contestIds);
-
-      const revenues: Record<string, { revenue: number; totalVotes: number }> = {};
-
-      const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
-      votes?.forEach(vote => {
-        if (!revenues[vote.contest_id]) {
-          revenues[vote.contest_id] = { revenue: 0, totalVotes: 0 };
-        }
-        const baseAmount = baseAmountMap.get(vote.transaction_id) ?? 0;
-        revenues[vote.contest_id].revenue += Number(baseAmount);
-        revenues[vote.contest_id].totalVotes += vote.quantity;
-      });
-
-      return revenues;
-    },
-    enabled: !!user,
-  });
+  const contestIds = contests?.map((c: { id: string }) => c.id) || [];
+  const { data: contestRevenues } = useContestsRevenueByCurrency(contestIds);
 
   // Fetch commission settings
   const { data: commissionSettings } = useQuery({
@@ -134,10 +102,10 @@ const ManageContests = () => {
         ) : contests && contests.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {contests.map((contest: any) => {
-              const contestData = contestRevenues?.[contest.id] || { revenue: 0, totalVotes: 0 };
-              const totalRevenue = contestData.revenue;
-              const netRevenue = totalRevenue * (1 - voteCommission / 100);
-              const commissionDeducted = totalRevenue - netRevenue;
+              const contestData = contestRevenues?.[contest.id] || {
+                grossByCurrency: {},
+                totalVotes: 0,
+              };
 
               return (
                 <Card key={contest.id} className="overflow-hidden">
@@ -173,39 +141,14 @@ const ManageContests = () => {
                       </div>
                     </div>
 
-                    {/* Revenue Section */}
+                    {/* Revenue Section — per paid currency (never mixed) */}
                     <div className="bg-secondary/50 rounded-lg p-3 mb-3 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <DollarSign className="h-3 w-3" />
-                          <span>Total Revenue</span>
-                        </div>
-                        <span className="font-medium">
-                          <CurrencyDisplay amount={totalRevenue} currency={contest.vote_currency || 'USD'} size="sm" />
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                          <TrendingUp className="h-3 w-3" />
-                          <span>Net Revenue</span>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <Info className="h-3 w-3 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">
-                                  {voteCommission}% commission<br/>
-                                  Deducted: {formatCurrency(commissionDeducted, contest.vote_currency || 'USD')}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        <span className="font-medium text-green-600 dark:text-green-400">
-                          <CurrencyDisplay amount={netRevenue} currency={contest.vote_currency || 'USD'} size="sm" className="text-green-600 dark:text-green-400" />
-                        </span>
-                      </div>
+                      <MultiCurrencyRevenueSummary
+                        grossByCurrency={contestData.grossByCurrency}
+                        commissionRatePercent={voteCommission}
+                        listingCurrency={contest.vote_currency || 'NGN'}
+                        size="sm"
+                      />
                     </div>
 
                     <div className="flex gap-2">

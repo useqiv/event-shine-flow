@@ -10,6 +10,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/components/ui/currency-selector';
+import MultiCurrencyRevenueSummary from '@/components/org/MultiCurrencyRevenueSummary';
+import { getActiveRevenueCurrencies } from '@/lib/revenueByCurrency';
 import { useContestAnalyticsData, useChartMaxValues } from '@/hooks/useContestAnalyticsData';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -70,7 +72,8 @@ const ContestAnalytics = () => {
   });
 
   const voteCommission = commissionData?.voteCommission ?? 10;
-  const netRevenue = analytics.totalRevenue * (1 - voteCommission / 100);
+  const primaryCurrency = getActiveRevenueCurrencies(analytics.revenueByCurrency, currency)[0];
+  const primaryGross = analytics.revenueByCurrency[primaryCurrency] || 0;
   const peakHour = analytics.peakVotingHours.reduce(
     (max, h) => (h.count > max.count ? h : max),
     { hour: 0, count: 0 }
@@ -133,25 +136,24 @@ const ContestAnalytics = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-primary text-primary-foreground">
+          <Card className="md:col-span-2">
             <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">Gross Revenue</p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-muted-foreground mb-2">Revenue (by paid currency)</p>
                   {isLoading ? (
-                    <Skeleton className="h-8 w-24 mt-1 bg-primary-foreground/20" />
+                    <Skeleton className="h-16 w-full" />
                   ) : (
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(analytics.totalRevenue, currency)}
-                    </p>
-                  )}
-                  {!isLoading && (
-                    <p className="text-xs opacity-80 mt-1">
-                      Net after {voteCommission}%: {formatCurrency(netRevenue, currency)}
-                    </p>
+                    <MultiCurrencyRevenueSummary
+                      grossByCurrency={analytics.revenueByCurrency}
+                      commissionRatePercent={voteCommission}
+                      listingCurrency={currency}
+                      totalLabel="Gross Revenue"
+                      netLabel={`Net (${voteCommission}% deducted)`}
+                    />
                   )}
                 </div>
-                <DollarSign className="h-8 w-8 opacity-80" />
+                <DollarSign className="h-8 w-8 text-muted-foreground shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -410,7 +412,7 @@ const ContestAnalytics = () => {
                       {isLoading
                         ? '—'
                         : formatCurrency(
-                            Math.round(analytics.totalRevenue / (analytics.uniqueVoters || 1)),
+                            Math.round(primaryGross / (analytics.uniqueVoters || 1)),
                             currency
                           )}
                     </p>

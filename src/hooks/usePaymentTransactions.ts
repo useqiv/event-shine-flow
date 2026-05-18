@@ -52,7 +52,7 @@ export const useVotesQuery = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('votes_public')
-        .select('id, quantity, amount_paid, payment_method, created_at, user_id, guest_email, guest_name, contest_id')
+        .select('id, quantity, amount_paid, currency, payment_method, created_at, user_id, guest_email, guest_name, contest_id')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -191,7 +191,7 @@ export const usePaymentTransactions = () => {
         id: vote.id,
         type: 'vote',
         amount: vote.amount_paid,
-        currency: vote.contest?.vote_currency || 'NGN',
+        currency: vote.currency || vote.contest?.vote_currency || 'NGN',
         status: 'completed',
         payment_method: vote.payment_method,
         created_at: vote.created_at,

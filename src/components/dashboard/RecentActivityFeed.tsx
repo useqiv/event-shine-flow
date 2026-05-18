@@ -40,7 +40,7 @@ export const RecentActivityFeed = () => {
         title: `Voted for ${vote.contestant?.name || 'Contestant'}`,
         subtitle: vote.contest?.title || 'Contest',
         amount: Number(vote.amount_paid),
-        currency: vote.currency || vote.contest?.vote_currency || 'NGN',
+        currency: (vote.currency || vote.contest?.vote_currency || 'NGN').toUpperCase(),
         isCredit: false,
         timestamp: new Date(vote.created_at),
         link: `/contests/${vote.contest_id}`,

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Receipt, Download, Printer } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency, getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 
 interface VoteReceiptProps {
   vote: any;
@@ -10,6 +11,12 @@ interface VoteReceiptProps {
 }
 
 export const VoteReceipt: React.FC<VoteReceiptProps> = ({ vote, children }) => {
+  const paidCurrency = getPaidTransactionCurrency(vote.currency, vote.contest?.vote_currency);
+  const totalPaid = Number(vote.amount_paid) || 0;
+  const pricePerVote = vote.quantity ? totalPaid / vote.quantity : totalPaid;
+  const formattedTotal = formatCurrency(totalPaid, paidCurrency);
+  const formattedPerVote = formatCurrency(pricePerVote, paidCurrency);
+
   const printReceipt = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -100,7 +107,7 @@ export const VoteReceipt: React.FC<VoteReceiptProps> = ({ vote, children }) => {
             </div>
             <div class="row">
               <span class="label">Price per Vote</span>
-              <span class="value">₦${(Number(vote.amount_paid) / vote.quantity).toLocaleString()}</span>
+              <span class="value">${formattedPerVote}</span>
             </div>
             <div class="row">
               <span class="label">Payment Method</span>
@@ -121,7 +128,7 @@ export const VoteReceipt: React.FC<VoteReceiptProps> = ({ vote, children }) => {
             </div>` : ''}
             <div class="total">
               <span class="total-label">Total Amount</span>
-              <span class="total-value">₦${Number(vote.amount_paid).toLocaleString()}</span>
+              <span class="total-value">${formattedTotal}</span>
             </div>
           </div>
           <div class="footer">
@@ -147,8 +154,8 @@ VOTE RECEIPT
 Contest: ${vote.contest?.title || 'N/A'}
 Contestant: ${vote.contestant?.name || 'N/A'}
 Vote Quantity: ${vote.quantity}
-Price per Vote: ₦${(Number(vote.amount_paid) / vote.quantity).toLocaleString()}
-Total Amount: ₦${Number(vote.amount_paid).toLocaleString()}
+Price per Vote: ${formattedPerVote}
+Total Amount: ${formattedTotal}
 Payment Method: ${vote.payment_method || 'Wallet'}
 Date: ${format(new Date(vote.created_at), 'MMMM d, yyyy')}
 Time: ${format(new Date(vote.created_at), 'h:mm a')}
@@ -189,7 +196,7 @@ Useqiv
         <div className="space-y-4 py-4">
           <div className="bg-gradient-to-r from-primary to-accent p-4 rounded-lg text-primary-foreground text-center">
             <p className="text-sm opacity-80">Total Amount</p>
-            <p className="text-2xl font-bold">₦{Number(vote.amount_paid).toLocaleString()}</p>
+            <p className="text-2xl font-bold">{formattedTotal}</p>
           </div>
           
           <div className="space-y-3">

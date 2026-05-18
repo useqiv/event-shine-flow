@@ -13,6 +13,8 @@ export interface VoteRecord {
   amount_paid: number;
   /** Fee-free org revenue; falls back to amount_paid when unset */
   base_amount?: number;
+  /** Currency the voter paid in */
+  currency?: string | null;
   payment_method?: string | null;
   created_at: string;
 }
@@ -50,6 +52,8 @@ export interface PaymentMethodStats {
 
 export interface AnalyticsResult {
   totalRevenue: number;
+  /** Gross revenue grouped by paid currency (never mixed). */
+  revenueByCurrency: Record<string, number>;
   totalVotes: number;
   uniqueVoters: number;
   averageVotesPerVoter: number;
@@ -77,6 +81,18 @@ export const calculateTotalVotes = (votes: VoteRecord[]): number => {
 /**
  * Calculate total revenue
  */
+export const calculateRevenueByCurrency = (
+  votes: VoteRecord[],
+  getCurrency: (vote: VoteRecord) => string,
+): Record<string, number> => {
+  const byCurrency: Record<string, number> = {};
+  votes.forEach((vote) => {
+    const currency = getCurrency(vote).toUpperCase();
+    byCurrency[currency] = (byCurrency[currency] || 0) + voteRevenue(vote);
+  });
+  return byCurrency;
+};
+
 export const calculateTotalRevenue = (votes: VoteRecord[]): number => {
   return votes.reduce((sum, v) => sum + voteRevenue(v), 0);
 };
@@ -172,13 +188,19 @@ export const calculatePaymentMethodStats = (votes: VoteRecord[]): PaymentMethodS
 export const calculateFullAnalytics = (
   votes: VoteRecord[],
   contestants: ContestantRecord[] = [],
-  daysRange: number = 14
+  daysRange: number = 14,
+  listingCurrency = 'NGN',
 ): AnalyticsResult => {
   const totalVotes = calculateTotalVotes(votes);
   const uniqueVoters = calculateUniqueVoters(votes);
+  const revenueByCurrency = calculateRevenueByCurrency(
+    votes,
+    (vote) => vote.currency || listingCurrency,
+  );
   
   return {
     totalRevenue: calculateTotalRevenue(votes),
+    revenueByCurrency,
     totalVotes,
     uniqueVoters,
     averageVotesPerVoter: uniqueVoters > 0 ? totalVotes / uniqueVoters : 0,

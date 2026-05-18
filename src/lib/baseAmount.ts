@@ -14,21 +14,41 @@ export interface ConvenienceFeeSettings {
  *
  * We store the fee-free base in `wallet_transactions.amount` and link records via `transaction_id`.
  */
-export async function getBaseAmountsByTransactionId(transactionIds: Array<string | null | undefined>) {
+export type WalletTransactionSnapshot = {
+  amount: number;
+  currency: string;
+};
+
+export async function getWalletTransactionsByTransactionId(
+  transactionIds: Array<string | null | undefined>,
+) {
   const ids = Array.from(
-    new Set(transactionIds.filter((id): id is string => typeof id === 'string' && id.length > 0))
+    new Set(transactionIds.filter((id): id is string => typeof id === 'string' && id.length > 0)),
   );
 
-  if (ids.length === 0) return new Map<string, number>();
+  if (ids.length === 0) return new Map<string, WalletTransactionSnapshot>();
 
   const { data, error } = await supabase
     .from('wallet_transactions')
-    .select('id, amount')
+    .select('id, amount, currency')
     .in('id', ids);
 
   if (error) throw error;
 
-  return new Map((data || []).map((t) => [t.id, Number(t.amount) || 0]));
+  return new Map(
+    (data || []).map((t) => [
+      t.id,
+      {
+        amount: Number(t.amount) || 0,
+        currency: (t.currency || 'NGN').toUpperCase(),
+      },
+    ]),
+  );
+}
+
+export async function getBaseAmountsByTransactionId(transactionIds: Array<string | null | undefined>) {
+  const walletTxMap = await getWalletTransactionsByTransactionId(transactionIds);
+  return new Map(Array.from(walletTxMap.entries()).map(([id, tx]) => [id, tx.amount]));
 }
 
 export async function getConvenienceFeeSettings(): Promise<ConvenienceFeeSettings> {

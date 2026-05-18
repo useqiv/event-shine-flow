@@ -40,6 +40,7 @@ interface UseContestAnalyticsReturn {
 
 const INITIAL_ANALYTICS: ContestAnalyticsResult = {
   totalRevenue: 0,
+  revenueByCurrency: {},
   totalVotes: 0,
   uniqueVoters: 0,
   averageVotesPerVoter: 0,
@@ -83,7 +84,7 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
           supabase
             .from('votes_public')
             .select(
-              'id, user_id, guest_email, quantity, amount_paid, payment_method, created_at, transaction_id, net_amount, platform_commission'
+              'id, user_id, guest_email, quantity, amount_paid, currency, payment_method, created_at, transaction_id, net_amount, platform_commission'
             )
             .eq('contest_id', contestId),
           supabase
@@ -143,6 +144,7 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
             quantity: v.quantity,
             amount_paid: Number(v.amount_paid) || 0,
             base_amount,
+            currency: v.currency,
             payment_method: v.payment_method,
             created_at: v.created_at,
           };
@@ -154,7 +156,12 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
           vote_count: c.vote_count,
         }));
 
-        const baseAnalytics = calculateFullAnalytics(voteRecords, contestantRecords, 14);
+        const baseAnalytics = calculateFullAnalytics(
+          voteRecords,
+          contestantRecords,
+          14,
+          contestData?.vote_currency || 'NGN',
+        );
         setAnalytics(baseAnalytics);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch analytics'));

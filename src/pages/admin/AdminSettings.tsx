@@ -646,14 +646,16 @@ const AdminSettings: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label>Supported Currencies</Label>
+                  <Label>Currency reference (optional)</Label>
                   <Input 
-                    placeholder="NGN, USD, GHS, KES" 
+                    placeholder="NGN, USD, EUR, GBP, GHS, KES" 
                     value={flutterwaveForm.currencies}
                     onChange={(e) => handleFlutterwaveFormChange('currencies', e.target.value)}
                     className="mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Comma-separated list of accepted currencies</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    For your records only. Checkout accepts any currency enabled on your Flutterwave account; we do not block payments by this list.
+                  </p>
                 </div>
 
                 <div>

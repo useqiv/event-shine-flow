@@ -28,7 +28,7 @@ const AdminPaymentAnalytics = () => {
   // Platform default currency from settings
   const platformCurrency = usePlatformCurrency();
 
-  // Fetch votes - currency comes from contest.vote_currency
+  // Fetch votes - group revenue by actual paid currency (votes.currency)
   const { data: votes, isLoading: votesLoading } = useQuery({
     queryKey: ['analytics-votes', timeRange],
     queryFn: async () => {
@@ -43,6 +43,8 @@ const AdminPaymentAnalytics = () => {
           payment_method,
           created_at,
           quantity,
+          amount_paid,
+          currency,
           contest:contests(vote_currency, vote_price)
         `)
         .gte('created_at', startDate)
@@ -150,7 +152,7 @@ const AdminPaymentAnalytics = () => {
     const byCurrency: Record<string, { votes: number; tickets: number; donations: number; forms: number; total: number; count: number }> = {};
     
     votes?.forEach((v: any) => {
-      const currency = v.contest?.vote_currency || 'NGN';
+      const currency = v.currency || v.contest?.vote_currency || 'NGN';
       if (!byCurrency[currency]) {
         byCurrency[currency] = { votes: 0, tickets: 0, donations: 0, forms: 0, total: 0, count: 0 };
       }

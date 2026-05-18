@@ -158,13 +158,6 @@ function buildFlutterwaveMeta(meta: Record<string, unknown>): Record<string, str
   return fwMeta;
 }
 
-function parseEnabledCurrencies(raw: string): string[] {
-  return raw
-    .split(",")
-    .map((c) => c.trim().toUpperCase())
-    .filter(Boolean);
-}
-
 interface PaymentRequest {
   type: "vote" | "ticket" | "wallet" | "donation" | "form";
   amount: number;
@@ -215,7 +208,6 @@ const handler = async (req: Request): Promise<Response> => {
         "flutterwave_secret_key",
         "flutterwave_public_key",
         "flutterwave_test_mode",
-        "flutterwave_currencies",
         "flutterwave_default_currency",
         "flutterwave_fee_percentage",
         "flutterwave_fee_fixed",
@@ -321,16 +313,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     const paymentCurrency = (payload.currency || defaultCurrency).toUpperCase();
     const paymentMinAmount = getPaymentMinAmount(paymentCurrency);
-
-    const enabledCurrencies = parseEnabledCurrencies(getSetting("flutterwave_currencies"));
-    if (enabledCurrencies.length > 0 && !enabledCurrencies.includes(paymentCurrency)) {
-      return new Response(
-        JSON.stringify({
-          error: `Payments in ${paymentCurrency} are not enabled. Supported currencies: ${enabledCurrencies.join(", ")}.`,
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     if (!Number.isFinite(payload.amount) || payload.amount < paymentMinAmount) {
       return new Response(
@@ -694,7 +676,7 @@ const handler = async (req: Request): Promise<Response> => {
       let errorMessage = data.message || "Failed to initialize payment";
       if (String(errorMessage).toLowerCase().includes("required parameters")) {
         errorMessage =
-          `Could not start ${chargeCurrency} checkout. Confirm ${chargeCurrency} is enabled in Admin > Flutterwave settings and on your Flutterwave dashboard.`;
+          `Could not start ${chargeCurrency} checkout. Confirm ${chargeCurrency} is enabled on your Flutterwave merchant account.`;
       }
       return new Response(
         JSON.stringify({ error: errorMessage }),

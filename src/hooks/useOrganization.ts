@@ -514,7 +514,7 @@ export const useOrganizationStats = () => {
       if (contestIds.length > 0) {
         const { data: votes } = await supabase
           .from('votes')
-          .select('amount_paid, net_amount, platform_commission, quantity, contest_id, transaction_id')
+          .select('amount_paid, net_amount, platform_commission, quantity, contest_id, transaction_id, currency')
           .in('contest_id', contestIds);
 
         const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
@@ -529,7 +529,7 @@ export const useOrganizationStats = () => {
         });
         
         votes?.forEach((v: any) => {
-          const currency = contestCurrencyMap[v.contest_id] || 'NGN';
+          const currency = v.currency || contestCurrencyMap[v.contest_id] || 'NGN';
           const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
           const contestVotePrice = contestVotePriceMap[v.contest_id] || 0;
           const contestVotePriceAmount =

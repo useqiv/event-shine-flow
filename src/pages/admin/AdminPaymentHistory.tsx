@@ -49,7 +49,7 @@ const AdminPaymentHistory = () => {
   const [entityFilter, setEntityFilter] = useState<string>('all');
   const [daysFilter, setDaysFilter] = useState<string>('30');
 
-  // Fetch votes - currency comes from contest.vote_currency
+  // Fetch votes - use vote.currency (actual paid currency), not contest listing currency
   const { data: votes, isLoading: votesLoading } = useQuery({
     queryKey: ['admin-votes'],
     queryFn: async () => {
@@ -60,6 +60,7 @@ const AdminPaymentHistory = () => {
           id,
           quantity,
           amount_paid,
+          currency,
           payment_method,
           created_at,
           user_id,
@@ -221,7 +222,7 @@ const AdminPaymentHistory = () => {
   const allTransactions = useMemo(() => {
     const transactions: PaymentTransaction[] = [];
 
-    // Add votes - get currency from contest.vote_currency
+    // Add votes - use vote.currency (amount the customer paid in)
     votes?.forEach((vote: any) => {
       // Use guest info if user_id is null (guest vote)
       const isGuest = !vote.user_id;
@@ -229,7 +230,7 @@ const AdminPaymentHistory = () => {
         id: vote.id,
         type: 'vote',
         amount: vote.amount_paid,
-        currency: vote.contest?.vote_currency || 'NGN',
+        currency: vote.currency || vote.contest?.vote_currency || 'NGN',
         status: 'completed',
         payment_method: vote.payment_method,
         created_at: vote.created_at,
@@ -451,7 +452,7 @@ const AdminPaymentHistory = () => {
                       Revenue
                     </CardDescription>
                     <CardTitle className="text-base sm:text-2xl">
-                      <CurrencyDisplay amount={amount} currency={currency} />
+                      <CurrencyDisplay amount={amount} currency={currency} showConversion={false} />
                     </CardTitle>
                   </CardHeader>
                 </Card>
@@ -610,7 +611,7 @@ const AdminPaymentHistory = () => {
                           <Badge variant="outline" className="text-xs">{tx.currency}</Badge>
                         </TableCell>
                         <TableCell className="font-medium text-xs sm:text-sm">
-                          <CurrencyDisplay amount={tx.amount} currency={tx.currency} />
+                          <CurrencyDisplay amount={tx.amount} currency={tx.currency} showConversion={false} />
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
                           <div className="flex items-center gap-1">

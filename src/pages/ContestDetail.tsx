@@ -888,7 +888,13 @@ const ContestDetail = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-semibold">
-                            <CurrencyDisplay amount={Number(vote.amount_paid)} currency={contest.vote_currency || 'NGN'} size="sm" />
+                            <CurrencyDisplay
+                              amount={Number(vote.amount_paid)}
+                              currency={vote.currency || contest.vote_currency || 'NGN'}
+                              size="sm"
+                              showConversion={false}
+                              showBadge
+                            />
                           </p>
                           <Badge variant="outline" className="text-xs">
                             {vote.payment_method}

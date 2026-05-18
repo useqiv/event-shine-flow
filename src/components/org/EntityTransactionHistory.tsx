@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatCurrency } from '@/components/ui/currency-selector';
+import { formatCurrency, getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Download, Filter, CreditCard, CheckCircle, Clock, XCircle, AlertCircle, Search } from 'lucide-react';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 import {
   getBaseAmountsByTransactionId,
+  getWalletTransactionsByTransactionId,
   getConvenienceFeeSettings,
   resolveVoteBaseAmount,
 } from '@/lib/baseAmount';
@@ -25,6 +26,7 @@ interface EntityTransactionHistoryProps {
   entityType: EntityType;
   entityId: string;
   currency?: string;
+  paid_currency?: string;
 }
 
 interface Transaction {
@@ -112,6 +114,7 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
                 id,
                 quantity,
                 amount_paid,
+                currency,
                 net_amount,
                 platform_commission,
                 payment_method,
@@ -166,7 +169,12 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const contestantsMap = new Map((contestantsRes.data || []).map(c => [c.id, c]));
         const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
         
-        const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((v: any) => v.transaction_id) || []);
+        const walletTxMap = await getWalletTransactionsByTransactionId(
+          data?.map((v: any) => v.transaction_id) || [],
+        );
+        const baseAmountMap = new Map(
+          Array.from(walletTxMap.entries()).map(([id, tx]) => [id, tx.amount]),
+        );
         const voteOptionPriceMap = new Map(
           (voteOptionsRes.data || []).map((option) => [
             option.vote_quantity,
@@ -178,7 +186,13 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const enrichedData = data?.map(v => {
           const voteCounts = voteCountMap.get(v.id);
           const transactionId = (v as { transaction_id?: string | null }).transaction_id;
-          const walletBaseAmount = transactionId ? baseAmountMap.get(transactionId) : undefined;
+          const walletTx = transactionId ? walletTxMap.get(transactionId) : undefined;
+          const walletBaseAmount = walletTx?.amount;
+          const paid_currency = getPaidTransactionCurrency(
+            v.currency,
+            walletTx?.currency,
+            currency,
+          );
           const base_amount = resolveVoteBaseAmount({
             transactionId,
             walletBaseAmount,
@@ -196,6 +210,7 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             contestant: contestantsMap.get(v.contestant_id),
             user: usersMap.get(v.user_id),
             base_amount,
+            paid_currency,
             votes_before: voteCounts?.votesBefore ?? null,
             votes_after: voteCounts?.votesAfter ?? null,
           };
@@ -251,14 +266,21 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
         const ticketTypesMap = new Map((ticketTypesRes.data || []).map(tt => [tt.id, tt]));
         const usersMap = new Map((usersRes.data || []).map(u => [u.id, u]));
         
-        const baseAmountMap = await getBaseAmountsByTransactionId(data?.map((t: any) => t.transaction_id) || []);
+        const walletTxMap = await getWalletTransactionsByTransactionId(
+          data?.map((t: any) => t.transaction_id) || [],
+        );
 
-        const enrichedData = data?.map(t => ({
-          ...t,
-          ticket_type: ticketTypesMap.get(t.ticket_type_id),
-          user: usersMap.get(t.user_id),
-          base_amount: baseAmountMap.get((t as any).transaction_id) ?? null,
-        }));
+        const enrichedData = data?.map(t => {
+          const transactionId = (t as { transaction_id?: string | null }).transaction_id;
+          const walletTx = transactionId ? walletTxMap.get(transactionId) : undefined;
+          return {
+            ...t,
+            ticket_type: ticketTypesMap.get(t.ticket_type_id),
+            user: usersMap.get(t.user_id),
+            base_amount: walletTx?.amount ?? null,
+            paid_currency: walletTx?.currency || currency,
+          };
+        });
         
         return { transactions: enrichedData || [] };
       } else {
@@ -316,13 +338,15 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
     
     return data.transactions.map((t: any) => {
       if (entityType === 'contest') {
-        const baseAmount = Number(t.base_amount ?? 0);
+        const displayAmount = Number(t.amount_paid ?? t.base_amount ?? 0);
+        const rowCurrency = getPaidTransactionCurrency(t.paid_currency, currency);
         return {
           id: t.id,
           user_name: t.user?.full_name || 'Anonymous',
           user_email: t.user?.email || '',
-          amount: baseAmount,
-          base_amount: baseAmount,
+          amount: displayAmount,
+          currency: rowCurrency,
+          base_amount: Number(t.base_amount ?? 0),
           quantity: t.quantity || 1,
           votes_before: t.votes_before ?? null,
           votes_after: t.votes_after ?? null,
@@ -332,11 +356,13 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
           item_name: t.contestant?.name || 'Unknown',
         };
       } else if (entityType === 'event') {
+        const rowCurrency = getPaidTransactionCurrency(t.paid_currency, currency);
         return {
           id: t.id,
           user_name: t.guest_name || t.user?.full_name || 'Guest',
           user_email: t.guest_email || t.user?.email || '',
-          amount: Number(t.base_amount ?? t.amount_paid ?? 0),
+          amount: Number(t.amount_paid ?? t.base_amount ?? 0),
+          currency: rowCurrency,
           base_amount: t.base_amount != null ? Number(t.base_amount) : null,
           quantity: t.quantity || 1,
           votes_before: null,
@@ -569,14 +595,14 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
                             {t.votes_after != null ? t.votes_after.toLocaleString() : '—'}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            {formatCurrency(t.amount, currency)}
+                            {formatCurrency(t.amount, t.currency || currency)}
                           </TableCell>
                         </>
                       ) : (
                         <>
                           <TableCell>{t.quantity}</TableCell>
                           <TableCell className="font-medium">
-                            {formatCurrency(t.amount, currency)}
+                            {formatCurrency(t.amount, t.currency || currency)}
                           </TableCell>
                         </>
                       )}
