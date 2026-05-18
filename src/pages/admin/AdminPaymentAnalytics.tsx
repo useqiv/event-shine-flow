@@ -66,8 +66,7 @@ const AdminPaymentAnalytics = () => {
           ...v,
           base_amount:
             baseAmountMap.get(v.transaction_id) ??
-            Number(v.amount_paid) ||
-            catalogFallback,
+            (Number(v.amount_paid) || catalogFallback),
         };
       });
     },

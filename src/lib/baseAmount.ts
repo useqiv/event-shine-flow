@@ -166,8 +166,7 @@ export function resolveVoteBaseAmount(params: {
       normalizedRecordedAmount ??
       normalizedSettledAmount ??
       (walletBase != null ? walletBase : null) ??
-      Number(params.amountPaid) ||
-      0
+      (Number(params.amountPaid) || 0)
     );
   }
 
@@ -219,8 +218,7 @@ export function resolveVotePaidRevenue(params: {
     return (
       normalizedRecordedAmount ??
       normalizedSettledAmount ??
-      Number(params.amountPaid) ||
-      0
+      (Number(params.amountPaid) || 0)
     );
   }
 
