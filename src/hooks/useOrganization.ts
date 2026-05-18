@@ -4,10 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
   getBaseAmountsByTransactionId,
+  getWalletTransactionsByTransactionId,
+  resolveVotePaidRevenue,
   getConvenienceFeeSettings,
   stripConvenienceFeeFromGross,
   type ConvenienceFeeSettings,
 } from '@/lib/baseAmount';
+import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 
 // Types
 export interface OrganizationSettings {
@@ -517,7 +520,9 @@ export const useOrganizationStats = () => {
           .select('amount_paid, net_amount, platform_commission, quantity, contest_id, transaction_id, currency')
           .in('contest_id', contestIds);
 
-        const baseAmountMap = await getBaseAmountsByTransactionId(votes?.map((v: any) => v.transaction_id) || []);
+        const walletTxMap = await getWalletTransactionsByTransactionId(
+          votes?.map((v: any) => v.transaction_id) || [],
+        );
         const { data: voteOptions } = await supabase
           .from('contest_vote_options')
           .select('contest_id, vote_quantity, price')
@@ -529,28 +534,29 @@ export const useOrganizationStats = () => {
         });
         
         votes?.forEach((v: any) => {
-          const currency = v.currency || contestCurrencyMap[v.contest_id] || 'NGN';
-          const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
-          const contestVotePrice = contestVotePriceMap[v.contest_id] || 0;
-          const contestVotePriceAmount =
-            contestVotePrice > 0 ? contestVotePrice * Number(v.quantity || 0) : undefined;
-          const netAmount = Number(v.net_amount);
-          const platformCommission = Number(v.platform_commission);
-          const settledBaseAmount =
-            Number.isFinite(netAmount) && Number.isFinite(platformCommission)
-              ? netAmount + platformCommission
-              : 0;
-          const normalizedSettledAmount = stripConvenienceFeeFromGross(settledBaseAmount, convenienceFeeSettings);
-          const normalizedRecordedAmount = stripConvenienceFeeFromGross(Number(v.amount_paid) || 0, convenienceFeeSettings);
-          // Never rely on raw amount_paid here since it may include convenience fees.
-          const baseAmount =
-            (baseAmountMap.get(v.transaction_id) ??
-              optionPrice ??
-              contestVotePriceAmount ??
-              normalizedSettledAmount ??
-              normalizedRecordedAmount ??
-              0);
-          voteRevenueByCurrency[currency] = (voteRevenueByCurrency[currency] || 0) + Number(baseAmount || 0);
+          const listingCurrency = contestCurrencyMap[v.contest_id] || 'NGN';
+          const walletTx = v.transaction_id ? walletTxMap.get(v.transaction_id) : undefined;
+          const paidCurrency = getPaidTransactionCurrency(
+            v.currency,
+            walletTx?.currency,
+            listingCurrency,
+          );
+          const baseAmount = resolveVotePaidRevenue({
+            paidCurrency,
+            listingCurrency,
+            transactionId: v.transaction_id,
+            walletAmount: walletTx?.amount,
+            walletCurrency: walletTx?.currency,
+            amountPaid: v.amount_paid,
+            netAmount: v.net_amount,
+            platformCommission: v.platform_commission,
+            quantity: v.quantity,
+            voteOptionPrice: voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`) ?? null,
+            contestVotePrice: contestVotePriceMap[v.contest_id] || 0,
+            convenienceFeeSettings,
+          });
+          voteRevenueByCurrency[paidCurrency] =
+            (voteRevenueByCurrency[paidCurrency] || 0) + Number(baseAmount || 0);
           totalVotes += v.quantity;
         });
       }

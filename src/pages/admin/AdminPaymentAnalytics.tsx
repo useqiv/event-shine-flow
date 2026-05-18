@@ -55,12 +55,21 @@ const AdminPaymentAnalytics = () => {
         data?.map((v: any) => v.transaction_id) || []
       );
 
-      return (data || []).map((v: any) => ({
-        ...v,
-        base_amount:
-          baseAmountMap.get(v.transaction_id) ??
-          ((Number(v.contest?.vote_price) || 0) * (Number(v.quantity) || 0)),
-      }));
+      return (data || []).map((v: any) => {
+        const listing = (v.contest?.vote_currency || 'NGN').toUpperCase();
+        const paid = (v.currency || listing).toUpperCase();
+        const catalogFallback =
+          paid === listing
+            ? (Number(v.contest?.vote_price) || 0) * (Number(v.quantity) || 0)
+            : 0;
+        return {
+          ...v,
+          base_amount:
+            baseAmountMap.get(v.transaction_id) ??
+            Number(v.amount_paid) ||
+            catalogFallback,
+        };
+      });
     },
   });
 

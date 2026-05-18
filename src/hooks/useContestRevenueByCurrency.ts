@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  getBaseAmountsByTransactionId,
   getConvenienceFeeSettings,
   getWalletTransactionsByTransactionId,
-  resolveVoteBaseAmount,
-  stripConvenienceFeeFromGross,
+  resolveVotePaidRevenue,
 } from '@/lib/baseAmount';
 import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 import { normalizeRevenueByCurrency } from '@/lib/revenueByCurrency';
@@ -47,9 +45,8 @@ async function aggregateVoteRevenueForContests(contestIds: string[]) {
   if (error) throw error;
 
   const voteRows = (votes || []) as VoteRow[];
-  const [convenienceFeeSettings, baseAmountMap, walletTxMap, voteOptionsRes] = await Promise.all([
+  const [convenienceFeeSettings, walletTxMap, voteOptionsRes] = await Promise.all([
     getConvenienceFeeSettings(),
-    getBaseAmountsByTransactionId(voteRows.map((v) => v.transaction_id)),
     getWalletTransactionsByTransactionId(voteRows.map((v) => v.transaction_id)),
     supabase
       .from('contest_vote_options')
@@ -78,37 +75,21 @@ async function aggregateVoteRevenueForContests(contestIds: string[]) {
       contestCurrencyMap[v.contest_id],
     );
 
-    const optionPrice = voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`);
-    const contestVotePrice = contestVotePriceMap[v.contest_id] || 0;
-    const contestVotePriceAmount =
-      contestVotePrice > 0 ? contestVotePrice * Number(v.quantity || 0) : undefined;
-
-    const netAmount = Number(v.net_amount);
-    const platformCommission = Number(v.platform_commission);
-    const settledBaseAmount =
-      Number.isFinite(netAmount) && Number.isFinite(platformCommission)
-        ? netAmount + platformCommission
-        : 0;
-    const normalizedSettledAmount = stripConvenienceFeeFromGross(
-      settledBaseAmount,
-      convenienceFeeSettings,
-    );
-    const normalizedRecordedAmount = stripConvenienceFeeFromGross(
-      Number(v.amount_paid) || 0,
-      convenienceFeeSettings,
-    );
-
-    const baseAmount = resolveVoteBaseAmount({
+    const listingCurrency = contestCurrencyMap[v.contest_id] || 'NGN';
+    const baseAmount = resolveVotePaidRevenue({
+      paidCurrency,
+      listingCurrency,
       transactionId: v.transaction_id,
-      walletBaseAmount: walletTx?.amount ?? baseAmountMap.get(v.transaction_id!),
+      walletAmount: walletTx?.amount,
+      walletCurrency: walletTx?.currency,
       amountPaid: v.amount_paid,
       netAmount: v.net_amount,
       platformCommission: v.platform_commission,
       quantity: v.quantity,
-      voteOptionPrice: optionPrice ?? null,
-      contestVotePrice,
+      voteOptionPrice: voteOptionPriceMap.get(`${v.contest_id}:${v.quantity}`) ?? null,
+      contestVotePrice: contestVotePriceMap[v.contest_id] || 0,
       convenienceFeeSettings,
-    }) || normalizedSettledAmount || normalizedRecordedAmount || 0;
+    });
 
     const bucket = result[v.contest_id];
     if (!bucket) return;

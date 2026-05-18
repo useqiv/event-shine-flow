@@ -6,10 +6,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  getBaseAmountsByTransactionId,
   getConvenienceFeeSettings,
-  resolveVoteBaseAmount,
+  getWalletTransactionsByTransactionId,
+  resolveVotePaidRevenue,
 } from '@/lib/baseAmount';
+import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 import {
   calculateFullAnalytics,
   type VoteRecord,
@@ -110,10 +111,11 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
         const contestants = contestantsRes.data || [];
         const contestVotePrice = Number(contestData?.vote_price) || 0;
 
-        const [convenienceFeeSettings, baseAmountMap] = await Promise.all([
+        const [convenienceFeeSettings, walletTxMap] = await Promise.all([
           getConvenienceFeeSettings(),
-          getBaseAmountsByTransactionId(votes.map((v) => v.transaction_id)),
+          getWalletTransactionsByTransactionId(votes.map((v) => v.transaction_id)),
         ]);
+        const listingCurrency = contestData?.vote_currency || 'NGN';
 
         const voteOptionPriceMap = new Map(
           (voteOptionsRes.data || []).map((option) => [
@@ -124,10 +126,18 @@ export const useContestAnalyticsData = (contestId: string | undefined): UseConte
 
         const voteRecords: VoteRecord[] = votes.map((v) => {
           const transactionId = v.transaction_id;
-          const walletBaseAmount = transactionId ? baseAmountMap.get(transactionId) : undefined;
-          const base_amount = resolveVoteBaseAmount({
+          const walletTx = transactionId ? walletTxMap.get(transactionId) : undefined;
+          const paidCurrency = getPaidTransactionCurrency(
+            v.currency,
+            walletTx?.currency,
+            listingCurrency,
+          );
+          const base_amount = resolveVotePaidRevenue({
+            paidCurrency,
+            listingCurrency,
             transactionId,
-            walletBaseAmount,
+            walletAmount: walletTx?.amount,
+            walletCurrency: walletTx?.currency,
             amountPaid: v.amount_paid,
             netAmount: v.net_amount,
             platformCommission: v.platform_commission,

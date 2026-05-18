@@ -114,8 +114,16 @@ export function resolveVoteBaseAmount(params: {
   voteOptionPrice?: number | null;
   contestVotePrice?: number | null;
   convenienceFeeSettings: ConvenienceFeeSettings;
+  /** Currency the customer paid in (votes.currency). */
+  paidCurrency?: string | null;
+  /** Contest listing currency (contests.vote_currency). */
+  listingCurrency?: string | null;
 }): number {
   const quantity = params.quantity || 1;
+  const paid = (params.paidCurrency || params.listingCurrency || 'NGN').toUpperCase();
+  const listing = (params.listingCurrency || params.paidCurrency || 'NGN').toUpperCase();
+  const crossCurrency = paid !== listing;
+
   const netAmount = Number(params.netAmount);
   const platformCommission = Number(params.platformCommission);
   const settledBaseAmount =
@@ -125,11 +133,11 @@ export function resolveVoteBaseAmount(params: {
 
   const normalizedSettledAmount = stripConvenienceFeeFromGross(
     settledBaseAmount,
-    params.convenienceFeeSettings
+    params.convenienceFeeSettings,
   );
   const normalizedRecordedAmount = stripConvenienceFeeFromGross(
     Number(params.amountPaid) || 0,
-    params.convenienceFeeSettings
+    params.convenienceFeeSettings,
   );
 
   const contestVotePrice = params.contestVotePrice || 0;
@@ -142,19 +150,74 @@ export function resolveVoteBaseAmount(params: {
       ? Number(params.walletBaseAmount)
       : null;
 
-  // wallet_transactions.amount should be fee-free; if it exceeds catalog price it may include fees
-  if (catalogBase != null && walletBase != null && walletBase > catalogBase + 0.01) {
+  // Only compare wallet to catalog when both are in the same currency
+  if (
+    !crossCurrency &&
+    catalogBase != null &&
+    walletBase != null &&
+    walletBase > catalogBase + 0.01
+  ) {
     walletBase = catalogBase;
+  }
+
+  // Cross-currency payment: never use listing price (e.g. ₦2000) as USD revenue
+  if (crossCurrency) {
+    return (
+      walletBase ??
+      normalizedSettledAmount ??
+      normalizedRecordedAmount ??
+      Number(params.amountPaid) ||
+      0
+    );
   }
 
   return (
     walletBase ??
-    params.voteOptionPrice ??
-    contestVotePriceAmount ??
     normalizedSettledAmount ??
     normalizedRecordedAmount ??
+    params.voteOptionPrice ??
+    contestVotePriceAmount ??
     0
   );
+}
+
+/** Revenue amount in the currency the voter paid — safe for multi-currency contests. */
+export function resolveVotePaidRevenue(params: {
+  paidCurrency: string;
+  listingCurrency: string;
+  transactionId?: string | null;
+  walletAmount?: number | null;
+  walletCurrency?: string | null;
+  amountPaid?: number | null;
+  netAmount?: number | null;
+  platformCommission?: number | null;
+  quantity?: number;
+  voteOptionPrice?: number | null;
+  contestVotePrice?: number | null;
+  convenienceFeeSettings: ConvenienceFeeSettings;
+}): number {
+  const paid = (params.paidCurrency || 'NGN').toUpperCase();
+  const walletCurrency = params.walletCurrency?.toUpperCase();
+  const walletAmount =
+    params.transactionId &&
+    params.walletAmount != null &&
+    (!walletCurrency || walletCurrency === paid)
+      ? Number(params.walletAmount)
+      : null;
+
+  return resolveVoteBaseAmount({
+    transactionId: params.transactionId,
+    walletBaseAmount: walletAmount,
+    amountPaid: params.amountPaid,
+    netAmount: params.netAmount,
+    platformCommission: params.platformCommission,
+    quantity: params.quantity,
+    voteOptionPrice: params.voteOptionPrice,
+    contestVotePrice: params.contestVotePrice,
+    convenienceFeeSettings: params.convenienceFeeSettings,
+    paidCurrency: paid,
+    listingCurrency: (params.listingCurrency || 'NGN').toUpperCase(),
+  });
 }
 
 export function resolveTicketBaseAmount(params: {

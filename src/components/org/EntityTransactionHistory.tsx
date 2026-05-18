@@ -16,7 +16,7 @@ import {
   getBaseAmountsByTransactionId,
   getWalletTransactionsByTransactionId,
   getConvenienceFeeSettings,
-  resolveVoteBaseAmount,
+  resolveVotePaidRevenue,
 } from '@/lib/baseAmount';
 
 type EntityType = 'contest' | 'event' | 'campaign';
@@ -193,9 +193,12 @@ const EntityTransactionHistory: React.FC<EntityTransactionHistoryProps> = ({
             walletTx?.currency,
             currency,
           );
-          const base_amount = resolveVoteBaseAmount({
+          const base_amount = resolveVotePaidRevenue({
+            paidCurrency: paid_currency,
+            listingCurrency: currency,
             transactionId,
-            walletBaseAmount,
+            walletAmount: walletTx?.amount,
+            walletCurrency: walletTx?.currency,
             amountPaid: v.amount_paid,
             netAmount: v.net_amount,
             platformCommission: v.platform_commission,
