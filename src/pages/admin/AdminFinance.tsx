@@ -1,58 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAdminStatistics, usePlatformSettings } from '@/hooks/useAdminData';
 import { usePlatformCurrency } from '@/hooks/usePlatformCurrency';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencySelector from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
-import { 
-  DollarSign, 
-  Wallet, 
+import {
+  DollarSign,
+  Wallet,
   CreditCard,
   BarChart3,
-  PieChart,
   Percent,
   Vote,
   Ticket,
-  Users
+  Users,
+  Coins,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart as RechartsPie,
   Pie,
   Cell,
-  Legend
+  Legend,
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
-import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import {
+  buildRevenueBreakdownPie,
+  fetchAdminFinanceOverview,
+  getFinanceStatsForCurrency,
+} from '@/lib/adminFinanceRevenue';
+import { normalizeRevenueByCurrency } from '@/lib/revenueByCurrency';
 
 const AdminFinance: React.FC = () => {
   const { data: stats, isLoading: statsLoading } = useAdminStatistics();
-
-  // Default currency for admin pages (from platform settings)
   const platformCurrency = usePlatformCurrency();
-  
-  // Selected currency filter - shows only transactions in this currency
   const [selectedCurrency, setSelectedCurrency] = useState<string>(platformCurrency);
-  
-  // Update selected currency when platform currency loads
+
   useEffect(() => {
     if (platformCurrency) {
       setSelectedCurrency(platformCurrency);
     }
   }, [platformCurrency]);
 
-  // Fetch real monthly revenue data from votes and tickets - filtered by selected currency
+  const { data: financeOverview, isLoading: overviewLoading } = useQuery({
+    queryKey: ['admin-finance-overview'],
+    queryFn: () => fetchAdminFinanceOverview(),
+  });
+
   const { data: revenueData = [], isLoading: revenueLoading } = useQuery({
     queryKey: ['admin-monthly-revenue', selectedCurrency],
     queryFn: async () => {
@@ -61,141 +66,96 @@ const AdminFinance: React.FC = () => {
         const date = subMonths(new Date(), i);
         const start = startOfMonth(date);
         const end = endOfMonth(date);
-        
-        // Get votes revenue for this month - filter by vote currency
-        const { data: votes } = await supabase
-          .from('votes')
-          .select('transaction_id, quantity, contests!inner(vote_currency, vote_price)')
-          .eq('contests.vote_currency', selectedCurrency)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-        
-        // Get tickets revenue for this month - filter by ticket type currency
-        const { data: tickets } = await supabase
-          .from('tickets')
-          .select('transaction_id, quantity, ticket_types!inner(currency, price)')
-          .eq('ticket_types.currency', selectedCurrency)
-          .gte('created_at', start.toISOString())
-          .lte('created_at', end.toISOString());
-
-        const voteBaseAmountMap = await getBaseAmountsByTransactionId(
-          votes?.map((v: any) => v.transaction_id) || []
-        );
-        const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
-          tickets?.map((t: any) => t.transaction_id) || []
-        );
-
-        const votesRevenue = votes?.reduce((sum, v: any) => {
-          const fallback = (Number(v.contests?.vote_price) || 0) * (Number(v.quantity) || 0);
-          return sum + (voteBaseAmountMap.get(v.transaction_id) ?? fallback);
-        }, 0) || 0;
-        const ticketsRevenue = tickets?.reduce((sum, t: any) => {
-          const fallback = (Number(t.ticket_types?.price) || 0) * (Number(t.quantity) || 0);
-          return sum + (ticketBaseAmountMap.get(t.transaction_id) ?? fallback);
-        }, 0) || 0;
-        
+        const monthOverview = await fetchAdminFinanceOverview({
+          start: start.toISOString(),
+          end: end.toISOString(),
+        });
+        const monthStats = getFinanceStatsForCurrency(monthOverview, selectedCurrency);
         months.push({
           month: format(date, 'MMM'),
-          votes: votesRevenue,
-          tickets: ticketsRevenue,
+          votes: monthStats.votes,
+          tickets: monthStats.tickets,
+          donations: monthStats.donations,
+          forms: monthStats.forms,
         });
       }
       return months;
     },
   });
 
-  // Fetch actual revenue breakdown from database - filtered by selected currency
-  const { data: currencyStats } = useQuery({
-    queryKey: ['admin-revenue-by-currency', selectedCurrency],
+  const { data: currencyStats, isLoading: currencyStatsLoading } = useQuery({
+    queryKey: ['admin-revenue-by-currency', selectedCurrency, financeOverview],
     queryFn: async () => {
-      // Get votes revenue in selected currency
-      const { data: votes } = await supabase
-        .from('votes')
-        .select('transaction_id, quantity, contests!inner(vote_currency, vote_price)')
-        .eq('contests.vote_currency', selectedCurrency);
-      
-      // Get tickets revenue in selected currency
-      const { data: tickets } = await supabase
-        .from('tickets')
-        .select('transaction_id, quantity, ticket_types!inner(currency, price)')
-        .eq('ticket_types.currency', selectedCurrency);
+      const source = getFinanceStatsForCurrency(financeOverview, selectedCurrency);
+      const total = source.total;
 
-      const voteBaseAmountMap = await getBaseAmountsByTransactionId(
-        votes?.map((v: any) => v.transaction_id) || []
-      );
-      const ticketBaseAmountMap = await getBaseAmountsByTransactionId(
-        tickets?.map((t: any) => t.transaction_id) || []
-      );
-
-      const votesTotal = votes?.reduce((sum, v: any) => {
-        const fallback = (Number(v.contests?.vote_price) || 0) * (Number(v.quantity) || 0);
-        return sum + (voteBaseAmountMap.get(v.transaction_id) ?? fallback);
-      }, 0) || 0;
-      const ticketsTotal = tickets?.reduce((sum, t: any) => {
-        const fallback = (Number(t.ticket_types?.price) || 0) * (Number(t.quantity) || 0);
-        return sum + (ticketBaseAmountMap.get(t.transaction_id) ?? fallback);
-      }, 0) || 0;
-      const total = votesTotal + ticketsTotal;
-      
-      // Get pending payouts filtered by currency
       const { data: pendingPayouts } = await supabase
         .from('payouts')
         .select('amount, currency')
         .eq('status', 'pending')
         .eq('currency', selectedCurrency);
-      
-      const pendingTotal = pendingPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      
-      // Get completed payouts filtered by currency
+
       const { data: completedPayouts } = await supabase
         .from('payouts')
         .select('amount, currency')
         .eq('status', 'completed')
         .eq('currency', selectedCurrency);
-      
+
+      const pendingTotal = pendingPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
       const completedTotal = completedPayouts?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      
+
       return {
-        votesTotal,
-        ticketsTotal,
-        total,
+        ...source,
         pendingPayouts: pendingTotal,
         completedPayouts: completedTotal,
-        breakdown: total === 0 ? [
-          { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
-          { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
-        ] : [
-          { name: 'Votes', value: Math.round((votesTotal / total) * 100), color: 'hsl(var(--chart-1))' },
-          { name: 'Tickets', value: Math.round((ticketsTotal / total) * 100), color: 'hsl(var(--chart-2))' },
-        ]
+        breakdown: buildRevenueBreakdownPie(source),
       };
     },
+    enabled: !!financeOverview,
   });
 
-  const revenueBreakdown = currencyStats?.breakdown || [
-    { name: 'Votes', value: 0, color: 'hsl(var(--chart-1))' },
-    { name: 'Tickets', value: 0, color: 'hsl(var(--chart-2))' },
-  ];
+  const allCurrenciesGross = useMemo(() => {
+    if (!financeOverview) return {};
+    return normalizeRevenueByCurrency(
+      Object.fromEntries(
+        Object.entries(financeOverview.byCurrency).map(([code, s]) => [code, s.total]),
+      ),
+    );
+  }, [financeOverview]);
 
-  // Fetch actual commission rates from platform settings
+  const revenueBreakdown = currencyStats?.breakdown || buildRevenueBreakdownPie(
+    getFinanceStatsForCurrency(financeOverview, selectedCurrency),
+  );
+
   const { data: platformSettings } = usePlatformSettings();
-  const voteCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'vote_commission_percentage')?.setting_value || '10');
-  const ticketCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'ticket_commission_percentage')?.setting_value || '10');
-  const campaignCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'campaign_commission_percentage')?.setting_value || '10');
-  const influencerCommission = parseFloat(platformSettings?.find(s => s.setting_key === 'influencer_commission_percentage')?.setting_value || '5');
-  
-  // Calculate platform earnings using actual commission rates per revenue type
-  const votesRevenue = currencyStats?.votesTotal || 0;
-  const ticketsRevenue = currencyStats?.ticketsTotal || 0;
+  const voteCommission = parseFloat(
+    platformSettings?.find((s) => s.setting_key === 'vote_commission_percentage')?.setting_value ||
+      '10',
+  );
+  const ticketCommission = parseFloat(
+    platformSettings?.find((s) => s.setting_key === 'ticket_commission_percentage')?.setting_value ||
+      '10',
+  );
+  const campaignCommission = parseFloat(
+    platformSettings?.find((s) => s.setting_key === 'campaign_commission_percentage')
+      ?.setting_value || '10',
+  );
+  const influencerCommission = parseFloat(
+    platformSettings?.find((s) => s.setting_key === 'influencer_commission_percentage')
+      ?.setting_value || '5',
+  );
+
+  const votesRevenue = currencyStats?.votes || 0;
+  const ticketsRevenue = currencyStats?.tickets || 0;
   const totalRevenue = currencyStats?.total || 0;
-  const platformEarnings = (votesRevenue * (voteCommission / 100)) + (ticketsRevenue * (ticketCommission / 100));
+  const platformEarnings =
+    votesRevenue * (voteCommission / 100) + ticketsRevenue * (ticketCommission / 100);
   const pendingPayouts = currencyStats?.pendingPayouts || 0;
   const completedPayouts = currencyStats?.completedPayouts || 0;
-  // Net profit = Platform earnings (commission) - nothing (platform keeps all commission)
-  // Available = Net revenue (org share) - pending - completed payouts
-  const netRevenue = totalRevenue - platformEarnings; // Org's share before payouts
+  const netRevenue = totalRevenue - platformEarnings;
   const availableForPayout = netRevenue - pendingPayouts - completedPayouts;
-  const isLoading = statsLoading || revenueLoading;
+
+  const isLoading = statsLoading || overviewLoading || revenueLoading || currencyStatsLoading;
 
   if (isLoading) {
     return (
@@ -220,26 +180,117 @@ const AdminFinance: React.FC = () => {
     );
   }
 
+  const hasMultipleCurrencies = Object.keys(allCurrenciesGross).length > 1;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header with Currency Selector */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Finance & Revenue</h1>
-            <p className="text-muted-foreground">Platform financial overview</p>
+            <p className="text-muted-foreground">
+              Platform financial overview — amounts use actual paid currency
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Filter by currency:</span>
-            <CurrencySelector 
-              value={selectedCurrency} 
+            <span className="text-sm text-muted-foreground">View currency:</span>
+            <CurrencySelector
+              value={selectedCurrency}
               onValueChange={setSelectedCurrency}
               className="w-[180px]"
             />
           </div>
         </div>
 
-        {/* Key Financial Stats - Shows only transactions in selected currency */}
+        {/* All currencies at a glance */}
+        {Object.keys(allCurrenciesGross).length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Coins className="h-5 w-5" />
+                Revenue by currency
+              </CardTitle>
+              <CardDescription>
+                {hasMultipleCurrencies
+                  ? 'Totals are never mixed across currencies. USD reflects amount_paid on USD votes, not listing price.'
+                  : 'All platform revenue in one currency.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {financeOverview?.activeCurrencies.map((code) => {
+                  const source = financeOverview.byCurrency[code];
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setSelectedCurrency(code)}
+                      className={`text-left p-4 rounded-lg border transition-colors ${
+                        selectedCurrency === code
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="outline">{code}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {(source?.voteCount || 0) +
+                            (source?.ticketCount || 0) +
+                            (source?.donationCount || 0) +
+                            (source?.formCount || 0)}{' '}
+                          txns
+                        </span>
+                      </div>
+                      <CurrencyDisplay
+                        amount={source?.total || 0}
+                        currency={code}
+                        size="lg"
+                        showConversion={false}
+                      />
+                      <div className="mt-2 space-y-0.5 text-[10px] text-muted-foreground">
+                        {(source?.votes || 0) > 0 && (
+                          <div>
+                            Votes:{' '}
+                            <CurrencyDisplay
+                              amount={source.votes}
+                              currency={code}
+                              size="sm"
+                              showConversion={false}
+                            />
+                          </div>
+                        )}
+                        {(source?.tickets || 0) > 0 && (
+                          <div>
+                            Tickets:{' '}
+                            <CurrencyDisplay
+                              amount={source.tickets}
+                              currency={code}
+                              size="sm"
+                              showConversion={false}
+                            />
+                          </div>
+                        )}
+                        {(source?.donations || 0) > 0 && (
+                          <div>
+                            Donations:{' '}
+                            <CurrencyDisplay
+                              amount={source.donations}
+                              currency={code}
+                              size="sm"
+                              showConversion={false}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Key Financial Stats — selected currency only */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -252,9 +303,11 @@ const AdminFinance: React.FC = () => {
               <div className="text-2xl font-bold">
                 <CurrencyDisplay amount={totalRevenue} currency={selectedCurrency} size="lg" />
               </div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
-                Transactions in {selectedCurrency} only
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Paid in {selectedCurrency} only
+                {currencyStats?.voteCount ? ` · ${currencyStats.voteCount} votes` : ''}
+                {currencyStats?.ticketCount ? ` · ${currencyStats.ticketCount} tickets` : ''}
+              </p>
             </CardContent>
           </Card>
 
@@ -269,9 +322,7 @@ const AdminFinance: React.FC = () => {
               <div className="text-2xl font-bold">
                 <CurrencyDisplay amount={platformEarnings} currency={selectedCurrency} size="lg" />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Based on configured rates
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Based on configured rates</p>
             </CardContent>
           </Card>
 
@@ -286,9 +337,7 @@ const AdminFinance: React.FC = () => {
               <div className="text-2xl font-bold text-warning">
                 <CurrencyDisplay amount={pendingPayouts} currency={selectedCurrency} size="lg" />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Awaiting processing
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Awaiting processing</p>
             </CardContent>
           </Card>
 
@@ -300,12 +349,12 @@ const AdminFinance: React.FC = () => {
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${availableForPayout >= 0 ? 'text-success' : 'text-destructive'}`}>
+              <div
+                className={`text-2xl font-bold ${availableForPayout >= 0 ? 'text-success' : 'text-destructive'}`}
+              >
                 <CurrencyDisplay amount={availableForPayout} currency={selectedCurrency} size="lg" />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Net revenue - payouts
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Net revenue − payouts</p>
             </CardContent>
           </Card>
         </div>
@@ -314,8 +363,10 @@ const AdminFinance: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle>Revenue Trend</CardTitle>
-              <CardDescription>Monthly revenue from votes and tickets</CardDescription>
+              <CardTitle>Revenue Trend ({selectedCurrency})</CardTitle>
+              <CardDescription>
+                Monthly revenue in {selectedCurrency} from votes, tickets, donations & forms
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -323,38 +374,48 @@ const AdminFinance: React.FC = () => {
                   <AreaChart data={revenueData}>
                     <defs>
                       <linearGradient id="colorVotes" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => formatCurrency(value / 1000, selectedCurrency).replace(/,/g, '') + 'k'} />
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value, selectedCurrency)}
+                    <YAxis
+                      className="text-xs"
+                      tickFormatter={(value) =>
+                        formatCurrency(value / 1000, selectedCurrency).replace(/,/g, '') + 'k'
+                      }
+                    />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [
+                        formatCurrency(value, selectedCurrency),
+                        name,
+                      ]}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
                       }}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="votes" 
-                      stroke="hsl(var(--chart-1))" 
-                      fillOpacity={1} 
-                      fill="url(#colorVotes)" 
+                    <Area
+                      type="monotone"
+                      dataKey="votes"
+                      stroke="hsl(var(--chart-1))"
+                      fillOpacity={1}
+                      fill="url(#colorVotes)"
+                      name="Votes"
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="tickets" 
-                      stroke="hsl(var(--chart-2))" 
-                      fillOpacity={1} 
-                      fill="url(#colorTickets)" 
+                    <Area
+                      type="monotone"
+                      dataKey="tickets"
+                      stroke="hsl(var(--chart-2))"
+                      fillOpacity={1}
+                      fill="url(#colorTickets)"
+                      name="Tickets"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -365,7 +426,7 @@ const AdminFinance: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Revenue Breakdown</CardTitle>
-              <CardDescription>Distribution by source</CardDescription>
+              <CardDescription>Distribution in {selectedCurrency}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[250px]">
@@ -393,7 +454,6 @@ const AdminFinance: React.FC = () => {
           </Card>
         </div>
 
-        {/* Additional Stats */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
@@ -437,22 +497,47 @@ const AdminFinance: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Revenue Sources</CardTitle>
-              <CardDescription>Detailed breakdown of platform revenue</CardDescription>
+              <CardTitle>Revenue Sources ({selectedCurrency})</CardTitle>
+              <CardDescription>Detailed breakdown for selected currency</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {revenueBreakdown.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span>{item.name} Revenue</span>
+              {[
+                { name: 'Votes', amount: votesRevenue, color: 'hsl(var(--chart-1))' },
+                { name: 'Tickets', amount: ticketsRevenue, color: 'hsl(var(--chart-2))' },
+                {
+                  name: 'Donations',
+                  amount: currencyStats?.donations || 0,
+                  color: 'hsl(var(--chart-3))',
+                },
+                { name: 'Forms', amount: currencyStats?.forms || 0, color: 'hsl(var(--chart-4))' },
+              ]
+                .filter((item) => item.amount > 0)
+                .map((item) => (
+                  <div key={item.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span>{item.name}</span>
+                    </div>
+                    <span className="font-medium">
+                      <CurrencyDisplay
+                        amount={item.amount}
+                        currency={selectedCurrency}
+                        showConversion={false}
+                      />
+                      {totalRevenue > 0 && (
+                        <span className="text-muted-foreground text-sm ml-1">
+                          ({Math.round((item.amount / totalRevenue) * 100)}%)
+                        </span>
+                      )}
+                    </span>
                   </div>
-                  <span className="font-medium">
-                    <CurrencyDisplay amount={totalRevenue * (item.value / 100)} currency={selectedCurrency} />
-                    <span className="text-muted-foreground text-sm ml-1">({item.value}%)</span>
-                  </span>
-                </div>
-              ))}
+                ))}
+              {totalRevenue === 0 && (
+                <p className="text-sm text-muted-foreground">No revenue in {selectedCurrency}</p>
+              )}
             </CardContent>
           </Card>
 
