@@ -1,23 +1,25 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Bitcoin, Clock, CheckCircle, XCircle, AlertTriangle, ArrowRight } from 'lucide-react';
+import { CreditCard, Bitcoin, Clock, CheckCircle, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import CurrencyDisplay from '@/components/ui/currency-display';
+import { aggregateAmountsByCurrency } from '@/lib/revenueByCurrency';
 
 interface PaymentStats {
   flutterwave_pending: number;
   flutterwave_completed: number;
-  flutterwave_total_amount: number;
+  flutterwave_by_currency: Record<string, number>;
   crypto_pending: number;
   crypto_pending_verification: number;
   crypto_completed: number;
-  crypto_total_amount: number;
+  crypto_by_currency: Record<string, number>;
   today_transactions: number;
-  today_revenue: number;
+  today_revenue_by_currency: Record<string, number>;
 }
 
 const PaymentStatsWidget: React.FC = () => {
@@ -27,68 +29,116 @@ const PaymentStatsWidget: React.FC = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get today's votes
       const { data: todayVotes } = await supabase
         .from('votes')
-        .select('amount_paid, payment_method')
+        .select('amount_paid, payment_method, currency, contests(vote_currency)')
         .gte('created_at', today.toISOString());
 
-      // Get today's tickets  
       const { data: todayTickets } = await supabase
         .from('tickets')
-        .select('amount_paid, payment_method')
+        .select('amount_paid, payment_method, ticket_types(currency)')
         .gte('created_at', today.toISOString());
 
-      // Calculate Flutterwave stats from votes and tickets
-      const flutterwaveVotes = todayVotes?.filter(v => v.payment_method === 'flutterwave') || [];
-      const flutterwaveTickets = todayTickets?.filter(t => t.payment_method === 'flutterwave') || [];
+      const voteCurrency = (v: any) =>
+        (v.currency || v.contests?.vote_currency || 'NGN').toUpperCase();
+      const ticketCurrency = (t: any) =>
+        (t.ticket_types?.currency || 'NGN').toUpperCase();
+
+      const flutterwaveVotes = todayVotes?.filter((v) => v.payment_method === 'flutterwave') || [];
+      const flutterwaveTickets = todayTickets?.filter((t) => t.payment_method === 'flutterwave') || [];
       const flutterwaveCount = flutterwaveVotes.length + flutterwaveTickets.length;
-      const flutterwaveAmount = 
-        flutterwaveVotes.reduce((sum, v) => sum + v.amount_paid, 0) +
-        flutterwaveTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+      const flutterwaveByCurrency = aggregateAmountsByCurrency([
+        ...flutterwaveVotes.map((v: any) => ({
+          amount: v.amount_paid,
+          currency: voteCurrency(v),
+        })),
+        ...flutterwaveTickets.map((t: any) => ({
+          amount: t.amount_paid,
+          currency: ticketCurrency(t),
+        })),
+      ]);
 
-      // Calculate Crypto stats from votes and tickets
-      const cryptoVotes = todayVotes?.filter(v => v.payment_method === 'crypto') || [];
-      const cryptoTickets = todayTickets?.filter(t => t.payment_method === 'crypto') || [];
+      const cryptoVotes = todayVotes?.filter((v) => v.payment_method === 'crypto') || [];
+      const cryptoTickets = todayTickets?.filter((t) => t.payment_method === 'crypto') || [];
       const cryptoCount = cryptoVotes.length + cryptoTickets.length;
-      const cryptoAmount = 
-        cryptoVotes.reduce((sum, v) => sum + v.amount_paid, 0) +
-        cryptoTickets.reduce((sum, t) => sum + t.amount_paid, 0);
+      const cryptoByCurrency = aggregateAmountsByCurrency([
+        ...cryptoVotes.map((v: any) => ({
+          amount: v.amount_paid,
+          currency: voteCurrency(v),
+        })),
+        ...cryptoTickets.map((t: any) => ({
+          amount: t.amount_paid,
+          currency: ticketCurrency(t),
+        })),
+      ]);
 
-      // Get pending crypto verifications from fraud_alerts
       const { data: pendingVerifications } = await supabase
         .from('fraud_alerts')
         .select('id')
         .eq('alert_type', 'crypto_payment_verification')
         .eq('status', 'pending');
 
-      // Calculate today's totals
       const todayVoteCount = todayVotes?.length || 0;
       const todayTicketCount = todayTickets?.length || 0;
-      const todayVoteRevenue = todayVotes?.reduce((sum, v) => sum + v.amount_paid, 0) || 0;
-      const todayTicketRevenue = todayTickets?.reduce((sum, t) => sum + t.amount_paid, 0) || 0;
+      const todayRevenueByCurrency = aggregateAmountsByCurrency([
+        ...(todayVotes || []).map((v: any) => ({
+          amount: v.amount_paid,
+          currency: voteCurrency(v),
+        })),
+        ...(todayTickets || []).map((t: any) => ({
+          amount: t.amount_paid,
+          currency: ticketCurrency(t),
+        })),
+      ]);
 
       return {
-        flutterwave_pending: 0, // We don't track pending at vote/ticket level
+        flutterwave_pending: 0,
         flutterwave_completed: flutterwaveCount,
-        flutterwave_total_amount: flutterwaveAmount,
+        flutterwave_by_currency: flutterwaveByCurrency,
         crypto_pending: 0,
         crypto_pending_verification: pendingVerifications?.length || 0,
         crypto_completed: cryptoCount,
-        crypto_total_amount: cryptoAmount,
+        crypto_by_currency: cryptoByCurrency,
         today_transactions: todayVoteCount + todayTicketCount,
-        today_revenue: todayVoteRevenue + todayTicketRevenue,
+        today_revenue_by_currency: todayRevenueByCurrency,
       };
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const todayCurrencies = useMemo(
+    () =>
+      Object.keys(stats?.today_revenue_by_currency || {}).sort(
+        (a, b) =>
+          (stats?.today_revenue_by_currency[b] || 0) -
+          (stats?.today_revenue_by_currency[a] || 0),
+      ),
+    [stats?.today_revenue_by_currency],
+  );
+
+  const renderByCurrency = (byCurrency: Record<string, number> | undefined) => {
+    const entries = Object.entries(byCurrency || {}).sort(
+      ([, a], [, b]) => b - a,
+    );
+    if (entries.length === 0) {
+      return <p className="text-lg font-semibold text-muted-foreground">—</p>;
+    }
+    if (entries.length === 1) {
+      const [code, amount] = entries[0];
+      return (
+        <CurrencyDisplay amount={amount} currency={code} size="lg" showConversion={false} />
+      );
+    }
+    return (
+      <div className="space-y-1">
+        {entries.map(([code, amount]) => (
+          <div key={code} className="flex items-center justify-between gap-2">
+            <Badge variant="outline" className="text-[10px]">{code}</Badge>
+            <CurrencyDisplay amount={amount} currency={code} size="sm" showConversion={false} />
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -118,20 +168,48 @@ const PaymentStatsWidget: React.FC = () => {
         <CardDescription>Real-time payment processing overview</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Today's Summary */}
         <div className="grid grid-cols-2 gap-4 p-4 bg-primary/5 rounded-lg">
           <div>
-            <p className="text-sm text-muted-foreground">Today's Transactions</p>
+            <p className="text-sm text-muted-foreground">Today&apos;s Transactions</p>
             <p className="text-2xl font-bold">{stats?.today_transactions || 0}</p>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Today's Revenue</p>
-            <p className="text-2xl font-bold text-primary">{formatCurrency(stats?.today_revenue || 0)}</p>
+            <p className="text-sm text-muted-foreground">Today&apos;s Revenue</p>
+            {todayCurrencies.length <= 1 ? (
+              <p className="text-2xl font-bold text-primary">
+                {todayCurrencies.length === 1 ? (
+                  <CurrencyDisplay
+                    amount={stats?.today_revenue_by_currency[todayCurrencies[0]] || 0}
+                    currency={todayCurrencies[0]}
+                    size="lg"
+                    showConversion={false}
+                  />
+                ) : (
+                  '—'
+                )}
+              </p>
+            ) : (
+              <div className="mt-1 space-y-1">
+                {todayCurrencies.map((code) => (
+                  <div key={code} className="flex items-center justify-between gap-2">
+                    <Badge variant="outline" className="text-[10px]">{code}</Badge>
+                    <CurrencyDisplay
+                      amount={stats?.today_revenue_by_currency[code] || 0}
+                      currency={code}
+                      size="sm"
+                      showConversion={false}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            {todayCurrencies.length > 1 && (
+              <p className="text-[10px] text-muted-foreground mt-1">Shown per paid currency</p>
+            )}
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          {/* Flutterwave Stats */}
           <div className="p-4 border rounded-lg space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium flex items-center gap-2">
@@ -150,10 +228,9 @@ const PaymentStatsWidget: React.FC = () => {
                 <span>{stats?.flutterwave_completed || 0} completed</span>
               </div>
             </div>
-            <p className="text-lg font-semibold">{formatCurrency(stats?.flutterwave_total_amount || 0)}</p>
+            {renderByCurrency(stats?.flutterwave_by_currency)}
           </div>
 
-          {/* Crypto Stats */}
           <div className="p-4 border rounded-lg space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium flex items-center gap-2">
@@ -172,11 +249,10 @@ const PaymentStatsWidget: React.FC = () => {
                 <span>{stats?.crypto_completed || 0} completed</span>
               </div>
             </div>
-            <p className="text-lg font-semibold">{formatCurrency(stats?.crypto_total_amount || 0)}</p>
+            {renderByCurrency(stats?.crypto_by_currency)}
           </div>
         </div>
 
-        {/* Pending Verifications Alert */}
         {(stats?.crypto_pending_verification || 0) > 0 && (
           <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <div className="flex items-center justify-between">
@@ -204,3 +280,4 @@ const PaymentStatsWidget: React.FC = () => {
 };
 
 export default PaymentStatsWidget;
+

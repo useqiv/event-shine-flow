@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { format, subDays, startOfDay, eachDayOfInterval, eachHourOfInterval, startOfHour, subHours } from 'date-fns';
 import { TrendingUp, CreditCard, Wallet, DollarSign, Calendar, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
@@ -204,6 +205,47 @@ const AdminPaymentAnalytics = () => {
       .map(([currency, data]) => ({ currency, ...data }))
       .sort((a, b) => b.total - a.total);
   }, [votes, tickets, donations, formPayments]);
+
+  const revenueByTypeAndCurrency = useMemo(
+    () => ({
+      votes: currencyBreakdown.reduce<Record<string, number>>((acc, row) => {
+        if (row.votes > 0) acc[row.currency] = row.votes;
+        return acc;
+      }, {}),
+      tickets: currencyBreakdown.reduce<Record<string, number>>((acc, row) => {
+        if (row.tickets > 0) acc[row.currency] = row.tickets;
+        return acc;
+      }, {}),
+      donations: currencyBreakdown.reduce<Record<string, number>>((acc, row) => {
+        if (row.donations > 0) acc[row.currency] = row.donations;
+        return acc;
+      }, {}),
+      forms: currencyBreakdown.reduce<Record<string, number>>((acc, row) => {
+        if (row.forms > 0) acc[row.currency] = row.forms;
+        return acc;
+      }, {}),
+    }),
+    [currencyBreakdown],
+  );
+
+  const renderTypeAmounts = (amounts: Record<string, number>, accentClass?: string) => {
+    const entries = Object.entries(amounts).sort(([, a], [, b]) => b - a);
+    if (entries.length === 0) {
+      return <p className="text-sm text-muted-foreground">No revenue</p>;
+    }
+    return (
+      <div className="space-y-1">
+        {entries.map(([code, amount]) => (
+          <div key={code} className="flex items-center justify-between gap-2">
+            <Badge variant="outline" className="text-[10px]">{code}</Badge>
+            <span className={accentClass}>
+              <CurrencyDisplay amount={amount} currency={code} size="sm" showConversion={false} />
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // Revenue trend data
   const revenueTrendData = useMemo(() => {
@@ -626,7 +668,7 @@ const AdminPaymentAnalytics = () => {
         <Card>
           <CardHeader>
             <CardTitle>Revenue Breakdown by Type</CardTitle>
-            <CardDescription>Compare revenue from different sources</CardDescription>
+            <CardDescription>Per paid currency (never mixed across currencies)</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -639,7 +681,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Votes</span>
                   </div>
                   <div className="text-xl font-bold text-primary">
-                    <CurrencyDisplay amount={summaryStats.voteRevenue} currency={platformCurrency} size="lg" />
+                    {renderTypeAmounts(revenueByTypeAndCurrency.votes, 'text-primary')}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {votes?.length || 0} transactions
@@ -651,7 +693,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Tickets</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-2))' }}>
-                    <CurrencyDisplay amount={summaryStats.ticketRevenue} currency={platformCurrency} size="lg" />
+                    {renderTypeAmounts(revenueByTypeAndCurrency.tickets)}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {tickets?.filter((t: any) => successStatuses.includes(t.status)).length || 0} transactions
@@ -663,7 +705,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Donations</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-3))' }}>
-                    <CurrencyDisplay amount={summaryStats.donationRevenue} currency={platformCurrency} size="lg" />
+                    {renderTypeAmounts(revenueByTypeAndCurrency.donations)}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {donations?.length || 0} transactions
@@ -675,7 +717,7 @@ const AdminPaymentAnalytics = () => {
                     <span className="font-medium">Forms</span>
                   </div>
                   <div className="text-xl font-bold" style={{ color: 'hsl(var(--chart-4))' }}>
-                    <CurrencyDisplay amount={summaryStats.formRevenue} currency={platformCurrency} size="lg" />
+                    {renderTypeAmounts(revenueByTypeAndCurrency.forms)}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
                     {formPayments?.length || 0} transactions

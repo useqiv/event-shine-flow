@@ -24,6 +24,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import DatabaseBackupManager from '@/components/admin/DatabaseBackupManager';
 import { FraudRulesManager } from '@/components/admin/FraudRulesManager';
 import { AdminRoleManager } from '@/components/admin/AdminRoleManager';
+import AdminCurrencyAmountsSummary from '@/components/admin/AdminCurrencyAmountsSummary';
+import CurrencyDisplay from '@/components/ui/currency-display';
+import { aggregateTransactionsByTypeAndCurrency } from '@/lib/revenueByCurrency';
 
 const AdminSettings: React.FC = () => {
   const { data: settings, isLoading } = usePlatformSettings();
@@ -335,36 +338,28 @@ const AdminSettings: React.FC = () => {
     },
   });
 
-  // Calculate transaction statistics
+  // Per-currency transaction statistics (never mix currencies in one total)
   const transactionStats = React.useMemo(() => {
     if (!recentTransactions || recentTransactions.length === 0) {
       return {
-        totalAmount: 0,
-        averageAmount: 0,
         count: 0,
-        byType: {} as Record<string, { count: number; amount: number }>,
+        byCurrency: {} as Record<string, number>,
+        byTypeAndCurrency: {} as ReturnType<typeof aggregateTransactionsByTypeAndCurrency>['byTypeAndCurrency'],
       };
     }
 
-    const byType: Record<string, { count: number; amount: number }> = {};
-    let totalAmount = 0;
-
-    recentTransactions.forEach((tx: any) => {
-      const amount = Number(tx.amount) || 0;
-      totalAmount += amount;
-      
-      if (!byType[tx.type]) {
-        byType[tx.type] = { count: 0, amount: 0 };
-      }
-      byType[tx.type].count++;
-      byType[tx.type].amount += amount;
-    });
+    const aggregated = aggregateTransactionsByTypeAndCurrency(
+      recentTransactions.map((tx: any) => ({
+        amount: tx.amount,
+        currency: tx.currency,
+        type: tx.type,
+      })),
+    );
 
     return {
-      totalAmount,
-      averageAmount: totalAmount / recentTransactions.length,
-      count: recentTransactions.length,
-      byType,
+      count: aggregated.count,
+      byCurrency: aggregated.byCurrency,
+      byTypeAndCurrency: aggregated.byTypeAndCurrency,
     };
   }, [recentTransactions]);
 
@@ -1026,16 +1021,22 @@ const AdminSettings: React.FC = () => {
                       <div className="p-3 bg-primary/5 rounded-lg border">
                         <div className="flex items-center gap-2 text-primary">
                           <DollarSign className="h-4 w-4" />
-                          <span className="text-xs font-medium">Total Amount</span>
+                          <span className="text-xs font-medium">Total by currency</span>
                         </div>
-                        <p className="text-lg font-bold mt-1">₦{transactionStats.totalAmount.toLocaleString()}</p>
+                        <div className="mt-2">
+                          <AdminCurrencyAmountsSummary
+                            amountsByCurrency={transactionStats.byCurrency}
+                            size="md"
+                          />
+                        </div>
                       </div>
                       <div className="p-3 bg-muted/50 rounded-lg border">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <TrendingUp className="h-4 w-4" />
-                          <span className="text-xs font-medium">Avg. Transaction</span>
+                          <span className="text-xs font-medium">Transactions</span>
                         </div>
-                        <p className="text-lg font-bold mt-1">₦{Math.round(transactionStats.averageAmount).toLocaleString()}</p>
+                        <p className="text-lg font-bold mt-1">{transactionStats.count}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Completed in range</p>
                       </div>
                       <div className="p-3 bg-muted/50 rounded-lg border">
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -1043,10 +1044,18 @@ const AdminSettings: React.FC = () => {
                           <span className="text-xs font-medium">Votes</span>
                         </div>
                         <p className="text-lg font-bold mt-1">
-                          {transactionStats.byType['vote_purchase']?.count || 0}
-                          <span className="text-xs font-normal text-muted-foreground ml-1">
-                            (₦{(transactionStats.byType['vote_purchase']?.amount || 0).toLocaleString()})
-                          </span>
+                          {Object.entries(transactionStats.byTypeAndCurrency['vote_purchase'] || {}).map(
+                            ([code, data]) => (
+                              <span key={code} className="block text-xs font-normal text-muted-foreground">
+                                {code}: {data.count} (
+                                <CurrencyDisplay amount={data.amount} currency={code} size="sm" showConversion={false} />
+                                )
+                              </span>
+                            ),
+                          )}
+                          {Object.keys(transactionStats.byTypeAndCurrency['vote_purchase'] || {}).length === 0 && (
+                            <span className="text-xs font-normal text-muted-foreground">0</span>
+                          )}
                         </p>
                       </div>
                       <div className="p-3 bg-muted/50 rounded-lg border">
@@ -1055,10 +1064,18 @@ const AdminSettings: React.FC = () => {
                           <span className="text-xs font-medium">Tickets</span>
                         </div>
                         <p className="text-lg font-bold mt-1">
-                          {transactionStats.byType['ticket_purchase']?.count || 0}
-                          <span className="text-xs font-normal text-muted-foreground ml-1">
-                            (₦{(transactionStats.byType['ticket_purchase']?.amount || 0).toLocaleString()})
-                          </span>
+                          {Object.entries(transactionStats.byTypeAndCurrency['ticket_purchase'] || {}).map(
+                            ([code, data]) => (
+                              <span key={code} className="block text-xs font-normal text-muted-foreground">
+                                {code}: {data.count} (
+                                <CurrencyDisplay amount={data.amount} currency={code} size="sm" showConversion={false} />
+                                )
+                              </span>
+                            ),
+                          )}
+                          {Object.keys(transactionStats.byTypeAndCurrency['ticket_purchase'] || {}).length === 0 && (
+                            <span className="text-xs font-normal text-muted-foreground">0</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1102,8 +1119,16 @@ const AdminSettings: React.FC = () => {
                                 {tx.type.replace('_', ' ')}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-mono">
-                              {tx.currency || 'NGN'} {tx.amount?.toLocaleString()}
+                            <TableCell>
+                              <Badge variant="outline" className="text-[10px] mr-1.5">
+                                {(tx.currency || 'NGN').toUpperCase()}
+                              </Badge>
+                              <CurrencyDisplay
+                                amount={tx.amount}
+                                currency={tx.currency || 'NGN'}
+                                size="sm"
+                                showConversion={false}
+                              />
                             </TableCell>
                             <TableCell>
                               <Badge variant={

@@ -31,14 +31,13 @@ export const useMultiCurrencyRevenue = () => {
 
       if (voteError) throw voteError;
 
-      // Fetch ticket revenue by currency (from event's currency)
-      // Include active, confirmed, and used tickets (exclude cancelled/refunded)
+      // Fetch ticket revenue by actual paid currency (ticket_types.currency)
       const { data: ticketData, error: ticketError } = await supabase
         .from('tickets')
         .select(`
           amount_paid,
           status,
-          events!inner(currency)
+          ticket_types!inner(currency)
         `)
         .in('status', ['active', 'confirmed', 'used']);
 
@@ -77,7 +76,7 @@ export const useMultiCurrencyRevenue = () => {
 
       // Process tickets
       ticketData?.forEach((ticket: any) => {
-        const currency = ticket.events?.currency || 'NGN';
+        const currency = (ticket.ticket_types?.currency || 'NGN').toUpperCase();
         if (!currencyMap[currency]) {
           currencyMap[currency] = {
             currency,

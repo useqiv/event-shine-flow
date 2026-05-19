@@ -59,3 +59,60 @@ export function applyCommissionToRevenueByCurrency(
 export function hasMultipleRevenueCurrencies(grossByCurrency: Record<string, number> | undefined): boolean {
   return Object.keys(normalizeRevenueByCurrency(grossByCurrency)).length > 1;
 }
+
+export type AmountWithCurrency = {
+  amount: number;
+  currency?: string | null;
+};
+
+/** Sum amounts per currency — never mixes currencies into one total. */
+export function aggregateAmountsByCurrency(
+  items: AmountWithCurrency[],
+  defaultCurrency = 'NGN',
+): Record<string, number> {
+  const raw: Record<string, number> = {};
+  items.forEach(({ amount, currency }) => {
+    const code = (currency || defaultCurrency).trim().toUpperCase();
+    const value = Number(amount) || 0;
+    if (!code || value === 0) return;
+    raw[code] = (raw[code] || 0) + value;
+  });
+  return normalizeRevenueByCurrency(raw);
+}
+
+export type TypeCurrencyBreakdown = Record<
+  string,
+  Record<string, { count: number; amount: number }>
+>;
+
+/** Wallet / admin transaction stats grouped by type and paid currency. */
+export function aggregateTransactionsByTypeAndCurrency(
+  transactions: Array<{ amount: number; currency?: string | null; type: string }>,
+  defaultCurrency = 'NGN',
+): {
+  byCurrency: Record<string, number>;
+  byTypeAndCurrency: TypeCurrencyBreakdown;
+  count: number;
+} {
+  const byTypeAndCurrency: TypeCurrencyBreakdown = {};
+
+  transactions.forEach((tx) => {
+    const code = (tx.currency || defaultCurrency).trim().toUpperCase();
+    const amount = Number(tx.amount) || 0;
+    if (!byTypeAndCurrency[tx.type]) byTypeAndCurrency[tx.type] = {};
+    if (!byTypeAndCurrency[tx.type][code]) {
+      byTypeAndCurrency[tx.type][code] = { count: 0, amount: 0 };
+    }
+    byTypeAndCurrency[tx.type][code].count += 1;
+    byTypeAndCurrency[tx.type][code].amount += amount;
+  });
+
+  return {
+    byCurrency: aggregateAmountsByCurrency(
+      transactions.map((t) => ({ amount: t.amount, currency: t.currency })),
+      defaultCurrency,
+    ),
+    byTypeAndCurrency,
+    count: transactions.length,
+  };
+}
