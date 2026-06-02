@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Activity, TrendingUp, Users, Zap, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 
 interface VoteSurge {
   contestantId: string;
@@ -22,6 +23,7 @@ interface LiveVotingWidgetProps {
     photo_url?: string;
   }>;
   isLive?: boolean;
+  voteDisplayMode?: VoteDisplayMode;
   onVoteSurge?: (surge: VoteSurge) => void;
 }
 
@@ -30,8 +32,10 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
   totalVotes,
   contestants,
   isLive = true,
+  voteDisplayMode: voteDisplayModeProp,
   onVoteSurge,
 }) => {
+  const voteDisplayMode = normalizeVoteDisplayMode(voteDisplayModeProp);
   const [recentSurges, setRecentSurges] = useState<VoteSurge[]>([]);
   const [animatingVotes, setAnimatingVotes] = useState<Record<string, boolean>>({});
   const [displayedTotalVotes, setDisplayedTotalVotes] = useState(totalVotes);
@@ -159,22 +163,26 @@ export const LiveVotingWidget: React.FC<LiveVotingWidgetProps> = ({
                           {contestant.name}
                         </span>
                       </div>
-                      <span
-                        className={cn(
-                          "text-sm font-bold tabular-nums transition-all ml-2",
-                          isAnimating && "text-green-500 scale-110"
-                        )}
-                      >
-                        {contestant.vote_count.toLocaleString()}
-                      </span>
-                    </div>
-                    <Progress
-                      value={percentage}
-                      className={cn(
-                        "h-2 transition-all",
-                        isAnimating && "bg-green-200"
+                      {voteDisplayMode === 'count' && (
+                        <span
+                          className={cn(
+                            "text-sm font-bold tabular-nums transition-all ml-2",
+                            isAnimating && "text-green-500 scale-110"
+                          )}
+                        >
+                          {contestant.vote_count.toLocaleString()}
+                        </span>
                       )}
-                    />
+                    </div>
+                    {voteDisplayMode === 'progress_bar' && (
+                      <Progress
+                        value={percentage}
+                        className={cn(
+                          "h-2 transition-all",
+                          isAnimating && "bg-green-200"
+                        )}
+                      />
+                    )}
                   </div>
                 );
               })}

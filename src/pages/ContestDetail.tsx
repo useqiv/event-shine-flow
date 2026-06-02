@@ -44,6 +44,8 @@ import { useMemo } from 'react';
 import { getContestUrl, getContestantUrl, getContestShareUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const ContestDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -102,6 +104,11 @@ const ContestDetail = () => {
 
   // Brand colors with fallbacks
   const primaryColor = (contest as any)?.brand_primary_color || '#7c3aed';
+  const voteDisplayMode = normalizeVoteDisplayMode((contest as any)?.vote_display_mode);
+  const leaderboardMaxVotes = useMemo(() => {
+    if (!contestants?.length) return 1;
+    return Math.max(...contestants.map((c: any) => c.vote_count), 1);
+  }, [contestants]);
   const secondaryColor = (contest as any)?.brand_secondary_color || '#f97316';
   const brandLogoUrl = (contest as any)?.brand_logo_url;
   
@@ -496,6 +503,7 @@ const ContestDetail = () => {
             voteCurrency={contest.vote_currency || 'NGN'}
             isVotingLocked={isVotingLocked}
             primaryColor={primaryColor}
+            voteDisplayMode={voteDisplayMode}
             onVoteClick={handleVoteClick}
           />
         ) : (
@@ -582,9 +590,14 @@ const ContestDetail = () => {
                           {contestant.bio && (
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                            <Vote className="h-4 w-4" />
-                            <span>{contestant.is_public_votes ? `${contestant.vote_count.toLocaleString()} votes` : 'Votes hidden'}</span>
+                          <div className="mt-3">
+                            <ContestantVoteDisplay
+                              mode={voteDisplayMode}
+                              voteCount={contestant.vote_count}
+                              maxVotes={leaderboardMaxVotes}
+                              isPublicVotes={contestant.is_public_votes}
+                              primaryColor={primaryColor}
+                            />
                           </div>
                           <Button 
                             className="w-full mt-4" 
@@ -691,9 +704,14 @@ const ContestDetail = () => {
                               {contestant.bio && (
                                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
                               )}
-                              <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                                <Vote className="h-4 w-4" />
-                                <span>{contestant.is_public_votes ? `${contestant.vote_count.toLocaleString()} votes` : 'Votes hidden'}</span>
+                              <div className="mt-3">
+                                <ContestantVoteDisplay
+                                  mode={voteDisplayMode}
+                                  voteCount={contestant.vote_count}
+                                  maxVotes={leaderboardMaxVotes}
+                                  isPublicVotes={contestant.is_public_votes}
+                                  primaryColor={primaryColor}
+                                />
                               </div>
                               <Button 
                                 className="w-full mt-4" 
@@ -764,9 +782,14 @@ const ContestDetail = () => {
                           {contestant.bio && (
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                            <Vote className="h-4 w-4" />
-                            <span>{contestant.is_public_votes ? `${contestant.vote_count.toLocaleString()} votes` : 'Votes hidden'}</span>
+                          <div className="mt-3">
+                            <ContestantVoteDisplay
+                              mode={voteDisplayMode}
+                              voteCount={contestant.vote_count}
+                              maxVotes={leaderboardMaxVotes}
+                              isPublicVotes={contestant.is_public_votes}
+                              primaryColor={primaryColor}
+                            />
                           </div>
                           <Button 
                             className="w-full mt-4" 

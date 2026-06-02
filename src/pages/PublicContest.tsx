@@ -24,6 +24,8 @@ import ContestantFilter, { filterContestants } from '@/components/ContestantFilt
 import { createSlug, getContestShareUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { useContestVoteOptions } from '@/hooks/useContests';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const PublicContest = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -78,6 +80,11 @@ const PublicContest = () => {
   // Brand colors with fallbacks
   const primaryColor = contest?.brand_primary_color || '#7c3aed';
   const secondaryColor = contest?.brand_secondary_color || '#f97316';
+  const voteDisplayMode = normalizeVoteDisplayMode(contest?.vote_display_mode);
+  const leaderboardMaxVotes = useMemo(() => {
+    if (!contestants?.length) return 1;
+    return Math.max(...contestants.map((c) => c.vote_count), 1);
+  }, [contestants]);
 
   // Generate CSS variables for branding
   const brandStyles = useMemo(() => ({
@@ -377,6 +384,7 @@ const PublicContest = () => {
               voteCurrency={contest.vote_currency || 'NGN'}
               isVotingLocked={isVotingLocked}
               primaryColor={primaryColor}
+              voteDisplayMode={voteDisplayMode}
               onVoteClick={handleVoteClick}
             />
           ) : (
@@ -433,13 +441,14 @@ const PublicContest = () => {
                       {contestant.bio && (
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{contestant.bio}</p>
                       )}
-                      <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
-                        <Vote className="h-4 w-4" />
-                        <span>
-                          {contestant.is_public_votes 
-                            ? `${contestant.vote_count.toLocaleString()} votes`
-                            : 'Votes hidden'}
-                        </span>
+                      <div className="mt-3">
+                        <ContestantVoteDisplay
+                          mode={voteDisplayMode}
+                          voteCount={contestant.vote_count}
+                          maxVotes={leaderboardMaxVotes}
+                          isPublicVotes={contestant.is_public_votes}
+                          primaryColor={primaryColor}
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-4">
                         <Link

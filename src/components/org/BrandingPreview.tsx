@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trophy, User, Vote, Eye } from 'lucide-react';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 
 interface BrandingPreviewProps {
   contestTitle: string;
   brandLogoUrl?: string;
   primaryColor: string;
   secondaryColor: string;
+  voteDisplayMode?: VoteDisplayMode;
   contestants?: Array<{
     name: string;
     photo_url?: string;
@@ -21,9 +24,12 @@ export const BrandingPreview: React.FC<BrandingPreviewProps> = ({
   brandLogoUrl,
   primaryColor,
   secondaryColor,
+  voteDisplayMode: voteDisplayModeProp,
   contestants = [],
 }) => {
   const previewContestants = contestants.slice(0, 3);
+  const voteDisplayMode = normalizeVoteDisplayMode(voteDisplayModeProp);
+  const maxVotes = previewContestants[0]?.vote_count || 1;
   
   return (
     <Card>
@@ -100,9 +106,13 @@ export const BrandingPreview: React.FC<BrandingPreviewProps> = ({
                       )}
                     </div>
                     <span className="text-sm font-medium flex-1 truncate">{contestant.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {contestant.vote_count.toLocaleString()}
-                    </span>
+                    <ContestantVoteDisplay
+                      mode={voteDisplayMode}
+                      voteCount={contestant.vote_count}
+                      maxVotes={maxVotes}
+                      primaryColor={primaryColor}
+                      className="text-xs"
+                    />
                   </div>
                 ))
               ) : (

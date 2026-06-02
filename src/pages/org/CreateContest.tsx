@@ -14,7 +14,9 @@ import CurrencySelector from '@/components/ui/currency-selector';
 import { useCreateContest, useOrganizationSettings } from '@/hooks/useOrganization';
 import { Calendar, DollarSign, FileText, Users, Layers, Check, Radio, Plus, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 
 const categories = [
   'Music',
@@ -52,6 +54,7 @@ const CreateContest = () => {
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
     is_live_voting: false,
+    vote_display_mode: 'count' as VoteDisplayMode,
   });
   const [voteOptions, setVoteOptions] = useState<Array<{ vote_quantity: number; price: number }>>([
     { vote_quantity: 1, price: 1 },
@@ -108,6 +111,7 @@ const CreateContest = () => {
         brand_logo_url: formData.brand_logo_url || undefined,
         contest_type: contestType as 'single' | 'category',
         is_live_voting: formData.is_live_voting,
+        vote_display_mode: formData.vote_display_mode,
       });
       
       // If category-based, navigate to contest management to add categories
@@ -429,6 +433,50 @@ const CreateContest = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Voters will choose from these vote bundles when paying.
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Vote display */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Public vote display</CardTitle>
+              <CardDescription>How standings appear to voters on your contest page</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RadioGroup
+                value={formData.vote_display_mode}
+                onValueChange={(value) =>
+                  handleChange('vote_display_mode', normalizeVoteDisplayMode(value))
+                }
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                <label
+                  htmlFor="create-vote-display-count"
+                  className={cn(
+                    'flex cursor-pointer items-start gap-3 rounded-lg border p-4',
+                    formData.vote_display_mode === 'count' && 'border-primary bg-primary/5'
+                  )}
+                >
+                  <RadioGroupItem value="count" id="create-vote-display-count" className="mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-medium">Vote counts</span>
+                    <p className="text-xs text-muted-foreground">Show numeric vote totals.</p>
+                  </div>
+                </label>
+                <label
+                  htmlFor="create-vote-display-progress"
+                  className={cn(
+                    'flex cursor-pointer items-start gap-3 rounded-lg border p-4',
+                    formData.vote_display_mode === 'progress_bar' && 'border-primary bg-primary/5'
+                  )}
+                >
+                  <RadioGroupItem value="progress_bar" id="create-vote-display-progress" className="mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-medium">Progress bar</span>
+                    <p className="text-xs text-muted-foreground">Show relative bars without exact numbers.</p>
+                  </div>
+                </label>
+              </RadioGroup>
             </CardContent>
           </Card>
 

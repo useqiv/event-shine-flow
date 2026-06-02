@@ -747,6 +747,7 @@ export const useCreateContest = () => {
       brand_logo_url?: string;
       contest_type?: 'single' | 'category';
       is_live_voting?: boolean;
+      vote_display_mode?: 'count' | 'progress_bar';
     }) => {
       const { vote_options, ...contestPayload } = contestData;
       const { data, error } = await supabase

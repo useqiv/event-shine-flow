@@ -3,10 +3,12 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, User, Vote, ExternalLink, Calendar, Clock } from 'lucide-react';
+import { Trophy, User, ExternalLink, Calendar, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { getContestVotingStatus } from '@/lib/contestVoting';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const EmbedContest = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -65,6 +67,7 @@ const EmbedContest = () => {
 
   const primaryColor = contest.brand_primary_color || '#7c3aed';
   const secondaryColor = contest.brand_secondary_color || '#f97316';
+  const voteDisplayMode = normalizeVoteDisplayMode(contest.vote_display_mode);
   const contestUrl = `${window.location.origin}/c/${contest.custom_slug || contest.id}`;
   const maxVotes = contestants?.[0]?.vote_count || 1;
   const { isEnded, isVotingLocked, shortVoteButtonLabel } = getContestVotingStatus(contest);
@@ -114,10 +117,12 @@ const EmbedContest = () => {
 
             return (
               <div key={contestant.id} className="relative bg-card border rounded-lg p-3 overflow-hidden">
-                <div
-                  className="absolute inset-0 opacity-10"
-                  style={{ width: `${percentage}%`, backgroundColor: primaryColor }}
-                />
+                {voteDisplayMode === 'progress_bar' && (
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{ width: `${percentage}%`, backgroundColor: primaryColor }}
+                  />
+                )}
                 <div className="relative flex items-center gap-3">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -141,10 +146,14 @@ const EmbedContest = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{contestant.name}</p>
                   </div>
-                  <div className="flex items-center gap-1 text-sm font-semibold" style={{ color: primaryColor }}>
-                    <Vote className="h-4 w-4" />
-                    {contestant.is_public_votes ? contestant.vote_count.toLocaleString() : '---'}
-                  </div>
+                  <ContestantVoteDisplay
+                    mode={voteDisplayMode}
+                    voteCount={contestant.vote_count}
+                    maxVotes={maxVotes}
+                    isPublicVotes={contestant.is_public_votes}
+                    primaryColor={primaryColor}
+                    className={voteDisplayMode === 'count' ? 'text-sm font-semibold' : undefined}
+                  />
                 </div>
               </div>
             );

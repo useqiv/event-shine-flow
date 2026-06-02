@@ -4,8 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LiveVotingWidget } from './LiveVotingWidget';
 import { LiveStreamEmbed } from './LiveStreamEmbed';
-import { User, Vote, Radio, Maximize2, Minimize2 } from 'lucide-react';
+import { User, Radio, Maximize2, Minimize2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { FavoriteButton } from '@/components/dashboard/FavoriteButton';
 import { ContestantShareButton } from '@/components/ui/share-buttons';
@@ -31,6 +33,7 @@ interface LiveContestViewProps {
   voteCurrency: string;
   isVotingLocked: boolean;
   primaryColor: string;
+  voteDisplayMode?: VoteDisplayMode;
   onVoteClick: (contestant: Contestant) => void;
 }
 
@@ -46,8 +49,10 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
   voteCurrency,
   isVotingLocked,
   primaryColor,
+  voteDisplayMode: voteDisplayModeProp,
   onVoteClick,
 }) => {
+  const voteDisplayMode = normalizeVoteDisplayMode(voteDisplayModeProp);
   const [isStreamExpanded, setIsStreamExpanded] = useState(false);
   const [highlightedContestant, setHighlightedContestant] = useState<string | null>(null);
 
@@ -58,6 +63,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
 
   // Sort contestants by vote count
   const sortedContestants = [...contestants].sort((a, b) => b.vote_count - a.vote_count);
+  const leaderboardMaxVotes = sortedContestants[0]?.vote_count || 1;
 
   return (
     <div className="space-y-4">
@@ -107,6 +113,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
               totalVotes={totalVotes}
               contestants={sortedContestants.slice(0, 10)}
               isLive={true}
+              voteDisplayMode={voteDisplayMode}
               onVoteSurge={handleVoteSurge}
             />
 
@@ -169,12 +176,14 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                           {/* Name & Votes */}
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{contestant.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Vote className="h-3 w-3" />
-                              {contestant.is_public_votes !== false
-                                ? contestant.vote_count.toLocaleString()
-                                : 'Hidden'}
-                            </p>
+                            <ContestantVoteDisplay
+                              mode={voteDisplayMode}
+                              voteCount={contestant.vote_count}
+                              maxVotes={leaderboardMaxVotes}
+                              isPublicVotes={contestant.is_public_votes !== false}
+                              primaryColor={primaryColor}
+                              className="text-xs"
+                            />
                           </div>
                         </div>
 

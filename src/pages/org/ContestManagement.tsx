@@ -63,6 +63,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCont
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
 import { getContestUrl, getContestantUrlById } from '@/lib/urlHelpers';
 
@@ -269,6 +272,7 @@ const ContestManagement = () => {
     brand_secondary_color: '#f97316',
     brand_logo_url: '',
     is_live_voting: false,
+    vote_display_mode: 'count' as VoteDisplayMode,
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
   });
@@ -309,6 +313,7 @@ const ContestManagement = () => {
         brand_secondary_color: (contest as any).brand_secondary_color || '#f97316',
         brand_logo_url: (contest as any).brand_logo_url || '',
         is_live_voting: (contest as any).is_live_voting || false,
+        vote_display_mode: normalizeVoteDisplayMode((contest as any).vote_display_mode),
         stream_url: (contest as any).stream_url || '',
         stream_platform: (contest as any).stream_platform || 'youtube',
       });
@@ -558,6 +563,7 @@ const ContestManagement = () => {
         brand_secondary_color: editForm.brand_secondary_color || '#f97316',
         brand_logo_url: editForm.brand_logo_url || null,
         is_live_voting: editForm.is_live_voting,
+        vote_display_mode: editForm.vote_display_mode,
         stream_url: editForm.stream_url || null,
         stream_platform: editForm.stream_platform || 'youtube',
       });
@@ -1251,9 +1257,10 @@ const ContestManagement = () => {
               <CardContent>
                 {contestants && contestants.length > 0 ? (
                   <div className="space-y-2">
-                    {[...contestants]
-                      .sort((a: any, b: any) => b.vote_count - a.vote_count)
-                      .map((contestant: any, index: number) => (
+                    {(() => {
+                      const sorted = [...contestants].sort((a: any, b: any) => b.vote_count - a.vote_count);
+                      const maxVotes = sorted[0]?.vote_count || 1;
+                      return sorted.map((contestant: any, index: number) => (
                       <div 
                         key={contestant.id} 
                         className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30 transition-all"
@@ -1285,18 +1292,15 @@ const ContestManagement = () => {
                         <div className="flex-1">
                           <p className="font-medium">{contestant.name}</p>
                         </div>
-                        <Badge 
-                          variant="secondary"
-                          style={index === 0 ? { 
-                            backgroundColor: `${editForm.brand_primary_color}20`,
-                            color: editForm.brand_primary_color,
-                            borderColor: editForm.brand_primary_color
-                          } : undefined}
-                        >
-                          {contestant.vote_count.toLocaleString()} votes
-                        </Badge>
+                        <ContestantVoteDisplay
+                          mode={editForm.vote_display_mode}
+                          voteCount={contestant.vote_count}
+                          maxVotes={maxVotes}
+                          primaryColor={editForm.brand_primary_color}
+                        />
                       </div>
-                    ))}
+                    ));
+                    })()}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">No contestants to display</p>
@@ -1470,14 +1474,60 @@ const ContestManagement = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Voting Display</CardTitle>
-                <CardDescription>Control how votes are displayed to the public</CardDescription>
+                <CardDescription>Control how standing is shown to voters on your public contest pages</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <Label>Public vote display</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose whether voters see exact vote totals or relative progress bars on contestant cards and leaderboards.
+                  </p>
+                  <RadioGroup
+                    value={editForm.vote_display_mode}
+                    onValueChange={(value) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        vote_display_mode: normalizeVoteDisplayMode(value),
+                      }))
+                    }
+                    className="grid gap-3 sm:grid-cols-2"
+                  >
+                    <label
+                      htmlFor="vote-display-count"
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                        editForm.vote_display_mode === 'count' ? 'border-primary bg-primary/5' : ''
+                      }`}
+                    >
+                      <RadioGroupItem value="count" id="vote-display-count" className="mt-0.5" />
+                      <div className="space-y-1">
+                        <span className="font-medium">Vote counts</span>
+                        <p className="text-xs text-muted-foreground">
+                          Show numeric totals (e.g. 12,450 votes) on each contestant.
+                        </p>
+                      </div>
+                    </label>
+                    <label
+                      htmlFor="vote-display-progress"
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                        editForm.vote_display_mode === 'progress_bar' ? 'border-primary bg-primary/5' : ''
+                      }`}
+                    >
+                      <RadioGroupItem value="progress_bar" id="vote-display-progress" className="mt-0.5" />
+                      <div className="space-y-1">
+                        <span className="font-medium">Progress bar</span>
+                        <p className="text-xs text-muted-foreground">
+                          Show relative standing with bars; hide exact vote numbers on public pages.
+                        </p>
+                      </div>
+                    </label>
+                  </RadioGroup>
+                </div>
+
+                <div className="flex items-center justify-between border-t pt-6">
                   <div className="space-y-0.5">
                     <Label htmlFor="live-voting">Live Voting (Real-time)</Label>
                     <p className="text-sm text-muted-foreground">
-                      When enabled, vote counts update in real-time for all viewers. Disable to keep votes hidden until you choose to reveal them.
+                      When enabled, standings update in real-time for all viewers with live animations.
                     </p>
                   </div>
                   <Switch
@@ -1533,6 +1583,7 @@ const ContestManagement = () => {
                 brandLogoUrl={editForm.brand_logo_url}
                 primaryColor={editForm.brand_primary_color}
                 secondaryColor={editForm.brand_secondary_color}
+                voteDisplayMode={editForm.vote_display_mode}
                 contestants={contestants?.slice(0, 3).map((c: any) => ({
                   name: c.name,
                   photo_url: c.photo_url,

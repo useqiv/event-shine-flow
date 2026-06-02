@@ -4,8 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Trophy, User, Vote, Search } from 'lucide-react';
+import { Trophy, User, Search } from 'lucide-react';
 import { filterContestants } from '@/components/ContestantFilter';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const EmbedLeaderboard = () => {
   const { contestId } = useParams<{ contestId: string }>();
@@ -47,6 +49,7 @@ const EmbedLeaderboard = () => {
 
   const primaryColor = contest?.brand_primary_color || '#7c3aed';
   const secondaryColor = contest?.brand_secondary_color || '#f97316';
+  const voteDisplayMode = normalizeVoteDisplayMode(contest?.vote_display_mode);
 
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -122,14 +125,15 @@ const EmbedLeaderboard = () => {
                 key={contestant.id} 
                 className="relative bg-card border rounded-lg p-3 overflow-hidden"
               >
-                {/* Progress bar background */}
-                <div 
-                  className="absolute inset-0 opacity-10"
-                  style={{ 
-                    width: `${percentage}%`, 
-                    backgroundColor: primaryColor 
-                  }}
-                />
+                {voteDisplayMode === 'progress_bar' && (
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{
+                      width: `${percentage}%`,
+                      backgroundColor: primaryColor,
+                    }}
+                  />
+                )}
                 
                 <div className="relative flex items-center gap-3">
                   {/* Rank */}
@@ -164,13 +168,14 @@ const EmbedLeaderboard = () => {
                     <p className="font-medium truncate">{contestant.name}</p>
                   </div>
                   
-                  {/* Votes */}
-                  <div className="flex items-center gap-1 text-sm font-semibold" style={{ color: primaryColor }}>
-                    <Vote className="h-4 w-4" />
-                    {contestant.is_public_votes 
-                      ? contestant.vote_count.toLocaleString()
-                      : '---'}
-                  </div>
+                  <ContestantVoteDisplay
+                    mode={voteDisplayMode}
+                    voteCount={contestant.vote_count}
+                    maxVotes={maxVotes}
+                    isPublicVotes={contestant.is_public_votes}
+                    primaryColor={primaryColor}
+                    className={voteDisplayMode === 'count' ? 'text-sm font-semibold' : undefined}
+                  />
                 </div>
               </div>
             );
