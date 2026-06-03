@@ -54,7 +54,7 @@ import { ExtendDeadlineDialog } from '@/components/ExtendDeadlineDialog';
 import { AdjustGoalDialog } from '@/components/AdjustGoalDialog';
 import { CampaignStatusToggle } from '@/components/CampaignStatusToggle';
 import EntityTransactionHistory from '@/components/org/EntityTransactionHistory';
-import { getCampaignUrl } from '@/lib/urlHelpers';
+import { getCampaignShareUrl } from '@/lib/urlHelpers';
 import { getCurrencySymbol } from '@/lib/campaignConstants';
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -100,7 +100,7 @@ const CampaignDashboard: React.FC = () => {
     ? Math.min((baseRaised / campaign.goal_amount) * 100, 100) 
     : 0;
 
-  const pageUrl = getCampaignUrl(campaign.id, campaign.custom_slug);
+  const pageUrl = getCampaignShareUrl(campaign.custom_slug || campaign.id, true);
   const currencySymbol = getCurrencySymbol(campaign.currency);
 
   const distributionData = donorStats ? [

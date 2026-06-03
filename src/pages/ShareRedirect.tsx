@@ -26,3 +26,33 @@ export const ShareContestantRedirect = () => {
 
   return <Navigate to={withSearch(targetPath, location.search)} replace />;
 };
+
+export const ShareEventRedirect = () => {
+  const { eventKey } = useParams<{ eventKey: string }>();
+  const location = useLocation();
+
+  if (!eventKey) return <Navigate to="/" replace />;
+
+  const targetPath = isValidUUID(eventKey) ? `/events/${eventKey}` : `/e/${eventKey}`;
+  return <Navigate to={withSearch(targetPath, location.search)} replace />;
+};
+
+export const ShareCampaignRedirect = () => {
+  const { campaignKey } = useParams<{ campaignKey: string }>();
+  const location = useLocation();
+
+  if (!campaignKey) return <Navigate to="/" replace />;
+
+  const targetPath = `/campaigns/${campaignKey}`;
+  return <Navigate to={withSearch(targetPath, location.search)} replace />;
+};
+
+export const ShareFormRedirect = () => {
+  const { formKey } = useParams<{ formKey: string }>();
+  const location = useLocation();
+
+  if (!formKey) return <Navigate to="/" replace />;
+
+  const targetPath = `/f/${formKey}`;
+  return <Navigate to={withSearch(targetPath, location.search)} replace />;
+};

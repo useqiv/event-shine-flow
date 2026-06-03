@@ -50,7 +50,7 @@ import EditCampaignDialog from '@/components/org/EditCampaignDialog';
 import { DuplicateCampaignDialog } from '@/components/DuplicateCampaignDialog';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { toast } from 'sonner';
-import { getCampaignUrl } from '@/lib/urlHelpers';
+import { getCampaignShareUrl } from '@/lib/urlHelpers';
 import { getCampaignCategoryLabel } from '@/lib/campaignConstants';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -143,7 +143,7 @@ const ManageCampaigns: React.FC = () => {
   };
 
   const handleShare = (campaign: Campaign) => {
-    const url = getCampaignUrl(campaign.id, campaign.custom_slug);
+    const url = getCampaignShareUrl(campaign.custom_slug || campaign.id, true);
     if (navigator.share) {
       navigator.share({
         title: campaign.title,

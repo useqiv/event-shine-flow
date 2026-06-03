@@ -11,6 +11,7 @@ import { useContestants } from '@/hooks/useContests';
 import { supabase } from '@/integrations/supabase/client';
 import { Send, Loader2, ExternalLink, Sparkles, Wand2, Trophy, Calendar, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { getContestShareUrl, getEventShareUrl } from '@/lib/urlHelpers';
 
 // Platform icons
 const TwitterIcon = ({ className }: { className?: string }) => (
@@ -78,20 +79,15 @@ export const QuickSocialPost: React.FC = () => {
   const currentPostTypes = contentType === 'contest' ? contestPostTypes : eventPostTypes;
   const selectedPlatformData = platforms.find(p => p.id === selectedPlatform);
 
-  const getContestUrl = (contestId: string) => {
+  const getContestShareLink = (contestId: string) => {
     const contest = contests?.find(c => c.id === contestId);
     if (!contest) return '';
-    return contest.custom_slug 
-      ? `${window.location.origin}/c/${contest.custom_slug}`
-      : `${window.location.origin}/contests/${contestId}`;
+    return getContestShareUrl((contest as any)?.custom_slug || contestId, true);
   };
 
-  const getEventUrl = (eventId: string) => {
+  const getEventShareLink = (eventId: string) => {
     const event = events?.find(e => e.id === eventId);
-    if (!event) return `${window.location.origin}/events/${eventId}`;
-    return event.custom_slug 
-      ? `${window.location.origin}/e/${event.custom_slug}`
-      : `${window.location.origin}/events/${eventId}`;
+    return getEventShareUrl((event as any)?.custom_slug || eventId, true);
   };
 
   const handleGenerateAI = async () => {
@@ -165,8 +161,8 @@ export const QuickSocialPost: React.FC = () => {
     }
 
     const targetUrl = contentType === 'contest' 
-      ? (selectedContest ? getContestUrl(selectedContest) : window.location.origin)
-      : (selectedEvent ? getEventUrl(selectedEvent) : window.location.origin);
+      ? (selectedContest ? getContestShareLink(selectedContest) : window.location.origin)
+      : (selectedEvent ? getEventShareLink(selectedEvent) : window.location.origin);
 
     if (platform !== 'twitter') {
       const encodedMessage = encodeURIComponent(message);

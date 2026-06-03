@@ -30,6 +30,9 @@ export const config = {
   matcher: [
     '/share/contest/:path*',
     '/share/contestant/:path*',
+    '/share/event/:path*',
+    '/share/campaign/:path*',
+    '/share/form/:path*',
     '/e/:path*',
     '/c/:path*',
     '/events/:path*',

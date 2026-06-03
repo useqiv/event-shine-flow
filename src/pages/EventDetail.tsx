@@ -14,6 +14,7 @@ import { useWallet, useWalletCurrencyBalances } from '@/hooks/useWallet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SocialShareButtons from '@/components/SocialShareButtons';
+import { getEventShareUrl, getEventUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import PaymentModal from '@/components/PaymentModal';
 import GuestTicketSuccess from '@/components/GuestTicketSuccess';
 import CurrencyDisplay from '@/components/ui/currency-display';
@@ -216,14 +217,10 @@ const EventDetail = () => {
     );
   }
 
-  const eventUrl = event?.custom_slug 
-    ? `https://www.useqiv.com/e/${event.custom_slug}` 
-    : `https://www.useqiv.com/events/${id}`;
+  const eventUrl = event ? getEventUrl(event.id, event.custom_slug, true) : '';
+  const eventShareUrl = event ? getEventShareUrl(event.custom_slug || event.id, true) : '';
   const ogDescription = event?.description || `Join us at ${event?.title} on ${event ? format(new Date(event.event_date), 'MMMM d, yyyy') : ''} at ${event?.venue}`;
-  // Ensure absolute URL for OG image - use the image directly if it's already absolute, otherwise construct one
-  const ogImage = event?.image_url
-    ? (event.image_url.startsWith('http') ? event.image_url : `https://www.useqiv.com${event.image_url}`)
-    : '';
+  const ogImage = getSocialOgImageUrl(event?.image_url);
 
   return (
     <>
@@ -348,7 +345,7 @@ const EventDetail = () => {
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="font-semibold mb-3">Share this event</h3>
                   <SocialShareButtons
-                    url={eventUrl}
+                    url={eventShareUrl}
                     title={event.title}
                     description={`Join me at ${event.title} on ${format(new Date(event.event_date), 'MMMM d, yyyy')} at ${event.venue}`}
                   />

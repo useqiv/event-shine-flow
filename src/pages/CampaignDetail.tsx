@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { trackCampaignView } from '@/hooks/useCampaignAnalytics';
-import { getCampaignUrl } from '@/lib/urlHelpers';
+import { getCampaignShareUrl, getCampaignUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { canAcceptDonations } from '@/lib/campaignConstants';
 
 const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
@@ -156,22 +156,22 @@ const CampaignDetail: React.FC = () => {
   };
 
   const handleShare = () => {
+    const shareUrl = getCampaignShareUrl(campaign.custom_slug || campaign.id, true);
     if (navigator.share) {
       navigator.share({
         title: campaign.title,
         text: campaign.short_description || campaign.description || '',
-        url: window.location.href,
+        url: shareUrl,
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied to clipboard!');
     }
   };
 
   const pageUrl = getCampaignUrl(campaign.id, campaign.custom_slug, true);
-  const ogImage = campaign.image_url
-    ? (campaign.image_url.startsWith('http') ? campaign.image_url : `https://www.useqiv.com${campaign.image_url}`)
-    : '';
+  const campaignShareUrl = getCampaignShareUrl(campaign.custom_slug || campaign.id, true);
+  const ogImage = getSocialOgImageUrl(campaign.image_url);
   const ogDescription = campaign.short_description || campaign.description?.substring(0, 160) || `Support ${campaign.title} - Help us reach our goal of ${campaign.currency} ${Number(campaign.goal_amount).toLocaleString()}`;
 
   return (
@@ -460,7 +460,7 @@ const CampaignDetail: React.FC = () => {
                   <div className="space-y-3">
                     <p className="text-sm font-medium text-center">Share this campaign</p>
                     <SocialShareButtons 
-                      url={pageUrl}
+                      url={campaignShareUrl}
                       title={campaign.title}
                       description={ogDescription}
                       className="justify-center"

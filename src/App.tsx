@@ -29,7 +29,7 @@ import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import AccountTypeSelection from "./pages/AccountTypeSelection";
 import PublicContest from "./pages/PublicContest";
-import { ShareContestRedirect, ShareContestantRedirect } from "./pages/ShareRedirect";
+import { ShareContestRedirect, ShareContestantRedirect, ShareEventRedirect, ShareCampaignRedirect, ShareFormRedirect } from "./pages/ShareRedirect";
 import SavedItems from "./pages/SavedItems";
 import ReferralLeaderboard from "./pages/ReferralLeaderboard";
 import PaymentCallback from "./pages/PaymentCallback";
@@ -262,6 +262,9 @@ const AppRoutes = () => (
     <Route path="/c/:slug/contestant/:contestantSlug" element={<ContestantDetail />} />
     <Route path="/share/contest/:contestKey" element={<ShareContestRedirect />} />
     <Route path="/share/contestant/:contestKey/:contestantSlug" element={<ShareContestantRedirect />} />
+    <Route path="/share/event/:eventKey" element={<ShareEventRedirect />} />
+    <Route path="/share/campaign/:campaignKey" element={<ShareCampaignRedirect />} />
+    <Route path="/share/form/:formKey" element={<ShareFormRedirect />} />
     <Route path="/e/:slug" element={<EventDetail />} />
     
     <Route path="/embed/leaderboard/:contestId" element={<EmbedLeaderboard />} />

@@ -21,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } from 'lucide-react';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
-import { createSlug, getContestShareUrl } from '@/lib/urlHelpers';
+import { createSlug, getContestShareUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { useContestVoteOptions } from '@/hooks/useContests';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
@@ -95,9 +95,7 @@ const PublicContest = () => {
   const contestUrl = `https://www.useqiv.com/c/${slug}`;
   const contestCurrency = contest?.vote_currency || 'NGN';
   // Ensure absolute URL for OG image
-  const ogImage = contest?.image_url
-    ? (contest.image_url.startsWith('http') ? contest.image_url : `https://www.useqiv.com${contest.image_url}`)
-    : '';
+  const ogImage = getSocialOgImageUrl(contest?.image_url);
   const contestShareUrl = contest
     ? getContestShareUrl(contest.custom_slug || contest.id, true)
     : contestUrl;

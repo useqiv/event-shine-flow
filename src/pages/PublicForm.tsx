@@ -22,6 +22,7 @@ import MultiPageNavigation from '@/components/forms/MultiPageNavigation';
 import FormPaymentSection from '@/components/forms/FormPaymentSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getFormUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 
 const PublicForm = () => {
   const { formIdOrSlug } = useParams<{ formIdOrSlug: string }>();
@@ -699,6 +700,8 @@ const PublicForm = () => {
 
   const isLastPage = currentPage === totalPages;
   const showPaymentSection = isLastPage && form.requires_payment && form.payment_amount > 0;
+  const formUrl = getFormUrl(form.id, form.custom_slug, true);
+  const ogImage = getSocialOgImageUrl(form.logo_url);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/50 to-background">
@@ -707,14 +710,18 @@ const PublicForm = () => {
         <meta name="description" content={form.description || `Fill out ${form.title}`} />
         
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={window.location.href} />
+        <meta property="og:url" content={formUrl} />
         <meta property="og:title" content={form.title} />
         <meta property="og:description" content={form.description || `Fill out ${form.title}`} />
+        {ogImage && <meta property="og:image" content={ogImage} />}
+        {ogImage && <meta property="og:image:width" content="1200" />}
+        {ogImage && <meta property="og:image:height" content="630" />}
         <meta property="og:site_name" content="USEQIV" />
         
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={form.title} />
         <meta name="twitter:description" content={form.description || `Fill out ${form.title}`} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
       </Helmet>
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-12 pt-28">

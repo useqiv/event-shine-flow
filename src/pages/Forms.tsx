@@ -17,6 +17,7 @@ import { useUserForms, useCreateForm, useDeleteForm, useDuplicateForm } from '@/
 import FormTemplateSelector from '@/components/forms/FormTemplateSelector';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { getFormShareUrl } from '@/lib/urlHelpers';
 
 const Forms = () => {
   const navigate = useNavigate();
@@ -45,8 +46,8 @@ const Forms = () => {
     navigate(`/forms/${form.id}/edit`);
   };
 
-  const handleCopyLink = (formId: string) => {
-    const url = `${window.location.origin}/f/${formId}`;
+  const handleCopyLink = (form: { id: string; custom_slug?: string | null }) => {
+    const url = getFormShareUrl(form.custom_slug || form.id, true);
     navigator.clipboard.writeText(url);
     toast({ title: 'Link copied to clipboard' });
   };
@@ -176,7 +177,7 @@ const Forms = () => {
                           <Settings className="h-4 w-4 mr-2" />
                           Edit Form
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleCopyLink(form.id)}>
+                        <DropdownMenuItem onClick={() => handleCopyLink(form)}>
                           <Copy className="h-4 w-4 mr-2" />
                           Copy Link
                         </DropdownMenuItem>

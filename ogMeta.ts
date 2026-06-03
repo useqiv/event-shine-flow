@@ -26,6 +26,21 @@ export function parseOgRoute(pathname: string): { type: string; slug: string } |
     return slug ? { type: 'contest', slug: decodeURIComponent(slug) } : null;
   }
 
+  if (pathname.startsWith('/share/event/')) {
+    const slug = pathname.replace('/share/event/', '').split('/')[0];
+    return slug ? { type: 'event', slug: decodeURIComponent(slug) } : null;
+  }
+
+  if (pathname.startsWith('/share/campaign/')) {
+    const slug = pathname.replace('/share/campaign/', '').split('/')[0];
+    return slug ? { type: 'campaign', slug: decodeURIComponent(slug) } : null;
+  }
+
+  if (pathname.startsWith('/share/form/')) {
+    const slug = pathname.replace('/share/form/', '').split('/')[0];
+    return slug ? { type: 'form', slug: decodeURIComponent(slug) } : null;
+  }
+
   if (pathname.startsWith('/share/contestant/')) {
     const rest = pathname.replace('/share/contestant/', '');
     const parts = rest.split('/').filter(Boolean);

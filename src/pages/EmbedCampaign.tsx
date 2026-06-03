@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Heart, Users, Target, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getCampaignShareUrl } from '@/lib/urlHelpers';
 
 const EmbedCampaign = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -57,7 +58,7 @@ const EmbedCampaign = () => {
     ? Math.max(0, Math.ceil((new Date(campaign.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const campaignUrl = `${window.location.origin}/campaigns/${campaign.id}`;
+  const campaignUrl = getCampaignShareUrl(campaign.custom_slug || campaign.id, true);
 
   return (
     <div className="min-h-screen bg-background p-4">

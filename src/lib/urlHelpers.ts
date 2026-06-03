@@ -97,6 +97,62 @@ export const getContestShareUrl = (
 };
 
 /**
+ * Generate domain-based event share URL for OG previews.
+ */
+export const getEventShareUrl = (
+  eventKey: string,
+  useAbsolute = true
+): string => {
+  const origin = getOrigin(useAbsolute);
+  return `${origin}/share/event/${encodeURIComponent(eventKey)}`;
+};
+
+/**
+ * Generate domain-based campaign share URL for OG previews.
+ */
+export const getCampaignShareUrl = (
+  campaignKey: string,
+  useAbsolute = true
+): string => {
+  const origin = getOrigin(useAbsolute);
+  return `${origin}/share/campaign/${encodeURIComponent(campaignKey)}`;
+};
+
+/**
+ * Generate domain-based form share URL for OG previews.
+ */
+export const getFormShareUrl = (
+  formKey: string,
+  useAbsolute = true
+): string => {
+  const origin = getOrigin(useAbsolute);
+  return `${origin}/share/form/${encodeURIComponent(formKey)}`;
+};
+
+/**
+ * Proxy image URLs through useqiv.com so social platforms receive JPEG previews.
+ */
+export const getSocialOgImageUrl = (rawImage: string | null | undefined): string => {
+  const absolute = toAbsolutePublicImageUrl(rawImage);
+  if (!absolute) return '';
+  return `${PRODUCTION_DOMAIN}/api/og-image?url=${encodeURIComponent(absolute)}`;
+};
+
+const SUPABASE_URL = 'https://tirqmqzgksclsjxfiham.supabase.co';
+const SUPABASE_STORAGE_PUBLIC_BASE = `${SUPABASE_URL}/storage/v1/object/public`;
+
+function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
+  if (!rawImage) return '';
+  const image = rawImage.trim();
+  if (!image) return '';
+  if (/^https?:\/\//i.test(image)) return image;
+  if (image.startsWith('/storage/v1/object/public/')) return `${SUPABASE_URL}${image}`;
+  if (image.startsWith('storage/v1/object/public/')) return `${SUPABASE_URL}/${image}`;
+  if (image.startsWith('/')) return `${PRODUCTION_DOMAIN}${image}`;
+  return `${SUPABASE_STORAGE_PUBLIC_BASE}/${image}`;
+}
+
+/**
  * Generate event URL - uses custom_slug if available, otherwise falls back to UUID
  */
 export const getEventUrl = (eventId: string, customSlug?: string | null, useAbsolute = false): string => {

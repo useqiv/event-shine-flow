@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, 
+  ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, Copy,
   Type, AlignLeft, Hash, Mail, Calendar, ListFilter, CheckSquare, 
   CircleDot, Star, Upload, Phone, Link2, Clock, MapPin, ToggleLeft,
   Heading, SeparatorHorizontal, Image, User, CreditCard, CalendarClock
@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useForm, useFormFields, useUpdateForm, useCreateFormField, useUpdateFormField, useDeleteFormField, FormField } from '@/hooks/useForms';
 import { useToast } from '@/hooks/use-toast';
+import { getFormShareUrl } from '@/lib/urlHelpers';
 import ConditionalLogicEditor, { ConditionalLogic } from '@/components/forms/ConditionalLogicEditor';
 
 const FIELD_TYPES = [
@@ -126,6 +127,13 @@ const FormBuilder = () => {
     });
   };
 
+  const handleCopyShareLink = () => {
+    if (!form) return;
+    const url = getFormShareUrl(form.custom_slug || form.id, true);
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Share link copied to clipboard' });
+  };
+
   const handleAddField = async (fieldType: string) => {
     if (!formId) return;
     
@@ -213,6 +221,10 @@ const FormBuilder = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleCopyShareLink}>
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Share Link
+            </Button>
             <Link to={`/f/${form.id}`} target="_blank">
               <Button variant="outline">
                 <Eye className="h-4 w-4 mr-2" />

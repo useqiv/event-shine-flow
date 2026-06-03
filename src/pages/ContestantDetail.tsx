@@ -41,7 +41,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID } from '@/lib/urlHelpers';
+import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
@@ -195,10 +195,7 @@ const ContestantDetail = () => {
         : getContestantUrl(contestId!, contestant.name, (contest as any)?.custom_slug, true))
     : '';
   const contestantPageSlug = contestant ? createContestantSlug(contestant.name) : '';
-  const contestantImageUrl = contestant?.photo_url
-    ? (contestant.photo_url.startsWith('http') ? contestant.photo_url : `https://www.useqiv.com${contestant.photo_url}`)
-    : '';
-  const ogImage = contestantImageUrl;
+  const ogImage = getSocialOgImageUrl(contestant?.photo_url);
   const contestantShareUrl = contest && contestant
     ? getContestantShareUrl((contest as any)?.custom_slug || contest.id, contestant.id, true)
     : contestantUrl;

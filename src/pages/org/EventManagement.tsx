@@ -30,6 +30,7 @@ import { EventEmbedGenerator } from '@/components/org/EventEmbedGenerator';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
+import { getEventShareUrl } from '@/lib/urlHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -184,7 +185,7 @@ const EventManagement = () => {
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/events/${id}`;
+    const url = getEventShareUrl((event as any)?.custom_slug || id!, true);
     navigator.clipboard.writeText(url);
     toast.success('Event link copied to clipboard!');
   };
