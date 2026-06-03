@@ -67,7 +67,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 import { exportToCsv, formatDateForExport } from '@/lib/exportCsv';
-import { getContestUrl, getContestantUrlById } from '@/lib/urlHelpers';
+import { getContestShareUrl, getContestantShareUrl } from '@/lib/urlHelpers';
 
 const categories = [
   'Music', 'Beauty', 'Fashion', 'Sports', 'Talent',
@@ -497,13 +497,13 @@ const ContestManagement = () => {
   };
 
   const handleCopyLink = () => {
-    const url = getContestUrl(id!, (contest as any)?.custom_slug);
+    const url = getContestShareUrl((contest as any)?.custom_slug || id!, true);
     navigator.clipboard.writeText(url);
     toast.success('Contest link copied to clipboard!');
   };
 
   const handleCopyContestantLink = (contestantId: string, contestantName: string) => {
-    const url = getContestantUrlById(id!, contestantId, (contest as any)?.custom_slug);
+    const url = getContestantShareUrl((contest as any)?.custom_slug || id!, contestantId, true);
     navigator.clipboard.writeText(url);
     toast.success(`Link for ${contestantName} copied!`);
   };
@@ -728,7 +728,7 @@ const ContestManagement = () => {
             <ShareButtons
               title={contest.title}
               description={contest.description || `Vote now in ${contest.title}`}
-              url={getContestUrl(id!, (contest as any)?.custom_slug)}
+              url={getContestShareUrl((contest as any)?.custom_slug || id!, true)}
             />
             <Button variant="outline" size="sm" onClick={handleCopyLink}>
               <Copy className="h-4 w-4 sm:mr-2" />

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Share2, Facebook, Twitter, MessageCircle, Link, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { getContestantUrlById } from '@/lib/urlHelpers';
+import { getContestantShareUrl } from '@/lib/urlHelpers';
 
 interface ShareButtonsProps {
   title: string;
@@ -106,7 +106,11 @@ export const ContestantShareButton = ({
   contestTitle,
   contestCustomSlug,
 }: ContestantShareButtonProps) => {
-  const url = getContestantUrlById(contestId, contestantId, contestCustomSlug);
+  const url = getContestantShareUrl(
+    contestCustomSlug || contestId,
+    contestantId,
+    true
+  );
   const title = `Vote for ${contestantName} in ${contestTitle}`;
   const description = `Support ${contestantName} by casting your vote now!`;
 

@@ -37,11 +37,12 @@ serve(async (req) => {
     let pageUrl = SITE_URL;
 
     if (type === "event") {
-      const { data: event } = await supabase
-        .from("events")
-        .select("id, title, description, image_url, custom_slug, venue, event_date")
-        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .maybeSingle();
+      const { data: event } = await findBySlugOrId(
+        supabase,
+        "events",
+        "id, title, description, image_url, custom_slug, venue, event_date",
+        slug
+      );
 
       if (event) {
         title = `${event.title} | USEQIV Events`;
@@ -66,11 +67,12 @@ serve(async (req) => {
       if (qpImage) {
         image = qpImage;
       }
-      const { data: contest } = await supabase
-        .from("contests")
-        .select("id, title, description, image_url, custom_slug")
-        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .maybeSingle();
+      const { data: contest } = await findBySlugOrId(
+        supabase,
+        "contests",
+        "id, title, description, image_url, custom_slug",
+        slug
+      );
 
       if (contest) {
         title = `${contest.title} | USEQIV`;
@@ -104,11 +106,12 @@ serve(async (req) => {
       if (qpImage) {
         image = qpImage;
       }
-      const { data: contest } = await supabase
-        .from("contests")
-        .select("id, title, custom_slug")
-        .or(`custom_slug.eq.${contestKey},id.eq.${contestKey}`)
-        .maybeSingle();
+      const { data: contest } = await findBySlugOrId(
+        supabase,
+        "contests",
+        "id, title, custom_slug",
+        contestKey
+      );
 
       if (contest && contestantSlug) {
         const { data: contestants } = await supabase
@@ -134,11 +137,12 @@ serve(async (req) => {
         }
       }
     } else if (type === "campaign") {
-      const { data: campaign } = await supabase
-        .from("campaigns")
-        .select("id, title, description, short_description, image_url, custom_slug, goal_amount, currency, current_amount")
-        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .maybeSingle();
+      const { data: campaign } = await findBySlugOrId(
+        supabase,
+        "campaigns",
+        "id, title, description, short_description, image_url, custom_slug, goal_amount, currency, current_amount",
+        slug
+      );
 
       if (campaign) {
         title = `${campaign.title} | USEQIV Campaigns`;
@@ -150,11 +154,12 @@ serve(async (req) => {
           : `${SITE_URL}/campaigns/${campaign.id}`;
       }
     } else if (type === "form") {
-      const { data: form } = await supabase
-        .from("forms")
-        .select("id, title, description, custom_slug, logo_url")
-        .or(`custom_slug.eq.${slug},id.eq.${slug}`)
-        .maybeSingle();
+      const { data: form } = await findBySlugOrId(
+        supabase,
+        "forms",
+        "id, title, description, custom_slug, logo_url",
+        slug
+      );
 
       if (form) {
         title = `${form.title} | USEQIV`;
@@ -290,6 +295,20 @@ function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+/** Look up a row by UUID id or custom_slug — never combine both in .or() (PostgREST casts id to uuid). */
+async function findBySlugOrId(
+  supabase: ReturnType<typeof createClient>,
+  table: string,
+  select: string,
+  slug: string
+) {
+  const query = supabase.from(table).select(select);
+  if (isUuid(slug)) {
+    return query.eq("id", slug).maybeSingle();
+  }
+  return query.eq("custom_slug", slug).maybeSingle();
 }
 
 function normalizeSlugSegment(value: string): string {
