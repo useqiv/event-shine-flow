@@ -43,6 +43,8 @@ import {
 import { format } from 'date-fns';
 import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
+import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
 
@@ -170,6 +172,20 @@ const ContestantDetail = () => {
     ? selectedOption.price
     : voteQuantity * fallbackUnitPrice;
   const contestCurrency = contest?.vote_currency || 'NGN';
+  const voteDisplayMode = normalizeVoteDisplayMode((contest as any)?.vote_display_mode);
+  const contestantVotesPublic = contestant?.is_public_votes !== false;
+  const useProgressDisplay = voteDisplayMode === 'progress_bar' && contestantVotesPublic;
+  const useCountDisplay = voteDisplayMode === 'count' && contestantVotesPublic;
+  const shareDescription = useMemo(() => {
+    if (!contestant || !contest) return '';
+    if (!contestantVotesPublic) {
+      return `Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank}.`;
+    }
+    if (useProgressDisplay) {
+      return `Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank}.`;
+    }
+    return `Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`;
+  }, [contest, contestant, contestantRank, contestantVotesPublic, useProgressDisplay]);
 
   // Generate URLs - use custom_slug if available
   const contestUrl = contest ? getContestUrl(contest.id, (contest as any)?.custom_slug) : '';
@@ -401,7 +417,7 @@ const ContestantDetail = () => {
         <meta property="og:type" content="profile" />
         <meta property="og:url" content={contestantUrl} />
         <meta property="og:title" content={`Vote for ${contestant.name} in ${contest.title}`} />
-        <meta property="og:description" content={`Vote and support ${contestant.name} for ${contest.title}. Currently ranked #${contestantRank} with ${contestant.vote_count.toLocaleString()} votes.`} />
+        <meta property="og:description" content={shareDescription} />
         {ogImage && <meta property="og:image" content={ogImage} />}
         {ogImage && <meta property="og:image:secure_url" content={ogImage} />}
         {ogImage && <meta property="og:image:width" content="1200" />}
@@ -486,10 +502,22 @@ const ContestantDetail = () => {
                   #{contestantRank}
                 </Badge>
               )}
-              <Badge variant="secondary" className="text-xs px-2 py-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {contestant.vote_count.toLocaleString()} votes
-              </Badge>
+              {useCountDisplay && (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  {contestant.vote_count.toLocaleString()} votes
+                </Badge>
+              )}
+              {useProgressDisplay && (
+                <div className="flex-1 max-w-[120px]">
+                  <Progress value={voteProgress} className="h-2" />
+                </div>
+              )}
+              {!contestantVotesPublic && (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  Votes hidden
+                </Badge>
+              )}
               {user && (
                 <FavoriteButton contestantId={contestant.id} className="ml-auto" />
               )}
@@ -673,26 +701,54 @@ const ContestantDetail = () => {
                   className="p-4 sm:p-6 text-center"
                   style={{ backgroundColor: `${primaryColor}10` }}
                 >
-                  <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Votes</p>
-                  <p 
-                    className={`text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight ${showVotePulse ? 'animate-scale-in' : ''}`}
-                    style={{ color: primaryColor }}
-                  >
-                    {contestant.vote_count.toLocaleString()}
-                  </p>
-                  {contestantRank > 0 && (
-                    <Badge 
-                      variant="secondary" 
-                      className="mt-2 sm:mt-3 text-xs sm:text-base px-3 sm:px-4 py-0.5 sm:py-1"
-                    >
-                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      Rank #{contestantRank} of {contestants?.length || 0}
-                    </Badge>
+                  {!contestantVotesPublic ? (
+                    <>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Votes</p>
+                      <p className="text-2xl sm:text-3xl font-semibold text-muted-foreground">Votes hidden</p>
+                    </>
+                  ) : useProgressDisplay ? (
+                    <>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-3">Standing</p>
+                      <div className="max-w-md mx-auto px-2">
+                        <Progress
+                          value={voteProgress}
+                          className={`h-4 sm:h-5 ${showVotePulse ? 'animate-scale-in' : ''}`}
+                        />
+                      </div>
+                      {contestantRank > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className="mt-3 sm:mt-4 text-xs sm:text-base px-3 sm:px-4 py-0.5 sm:py-1"
+                        >
+                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          Rank #{contestantRank} of {contestants?.length || 0}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">Total Votes</p>
+                      <p 
+                        className={`text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight ${showVotePulse ? 'animate-scale-in' : ''}`}
+                        style={{ color: primaryColor }}
+                      >
+                        {contestant.vote_count.toLocaleString()}
+                      </p>
+                      {contestantRank > 0 && (
+                        <Badge 
+                          variant="secondary" 
+                          className="mt-2 sm:mt-3 text-xs sm:text-base px-3 sm:px-4 py-0.5 sm:py-1"
+                        >
+                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          Rank #{contestantRank} of {contestants?.length || 0}
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
                 
-                {/* Progress to Leader */}
-                {contestantRank > 1 && leaderVotes > 0 && (
+                {/* Progress to Leader — vote counts only */}
+                {useCountDisplay && contestantRank > 1 && leaderVotes > 0 && (
                   <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50">
                     <div className="flex justify-between text-xs sm:text-sm mb-2">
                       <span className="text-muted-foreground">Progress to #1</span>
@@ -827,9 +883,14 @@ const ContestantDetail = () => {
                       </div>
                       <CardContent className="p-2 sm:p-3">
                         <p className="font-medium text-xs sm:text-sm truncate capitalize">{c.name}</p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground">
-                          {c.vote_count.toLocaleString()} votes
-                        </p>
+                        <ContestantVoteDisplay
+                          mode={voteDisplayMode}
+                          voteCount={c.vote_count}
+                          maxVotes={leaderVotes}
+                          isPublicVotes={c.is_public_votes}
+                          primaryColor={primaryColor}
+                          className="text-[10px] sm:text-xs"
+                        />
                       </CardContent>
                     </Card>
                   </Link>
