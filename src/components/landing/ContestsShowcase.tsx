@@ -142,12 +142,9 @@ const ContestsShowcase = () => {
         <div className="max-w-[1600px] mx-auto">
           {/* Header */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-1">Contests</h2>
-                <p className="text-muted-foreground text-sm">Vote for your favorite contestants or browse past results</p>
-              </div>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Contests</h2>
+              <div className="flex items-center gap-2 shrink-0">
                 <Button variant="outline" size="sm" className="rounded-full px-4" asChild>
                   <Link to="/contests">
                     View All
@@ -170,6 +167,7 @@ const ContestsShowcase = () => {
                 </div>
               </div>
             </div>
+            <p className="text-muted-foreground text-sm -mt-2">Vote for your favorite contestants or browse past results</p>
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 pb-2">
