@@ -8,28 +8,47 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isToday, isThisWeek, isThisMonth, addMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
-type FilterType = "all" | "today" | "this_week" | "this_month" | "next_month";
+type FilterType = "all" | "today" | "this_week" | "this_month" | "next_month" | "past";
 
 const EventsShowcase = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
 
-  const { data: events, isLoading } = useQuery({
+  const { data: eventData, isLoading } = useQuery({
     queryKey: ["landing-events"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("is_active", true)
-        .eq("is_private", false)
-        .gte("event_date", new Date().toISOString())
-        .order("event_date", { ascending: true })
-        .limit(20);
+      const now = new Date().toISOString();
+      const [upcomingResult, pastResult] = await Promise.all([
+        supabase
+          .from("events")
+          .select("*")
+          .eq("is_active", true)
+          .eq("is_private", false)
+          .gte("event_date", now)
+          .order("event_date", { ascending: true })
+          .limit(20),
+        supabase
+          .from("events")
+          .select("*")
+          .eq("is_active", true)
+          .eq("is_private", false)
+          .lt("event_date", now)
+          .order("event_date", { ascending: false })
+          .limit(20),
+      ]);
 
-      if (error) throw error;
-      return data;
+      if (upcomingResult.error) throw upcomingResult.error;
+      if (pastResult.error) throw pastResult.error;
+
+      return {
+        upcoming: upcomingResult.data ?? [],
+        past: pastResult.data ?? [],
+      };
     },
   });
+
+  const upcomingEvents = eventData?.upcoming ?? [];
+  const pastEvents = eventData?.past ?? [];
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "All" },
@@ -37,21 +56,24 @@ const EventsShowcase = () => {
     { key: "this_week", label: "This Week" },
     { key: "this_month", label: "This Month" },
     { key: "next_month", label: "Next Month" },
+    { key: "past", label: "Past" },
   ];
 
   const availableCountries = useMemo(() => {
-    if (!events) return [];
-    return [...new Set(events.map((e: any) => e.country).filter(Boolean))].sort();
-  }, [events]);
+    const allEvents = [...upcomingEvents, ...pastEvents];
+    return [...new Set(allEvents.map((e: any) => e.country).filter(Boolean))].sort();
+  }, [upcomingEvents, pastEvents]);
 
   const filteredEvents = useMemo(() => {
-    if (!events) return [];
+    const sourceEvents = activeFilter === "past" ? pastEvents : upcomingEvents;
+    let filtered = sourceEvents;
 
-    let filtered = events;
-
-    // Apply country filter first
     if (countryFilter !== "all") {
       filtered = filtered.filter((event: any) => event.country === countryFilter);
+    }
+
+    if (activeFilter === "past") {
+      return filtered.slice(0, 10);
     }
 
     switch (activeFilter) {
@@ -64,19 +86,20 @@ const EventsShowcase = () => {
       case "this_month":
         filtered = filtered.filter((event) => isThisMonth(new Date(event.event_date)));
         break;
-      case "next_month":
+      case "next_month": {
         const nextMonthStart = startOfMonth(addMonths(new Date(), 1));
         const nextMonthEnd = endOfMonth(addMonths(new Date(), 1));
         filtered = filtered.filter((event) =>
           isWithinInterval(new Date(event.event_date), { start: nextMonthStart, end: nextMonthEnd })
         );
         break;
+      }
       default:
         break;
     }
 
     return filtered.slice(0, 10);
-  }, [events, activeFilter, countryFilter]);
+  }, [upcomingEvents, pastEvents, activeFilter, countryFilter]);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -127,7 +150,7 @@ const EventsShowcase = () => {
     );
   }
 
-  if (!events || events.length === 0) {
+  if (upcomingEvents.length === 0 && pastEvents.length === 0) {
     return null;
   }
 
@@ -138,7 +161,7 @@ const EventsShowcase = () => {
           {/* Header */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Upcoming Events</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Events</h2>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="rounded-full px-4" asChild>
                   <Link to="/events">
@@ -162,7 +185,7 @@ const EventsShowcase = () => {
                 </div>
               </div>
             </div>
-            <p className="text-muted-foreground text-sm -mt-2">Discover exciting events happening soon</p>
+            <p className="text-muted-foreground text-sm -mt-2">Discover upcoming and past events</p>
 
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 pb-2">
@@ -228,7 +251,12 @@ const EventsShowcase = () => {
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} categoryColor={getCategoryColor(event.category)} />
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  categoryColor={getCategoryColor(event.category)}
+                  isPast={activeFilter === "past"}
+                />
               ))}
             </div>
           )}
@@ -251,9 +279,10 @@ interface EventCardProps {
     country?: string | null;
   };
   categoryColor: string;
+  isPast?: boolean;
 }
 
-const EventCard = ({ event, categoryColor }: EventCardProps) => {
+const EventCard = ({ event, categoryColor, isPast = false }: EventCardProps) => {
   const eventUrl = event.custom_slug ? `/e/${event.custom_slug}` : `/events/${event.id}`;
 
   return (
@@ -281,6 +310,11 @@ const EventCard = ({ event, categoryColor }: EventCardProps) => {
         <div className={`absolute top-3 left-3 px-2.5 py-1 ${categoryColor} rounded-full shadow-md`}>
           <span className="text-xs font-semibold text-white capitalize">{event.category}</span>
         </div>
+        {isPast && (
+          <div className="absolute top-3 right-3 px-2.5 py-1 bg-muted-foreground rounded-full shadow-md">
+            <span className="text-xs font-semibold text-white">Past</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -305,7 +339,7 @@ const EventCard = ({ event, categoryColor }: EventCardProps) => {
         {/* Action Button */}
         <Button variant="outline" size="sm" className="w-full rounded-full text-xs group/btn">
           <Ticket className="h-3.5 w-3.5 mr-1.5" />
-          Get Tickets
+          {isPast ? "View Event" : "Get Tickets"}
           <ArrowRight className="h-3.5 w-3.5 ml-auto group-hover/btn:translate-x-1 transition-transform" />
         </Button>
       </div>

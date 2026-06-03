@@ -7,59 +7,81 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isAfter, isBefore } from "date-fns";
 
-type FilterType = "all" | "ongoing" | "coming_up";
+type FilterType = "all" | "ongoing" | "coming_up" | "past";
 
 const ContestsShowcase = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
-  const { data: contests, isLoading } = useQuery({
+  const { data: contestData, isLoading } = useQuery({
     queryKey: ["landing-contests"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contests")
-        .select("*")
-        .eq("is_active", true)
-        .gte("end_date", new Date().toISOString())
-        .order("start_date", { ascending: true })
-        .limit(20);
+      const now = new Date().toISOString();
+      const [activeResult, pastResult] = await Promise.all([
+        supabase
+          .from("contests")
+          .select("*")
+          .eq("is_active", true)
+          .gte("end_date", now)
+          .order("start_date", { ascending: true })
+          .limit(20),
+        supabase
+          .from("contests")
+          .select("*")
+          .eq("is_active", true)
+          .lt("end_date", now)
+          .order("end_date", { ascending: false })
+          .limit(20),
+      ]);
 
-      if (error) throw error;
-      return data;
+      if (activeResult.error) throw activeResult.error;
+      if (pastResult.error) throw pastResult.error;
+
+      return {
+        active: activeResult.data ?? [],
+        past: pastResult.data ?? [],
+      };
     },
   });
+
+  const activeContests = contestData?.active ?? [];
+  const pastContests = contestData?.past ?? [];
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: "All" },
     { key: "ongoing", label: "Ongoing" },
     { key: "coming_up", label: "Coming Soon" },
+    { key: "past", label: "Past" },
   ];
 
   const filteredContests = useMemo(() => {
-    if (!contests) return [];
-
     const now = new Date();
-    let filtered = contests;
+    const sourceContests = activeFilter === "past" ? pastContests : activeContests;
+    let filtered = sourceContests;
+
+    if (activeFilter === "past") {
+      return filtered.slice(0, 10);
+    }
 
     switch (activeFilter) {
       case "ongoing":
-        filtered = contests.filter((contest) => {
+        filtered = activeContests.filter((contest) => {
           const startDate = new Date(contest.start_date);
           const endDate = new Date(contest.end_date);
           return isBefore(startDate, now) && isAfter(endDate, now);
         });
         break;
       case "coming_up":
-        filtered = contests.filter((contest) => {
+        filtered = activeContests.filter((contest) => {
           const startDate = new Date(contest.start_date);
           return isAfter(startDate, now);
         });
         break;
       default:
-        filtered = contests;
+        filtered = activeContests;
     }
 
     return filtered.slice(0, 10);
-  }, [contests, activeFilter]);
+  }, [activeContests, pastContests, activeFilter]);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -110,7 +132,7 @@ const ContestsShowcase = () => {
     );
   }
 
-  if (!contests || contests.length === 0) {
+  if (activeContests.length === 0 && pastContests.length === 0) {
     return null;
   }
 
@@ -122,8 +144,8 @@ const ContestsShowcase = () => {
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-1">Active Contests</h2>
-                <p className="text-muted-foreground text-sm">Vote for your favorite contestants</p>
+                <h2 className="text-xl lg:text-2xl font-bold text-foreground mb-1">Contests</h2>
+                <p className="text-muted-foreground text-sm">Vote for your favorite contestants or browse past results</p>
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" size="sm" className="rounded-full px-4" asChild>
@@ -179,7 +201,12 @@ const ContestsShowcase = () => {
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {filteredContests.map((contest) => (
-                <ContestCard key={contest.id} contest={contest} categoryColor={getCategoryColor(contest.category)} />
+                <ContestCard
+                  key={contest.id}
+                  contest={contest}
+                  categoryColor={getCategoryColor(contest.category)}
+                  isPast={activeFilter === "past"}
+                />
               ))}
             </div>
           )}
@@ -202,14 +229,15 @@ interface ContestCardProps {
     vote_currency: string;
   };
   categoryColor: string;
+  isPast?: boolean;
 }
 
-const ContestCard = ({ contest, categoryColor }: ContestCardProps) => {
+const ContestCard = ({ contest, categoryColor, isPast = false }: ContestCardProps) => {
   const contestUrl = contest.custom_slug ? `/c/${contest.custom_slug}` : `/contests/${contest.id}`;
   const now = new Date();
   const startDate = new Date(contest.start_date);
   const endDate = new Date(contest.end_date);
-  const isOngoing = isBefore(startDate, now) && isAfter(endDate, now);
+  const isOngoing = !isPast && isBefore(startDate, now) && isAfter(endDate, now);
 
   return (
     <Link
@@ -238,8 +266,14 @@ const ContestCard = ({ contest, categoryColor }: ContestCardProps) => {
         </div>
 
         {/* Status Badge */}
-        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-full shadow-md ${isOngoing ? "bg-green-500" : "bg-amber-500"}`}>
-          <span className="text-xs font-semibold text-white">{isOngoing ? "Live" : "Coming Soon"}</span>
+        <div
+          className={`absolute top-3 right-3 px-2.5 py-1 rounded-full shadow-md ${
+            isPast ? "bg-muted-foreground" : isOngoing ? "bg-green-500" : "bg-amber-500"
+          }`}
+        >
+          <span className="text-xs font-semibold text-white">
+            {isPast ? "Ended" : isOngoing ? "Live" : "Coming Soon"}
+          </span>
         </div>
       </div>
 
@@ -253,10 +287,11 @@ const ContestCard = ({ contest, categoryColor }: ContestCardProps) => {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-3.5 w-3.5 text-primary shrink-0" />
             <span className="text-xs">
-              {isOngoing 
-                ? `Ends ${format(endDate, "MMM d, yyyy")}`
-                : `Starts ${format(startDate, "MMM d, yyyy")}`
-              }
+              {isPast
+                ? `Ended ${format(endDate, "MMM d, yyyy")}`
+                : isOngoing
+                  ? `Ends ${format(endDate, "MMM d, yyyy")}`
+                  : `Starts ${format(startDate, "MMM d, yyyy")}`}
             </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -270,7 +305,7 @@ const ContestCard = ({ contest, categoryColor }: ContestCardProps) => {
         {/* Action Button */}
         <Button variant="outline" size="sm" className="w-full rounded-full text-xs group/btn">
           <Trophy className="h-3.5 w-3.5 mr-1.5" />
-          {isOngoing ? "Vote Now" : "View Contest"}
+          {isPast ? "View Results" : isOngoing ? "Vote Now" : "View Contest"}
           <ArrowRight className="h-3.5 w-3.5 ml-auto group-hover/btn:translate-x-1 transition-transform" />
         </Button>
       </div>
