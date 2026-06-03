@@ -27,7 +27,6 @@ const ContestsShowcase = () => {
         supabase
           .from("contests")
           .select("*")
-          .eq("is_active", true)
           .lt("end_date", now)
           .order("end_date", { ascending: false })
           .limit(20),

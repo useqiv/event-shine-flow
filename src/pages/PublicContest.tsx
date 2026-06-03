@@ -51,7 +51,6 @@ const PublicContest = () => {
         .from('contests')
         .select('*')
         .eq('custom_slug', slug)
-        .eq('is_active', true)
         .maybeSingle();
       
       if (error) throw error;

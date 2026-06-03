@@ -68,7 +68,6 @@ const ContestantDetail = () => {
         .from('contests')
         .select('*')
         .eq('custom_slug', contestSlug)
-        .eq('is_active', true)
         .maybeSingle();
       if (error) throw error;
       return data;
