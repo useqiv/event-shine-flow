@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { Trophy, Calendar, ArrowRight, Vote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trophy, Calendar, ArrowRight, Vote, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, isAfter, isBefore } from "date-fns";
@@ -171,20 +172,38 @@ const ContestsShowcase = () => {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {filters.map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setActiveFilter(filter.key)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                    activeFilter === filter.key
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:bg-background/80"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between gap-4 pb-2">
+              {/* Mobile: filter dropdown */}
+              <div className="sm:hidden">
+                <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as FilterType)}>
+                  <SelectTrigger className="w-auto min-w-[130px] rounded-full text-sm h-9">
+                    <SlidersHorizontal className="h-4 w-4 mr-1.5 shrink-0" />
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filters.map((filter) => (
+                      <SelectItem key={filter.key} value={filter.key}>{filter.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Desktop: filter pills */}
+              <div className="hidden sm:flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() => setActiveFilter(filter.key)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                      activeFilter === filter.key
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-background text-muted-foreground hover:bg-background/80"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
