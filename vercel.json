@@ -17,14 +17,6 @@
   ],
   "rewrites": [
     {
-      "source": "/share/contest/:contestKey",
-      "destination": "https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/og-meta?type=contest&slug=:contestKey"
-    },
-    {
-      "source": "/share/contestant/:contestKey/:contestantSlug",
-      "destination": "https://tirqmqzgksclsjxfiham.supabase.co/functions/v1/og-meta?type=contestant&slug=:contestKey/:contestantSlug"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

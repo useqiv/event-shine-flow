@@ -171,9 +171,9 @@ serve(async (req) => {
       }
     }
 
-    // Ensure image is absolute URL when present.
+    // Ensure image is absolute URL when present, then proxy for social compatibility.
     if (image) {
-      image = toAbsolutePublicImageUrl(image);
+      image = toSocialOgImageUrl(toAbsolutePublicImageUrl(image));
     }
 
     // Return JSON with OG data (for debugging) or HTML for crawlers
@@ -291,6 +291,11 @@ function toAbsolutePublicImageUrl(rawImage: string | null | undefined): string {
     return `${SITE_URL}${image}`;
   }
   return `${SUPABASE_STORAGE_PUBLIC_BASE}/${image}`;
+}
+
+function toSocialOgImageUrl(absoluteImage: string): string {
+  if (!absoluteImage) return "";
+  return `${SITE_URL}/api/og-image?url=${encodeURIComponent(absoluteImage)}`;
 }
 
 function isUuid(value: string): boolean {
