@@ -152,7 +152,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 md:ml-64">
         {/* Top Header */}
-        <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 w-full border-b border-border bg-card">
           <div className="px-4 md:px-6">
             <div className="flex h-16 items-center justify-between">
               {/* Mobile Menu Toggle */}

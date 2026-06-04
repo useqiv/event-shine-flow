@@ -326,7 +326,7 @@ const PitchDeck = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Minimal Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
             <Home className="h-5 w-5" />

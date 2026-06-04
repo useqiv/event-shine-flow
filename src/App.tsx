@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { isAdminVerificationComplete } from "@/components/admin/AdminMfaGate";
 import { InfluencerTracker } from "@/components/InfluencerTracker";
 import { AIChatWidget } from "@/components/AIChatWidget";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { ConfirmDialogProvider } from "@/hooks/useConfirmDialog";
 import { useIsScannerOnly } from "@/hooks/useIsScannerOnly";
 import Index from "./pages/Index";
@@ -382,6 +383,7 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  <ScrollToTop />
                   <InfluencerTracker>
                     <AppRoutes />
                     <AIChatWidget />

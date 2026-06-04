@@ -28,7 +28,7 @@ const ScannerLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Compact Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-card/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-card">
         <div className="px-3 sm:px-6">
           <div className="flex h-14 items-center justify-between">
             <Link to="/scanner" className="flex items-center gap-2">
