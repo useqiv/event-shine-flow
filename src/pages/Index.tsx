@@ -8,6 +8,7 @@ import Showcase from "@/components/landing/Showcase";
 import Features from "@/components/landing/Features";
 import Stats from "@/components/landing/Stats";
 import CTA from "@/components/landing/CTA";
+import BlogShowcase from "@/components/landing/BlogShowcase";
 import Footer from "@/components/landing/Footer";
 import { combineSchemas, getOrganizationSchema, getWebSiteSchema, getSoftwareApplicationSchema, getWebPageSchema } from "@/lib/structuredData";
 
@@ -68,6 +69,7 @@ const Index = () => {
           <Stats />
           <CTA />
         </main>
+        <BlogShowcase />
         <Footer />
       </div>
     </>

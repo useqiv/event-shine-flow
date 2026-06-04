@@ -65,6 +65,8 @@ import HelpCenter from "./pages/HelpCenter";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import PitchDeck from "./pages/PitchDeck";
+import BlogArchive from "./pages/BlogArchive";
+import BlogPostDetail from "./pages/BlogPostDetail";
 
 // Product Pages
 import EventTicketing from "./pages/products/EventTicketing";
@@ -115,6 +117,7 @@ import AdminVoteReconciliation from "./pages/admin/AdminVoteReconciliation";
 import AdminActivityLog from "./pages/admin/AdminActivityLog";
 import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AdminOrgReports from "./pages/admin/AdminOrgReports";
+import AdminBlog from "./pages/admin/AdminBlog";
 
 // Influencer Dashboard Pages
 import InfluencerDashboard from "./pages/influencer/InfluencerDashboard";
@@ -251,6 +254,8 @@ const AppRoutes = () => (
     <Route path="/privacy" element={<PrivacyPolicy />} />
     <Route path="/terms" element={<TermsOfService />} />
     <Route path="/pitch-deck" element={<PitchDeck />} />
+    <Route path="/blog" element={<BlogArchive />} />
+    <Route path="/blog/:slug" element={<BlogPostDetail />} />
     
     {/* Product Feature Pages */}
     <Route path="/products/events" element={<EventTicketing />} />
@@ -346,6 +351,7 @@ const AppRoutes = () => (
         <Route path="/admin/activity-log" element={<ProtectedRoute><AdminActivityLog /></ProtectedRoute>} />
         <Route path="/admin/system-health" element={<ProtectedRoute><AdminSystemHealth /></ProtectedRoute>} />
         <Route path="/admin/org-reports" element={<ProtectedRoute><AdminOrgReports /></ProtectedRoute>} />
+        <Route path="/admin/blog" element={<ProtectedRoute><AdminBlog /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
         
         {/* Influencer Dashboard Routes */}

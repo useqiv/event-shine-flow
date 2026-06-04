@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { compressImage, getCompressedExtension } from '@/lib/imageCompression';
 
 interface ImageUploadProps {
-  bucket: 'contest-images' | 'event-images' | 'contestant-images' | 'campaign-images' | 'avatars';
+  bucket: 'contest-images' | 'event-images' | 'contestant-images' | 'campaign-images' | 'avatars' | 'blog-images';
   value?: string;
   onChange: (url: string) => void;
   label?: string;

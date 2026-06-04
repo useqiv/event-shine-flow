@@ -14,7 +14,7 @@ const Footer = (props: HTMLAttributes<HTMLElement>) => {
     company: [
       { name: "About Us", href: "/about" },
       { name: "Contact Us", href: "/contact" },
-      { name: "Blog", href: "#blog" }
+      { name: "Blog", href: "/blog" }
     ],
     resources: [
       { name: "Help Center", href: "/help" },
