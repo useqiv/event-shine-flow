@@ -12,13 +12,14 @@ import {
   getConvenienceFeeSettings,
   resolveTicketBaseAmount,
   resolveVoteBaseAmount,
+  stripConvenienceFeeFromGross,
 } from '@/lib/baseAmount';
-import { Trophy, Calendar, TrendingUp, Crown } from 'lucide-react';
+import { Trophy, Calendar, TrendingUp, Crown, Heart } from 'lucide-react';
 
 interface TopPerformer {
   id: string;
   title: string;
-  type: 'contest' | 'event';
+  type: 'contest' | 'event' | 'campaign';
   revenue: number;
   currency: string;
   itemCount: number;
@@ -185,7 +186,72 @@ const TopPerformersWidget = () => {
         });
       }
 
-      const allPerformers = [...contestRevenues, ...eventRevenues];
+      const { data: campaigns } = await supabase
+        .from('campaigns')
+        .select('id, title, currency')
+        .eq('creator_id', user!.id);
+
+      const campaignIds = campaigns?.map((c) => c.id) || [];
+      const campaignRevenues: TopPerformer[] = [];
+
+      if (campaignIds.length > 0) {
+        const { data: donations } = await supabase
+          .from('donations')
+          .select('campaign_id, amount, net_amount, platform_commission, transaction_id')
+          .in('campaign_id', campaignIds)
+          .eq('status', 'completed');
+
+        const campaignTitleMap = new Map(campaigns?.map((c) => [c.id, c.title]) || []);
+        const campaignCurrencyMap = new Map(campaigns?.map((c) => [c.id, c.currency || 'USD']) || []);
+        const revenueMap: Record<string, { revenue: number; donations: number }> = {};
+        const baseAmountMap = await getBaseAmountsByTransactionId(
+          donations?.map((d) => d.transaction_id) || [],
+        );
+
+        donations?.forEach((d) => {
+          if (!revenueMap[d.campaign_id]) {
+            revenueMap[d.campaign_id] = { revenue: 0, donations: 0 };
+          }
+          const netAmount = Number(d.net_amount);
+          const platformCommission = Number(d.platform_commission);
+          const settledBaseAmount =
+            Number.isFinite(netAmount) && Number.isFinite(platformCommission)
+              ? netAmount + platformCommission
+              : 0;
+          const normalizedSettledAmount = stripConvenienceFeeFromGross(
+            settledBaseAmount,
+            convenienceFeeSettings,
+          );
+          const normalizedRecordedAmount = stripConvenienceFeeFromGross(
+            Number(d.amount) || 0,
+            convenienceFeeSettings,
+          );
+          const baseAmount =
+            baseAmountMap.get(d.transaction_id) ??
+            normalizedSettledAmount ??
+            normalizedRecordedAmount ??
+            0;
+          revenueMap[d.campaign_id].revenue += Number(baseAmount) || 0;
+          revenueMap[d.campaign_id].donations += 1;
+        });
+
+        campaignIds.forEach((id) => {
+          const data = revenueMap[id] || { revenue: 0, donations: 0 };
+          if (data.revenue > 0) {
+            campaignRevenues.push({
+              id,
+              title: campaignTitleMap.get(id) || 'Campaign',
+              type: 'campaign',
+              revenue: data.revenue,
+              currency: campaignCurrencyMap.get(id) || 'USD',
+              itemCount: data.donations,
+              itemLabel: 'donations',
+            });
+          }
+        });
+      }
+
+      const allPerformers = [...contestRevenues, ...eventRevenues, ...campaignRevenues];
       allPerformers.sort((a, b) => b.revenue - a.revenue);
 
       return allPerformers.slice(0, 5);
@@ -221,7 +287,7 @@ const TopPerformersWidget = () => {
             <Crown className="h-5 w-5" />
             Top Performers
           </CardTitle>
-          <CardDescription>Your highest revenue contests and events</CardDescription>
+          <CardDescription>Your highest revenue contests, events, and campaigns</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-6 text-muted-foreground">
@@ -241,14 +307,22 @@ const TopPerformersWidget = () => {
           <Crown className="h-5 w-5" />
           Top Performers
         </CardTitle>
-        <CardDescription>Your highest revenue contests and events</CardDescription>
+        <CardDescription>Your highest revenue contests, events, and campaigns</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {topPerformers.map((item, index) => (
+          {topPerformers.map((item, index) => {
+            const href =
+              item.type === 'contest'
+                ? `/org/contests/${item.id}`
+                : item.type === 'event'
+                  ? `/org/events/${item.id}`
+                  : `/org/campaigns/${item.id}/analytics`;
+
+            return (
             <Link
               key={item.id}
-              to={item.type === 'contest' ? `/org/contests/${item.id}` : `/org/events/${item.id}`}
+              to={href}
               className="block"
             >
               <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors min-w-0">
@@ -259,8 +333,10 @@ const TopPerformersWidget = () => {
                   <div className="flex items-center gap-2">
                     {item.type === 'contest' ? (
                       <Trophy className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    ) : (
+                    ) : item.type === 'event' ? (
                       <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    ) : (
+                      <Heart className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     )}
                     <p className="font-medium truncate">{item.title}</p>
                   </div>
@@ -278,7 +354,8 @@ const TopPerformersWidget = () => {
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>

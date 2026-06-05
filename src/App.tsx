@@ -77,6 +77,7 @@ import SmartForms from "./pages/products/SmartForms";
 
 // Organization Dashboard Pages
 import OrgDashboard from "./pages/org/OrgDashboard";
+import OrgMarketing from "./pages/org/OrgMarketing";
 import CreateContest from "./pages/org/CreateContest";
 import CreateEvent from "./pages/org/CreateEvent";
 import ManageContests from "./pages/org/ManageContests";
@@ -312,6 +313,7 @@ const AppRoutes = () => (
     
     {/* Organization Dashboard Routes */}
     <Route path="/org/dashboard" element={<ProtectedRoute><OrgDashboard /></ProtectedRoute>} />
+    <Route path="/org/marketing" element={<ProtectedRoute><OrgMarketing /></ProtectedRoute>} />
     <Route path="/org/contests/create" element={<ProtectedRoute><CreateContest /></ProtectedRoute>} />
     <Route path="/org/events/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
     <Route path="/org/contests" element={<ProtectedRoute><ManageContests /></ProtectedRoute>} />

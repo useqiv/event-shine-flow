@@ -32,6 +32,21 @@ export const useOrgRealtimeStats = () => {
         () => {
           queryClient.invalidateQueries({ queryKey: ['organization-stats', user.id] });
           queryClient.invalidateQueries({ queryKey: ['revenue-trends'] });
+          queryClient.invalidateQueries({ queryKey: ['org-monthly-goal-metrics'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'donations',
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['organization-stats', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['revenue-trends'] });
+          queryClient.invalidateQueries({ queryKey: ['org-monthly-goal-metrics'] });
+          queryClient.invalidateQueries({ queryKey: ['top-performers', user.id] });
         }
       )
       .on(
@@ -44,6 +59,7 @@ export const useOrgRealtimeStats = () => {
         () => {
           queryClient.invalidateQueries({ queryKey: ['organization-stats', user.id] });
           queryClient.invalidateQueries({ queryKey: ['revenue-trends'] });
+          queryClient.invalidateQueries({ queryKey: ['org-monthly-goal-metrics'] });
         }
       )
       .on(

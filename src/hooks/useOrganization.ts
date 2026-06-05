@@ -27,6 +27,10 @@ export interface OrganizationSettings {
   usdt_address: string | null;
   preferred_payout_method: string | null;
   default_currency: string;
+  monthly_revenue_goal?: number | null;
+  monthly_votes_goal?: number | null;
+  monthly_tickets_goal?: number | null;
+  monthly_donations_goal?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,6 +140,7 @@ export const useUpdateOrganizationSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['org-monthly-goal-metrics'] });
       toast.success('Settings updated successfully');
     },
     onError: (error) => {
@@ -571,10 +576,16 @@ export const useOrganizationStats = () => {
       // Get campaigns created by this organization
       const { data: campaigns } = await supabase
         .from('campaigns')
-        .select('id')
+        .select('id, status, end_date')
         .eq('creator_id', user!.id);
       
       const campaignIds = campaigns?.map(c => c.id) || [];
+      const activeCampaigns =
+        campaigns?.filter(
+          (c) =>
+            c.status === 'active' &&
+            (!c.end_date || new Date(c.end_date) > new Date()),
+        ).length || 0;
       
       if (campaignIds.length > 0) {
         const { data: donations } = await supabase
@@ -703,6 +714,7 @@ export const useOrganizationStats = () => {
         availableBalance,
         activeContests,
         activeEvents,
+        activeCampaigns,
         // Revenue breakdown by currency
         ticketRevenueByCurrency,
         voteRevenueByCurrency,

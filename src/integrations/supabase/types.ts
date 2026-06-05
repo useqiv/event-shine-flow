@@ -1882,6 +1882,10 @@ export type Database = {
           created_at: string
           default_currency: string
           id: string
+          monthly_donations_goal: number | null
+          monthly_revenue_goal: number | null
+          monthly_tickets_goal: number | null
+          monthly_votes_goal: number | null
           notify_on_donation: boolean
           notify_on_ticket: boolean
           notify_on_vote: boolean
@@ -1903,6 +1907,10 @@ export type Database = {
           created_at?: string
           default_currency?: string
           id?: string
+          monthly_donations_goal?: number | null
+          monthly_revenue_goal?: number | null
+          monthly_tickets_goal?: number | null
+          monthly_votes_goal?: number | null
           notify_on_donation?: boolean
           notify_on_ticket?: boolean
           notify_on_vote?: boolean
@@ -1924,6 +1932,10 @@ export type Database = {
           created_at?: string
           default_currency?: string
           id?: string
+          monthly_donations_goal?: number | null
+          monthly_revenue_goal?: number | null
+          monthly_tickets_goal?: number | null
+          monthly_votes_goal?: number | null
           notify_on_donation?: boolean
           notify_on_ticket?: boolean
           notify_on_vote?: boolean

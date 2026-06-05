@@ -1,9 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useSocialPostLogs } from '@/hooks/useSocialPostLogs';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { BarChart3, TrendingUp, CheckCircle2, XCircle, MousePointerClick, Eye } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
@@ -11,23 +9,7 @@ import { format, subDays, startOfDay } from 'date-fns';
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export const MarketingAnalyticsDashboard: React.FC = () => {
-  const { user } = useAuth();
-
-  const { data: postLogs, isLoading } = useQuery({
-    queryKey: ['social-post-logs-all', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('social_post_logs')
-        .select('*, contests(title)')
-        .eq('organization_id', user?.id)
-        .order('posted_at', { ascending: false })
-        .limit(200);
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  const { data: postLogs, isLoading } = useSocialPostLogs();
 
   if (isLoading) {
     return (

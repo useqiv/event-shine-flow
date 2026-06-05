@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import OrganizationLayout from '@/components/layout/OrganizationLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOrganizationStats, useOrganizationContests, useOrganizationEvents, usePayouts, useOrganizationSettings } from '@/hooks/useOrganization';
+import { useOrgMonthlyGoalMetrics } from '@/hooks/useOrgMonthlyGoalMetrics';
+import { useOrganizationCampaigns } from '@/hooks/useCampaigns';
+import { useOrgPermissions } from '@/hooks/useOrgPermissions';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOrgRealtimeStats } from '@/hooks/useOrgRealtimeStats';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,30 +24,31 @@ import GoalTrackingWidget from '@/components/org/GoalTrackingWidget';
 import PayoutStatusAlert from '@/components/org/PayoutStatusAlert';
 import RevenueForecastWidget from '@/components/org/RevenueForecastWidget';
 import ExportRevenueButton from '@/components/org/ExportRevenueButton';
+import OrgOnboardingChecklist from '@/components/org/OrgOnboardingChecklist';
+import MarketingPulseWidget from '@/components/org/MarketingPulseWidget';
 import { formatCurrency, currencies } from '@/components/ui/currency-selector';
 import { 
-  Wallet, 
   Trophy, 
   Calendar, 
   Ticket, 
   Vote, 
-  ArrowRight,
   TrendingUp,
   CreditCard,
-  DollarSign,
-  Users,
-  BarChart3,
-  PlusCircle,
-  TrendingDown,
-  Info,
+  Heart,
   Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const OrgDashboard = () => {
+  const { user } = useAuth();
+  const { data: role } = useUserRole();
+  const { data: permissions } = useOrgPermissions();
+  const orgId = permissions?.organizationId ?? (role === 'organization' ? user?.id : undefined);
+
   const { data: stats, isLoading: statsLoading } = useOrganizationStats();
   const { data: contests, isLoading: contestsLoading } = useOrganizationContests();
   const { data: events, isLoading: eventsLoading } = useOrganizationEvents();
+  const { data: campaigns, isLoading: campaignsLoading } = useOrganizationCampaigns(orgId);
   const { data: payouts, isLoading: payoutsLoading } = usePayouts();
   const { data: orgSettings, isLoading: orgSettingsLoading } = useOrganizationSettings();
 
@@ -57,6 +64,24 @@ const OrgDashboard = () => {
       setDisplayCurrency(orgSettings.default_currency);
     }
   }, [orgSettings?.default_currency]);
+
+  const { data: goalMetrics, isLoading: goalsLoading } = useOrgMonthlyGoalMetrics(
+    displayCurrency,
+    orgSettings,
+  );
+
+  const campaignsInCurrency = useMemo(
+    () => campaigns?.filter((c) => c.currency === displayCurrency) || [],
+    [campaigns, displayCurrency],
+  );
+
+  const activeCampaignsInCurrency = useMemo(
+    () =>
+      campaignsInCurrency.filter(
+        (c) => c.status === 'active' && (!c.end_date || new Date(c.end_date) > new Date()),
+      ).length,
+    [campaignsInCurrency],
+  );
 
   // Fetch platform commission settings
   const { data: commissionSettings } = useQuery({
@@ -238,7 +263,9 @@ const OrgDashboard = () => {
                 Live
               </Badge>
             </div>
-            <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Manage your contests, events, and finances.</p>
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
+              Manage your contests, events, campaigns, and finances.
+            </p>
           </div>
           
           {/* Currency + export toolbar */}
@@ -266,7 +293,7 @@ const OrgDashboard = () => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
-                    Showing only contests/events with {displayCurrency} as their native currency
+                    Showing revenue from contests, events, and campaigns with {displayCurrency} as their native currency
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -279,6 +306,9 @@ const OrgDashboard = () => {
 
         </div>
 
+        {/* Getting started checklist for new organizations */}
+        <OrgOnboardingChecklist />
+
         {/* Payout Status Alerts */}
         {payouts && payouts.length > 0 && (
           <PayoutStatusAlert 
@@ -288,7 +318,7 @@ const OrgDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 w-full min-w-0">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 sm:gap-4 w-full min-w-0">
 
           {/* Total Votes */}
           <Card>
@@ -337,10 +367,34 @@ const OrgDashboard = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* Campaign fundraising */}
+          <Card>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Campaign Raised</p>
+                  {statsLoading ? (
+                    <Skeleton className="h-6 sm:h-8 w-12 sm:w-16 mt-1" />
+                  ) : (
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold text-foreground truncate">
+                      {formatCurrency(displayCampaignRevenue, displayCurrency)}
+                    </p>
+                  )}
+                </div>
+                <div className="h-8 w-8 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-chart-4/10 flex items-center justify-center flex-shrink-0">
+                  <Heart className="h-4 w-4 sm:h-6 sm:w-6 text-chart-4" />
+                </div>
+              </div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2 truncate">
+                {stats?.totalDonations?.toLocaleString() || 0} total donations
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-3 gap-2 sm:gap-4 w-full min-w-0">
+        <div className="grid grid-cols-2 min-[500px]:grid-cols-4 gap-2 sm:gap-4 w-full min-w-0">
           <Card>
             <CardContent className="p-3 sm:pt-6 sm:px-6">
               <div className="flex items-center justify-between gap-2">
@@ -371,6 +425,19 @@ const OrgDashboard = () => {
             <CardContent className="p-3 sm:pt-6 sm:px-6">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Active Campaigns</p>
+                  <p className="text-lg sm:text-2xl font-bold text-foreground">
+                    {activeCampaignsInCurrency || stats?.activeCampaigns || 0}
+                  </p>
+                </div>
+                <Heart className="h-5 w-5 sm:h-8 sm:w-8 text-muted-foreground shrink-0" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3 sm:pt-6 sm:px-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <p className="text-xs sm:text-sm text-muted-foreground">Pending Payouts</p>
                   <p className="text-sm sm:text-2xl font-bold text-foreground truncate">
                     {formatCurrency(displayPendingPayouts, displayCurrency)}
@@ -384,10 +451,25 @@ const OrgDashboard = () => {
 
         {/* Goal Tracking Widget */}
         <GoalTrackingWidget
-          totalRevenue={displayTotalRevenue}
-          totalVotes={stats?.totalVotes || 0}
-          ticketsSold={stats?.ticketsSold || 0}
           currency={displayCurrency}
+          currentMonth={
+            goalMetrics?.currentMonth ?? {
+              revenue: 0,
+              votes: 0,
+              tickets: 0,
+              donations: 0,
+            }
+          }
+          targets={
+            goalMetrics?.targets ?? {
+              revenue: 0,
+              votes: 0,
+              tickets: 0,
+              donations: 0,
+              source: 'starter',
+            }
+          }
+          isLoading={goalsLoading}
         />
 
         {/* Advanced Revenue Chart */}
@@ -401,7 +483,7 @@ const OrgDashboard = () => {
           <EventCountdownWidget events={events} />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full min-w-0">
           {/* Recent Contests */}
           <Card>
             <CardHeader className="pb-3 px-3 sm:px-6">
@@ -523,10 +605,93 @@ const OrgDashboard = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Recent Campaigns */}
+          <Card>
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 min-w-0">
+                  <Heart className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  <span className="truncate">Your Campaigns</span>
+                </CardTitle>
+                <Link to="/org/campaigns" className="shrink-0">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-3 text-xs sm:text-sm">View All</Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {campaignsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : campaigns && campaigns.length > 0 ? (
+                <div className="space-y-3">
+                  {campaigns.slice(0, 4).map((campaign) => {
+                    const progress =
+                      campaign.goal_amount > 0
+                        ? Math.min((campaign.current_amount / campaign.goal_amount) * 100, 100)
+                        : 0;
+
+                    return (
+                      <Link key={campaign.id} to={`/org/campaigns/${campaign.id}/analytics`}>
+                        <div className="flex gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg hover:bg-secondary/50 transition-colors border border-border items-center min-w-0">
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                            {campaign.image_url ? (
+                              <img
+                                src={campaign.image_url}
+                                alt={campaign.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center">
+                                <Heart className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{campaign.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatCurrency(campaign.current_amount, campaign.currency)} raised
+                              {campaign.goal_amount > 0 &&
+                                ` · ${progress.toFixed(0)}% of goal`}
+                            </p>
+                            {campaign.goal_amount > 0 && (
+                              <Progress value={progress} className="h-1.5 mt-2" />
+                            )}
+                          </div>
+                          <Badge
+                            variant={campaign.status === 'active' ? 'default' : 'secondary'}
+                            className="shrink-0 text-[10px] sm:text-xs capitalize"
+                          >
+                            {campaign.status}
+                          </Badge>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">No campaigns yet</p>
+                  <Link to="/campaigns/create">
+                    <Button variant="outline" size="sm" className="mt-3">
+                      Create Your First Campaign
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Top Performers Widget */}
         <TopPerformersWidget />
+
+        {/* Marketing pulse + full analytics link */}
+        <MarketingPulseWidget />
 
         {/* Pending Payouts - Legacy view for detailed list */}
         {pendingPayouts.length > 0 && (
