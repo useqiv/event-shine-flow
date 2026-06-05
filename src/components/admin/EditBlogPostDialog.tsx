@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import BlogSidebarImagesManager from '@/components/admin/BlogSidebarImagesManager';
 import { Loader2 } from 'lucide-react';
 import {
   BlogPost,
@@ -28,7 +29,8 @@ import {
   useCreateBlogPost,
   useUpdateBlogPost,
 } from '@/hooks/useBlogPosts';
-import { slugify } from '@/lib/blogUtils';
+import { slugify, stripHtmlToText } from '@/lib/blogUtils';
+import { BLOG_IMAGE_COMPRESS_OPTIONS } from '@/lib/imageCompression';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface EditBlogPostDialogProps {
@@ -52,6 +54,7 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
+  const [sidebarImages, setSidebarImages] = useState<string[]>([]);
   const [status, setStatus] = useState<BlogPostStatus>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -64,6 +67,7 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
         setExcerpt(post.excerpt ?? '');
         setContent(post.content);
         setCoverImageUrl(post.cover_image_url ?? '');
+        setSidebarImages(post.sidebar_images ?? []);
         setStatus(post.status);
         setIsFeatured(post.is_featured);
         setSlugTouched(true);
@@ -73,6 +77,7 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
         setExcerpt('');
         setContent('');
         setCoverImageUrl('');
+        setSidebarImages([]);
         setStatus('draft');
         setIsFeatured(false);
         setSlugTouched(false);
@@ -87,10 +92,11 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
   }, [title, slugTouched]);
 
   const isPending = createPost.isPending || updatePost.isPending;
+  const hasTextContent = stripHtmlToText(content).length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !hasTextContent) return;
 
     const payload = {
       title: title.trim(),
@@ -98,53 +104,73 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
       excerpt: excerpt.trim() || undefined,
       content,
       cover_image_url: coverImageUrl || null,
+      sidebar_images: sidebarImages.filter(Boolean),
       status,
       is_featured: isFeatured,
     };
 
-    if (isEditing && post) {
-      await updatePost.mutateAsync({ id: post.id, ...payload });
-    } else {
-      await createPost.mutateAsync({ ...payload, author_id: user?.id });
+    try {
+      if (isEditing && post) {
+        await updatePost.mutateAsync({ id: post.id, ...payload });
+      } else {
+        await createPost.mutateAsync({ ...payload, author_id: user?.id });
+      }
+      onOpenChange(false);
+    } catch {
+      // Toast handled by mutation
     }
-    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit blog post' : 'New blog post'}</DialogTitle>
             <DialogDescription>
-              Write with the visual editor. Add a cover image and inline images in the body.
+              Write with the visual editor. Images upload at high quality. Sidebar images appear on the right column of the post page.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="blog-title">Title *</Label>
-              <Input
-                id="blog-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Post title"
-                required
-              />
-            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="blog-title">Title *</Label>
+                <Input
+                  id="blog-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Post title"
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="blog-slug">URL slug *</Label>
-              <Input
-                id="blog-slug"
-                value={slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  setSlug(e.target.value);
-                }}
-                placeholder="my-post-title"
-                required
-              />
+              <div className="space-y-2">
+                <Label htmlFor="blog-slug">URL slug *</Label>
+                <Input
+                  id="blog-slug"
+                  value={slug}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    setSlug(e.target.value);
+                  }}
+                  placeholder="my-post-title"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as BlogPostStatus)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="published">Published</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -166,30 +192,27 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
               label="Cover image"
               value={coverImageUrl}
               onChange={setCoverImageUrl}
+              compressOptions={BLOG_IMAGE_COMPRESS_OPTIONS}
+              maxFileSizeMB={15}
             />
 
             <div className="space-y-2">
               <Label>Content *</Label>
-              <RichTextEditor value={content} onChange={setContent} minHeight="320px" />
+              <RichTextEditor value={content} onChange={setContent} minHeight="360px" />
+              {!hasTextContent && content.length > 0 && (
+                <p className="text-xs text-destructive">Add some text content to your post.</p>
+              )}
             </div>
 
-            <div className="flex flex-wrap gap-6 items-center">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as BlogPostStatus)}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 pt-6">
-                <Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} />
-                <Label htmlFor="featured">Featured on homepage</Label>
-              </div>
+            <BlogSidebarImagesManager
+              images={sidebarImages}
+              onChange={setSidebarImages}
+              maxImages={3}
+            />
+
+            <div className="flex items-center gap-2">
+              <Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} />
+              <Label htmlFor="featured">Featured on homepage</Label>
             </div>
           </div>
 
@@ -197,7 +220,7 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !title.trim() || !content.trim()}>
+            <Button type="submit" disabled={isPending || !title.trim() || !hasTextContent}>
               {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isEditing ? 'Save changes' : 'Create post'}
             </Button>

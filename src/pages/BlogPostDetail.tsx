@@ -1,7 +1,8 @@
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
-import { useBlogPostBySlug } from '@/hooks/useBlogPosts';
+import BlogPostSidebar from '@/components/blog/BlogPostSidebar';
+import { useBlogPostBySlug, useRelatedBlogPosts } from '@/hooks/useBlogPosts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -23,16 +24,22 @@ import {
 const BlogPostDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, isError } = useBlogPostBySlug(slug);
+  const { data: relatedPosts = [] } = useRelatedBlogPosts(slug, 4);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted">
         <Navbar />
-        <main className="max-w-3xl mx-auto px-4 py-16">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-12 w-full mb-4" />
-          <Skeleton className="aspect-video w-full mb-8" />
-          <Skeleton className="h-64 w-full" />
+        <main className="max-w-7xl mx-auto px-4 py-16">
+          <div className="grid lg:grid-cols-[1fr_320px] gap-8">
+            <div>
+              <Skeleton className="h-8 w-48 mb-6" />
+              <Skeleton className="h-12 w-full mb-4" />
+              <Skeleton className="aspect-video w-full mb-8" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+            <Skeleton className="h-96 w-full hidden lg:block" />
+          </div>
         </main>
         <Footer />
       </div>
@@ -103,43 +110,54 @@ const BlogPostDetail = () => {
         <Navbar />
         <main className="pb-16">
           {post.cover_image_url && (
-            <div className="w-full max-h-[420px] overflow-hidden bg-muted">
+            <div className="w-full max-h-[480px] overflow-hidden bg-muted">
               <img
                 src={post.cover_image_url}
                 alt={post.title}
-                className="w-full h-full max-h-[420px] object-cover"
+                className="w-full h-full max-h-[480px] object-cover"
               />
             </div>
           )}
-          <article
-            className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14"
-            itemScope
-            itemType="https://schema.org/BlogPosting"
-          >
-            <meta itemProp="headline" content={post.title} />
-            <meta itemProp="description" content={description} />
-            <meta itemProp="datePublished" content={post.published_at ?? post.created_at} />
-            <meta itemProp="dateModified" content={post.updated_at} />
-            {post.cover_image_url && <meta itemProp="image" content={post.cover_image_url} />}
-            <Button variant="ghost" size="sm" className="mb-6 -ml-2" asChild>
-              <Link to="/blog">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                All posts
-              </Link>
-            </Button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Calendar className="h-4 w-4" />
-              <time dateTime={date}>{format(new Date(date), 'MMMM d, yyyy')}</time>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 lg:gap-10">
+              <article
+                itemScope
+                itemType="https://schema.org/BlogPosting"
+              >
+                <meta itemProp="headline" content={post.title} />
+                <meta itemProp="description" content={description} />
+                <meta itemProp="datePublished" content={post.published_at ?? post.created_at} />
+                <meta itemProp="dateModified" content={post.updated_at} />
+                {post.cover_image_url && <meta itemProp="image" content={post.cover_image_url} />}
+                <Button variant="ghost" size="sm" className="mb-6 -ml-2" asChild>
+                  <Link to="/blog">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    All posts
+                  </Link>
+                </Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                  <Calendar className="h-4 w-4" />
+                  <time dateTime={date}>{format(new Date(date), 'MMMM d, yyyy')}</time>
+                </div>
+                <h1
+                  className="text-3xl sm:text-4xl font-bold text-foreground mb-8 leading-tight"
+                  itemProp="name"
+                >
+                  {post.title}
+                </h1>
+                <div
+                  className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary [&_img]:rounded-xl [&_img]:w-full"
+                  itemProp="articleBody"
+                  dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }}
+                />
+              </article>
+
+              <BlogPostSidebar
+                relatedPosts={relatedPosts}
+                sidebarImages={post.sidebar_images}
+              />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-8 leading-tight" itemProp="name">
-              {post.title}
-            </h1>
-            <div
-              className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary [&_img]:rounded-xl"
-              itemProp="articleBody"
-              dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }}
-            />
-          </article>
+          </div>
         </main>
         <Footer />
       </div>

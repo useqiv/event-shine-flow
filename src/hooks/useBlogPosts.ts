@@ -12,6 +12,7 @@ export interface BlogPost {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  sidebar_images: string[];
   author_id: string | null;
   status: BlogPostStatus;
   is_featured: boolean;
@@ -26,9 +27,24 @@ export type BlogPostInput = {
   excerpt?: string;
   content: string;
   cover_image_url?: string | null;
+  sidebar_images?: string[];
   status: BlogPostStatus;
   is_featured?: boolean;
 };
+
+function parseSidebarImages(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+  }
+  return [];
+}
+
+function normalizePost(row: Record<string, unknown>): BlogPost {
+  return {
+    ...(row as BlogPost),
+    sidebar_images: parseSidebarImages(row.sidebar_images),
+  };
+}
 
 export function usePublishedBlogPosts(limit = 6) {
   return useQuery({
@@ -43,7 +59,27 @@ export function usePublishedBlogPosts(limit = 6) {
         .limit(limit);
 
       if (error) throw error;
-      return (data ?? []) as BlogPost[];
+      return (data ?? []).map((row) => normalizePost(row as Record<string, unknown>));
+    },
+  });
+}
+
+export function useRelatedBlogPosts(currentSlug: string | undefined, limit = 4) {
+  return useQuery({
+    queryKey: ['blog-posts', 'related', currentSlug, limit],
+    enabled: !!currentSlug,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('status', 'published')
+        .neq('slug', currentSlug!)
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return (data ?? []).map((row) => normalizePost(row as Record<string, unknown>));
     },
   });
 }
@@ -61,7 +97,7 @@ export function useBlogPostBySlug(slug: string | undefined) {
         .maybeSingle();
 
       if (error) throw error;
-      return data as BlogPost | null;
+      return data ? normalizePost(data as Record<string, unknown>) : null;
     },
   });
 }
@@ -76,7 +112,7 @@ export function useAdminBlogPosts() {
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return (data ?? []) as BlogPost[];
+      return (data ?? []).map((row) => normalizePost(row as Record<string, unknown>));
     },
   });
 }
@@ -98,6 +134,7 @@ export function useCreateBlogPost() {
           excerpt: input.excerpt ?? null,
           content: input.content,
           cover_image_url: input.cover_image_url ?? null,
+          sidebar_images: input.sidebar_images ?? [],
           status: input.status,
           is_featured: input.is_featured ?? false,
           author_id: input.author_id ?? null,
@@ -133,6 +170,7 @@ export function useUpdateBlogPost() {
         excerpt: input.excerpt ?? null,
         content: input.content,
         cover_image_url: input.cover_image_url ?? null,
+        sidebar_images: input.sidebar_images ?? [],
         status: input.status,
         is_featured: input.is_featured ?? false,
       };

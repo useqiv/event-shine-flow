@@ -6,7 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { compressImage, getCompressedExtension } from '@/lib/imageCompression';
+import {
+  compressImage,
+  getCompressedExtension,
+  type CompressImageOptions,
+} from '@/lib/imageCompression';
 
 interface ImageUploadProps {
   bucket: 'contest-images' | 'event-images' | 'contestant-images' | 'campaign-images' | 'avatars' | 'blog-images';
@@ -14,6 +18,8 @@ interface ImageUploadProps {
   onChange: (url: string) => void;
   label?: string;
   className?: string;
+  compressOptions?: number | CompressImageOptions;
+  maxFileSizeMB?: number;
 }
 
 export const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -22,6 +28,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   label = 'Upload Image',
   className,
+  compressOptions,
+  maxFileSizeMB = 10,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -30,23 +38,20 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   const handleUpload = async (file: File) => {
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please upload an image file');
       return;
     }
 
-    // Validate file size (max 10MB before compression)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('Image must be less than 10MB');
+    if (file.size > maxFileSizeMB * 1024 * 1024) {
+      toast.error(`Image must be less than ${maxFileSizeMB}MB`);
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Compress image before upload
-      const compressedBlob = await compressImage(file);
+      const compressedBlob = await compressImage(file, compressOptions);
       const extension = getCompressedExtension(file, compressedBlob);
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
 
@@ -55,7 +60,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         .upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false,
-          contentType: compressedBlob.type,
+          contentType: compressedBlob.type || file.type,
         });
 
       if (uploadError) throw uploadError;
@@ -65,17 +70,17 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         .getPublicUrl(fileName);
 
       onChange(publicUrl);
-      
-      // Show compression savings
-      const savedPercent = Math.round((1 - compressedBlob.size / file.size) * 100);
-      if (savedPercent > 0) {
+
+      if (compressedBlob.size < file.size) {
+        const savedPercent = Math.round((1 - compressedBlob.size / file.size) * 100);
         toast.success(`Image uploaded (${savedPercent}% smaller)`);
       } else {
-        toast.success('Image uploaded successfully');
+        toast.success('Image uploaded at full quality');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload image');
+      const message = error instanceof Error ? error.message : 'Failed to upload image';
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -114,7 +119,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div className={cn('space-y-2', className)}>
       {label && <Label>{label}</Label>}
-      
+
       <div
         className={cn(
           'relative border-2 border-dashed rounded-lg transition-colors',
@@ -165,13 +170,13 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
                   Choose File
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3">
-                  PNG, JPG or WEBP (max 5MB)
+                  PNG, JPG or WEBP (max {maxFileSizeMB}MB)
                 </p>
               </>
             )}
           </div>
         )}
-        
+
         <Input
           ref={inputRef}
           type="file"

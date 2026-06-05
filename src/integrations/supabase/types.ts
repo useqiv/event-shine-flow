@@ -148,6 +148,7 @@ export type Database = {
           id: string
           is_featured: boolean
           published_at: string | null
+          sidebar_images: Json
           slug: string
           status: string
           title: string
@@ -162,6 +163,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           published_at?: string | null
+          sidebar_images?: Json
           slug: string
           status?: string
           title: string
@@ -176,6 +178,7 @@ export type Database = {
           id?: string
           is_featured?: boolean
           published_at?: string | null
+          sidebar_images?: Json
           slug?: string
           status?: string
           title?: string
