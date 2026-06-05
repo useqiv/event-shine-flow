@@ -16,11 +16,18 @@ export default defineConfig(() => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "favicon.svg", "apple-touch-icon.png", "robots.txt"],
+      includeAssets: [
+        "favicon.ico",
+        "favicon.svg",
+        "apple-touch-icon.png",
+        "robots.txt",
+        "google17e4b92a69f00da5.html",
+      ],
       manifest: false, // Use public/manifest.json
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallbackDenylist: [/^\/google[a-z0-9]+\.html$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,

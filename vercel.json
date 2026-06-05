@@ -4,6 +4,13 @@
   "framework": "vite",
   "headers": [
     {
+      "source": "/google17e4b92a69f00da5.html",
+      "headers": [
+        { "key": "Content-Type", "value": "text/html; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
@@ -21,7 +28,7 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/((?!google[a-z0-9]+\\.html$).*)",
+      "source": "/((?!google17e4b92a69f00da5\\.html$).*)",
       "destination": "/index.html"
     }
   ]
