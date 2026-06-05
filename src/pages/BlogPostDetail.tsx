@@ -142,7 +142,13 @@ const BlogPostDetail = () => {
                     All posts
                   </Link>
                 </Button>
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                <h1
+                  className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight"
+                  itemProp="name"
+                >
+                  {post.title}
+                </h1>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <time dateTime={date}>{format(new Date(date), 'MMMM d, yyyy')}</time>
@@ -153,12 +159,6 @@ const BlogPostDetail = () => {
                     description={description}
                   />
                 </div>
-                <h1
-                  className="text-3xl sm:text-4xl font-bold text-foreground mb-8 leading-tight"
-                  itemProp="name"
-                >
-                  {post.title}
-                </h1>
                 <div
                   className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary [&_img]:rounded-xl [&_img]:w-full"
                   itemProp="articleBody"

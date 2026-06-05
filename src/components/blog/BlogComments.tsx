@@ -57,9 +57,11 @@ const BlogComments: React.FC<BlogCommentsProps> = ({ postId }) => {
       </h2>
 
       <form onSubmit={handleSubmit} className="mb-8 space-y-4 bg-card border border-border rounded-2xl p-5">
-        <p className="text-sm text-muted-foreground">
-          {user ? `Commenting as ${displayName || user.email}` : 'No account needed — leave a comment below.'}
-        </p>
+        {user && (
+          <p className="text-sm text-muted-foreground">
+            Commenting as {displayName || user.email}
+          </p>
+        )}
 
         {!user && (
           <div className="grid gap-4 sm:grid-cols-2">
