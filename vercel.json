@@ -21,7 +21,7 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!google[a-z0-9]+\\.html$).*)",
       "destination": "/index.html"
     }
   ]
