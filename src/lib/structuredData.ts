@@ -3,7 +3,7 @@
  * Following Schema.org specifications
  */
 
-const SITE_URL = "https://www.useqiv.com";
+export const SITE_URL = "https://www.useqiv.com";
 const SITE_NAME = "USEQIV";
 const LOGO_URL = `${SITE_URL}/logo.png`;
 
@@ -280,6 +280,95 @@ export const getSoftwareApplicationSchema = () => ({
   author: {
     "@id": `${SITE_URL}/#organization`,
   },
+});
+
+/**
+ * BlogPosting schema for individual articles
+ */
+export const getBlogPostingSchema = (post: {
+  title: string;
+  description: string;
+  url: string;
+  image?: string;
+  datePublished: string;
+  dateModified: string;
+  authorName?: string;
+  wordCount?: number;
+}) => ({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "@id": `${post.url}/#article`,
+  headline: post.title,
+  name: post.title,
+  description: post.description,
+  ...(post.image && {
+    image: {
+      "@type": "ImageObject",
+      url: post.image,
+      width: 1200,
+      height: 630,
+    },
+    thumbnailUrl: post.image,
+  }),
+  datePublished: post.datePublished,
+  dateModified: post.dateModified,
+  author: {
+    "@type": "Organization",
+    name: post.authorName || SITE_NAME,
+    url: SITE_URL,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: {
+      "@type": "ImageObject",
+      url: LOGO_URL,
+      width: 512,
+      height: 512,
+    },
+  },
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": post.url,
+  },
+  isPartOf: {
+    "@type": "Blog",
+    "@id": `${SITE_URL}/blog/#blog`,
+    name: `${SITE_NAME} Blog`,
+    url: `${SITE_URL}/blog`,
+  },
+  inLanguage: "en-US",
+  ...(post.wordCount && { wordCount: post.wordCount }),
+});
+
+/**
+ * CollectionPage + ItemList for blog archive
+ */
+export const getBlogArchiveSchema = (
+  posts: Array<{ title: string; url: string; datePublished: string; image?: string }>
+) => ({
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": `${SITE_URL}/blog/#webpage`,
+  name: `${SITE_NAME} Blog`,
+  description:
+    "Insights, guides, and product updates on contest voting, event ticketing, and crowdfunding.",
+  url: `${SITE_URL}/blog`,
+  isPartOf: {
+    "@id": `${SITE_URL}/#website`,
+  },
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: posts.map((post, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: post.url,
+      name: post.title,
+      ...(post.image && { image: post.image }),
+    })),
+  },
+  inLanguage: "en-US",
 });
 
 /**

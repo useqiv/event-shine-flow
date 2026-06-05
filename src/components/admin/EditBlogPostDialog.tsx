@@ -148,14 +148,17 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="blog-excerpt">Excerpt (optional)</Label>
+              <Label htmlFor="blog-excerpt">Excerpt (recommended for SEO)</Label>
               <Textarea
                 id="blog-excerpt"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Short summary for cards and SEO"
+                placeholder="Write a compelling 1–2 sentence summary (used in Google search results and social previews)"
                 rows={2}
               />
+              <p className="text-xs text-muted-foreground">
+                Aim for 120–160 characters. A clear excerpt helps this post rank higher in search results.
+              </p>
             </div>
 
             <ImageUpload

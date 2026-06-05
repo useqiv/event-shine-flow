@@ -7,15 +7,44 @@ import { BookOpen, Calendar, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { stripHtmlToText } from '@/lib/blogUtils';
 import SEOHead from '@/components/seo/SEOHead';
+import {
+  SITE_URL,
+  getBlogArchiveSchema,
+  getBreadcrumbSchema,
+  combineSchemas,
+} from '@/lib/structuredData';
 
 const BlogArchive = () => {
   const { data: posts, isLoading } = usePublishedBlogPosts(50);
 
+  const archiveSchema = posts?.length
+    ? combineSchemas(
+        getBlogArchiveSchema(
+          posts.map((post) => ({
+            title: post.title,
+            url: `${SITE_URL}/blog/${post.slug}`,
+            datePublished: post.published_at ?? post.created_at,
+            image: post.cover_image_url ?? undefined,
+          }))
+        ),
+        getBreadcrumbSchema([
+          { name: 'Home', url: SITE_URL },
+          { name: 'Blog', url: `${SITE_URL}/blog` },
+        ])
+      )
+    : getBreadcrumbSchema([
+        { name: 'Home', url: SITE_URL },
+        { name: 'Blog', url: `${SITE_URL}/blog` },
+      ]);
+
   return (
     <>
       <SEOHead
-        title="Blog | USEQIV"
-        description="Insights, guides, and product updates from the USEQIV team."
+        title="Blog"
+        description="Expert guides, product updates, and insights on contest voting, event ticketing, crowdfunding, and event management from USEQIV."
+        canonicalUrl={`${SITE_URL}/blog`}
+        keywords="USEQIV blog, contest voting tips, event ticketing guides, crowdfunding advice, event platform news"
+        structuredData={archiveSchema}
       />
       <div className="min-h-screen bg-muted">
         <Navbar />
@@ -26,7 +55,9 @@ const BlogArchive = () => {
               Blog
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">All posts</h1>
-            <p className="text-muted-foreground mt-2">News, tips, and updates from USEQIV.</p>
+            <p className="text-muted-foreground mt-2">
+              News, tips, and updates from USEQIV on contests, events, and campaigns.
+            </p>
           </div>
 
           {isLoading ? (
@@ -53,7 +84,7 @@ const BlogArchive = () => {
                       {post.cover_image_url ? (
                         <img
                           src={post.cover_image_url}
-                          alt=""
+                          alt={post.title}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -65,7 +96,7 @@ const BlogArchive = () => {
                     <div className="p-5 flex-1 flex flex-col">
                       <span className="text-xs text-muted-foreground flex items-center gap-1 mb-2">
                         <Calendar className="h-3 w-3" />
-                        {format(new Date(date), 'MMM d, yyyy')}
+                        <time dateTime={date}>{format(new Date(date), 'MMM d, yyyy')}</time>
                       </span>
                       <h2 className="font-semibold text-lg group-hover:text-primary transition-colors">
                         {post.title}

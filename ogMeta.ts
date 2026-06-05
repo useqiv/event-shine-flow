@@ -13,7 +13,11 @@ export interface OgData {
   description: string;
   image: string;
   pageUrl: string;
-  type: 'website' | 'profile';
+  type: 'website' | 'profile' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  bodyText?: string;
+  jsonLd?: object | object[];
 }
 
 export function isCrawler(userAgent: string): boolean {
@@ -89,6 +93,15 @@ export function parseOgRoute(pathname: string): { type: string; slug: string } |
   if (pathname.startsWith('/f/')) {
     const slug = pathname.replace('/f/', '').split('/')[0];
     return slug ? { type: 'form', slug: decodeURIComponent(slug) } : null;
+  }
+
+  if (pathname === '/blog') {
+    return { type: 'blog', slug: '' };
+  }
+
+  if (pathname.startsWith('/blog/')) {
+    const slug = pathname.replace('/blog/', '').split('/')[0];
+    return slug ? { type: 'blog-post', slug: decodeURIComponent(slug) } : { type: 'blog', slug: '' };
   }
 
   return null;
@@ -240,6 +253,69 @@ export async function buildOgData(type: string, slug: string): Promise<OgData> {
       image = form.logo_url || '';
       pageUrl = form.custom_slug ? `${SITE_URL}/f/${form.custom_slug}` : `${SITE_URL}/f/${form.id}`;
     }
+  } else if (type === 'blog') {
+    title = 'USEQIV Blog | Contest Voting, Events & Crowdfunding Insights';
+    description =
+      'Expert guides, product updates, and insights on contest voting, event ticketing, crowdfunding, and event management.';
+    pageUrl = `${SITE_URL}/blog`;
+    image = `${SITE_URL}/og-image.png`;
+  } else if (type === 'blog-post') {
+    const rows = await supabaseRest<{
+      title: string;
+      excerpt: string | null;
+      content: string;
+      cover_image_url: string | null;
+      slug: string;
+      published_at: string | null;
+      created_at: string;
+      updated_at: string;
+    }>(
+      `blog_posts?select=title,excerpt,content,cover_image_url,slug,published_at,created_at,updated_at&slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`
+    );
+    const post = rows[0];
+
+    if (post) {
+      title = `${post.title} | USEQIV Blog`;
+      description = buildMetaDescription(post.excerpt, post.content);
+      image = post.cover_image_url || `${SITE_URL}/og-image.png`;
+      pageUrl = `${SITE_URL}/blog/${post.slug}`;
+      ogType = 'article';
+
+      return {
+        title,
+        description,
+        image: toSocialOgImageUrl(image),
+        pageUrl,
+        type: ogType,
+        publishedTime: post.published_at ?? post.created_at,
+        modifiedTime: post.updated_at,
+        bodyText: stripHtml(post.content).slice(0, 5000),
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description,
+          image: image ? [toSocialOgImageUrl(image)] : undefined,
+          datePublished: post.published_at ?? post.created_at,
+          dateModified: post.updated_at,
+          author: {
+            '@type': 'Organization',
+            name: 'USEQIV',
+            url: SITE_URL,
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: 'USEQIV',
+            logo: {
+              '@type': 'ImageObject',
+              url: `${SITE_URL}/logo.png`,
+            },
+          },
+          mainEntityOfPage: pageUrl,
+          url: pageUrl,
+        },
+      };
+    }
   }
 
   return {
@@ -249,6 +325,18 @@ export async function buildOgData(type: string, slug: string): Promise<OgData> {
     pageUrl,
     type: ogType,
   };
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function buildMetaDescription(excerpt: string | null, content: string, maxLength = 160): string {
+  const source = excerpt?.trim() || stripHtml(content);
+  if (source.length <= maxLength) return source;
+  const trimmed = source.slice(0, maxLength - 1);
+  const lastSpace = trimmed.lastIndexOf(' ');
+  return `${(lastSpace > 80 ? trimmed.slice(0, lastSpace) : trimmed).trim()}…`;
 }
 
 /** Serve OG images from useqiv.com and convert WebP to JPEG for WhatsApp/Facebook. */
@@ -281,6 +369,35 @@ export function renderOgHtml(data: OgData): string {
   <meta name="twitter:image:alt" content="${escapeHtml(data.title)}">`
     : '';
 
+  const articleMeta =
+    data.type === 'article'
+      ? `
+  <meta property="article:published_time" content="${escapeHtml(data.publishedTime || '')}">
+  <meta property="article:modified_time" content="${escapeHtml(data.modifiedTime || data.publishedTime || '')}">
+  <meta property="article:author" content="USEQIV">
+  <meta property="article:section" content="Blog">`
+      : '';
+
+  const robotsMeta = `
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-image-preview:large">`;
+
+  const jsonLdItems = data.jsonLd
+    ? Array.isArray(data.jsonLd)
+      ? data.jsonLd
+      : [data.jsonLd]
+    : [];
+  const jsonLdMeta = jsonLdItems
+    .map(
+      (schema) => `
+  <script type="application/ld+json">${JSON.stringify(schema)}</script>`
+    )
+    .join('');
+
+  const bodyContent = data.bodyText
+    ? `<article><h1>${escapeHtml(data.title)}</h1><p>${escapeHtml(data.description)}</p><div>${escapeHtml(data.bodyText)}</div></article>`
+    : `<p>${escapeHtml(data.description)}</p>`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -288,11 +405,15 @@ export function renderOgHtml(data: OgData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(data.title)}</title>
   <meta name="description" content="${escapeHtml(data.description)}">
+  <meta name="title" content="${escapeHtml(data.title)}">
+${robotsMeta}
   <meta property="og:type" content="${escapeHtml(data.type)}">
   <meta property="og:url" content="${escapeHtml(data.pageUrl)}">
   <meta property="og:title" content="${escapeHtml(data.title)}">
   <meta property="og:description" content="${escapeHtml(data.description)}">
+  <meta property="og:locale" content="en_US">
 ${imageMeta}
+${articleMeta}
   <meta property="og:site_name" content="USEQIV">
   <link rel="shortcut icon" href="${SITE_URL}/favicon.ico" sizes="any">
   <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
@@ -304,9 +425,10 @@ ${imageMeta}
   <meta name="twitter:title" content="${escapeHtml(data.title)}">
   <meta name="twitter:description" content="${escapeHtml(data.description)}">
   <link rel="canonical" href="${escapeHtml(data.pageUrl)}">
+${jsonLdMeta}
 </head>
 <body>
-  <p>${escapeHtml(data.description)}</p>
+  ${bodyContent}
   <p><a href="${escapeHtml(data.pageUrl)}">${escapeHtml(data.pageUrl)}</a></p>
 </body>
 </html>`;

@@ -39,5 +39,7 @@ export const config = {
     '/contests/:path*',
     '/campaigns/:path*',
     '/f/:path*',
+    '/blog',
+    '/blog/:path*',
   ],
 };

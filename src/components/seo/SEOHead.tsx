@@ -8,10 +8,12 @@ interface SEOHeadProps {
   ogType?: 'website' | 'article' | 'event' | 'product';
   keywords?: string;
   noIndex?: boolean;
-  structuredData?: object;
+  structuredData?: object | object[];
   publishedTime?: string;
   modifiedTime?: string;
   author?: string;
+  articleSection?: string;
+  tags?: string[];
 }
 
 /**
@@ -29,10 +31,17 @@ export const SEOHead = ({
   publishedTime,
   modifiedTime,
   author,
+  articleSection,
+  tags,
 }: SEOHeadProps) => {
   const siteName = 'USEQIV';
   const fullTitle = title.includes('USEQIV') ? title : `${title} | ${siteName}`;
   const twitterHandle = '@useqiv';
+  const structuredDataItems = structuredData
+    ? Array.isArray(structuredData)
+      ? structuredData
+      : [structuredData]
+    : [];
 
   return (
     <Helmet>
@@ -67,6 +76,10 @@ export const SEOHead = ({
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
       {author && <meta property="article:author" content={author} />}
+      {articleSection && <meta property="article:section" content={articleSection} />}
+      {tags?.map((tag) => (
+        <meta key={tag} property="article:tag" content={tag} />
+      ))}
       
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
@@ -85,11 +98,11 @@ export const SEOHead = ({
       <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       
       {/* Structured Data / JSON-LD */}
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
+      {structuredDataItems.map((schema, index) => (
+        <script key={index} type="application/ld+json">
+          {JSON.stringify(schema)}
         </script>
-      )}
+      ))}
     </Helmet>
   );
 };

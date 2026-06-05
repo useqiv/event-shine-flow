@@ -57,6 +57,7 @@ const BlogShowcase = () => {
                   <Link
                     key={post.id}
                     to={`/blog/${post.slug}`}
+                    title={`Read: ${post.title}`}
                     className="group flex flex-col bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all"
                   >
                     <div className="aspect-[16/10] bg-muted overflow-hidden">
