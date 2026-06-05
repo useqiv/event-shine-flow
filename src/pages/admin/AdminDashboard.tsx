@@ -28,7 +28,8 @@ import {
   Vote,
   Ticket,
   DollarSign,
-  ArrowRight
+  ArrowRight,
+  BookOpen
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -393,6 +394,12 @@ const AdminDashboard: React.FC = () => {
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   Review Fraud
+                </Button>
+              </Link>
+              <Link to="/admin/blog">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  Manage Blog
                 </Button>
               </Link>
               <Link to="/admin/settings">

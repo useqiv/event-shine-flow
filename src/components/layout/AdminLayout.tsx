@@ -63,6 +63,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/org-reports', label: 'Org Revenue Reports', icon: BarChart3 },
     { path: '/admin/contests', label: 'Contests', icon: Trophy },
     { path: '/admin/events', label: 'Events', icon: Calendar },
+    { path: '/admin/blog', label: 'Blog Posts', icon: BookOpen },
     { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
     { path: '/admin/payments', label: 'Payment History', icon: Wallet },
     { path: '/admin/analytics', label: 'Payment Analytics', icon: PieChart },
@@ -70,7 +71,6 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
-    { path: '/admin/blog', label: 'Blog', icon: BookOpen },
     { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
     { path: '/admin/activity-log', label: 'Activity Log', icon: History },
     { path: '/admin/system-health', label: 'System Health', icon: Bell },
@@ -201,6 +201,12 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       <Badge variant="destructive" className="mt-1 text-xs">Admin</Badge>
                     </div>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/blog" className="cursor-pointer">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Blog Posts
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/admin/settings" className="cursor-pointer">
                         <Settings className="mr-2 h-4 w-4" />
