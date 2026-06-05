@@ -1,15 +1,65 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { BlogPost } from '@/hooks/useBlogPosts';
 import { BookOpen } from 'lucide-react';
 
+const ADSENSE_CLIENT = 'ca-pub-4739421992298461';
+const ADSENSE_SLOT = '7321558608';
+
 interface BlogPostSidebarProps {
   relatedPosts: BlogPost[];
   sidebarImages?: string[];
+  /** Changes when navigating between posts so the ad unit re-initializes */
+  postSlug?: string;
 }
 
-const BlogPostSidebar = ({ relatedPosts, sidebarImages = [] }: BlogPostSidebarProps) => {
+function loadAdSenseScript(): Promise<void> {
+  return new Promise((resolve) => {
+    const existing = document.querySelector(
+      'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]'
+    );
+    if (existing) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.head.appendChild(script);
+  });
+}
+
+const BlogPostSidebar = ({ relatedPosts, sidebarImages = [], postSlug }: BlogPostSidebarProps) => {
   const images = sidebarImages.filter(Boolean);
+  const adRef = useRef<HTMLModElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const initAd = async () => {
+      await loadAdSenseScript();
+      if (cancelled || !adRef.current) return;
+
+      try {
+        const w = window as Window & { adsbygoogle?: Record<string, unknown>[] };
+        w.adsbygoogle = w.adsbygoogle || [];
+        w.adsbygoogle.push({});
+      } catch {
+        // AdSense may error if the slot was already initialized
+      }
+    };
+
+    initAd();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postSlug]);
 
   return (
     <aside className="space-y-8 lg:sticky lg:top-24 lg:self-start">
@@ -56,30 +106,17 @@ const BlogPostSidebar = ({ relatedPosts, sidebarImages = [] }: BlogPostSidebarPr
         </section>
       )}
 
-      {/* Google AdSense slot — replace data-ad-slot with your AdSense unit ID */}
-      <section
-        className="bg-muted/50 border border-dashed border-border rounded-2xl p-5 min-h-[280px] flex flex-col items-center justify-center text-center"
-        aria-label="Advertisement"
-      >
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-          Sponsored
-        </p>
-        <div
-          id="blog-ad-slot"
-          className="w-full min-h-[250px] flex items-center justify-center"
-        >
-          <ins
-            className="adsbygoogle block w-full min-h-[250px]"
-            style={{ display: 'block' }}
-            data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-            data-ad-slot="XXXXXXXXXX"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-3">
-          Ad space reserved for Google AdSense
-        </p>
+      <section className="rounded-2xl overflow-hidden" aria-label="Advertisement">
+        <ins
+          ref={adRef}
+          key={postSlug ?? 'blog-ad'}
+          className="adsbygoogle"
+          style={{ display: 'block' }}
+          data-ad-client={ADSENSE_CLIENT}
+          data-ad-slot={ADSENSE_SLOT}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
       </section>
 
       {images.length > 0 && (

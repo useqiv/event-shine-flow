@@ -12,7 +12,6 @@ export interface BlogPost {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
-  sidebar_images: string[];
   author_id: string | null;
   status: BlogPostStatus;
   is_featured: boolean;
@@ -27,23 +26,12 @@ export type BlogPostInput = {
   excerpt?: string;
   content: string;
   cover_image_url?: string | null;
-  sidebar_images?: string[];
   status: BlogPostStatus;
   is_featured?: boolean;
 };
 
-function parseSidebarImages(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
-  }
-  return [];
-}
-
 function normalizePost(row: Record<string, unknown>): BlogPost {
-  return {
-    ...(row as BlogPost),
-    sidebar_images: parseSidebarImages(row.sidebar_images),
-  };
+  return row as BlogPost;
 }
 
 export function usePublishedBlogPosts(limit = 6) {
@@ -134,7 +122,6 @@ export function useCreateBlogPost() {
           excerpt: input.excerpt ?? null,
           content: input.content,
           cover_image_url: input.cover_image_url ?? null,
-          sidebar_images: input.sidebar_images ?? [],
           status: input.status,
           is_featured: input.is_featured ?? false,
           author_id: input.author_id ?? null,
@@ -170,7 +157,6 @@ export function useUpdateBlogPost() {
         excerpt: input.excerpt ?? null,
         content: input.content,
         cover_image_url: input.cover_image_url ?? null,
-        sidebar_images: input.sidebar_images ?? [],
         status: input.status,
         is_featured: input.is_featured ?? false,
       };

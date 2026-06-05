@@ -275,7 +275,7 @@ export async function buildOgData(type: string, slug: string): Promise<OgData> {
     const post = rows[0];
 
     if (post) {
-      title = `${post.title} | USEQIV Blog`;
+      title = post.title;
       description = buildMetaDescription(post.excerpt, post.content);
       image = post.cover_image_url || `${SITE_URL}/og-image.png`;
       pageUrl = `${SITE_URL}/blog/${post.slug}`;

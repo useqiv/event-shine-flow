@@ -3,6 +3,7 @@ import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import BlogPostSidebar from '@/components/blog/BlogPostSidebar';
 import { useBlogPostBySlug, useRelatedBlogPosts } from '@/hooks/useBlogPosts';
+import { useBlogSidebarImages } from '@/hooks/useBlogSidebarImages';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -12,7 +13,11 @@ import {
   buildBlogMetaDescription,
   buildBlogKeywords,
   countWords,
+  getBlogShareOgImage,
+  getBlogShareUrl,
 } from '@/lib/blogUtils';
+import BlogComments from '@/components/blog/BlogComments';
+import SocialShareButtons from '@/components/SocialShareButtons';
 import SEOHead from '@/components/seo/SEOHead';
 import {
   SITE_URL,
@@ -25,6 +30,7 @@ const BlogPostDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, isError } = useBlogPostBySlug(slug);
   const { data: relatedPosts = [] } = useRelatedBlogPosts(slug, 4);
+  const { data: sidebarImages = [] } = useBlogSidebarImages();
 
   if (isLoading) {
     return (
@@ -63,7 +69,8 @@ const BlogPostDetail = () => {
   }
 
   const date = post.published_at || post.created_at;
-  const pageUrl = `${SITE_URL}/blog/${post.slug}`;
+  const pageUrl = getBlogShareUrl(post.slug);
+  const shareImage = getBlogShareOgImage(post.cover_image_url);
   const description = buildBlogMetaDescription(post.excerpt, post.content);
   const keywords = buildBlogKeywords(post.title, post.excerpt);
   const tags = post.title
@@ -78,7 +85,7 @@ const BlogPostDetail = () => {
       title: post.title,
       description,
       url: pageUrl,
-      image: post.cover_image_url ?? undefined,
+      image: shareImage,
       datePublished: post.published_at ?? post.created_at,
       dateModified: post.updated_at,
       wordCount: countWords(post.content),
@@ -97,7 +104,7 @@ const BlogPostDetail = () => {
         description={description}
         canonicalUrl={pageUrl}
         ogType="article"
-        ogImage={post.cover_image_url ?? `${SITE_URL}/og-image.png`}
+        ogImage={shareImage}
         keywords={keywords}
         author="USEQIV"
         publishedTime={post.published_at ?? post.created_at}
@@ -128,16 +135,23 @@ const BlogPostDetail = () => {
                 <meta itemProp="description" content={description} />
                 <meta itemProp="datePublished" content={post.published_at ?? post.created_at} />
                 <meta itemProp="dateModified" content={post.updated_at} />
-                {post.cover_image_url && <meta itemProp="image" content={post.cover_image_url} />}
+                {post.cover_image_url && <meta itemProp="image" content={shareImage} />}
                 <Button variant="ghost" size="sm" className="mb-6 -ml-2" asChild>
                   <Link to="/blog">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     All posts
                   </Link>
                 </Button>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <Calendar className="h-4 w-4" />
-                  <time dateTime={date}>{format(new Date(date), 'MMMM d, yyyy')}</time>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <time dateTime={date}>{format(new Date(date), 'MMMM d, yyyy')}</time>
+                  </div>
+                  <SocialShareButtons
+                    url={pageUrl}
+                    title={post.title}
+                    description={description}
+                  />
                 </div>
                 <h1
                   className="text-3xl sm:text-4xl font-bold text-foreground mb-8 leading-tight"
@@ -150,11 +164,13 @@ const BlogPostDetail = () => {
                   itemProp="articleBody"
                   dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }}
                 />
+                <BlogComments postId={post.id} />
               </article>
 
               <BlogPostSidebar
                 relatedPosts={relatedPosts}
-                sidebarImages={post.sidebar_images}
+                sidebarImages={sidebarImages}
+                postSlug={post.slug}
               />
             </div>
           </div>

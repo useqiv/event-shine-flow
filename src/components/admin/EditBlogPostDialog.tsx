@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import BlogSidebarImagesManager from '@/components/admin/BlogSidebarImagesManager';
 import { Loader2 } from 'lucide-react';
 import {
   BlogPost,
@@ -54,7 +53,6 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [sidebarImages, setSidebarImages] = useState<string[]>([]);
   const [status, setStatus] = useState<BlogPostStatus>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
@@ -67,7 +65,6 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
         setExcerpt(post.excerpt ?? '');
         setContent(post.content);
         setCoverImageUrl(post.cover_image_url ?? '');
-        setSidebarImages(post.sidebar_images ?? []);
         setStatus(post.status);
         setIsFeatured(post.is_featured);
         setSlugTouched(true);
@@ -77,7 +74,6 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
         setExcerpt('');
         setContent('');
         setCoverImageUrl('');
-        setSidebarImages([]);
         setStatus('draft');
         setIsFeatured(false);
         setSlugTouched(false);
@@ -104,7 +100,6 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
       excerpt: excerpt.trim() || undefined,
       content,
       cover_image_url: coverImageUrl || null,
-      sidebar_images: sidebarImages.filter(Boolean),
       status,
       is_featured: isFeatured,
     };
@@ -128,7 +123,7 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Edit blog post' : 'New blog post'}</DialogTitle>
             <DialogDescription>
-              Write with the visual editor. Images upload at high quality. Sidebar images appear on the right column of the post page.
+              Write with the visual editor. Images upload at high quality. Sidebar images are managed separately on the Blog admin page.
             </DialogDescription>
           </DialogHeader>
 
@@ -203,12 +198,6 @@ const EditBlogPostDialog: React.FC<EditBlogPostDialogProps> = ({
                 <p className="text-xs text-destructive">Add some text content to your post.</p>
               )}
             </div>
-
-            <BlogSidebarImagesManager
-              images={sidebarImages}
-              onChange={setSidebarImages}
-              maxImages={3}
-            />
 
             <div className="flex items-center gap-2">
               <Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} />

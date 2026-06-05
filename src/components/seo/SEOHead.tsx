@@ -69,6 +69,7 @@ export const SEOHead = ({
       {ogImage && <meta property="og:image:width" content="1200" />}
       {ogImage && <meta property="og:image:height" content="630" />}
       {ogImage && <meta property="og:image:alt" content={title} />}
+      {ogImage && <meta property="og:image:secure_url" content={ogImage} />}
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
       <meta property="og:locale" content="en_US" />
       

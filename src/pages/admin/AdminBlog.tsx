@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,19 +29,28 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAdminBlogPosts, useDeleteBlogPost, BlogPost } from '@/hooks/useBlogPosts';
-import { Search, MoreHorizontal, Plus, Pencil, Trash2, ExternalLink, BookOpen } from 'lucide-react';
+import { Search, MoreHorizontal, Plus, Pencil, Trash2, ExternalLink, BookOpen, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import EditBlogPostDialog from '@/components/admin/EditBlogPostDialog';
+import BlogSidebarImagesManager from '@/components/admin/BlogSidebarImagesManager';
+import { useBlogSidebarImages, useUpdateBlogSidebarImages } from '@/hooks/useBlogSidebarImages';
 
 const AdminBlog: React.FC = () => {
   const { data: posts, isLoading } = useAdminBlogPosts();
   const deletePost = useDeleteBlogPost();
+  const { data: globalSidebarImages = [], isLoading: sidebarLoading } = useBlogSidebarImages();
+  const updateSidebarImages = useUpdateBlogSidebarImages();
+  const [sidebarImages, setSidebarImages] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
+
+  useEffect(() => {
+    setSidebarImages(globalSidebarImages);
+  }, [globalSidebarImages]);
 
   const filteredPosts = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -87,6 +96,37 @@ const AdminBlog: React.FC = () => {
             New post
           </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Sidebar images</CardTitle>
+            <CardDescription>
+              Global images for the right sidebar on every blog post (shown below the ad). Not tied to individual posts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sidebarLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : (
+              <>
+                <BlogSidebarImagesManager
+                  images={sidebarImages}
+                  onChange={setSidebarImages}
+                  maxImages={3}
+                />
+                <Button
+                  onClick={() => updateSidebarImages.mutate(sidebarImages.filter(Boolean))}
+                  disabled={updateSidebarImages.isPending}
+                >
+                  {updateSidebarImages.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  Save sidebar images
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { SITE_URL } from '@/lib/structuredData';
 
 const DEFAULT_BLOG_KEYWORDS =
   'USEQIV blog, contest voting, event ticketing, crowdfunding, event management, voting platform';
@@ -63,4 +64,17 @@ export function buildBlogKeywords(title: string, excerpt?: string | null): strin
 export function countWords(html: string): number {
   const text = stripHtmlToText(html);
   return text ? text.split(/\s+/).filter(Boolean).length : 0;
+}
+
+/** OG/Twitter image URL — proxies cover images for reliable social previews */
+export function getBlogShareOgImage(coverImageUrl: string | null | undefined): string {
+  const fallback = `${SITE_URL}/og-image.png`;
+  if (!coverImageUrl?.trim()) return fallback;
+  const image = coverImageUrl.trim();
+  if (!/^https?:\/\//i.test(image)) return fallback;
+  return `${SITE_URL}/api/og-image?url=${encodeURIComponent(image)}`;
+}
+
+export function getBlogShareUrl(slug: string): string {
+  return `${SITE_URL}/blog/${slug}`;
 }

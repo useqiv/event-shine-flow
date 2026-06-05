@@ -138,6 +138,54 @@ export type Database = {
           },
         ]
       }
+      blog_comments: {
+        Row: {
+          author_email: string | null
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          is_approved: boolean
+          post_id: string
+          user_id: string | null
+        }
+        Insert: {
+          author_email?: string | null
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          post_id: string
+          user_id?: string | null
+        }
+        Update: {
+          author_email?: string | null
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          post_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -148,7 +196,6 @@ export type Database = {
           id: string
           is_featured: boolean
           published_at: string | null
-          sidebar_images: Json
           slug: string
           status: string
           title: string
@@ -163,7 +210,6 @@ export type Database = {
           id?: string
           is_featured?: boolean
           published_at?: string | null
-          sidebar_images?: Json
           slug: string
           status?: string
           title: string
@@ -178,7 +224,6 @@ export type Database = {
           id?: string
           is_featured?: boolean
           published_at?: string | null
-          sidebar_images?: Json
           slug?: string
           status?: string
           title?: string

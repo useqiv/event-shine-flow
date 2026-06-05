@@ -37,7 +37,7 @@ const BlogSidebarImagesManager: React.FC<BlogSidebarImagesManagerProps> = ({
   return (
     <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
       <div className="flex items-center justify-between gap-2">
-        <Label>Sidebar images (right column)</Label>
+        <Label>Global sidebar images (all blog posts)</Label>
         {images.filter(Boolean).length < maxImages && images.length < maxImages && (
           <Button type="button" variant="outline" size="sm" onClick={addImage}>
             <Plus className="h-4 w-4 mr-1" />
@@ -46,7 +46,7 @@ const BlogSidebarImagesManager: React.FC<BlogSidebarImagesManagerProps> = ({
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Optional high-quality images shown in the right sidebar on the published post page.
+        These images appear in the right sidebar on every published blog post (below the ad).
       </p>
 
       {displaySlots.length === 0 ? (
