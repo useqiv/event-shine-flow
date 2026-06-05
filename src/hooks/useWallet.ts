@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { queryCache, selectColumns } from '@/lib/queryConfig';
+import { useUserCurrency } from '@/hooks/useUserCurrency';
 
 export interface Wallet {
   id: string;
@@ -104,54 +106,35 @@ export const useWalletTransactions = () => {
   });
 };
 
-export const useFundWallet = () => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
+export const useWalletDisplayBalance = () => {
+  const { data: wallet, isLoading: walletLoading } = useWallet();
+  const { data: currencyBalances, isLoading: balancesLoading } = useWalletCurrencyBalances();
+  const { preferredCurrency } = useUserCurrency();
 
-  return useMutation({
-    mutationFn: async ({ amount, paymentMethod }: { amount: number; paymentMethod: string }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+  const displayCurrency = useMemo(() => {
+    const primaryCurrency = wallet?.balance_currency || 'NGN';
+    if (currencyBalances?.some((cb) => cb.currency === preferredCurrency)) {
+      return preferredCurrency;
+    }
+    const funded = currencyBalances?.find((cb) => cb.balance > 0);
+    if (funded) return funded.currency;
+    return primaryCurrency;
+  }, [currencyBalances, preferredCurrency, wallet?.balance_currency]);
 
-      // Get wallet
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+  const displayBalance = useMemo(() => {
+    const currencyBalance = currencyBalances?.find((cb) => cb.currency === displayCurrency);
+    if (currencyBalance) return currencyBalance.balance;
+    if (displayCurrency === (wallet?.balance_currency || 'NGN')) {
+      return wallet?.balance || 0;
+    }
+    return 0;
+  }, [currencyBalances, displayCurrency, wallet?.balance, wallet?.balance_currency]);
 
-      if (walletError) throw walletError;
-
-      // Create transaction
-      const { data: transaction, error: txError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          wallet_id: wallet.id,
-          user_id: user.id,
-          type: 'deposit',
-          amount,
-          description: `Wallet funded via ${paymentMethod}`,
-          status: 'completed'
-        })
-        .select()
-        .single();
-
-      if (txError) throw txError;
-
-      // Update wallet balance
-      const { error: updateError } = await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) + amount })
-        .eq('id', wallet.id);
-
-      if (updateError) throw updateError;
-
-      return transaction;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
-    },
-  });
+  return {
+    displayBalance,
+    displayCurrency,
+    isLoading: walletLoading || balancesLoading,
+  };
 };
 
 export const useRedeemVoucher = () => {
@@ -205,6 +188,7 @@ export const useRedeemVoucher = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-currency-balances'] });
     },
   });
 };
@@ -217,12 +201,18 @@ export const useUpdateLowBalanceThreshold = () => {
     mutationFn: async (threshold: number | null) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('wallets')
-        .update({ low_balance_threshold: threshold })
-        .eq('user_id', user.id);
+      const { data: result, error } = await supabase.rpc('update_wallet_low_balance_threshold', {
+        p_user_id: user.id,
+        p_threshold: threshold,
+      });
 
       if (error) throw error;
+
+      const parsed = result as { success?: boolean; error?: string };
+      if (!parsed?.success) {
+        throw new Error(parsed?.error || 'Failed to update threshold');
+      }
+
       return threshold;
     },
     onSuccess: () => {

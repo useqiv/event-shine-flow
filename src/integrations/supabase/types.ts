@@ -4042,6 +4042,19 @@ export type Database = {
         Returns: Json
       }
       clear_login_attempts: { Args: { p_email: string }; Returns: undefined }
+      credit_wallet_safely: {
+        Args: {
+          p_amount: number
+          p_currency: string
+          p_description?: string
+          p_reference_id?: string
+          p_type: string
+          p_update_referral_earnings?: boolean
+          p_user_id: string
+          p_wallet_transaction_id?: string
+        }
+        Returns: Json
+      }
       debit_wallet_safely: {
         Args: {
           p_amount: number
@@ -4109,6 +4122,10 @@ export type Database = {
       track_campaign_view: {
         Args: { p_campaign_id: string; p_source?: string }
         Returns: undefined
+      }
+      update_wallet_low_balance_threshold: {
+        Args: { p_threshold: number; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {

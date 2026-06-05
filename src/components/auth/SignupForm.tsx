@@ -6,7 +6,7 @@ import { CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PasswordStrength, isPasswordStrong } from '@/components/ui/password-strength';
 import { GoogleButton } from '@/components/auth/GoogleButton';
-import { Eye, EyeOff, Mail, Lock, User, Gift, AlertTriangle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, AlertTriangle, Loader2 } from 'lucide-react';
 import { emailSchema, passwordSchema } from '@/lib/validationSchemas';
 import { z } from 'zod';
 
@@ -14,20 +14,17 @@ interface SignupFormProps {
   onSubmit: (email: string, password: string, fullName: string) => Promise<void>;
   onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
-  initialReferralCode?: string;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({
   onSubmit,
   onGoogleLogin,
   isLoading,
-  initialReferralCode = '',
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [referralCode, setReferralCode] = useState(initialReferralCode);
   const [showPassword, setShowPassword] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -145,24 +142,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
               required
             />
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="referral-code">Referral Code (Optional)</Label>
-          <div className="relative">
-            <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="referral-code"
-              type="text"
-              placeholder="Enter referral code"
-              value={referralCode}
-              onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-              className="pl-10"
-            />
-          </div>
-          {referralCode && (
-            <p className="text-xs text-primary">You'll get ₦500 bonus when you sign up!</p>
-          )}
         </div>
       </CardContent>
 

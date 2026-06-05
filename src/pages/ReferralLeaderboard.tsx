@@ -187,7 +187,7 @@ const ReferralLeaderboard = () => {
                   </li>
                   <li className="flex gap-3">
                     <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">3</span>
-                    <span className="text-muted-foreground">You both earn ₦500 bonus instantly!</span>
+                    <span className="text-muted-foreground">They join USEQIV and start exploring events and contests</span>
                   </li>
                 </ol>
               </CardContent>

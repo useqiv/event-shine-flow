@@ -10,7 +10,8 @@ import {
   CardSkeleton, 
   ListSkeleton 
 } from '@/components/ui/loading-skeletons';
-import { useWallet } from '@/hooks/useWallet';
+import { useWalletDisplayBalance } from '@/hooks/useWallet';
+import { getCurrencySymbol } from '@/components/ui/currency-selector';
 import { useFeaturedContests } from '@/hooks/useContests';
 import { useFeaturedEvents } from '@/hooks/useEvents';
 import { useMyTickets } from '@/hooks/useEvents';
@@ -110,7 +111,7 @@ const RecentVotesSkeleton = () => (
 );
 
 const Dashboard = () => {
-  const { data: wallet, isLoading: walletLoading } = useWallet();
+  const { displayBalance, displayCurrency, isLoading: walletLoading } = useWalletDisplayBalance();
   const { data: featuredContests, isLoading: contestsLoading } = useFeaturedContests();
   const { data: featuredEvents, isLoading: eventsLoading } = useFeaturedEvents();
   const { data: myTickets, isLoading: ticketsLoading } = useMyTickets();
@@ -184,7 +185,7 @@ const Dashboard = () => {
                     <Skeleton className="h-8 w-24 mt-1" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground">
-                      ₦{wallet?.balance?.toLocaleString() || '0.00'}
+                      {getCurrencySymbol(displayCurrency)}{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   )}
                 </div>

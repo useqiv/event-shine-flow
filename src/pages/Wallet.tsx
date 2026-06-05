@@ -258,7 +258,7 @@ const WalletPage = () => {
               <div className="flex-1">
                 <p className="font-medium text-destructive">Low Balance Alert</p>
                 <p className="text-sm text-muted-foreground">
-                  Your balance (₦{wallet?.balance.toLocaleString()}) is below your threshold of ₦{wallet?.low_balance_threshold?.toLocaleString()}
+                  Your balance ({getCurrencySymbol(displayCurrency)}{displayBalance.toLocaleString()}) is below your threshold of ₦{wallet?.low_balance_threshold?.toLocaleString()}
                 </p>
               </div>
               <Button size="sm" onClick={() => setIsFundModalOpen(true)}>

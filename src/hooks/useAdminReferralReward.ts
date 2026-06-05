@@ -6,55 +6,37 @@ interface RewardParams {
   userId: string;
   amount: number;
   reason: string;
+  currency?: string;
 }
 
 export const useAdminRewardReferral = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, amount, reason }: RewardParams) => {
-      // Get the user's wallet
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('id, balance, referral_earnings')
-        .eq('user_id', userId)
-        .maybeSingle();
+    mutationFn: async ({ userId, amount, reason, currency = 'NGN' }: RewardParams) => {
+      const { data: result, error } = await supabase.rpc('credit_wallet_safely', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_currency: currency,
+        p_type: 'referral',
+        p_description: `Admin reward: ${reason}`,
+        p_reference_id: null,
+        p_update_referral_earnings: true,
+      });
 
-      if (walletError) throw walletError;
-      if (!wallet) throw new Error('Wallet not found for user');
+      if (error) throw error;
 
-      // Update wallet balance and referral earnings
-      const { error: updateError } = await supabase
-        .from('wallets')
-        .update({
-          balance: Number(wallet.balance) + amount,
-          referral_earnings: Number(wallet.referral_earnings) + amount,
-        })
-        .eq('id', wallet.id);
+      const credit = result as { success?: boolean; error?: string };
+      if (!credit?.success) {
+        throw new Error(credit?.error || 'Failed to credit wallet');
+      }
 
-      if (updateError) throw updateError;
-
-      // Create wallet transaction
-      const { error: txError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          wallet_id: wallet.id,
-          user_id: userId,
-          type: 'referral',
-          amount: amount,
-          description: `Admin reward: ${reason}`,
-          status: 'completed',
-        });
-
-      if (txError) throw txError;
-
-      // Create notification for user
       const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: userId,
           title: 'Referral Reward!',
-          message: `You received a ₦${amount.toLocaleString()} referral bonus! ${reason}`,
+          message: `You received a ${currency} ${amount.toLocaleString()} referral reward! ${reason}`,
           type: 'wallet',
         });
 
@@ -66,6 +48,7 @@ export const useAdminRewardReferral = () => {
       toast.success('Referral reward sent successfully!');
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
       queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-currency-balances'] });
       queryClient.invalidateQueries({ queryKey: ['referral-leaderboard'] });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },

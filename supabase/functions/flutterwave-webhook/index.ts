@@ -1134,121 +1134,70 @@ async function processSuccessfulPayment(paymentData: any) {
   } else if (type === "wallet" && user_id) {
     console.log("Processing wallet funding...");
 
-    // Get wallet
-    const { data: wallet, error: walletError } = await supabase
-      .from("wallets")
-      .select("id")
-      .eq("user_id", user_id)
-      .single();
-
-    if (walletError || !wallet) {
-      console.error("Error fetching wallet:", walletError?.message);
+    if (walletTx?.status === "completed") {
+      console.log("Wallet funding already processed for tx_ref:", paymentData.tx_ref);
       return;
     }
 
     const paymentCurrency = paymentData.currency || "NGN";
-    // The user paid amount + 3% admin fee. Only credit the base funding amount to their wallet.
-    // funding_amount holds the original deposit amount (before the 3% fee was added).
     const baseAmount = Number(meta.funding_amount) || paymentData.amount;
     const WALLET_ADMIN_FEE_RATE = 0.03;
     const adminFee = Math.round(baseAmount * WALLET_ADMIN_FEE_RATE * 100) / 100;
-    const amountToAdd = baseAmount; // Only credit the base amount to wallet
+    const amountToAdd = baseAmount;
     console.log(`Wallet funding: base=${baseAmount}, admin fee(3%)=${adminFee}, credited to wallet=${amountToAdd}, total charged=${paymentData.amount}`);
 
-    // Check if a currency balance already exists for this currency
-    const { data: existingBalance, error: balanceError } = await supabase
-      .from("wallet_currency_balances")
-      .select("id, balance")
-      .eq("wallet_id", wallet.id)
-      .eq("currency", paymentCurrency)
-      .maybeSingle();
+    const { data: creditResult, error: creditError } = await supabase.rpc("credit_wallet_safely", {
+      p_user_id: user_id,
+      p_amount: amountToAdd,
+      p_currency: paymentCurrency,
+      p_type: "deposit",
+      p_description: `Wallet funding via Flutterwave (${paymentCurrency})`,
+      p_reference_id: paymentData.tx_ref,
+      p_update_referral_earnings: false,
+      p_wallet_transaction_id: walletTx?.id ?? null,
+    });
 
-    if (balanceError) {
-      console.error("Error checking existing currency balance:", balanceError.message);
-    }
-
-    let newBalance = amountToAdd;
-    let updateOrInsertError = null;
-
-    if (existingBalance) {
-      // Update existing currency balance
-      newBalance = Number(existingBalance.balance) + amountToAdd;
-      const { error: updateError } = await supabase
-        .from("wallet_currency_balances")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
-        .eq("id", existingBalance.id);
-
-      updateOrInsertError = updateError;
-      if (updateError) {
-        console.error("Error updating currency balance:", updateError.message);
-      } else {
-        console.log(`Updated ${paymentCurrency} balance to ${newBalance}`);
-      }
-    } else {
-      // Insert new currency balance
-      const { error: insertError } = await supabase
-        .from("wallet_currency_balances")
-        .insert({
-          wallet_id: wallet.id,
-          currency: paymentCurrency,
-          balance: amountToAdd,
-        });
-
-      updateOrInsertError = insertError;
-      if (insertError) {
-        console.error("Error inserting new currency balance:", insertError.message);
-      } else {
-        console.log(`Created new ${paymentCurrency} balance with ${amountToAdd}`);
-      }
-    }
-
-    // Also update the legacy wallet balance for backward compatibility
-    const { data: walletFull } = await supabase
-      .from("wallets")
-      .select("balance")
-      .eq("id", wallet.id)
-      .single();
-
-    if (walletFull) {
-      await supabase
-        .from("wallets")
-        .update({ 
-          balance: Number(walletFull.balance) + amountToAdd, 
-          updated_at: new Date().toISOString() 
-        })
-        .eq("id", wallet.id);
-    }
-
-    if (!updateOrInsertError) {
-      console.log("Wallet funded successfully with", paymentCurrency, amountToAdd);
-      await updateWalletTxStatus("completed");
-
-      // Create notification
-      await supabase.from("notifications").insert({
-        user_id,
-        title: "Wallet Funded Successfully",
-        message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()}. A 3% admin fee of ${paymentCurrency} ${adminFee.toLocaleString()} was charged.`,
-        type: "system",
-      });
-
-      // Send wallet funding email receipt
-      await sendReceipt({
-        type: "wallet",
-        user_email: customer.email,
-        user_name: customer.name || "Valued Customer",
-        amount: baseAmount,
-        currency: paymentCurrency,
-        payment_method: `Flutterwave`,
-        transaction_ref: paymentData.tx_ref,
-        new_balance: newBalance,
-        wallet_currency: paymentCurrency,
-        admin_fee: adminFee,
-        total_charged: paymentData.amount,
-        total_credited: amountToAdd,
-      }, user_id, supabase);
-    } else {
+    if (creditError) {
+      console.error("Error crediting wallet:", creditError.message);
       await updateWalletTxStatus("failed");
+      return;
     }
+
+    const credit = creditResult as { success?: boolean; error?: string; new_balance?: number; already_credited?: boolean };
+    if (!credit?.success) {
+      console.error("Wallet credit failed:", credit?.error || "Unknown error");
+      await updateWalletTxStatus("failed");
+      return;
+    }
+
+    const newBalance = Number(credit.new_balance ?? amountToAdd);
+    console.log("Wallet funded successfully with", paymentCurrency, amountToAdd);
+
+    if (!credit.already_credited) {
+      await updateWalletTxStatus("completed");
+    }
+
+    await supabase.from("notifications").insert({
+      user_id,
+      title: "Wallet Funded Successfully",
+      message: `Your wallet has been credited with ${paymentCurrency} ${amountToAdd.toLocaleString()}. A 3% admin fee of ${paymentCurrency} ${adminFee.toLocaleString()} was charged.`,
+      type: "system",
+    });
+
+    await sendReceipt({
+      type: "wallet",
+      user_email: customer.email,
+      user_name: customer.name || "Valued Customer",
+      amount: baseAmount,
+      currency: paymentCurrency,
+      payment_method: `Flutterwave`,
+      transaction_ref: paymentData.tx_ref,
+      new_balance: newBalance,
+      wallet_currency: paymentCurrency,
+      admin_fee: adminFee,
+      total_charged: paymentData.amount,
+      total_credited: amountToAdd,
+    }, user_id, supabase);
   } else if (type === "donation" && campaign_id && user_id) {
     console.log("Processing donation...");
     const grossAmount = Number(paymentData.amount) || 0;

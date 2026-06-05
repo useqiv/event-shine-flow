@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +14,6 @@ import appLogo from '@/assets/logo.png';
 const Auth = () => {
   const { signIn, signUp, signInWithGoogle, mfaState, verifyMfa, clearMfaState } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const {
     isLocked,
@@ -27,17 +26,6 @@ const Auth = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
-  const [referralCode, setReferralCode] = useState('');
-
-  // Capture referral code from URL
-  useEffect(() => {
-    const ref = searchParams.get('ref');
-    if (ref) {
-      const code = ref.toUpperCase();
-      setReferralCode(code);
-      localStorage.setItem('pendingReferral', code);
-    }
-  }, [searchParams]);
 
   const handleLogin = async (email: string, password: string) => {
     setLoginEmail(email);
@@ -198,7 +186,6 @@ const Auth = () => {
                 onSubmit={handleSignup}
                 onGoogleLogin={handleGoogleLogin}
                 isLoading={isLoading}
-                initialReferralCode={referralCode}
               />
             </TabsContent>
           </Tabs>

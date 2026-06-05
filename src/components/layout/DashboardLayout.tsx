@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/useProfile';
-import { useWallet } from '@/hooks/useWallet';
+import { useWalletDisplayBalance } from '@/hooks/useWallet';
+import { getCurrencySymbol } from '@/components/ui/currency-selector';
 import { useUnreadCount } from '@/hooks/useNotifications';
 import { 
   Vote, 
@@ -41,7 +42,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const navigate = useNavigate();
   const location = useLocation();
   const { data: profile } = useProfile();
-  const { data: wallet } = useWallet();
+  const { displayBalance, displayCurrency } = useWalletDisplayBalance();
   const { data: unreadCount } = useUnreadCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
@@ -170,7 +171,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary">
                   <Wallet className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">
-                    ₦{wallet?.balance?.toLocaleString() || '0.00'}
+                    {getCurrencySymbol(displayCurrency)}{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
 

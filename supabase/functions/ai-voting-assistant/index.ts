@@ -88,7 +88,7 @@ serve(async (req) => {
 - Find upcoming events and buy tickets
 - Discover campaigns they might want to support
 - Understand how voting works (paid voting system with wallet balance)
-- Learn about features like referral bonuses and promo codes
+- Learn about features like promo codes
 
 Current Platform Data:
 ${contestContext}

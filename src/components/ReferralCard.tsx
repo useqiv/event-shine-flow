@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useWallet } from '@/hooks/useWallet';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Share2, Users, Gift, Check, Trophy } from 'lucide-react';
+import { Copy, Share2, Users, Check, Trophy } from 'lucide-react';
 
 const ReferralCard = () => {
   const { data: wallet } = useWallet();
@@ -36,7 +36,7 @@ const ReferralCard = () => {
       try {
         await navigator.share({
           title: 'Join USEQIV',
-          text: 'Join USEQIV and get bonus points! Use my referral link:',
+          text: 'Join USEQIV and discover events, contests, and more!',
           url: referralLink,
         });
       } catch (error: any) {
@@ -54,12 +54,12 @@ const ReferralCard = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" />
-          Refer & Earn
+          Refer & Invite
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Share your referral link with friends. When they sign up and make their first transaction, you both earn ₦500 bonus!
+          Share your referral link with friends and invite them to join USEQIV.
         </p>
         
         <div className="flex gap-2">
@@ -91,20 +91,11 @@ const ReferralCard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-primary">
-              ₦{wallet?.referral_earnings?.toLocaleString() || '0'}
-            </p>
-            <p className="text-xs text-muted-foreground">Total Earnings</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1">
-              <Gift className="h-4 w-4 text-accent" />
-              <span className="text-2xl font-bold">₦500</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Per Referral</p>
-          </div>
+        <div className="pt-4 border-t text-center">
+          <p className="text-2xl font-bold text-primary">
+            ₦{wallet?.referral_earnings?.toLocaleString() || '0'}
+          </p>
+          <p className="text-xs text-muted-foreground">Total Referral Earnings</p>
         </div>
       </CardContent>
     </Card>

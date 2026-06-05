@@ -136,7 +136,7 @@ const userSteps = [
     step: 3,
     icon: CheckCircle,
     title: "Enjoy & Earn Rewards",
-    description: "Attend events with QR tickets, track your favorites, and earn ₦500 for every referral.",
+    description: "Attend events with QR tickets, track your favorites, and invite friends to USEQIV.",
   },
 ];
 

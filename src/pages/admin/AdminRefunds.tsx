@@ -87,31 +87,25 @@ const AdminRefunds = () => {
 
       if (error) throw error;
 
-      // If approved, we could add wallet credit logic here
+      // If approved, credit the user's wallet via secure RPC
       if (action === 'approve') {
         const refund = refunds?.find(r => r.id === refundId);
         if (refund) {
-          // Credit the user's wallet
-          const { data: wallet } = await supabase
-            .from('wallets')
-            .select('id, balance')
-            .eq('user_id', refund.user_id)
-            .single();
+          const { data: result, error: creditError } = await supabase.rpc('credit_wallet_safely', {
+            p_user_id: refund.user_id,
+            p_amount: refund.amount,
+            p_currency: 'NGN',
+            p_type: 'refund',
+            p_description: `Refund for ${refund.original_transaction_type}`,
+            p_reference_id: refund.id,
+            p_update_referral_earnings: false,
+          });
 
-          if (wallet) {
-            await supabase
-              .from('wallets')
-              .update({ balance: wallet.balance + refund.amount })
-              .eq('id', wallet.id);
+          if (creditError) throw creditError;
 
-            await supabase.from('wallet_transactions').insert({
-              wallet_id: wallet.id,
-              user_id: refund.user_id,
-              type: 'refund',
-              amount: refund.amount,
-              description: `Refund for ${refund.original_transaction_type}`,
-              reference_id: refund.id,
-            });
+          const credit = result as { success?: boolean; error?: string };
+          if (!credit?.success) {
+            throw new Error(credit?.error || 'Failed to credit wallet for refund');
           }
         }
       }
