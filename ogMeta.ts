@@ -417,7 +417,7 @@ ${articleMeta}
   <meta property="og:site_name" content="USEQIV">
   <link rel="shortcut icon" href="${SITE_URL}/favicon.ico" sizes="any">
   <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
-  <link rel="icon" href="${SITE_URL}/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="${SITE_URL}/favicon.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="${SITE_URL}/apple-touch-icon.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@useqiv">

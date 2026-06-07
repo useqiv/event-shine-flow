@@ -212,7 +212,7 @@ ${imageMeta}
   <!-- Site icons (WhatsApp/social crawlers read these; keep in sync with www.useqiv.com static assets) -->
   <link rel="shortcut icon" href="${SITE_URL}/favicon.ico" sizes="any">
   <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
-  <link rel="icon" href="${SITE_URL}/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="${SITE_URL}/favicon.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="${SITE_URL}/apple-touch-icon.png">
   
   <!-- Twitter Card -->
