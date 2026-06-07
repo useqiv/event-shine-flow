@@ -32,6 +32,8 @@ const ManageContests = () => {
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contestToDelete, setContestToDelete] = useState<any>(null);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [contestToCopy, setContestToCopy] = useState<any>(null);
 
   const contestIds = contests?.map((c: { id: string }) => c.id) || [];
   const { data: contestRevenues } = useContestsRevenueByCurrency(contestIds);
@@ -170,7 +172,10 @@ const ManageContests = () => {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => duplicateContest.mutate(contest.id)}
+                              onClick={() => {
+                                setContestToCopy(contest);
+                                setCopyDialogOpen(true);
+                              }}
                               disabled={duplicateContest.isPending}
                             >
                               <Copy className="h-4 w-4" />
@@ -230,6 +235,32 @@ const ManageContests = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate Contest</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to duplicate "{contestToCopy?.title}"? A new copy will be created
+              with the same settings but without contestants or vote data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (contestToCopy) {
+                  duplicateContest.mutate(contestToCopy.id);
+                  setCopyDialogOpen(false);
+                  setContestToCopy(null);
+                }
+              }}
+            >
+              Duplicate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

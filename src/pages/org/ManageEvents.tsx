@@ -33,6 +33,8 @@ const ManageEvents = () => {
   const { user } = useAuth();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<any>(null);
+  const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [eventToCopy, setEventToCopy] = useState<any>(null);
 
   // Fetch ticket revenue per event with currency info
   const { data: eventRevenues } = useQuery({
@@ -237,7 +239,10 @@ const ManageEvents = () => {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => duplicateEvent.mutate(event.id)}
+                              onClick={() => {
+                                setEventToCopy(event);
+                                setCopyDialogOpen(true);
+                              }}
                               disabled={duplicateEvent.isPending}
                             >
                               <Copy className="h-4 w-4" />
@@ -297,6 +302,32 @@ const ManageEvents = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to duplicate "{eventToCopy?.title}"? A new copy will be created
+              with the same settings but without ticket sales data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (eventToCopy) {
+                  duplicateEvent.mutate(eventToCopy.id);
+                  setCopyDialogOpen(false);
+                  setEventToCopy(null);
+                }
+              }}
+            >
+              Duplicate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
