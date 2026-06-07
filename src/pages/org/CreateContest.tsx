@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { FieldLabel, RequiredFieldsNote } from '@/components/ui/required-field-label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { ContestBrandingForm } from '@/components/org/ContestBrandingForm';
@@ -16,6 +17,7 @@ import { Calendar, DollarSign, FileText, Users, Layers, Check, Radio, Plus, Tras
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { normalizeVoteDisplayMode, type VoteDisplayMode } from '@/lib/voteDisplay';
 
 const categories = [
@@ -76,6 +78,31 @@ const CreateContest = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.title.trim()) {
+      toast.error('Contest title is required');
+      return;
+    }
+    if (!formData.category) {
+      toast.error('Category is required');
+      return;
+    }
+    if (!formData.start_date) {
+      toast.error('Start date is required');
+      return;
+    }
+    if (!formData.end_date) {
+      toast.error('End date is required');
+      return;
+    }
+    if (new Date(formData.end_date) <= new Date(formData.start_date)) {
+      toast.error('End date must be after start date');
+      return;
+    }
+    if (!formData.vote_currency) {
+      toast.error('Currency is required');
+      return;
+    }
     
     try {
       const sanitizedVoteOptions = voteOptions
@@ -86,12 +113,14 @@ const CreateContest = () => {
         .filter((option) => option.price > 0);
 
       if (sanitizedVoteOptions.length === 0) {
-        throw new Error('Add at least one valid voting option');
+        toast.error('Add at least one valid voting option');
+        return;
       }
 
       const votePrice = Number(formData.vote_price) || 0;
       if (votePrice <= 0) {
-        throw new Error('Vote price must be greater than zero');
+        toast.error('Vote price must be greater than zero');
+        return;
       }
 
       const result = await createContest.mutateAsync({
@@ -122,6 +151,7 @@ const CreateContest = () => {
       }
     } catch (error) {
       console.error('Failed to create contest:', error);
+      toast.error('Failed to create contest');
     }
   };
   const handleVoteOptionChange = (index: number, field: 'vote_quantity' | 'price', value: string) => {
@@ -249,6 +279,8 @@ const CreateContest = () => {
           </div>
         </div>
 
+        <RequiredFieldsNote />
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Details */}
           <Card>
@@ -261,7 +293,7 @@ const CreateContest = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Contest Title *</Label>
+                <FieldLabel htmlFor="title" required>Contest Title</FieldLabel>
                 <Input
                   id="title"
                   placeholder="e.g., Best Dressed 2024"
@@ -292,7 +324,7 @@ const CreateContest = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
+                  <FieldLabel htmlFor="category" required>Category</FieldLabel>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => handleChange('category', value)}
@@ -331,7 +363,7 @@ const CreateContest = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date *</Label>
+                  <FieldLabel htmlFor="start_date" required>Start Date</FieldLabel>
                   <Input
                     id="start_date"
                     type="datetime-local"
@@ -342,7 +374,7 @@ const CreateContest = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date *</Label>
+                  <FieldLabel htmlFor="end_date" required>End Date</FieldLabel>
                   <Input
                     id="end_date"
                     type="datetime-local"
@@ -369,14 +401,14 @@ const CreateContest = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="vote_currency">Currency *</Label>
+                  <FieldLabel htmlFor="vote_currency" required>Currency</FieldLabel>
                   <CurrencySelector
                     value={formData.vote_currency}
                     onValueChange={(value) => handleChange('vote_currency', value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vote_price">Vote Price (per vote) *</Label>
+                  <FieldLabel htmlFor="vote_price" required>Vote Price (per vote)</FieldLabel>
                   <Input
                     id="vote_price"
                     type="number"
@@ -391,14 +423,14 @@ const CreateContest = () => {
                   </p>
                 </div>
                 <div className="space-y-3">
-                  <Label>Voting Options *</Label>
+                  <FieldLabel required>Voting Options</FieldLabel>
                   <p className="text-xs text-muted-foreground">
                     Bundles at checkout (votes + total bundle price). Can differ from the per-vote price.
                   </p>
                   {voteOptions.map((option, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                       <div className="space-y-1">
-                        <Label>Number of Votes</Label>
+                        <FieldLabel required>Number of Votes</FieldLabel>
                         <Input
                           type="number"
                           min="1"
@@ -409,7 +441,7 @@ const CreateContest = () => {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label>Bundle price (total)</Label>
+                        <FieldLabel required>Bundle price (total)</FieldLabel>
                         <Input
                           type="number"
                           min="0.01"

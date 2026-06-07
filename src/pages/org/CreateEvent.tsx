@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { FieldLabel, RequiredFieldsNote } from '@/components/ui/required-field-label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageUpload } from '@/components/ui/image-upload';
 import { CustomSlugInput, validateCustomSlug } from '@/components/ui/custom-slug-input';
@@ -58,6 +59,31 @@ const CreateEvent = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.title.trim()) {
+      toast.error('Event title is required');
+      return;
+    }
+    if (!formData.category) {
+      toast.error('Category is required');
+      return;
+    }
+    if (!formData.currency) {
+      toast.error('Currency is required');
+      return;
+    }
+    if (!formData.event_date) {
+      toast.error('Event date and time is required');
+      return;
+    }
+    if (!formData.country) {
+      toast.error('Country is required');
+      return;
+    }
+    if (!formData.venue.trim()) {
+      toast.error('Venue name is required');
+      return;
+    }
     
     // Validate custom slug
     const slugError = validateCustomSlug(formData.custom_slug);
@@ -103,6 +129,8 @@ const CreateEvent = () => {
           />
         </div>
 
+        <RequiredFieldsNote />
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Details */}
           <Card>
@@ -115,7 +143,7 @@ const CreateEvent = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Event Title *</Label>
+                <FieldLabel htmlFor="title" required>Event Title</FieldLabel>
                 <Input
                   id="title"
                   placeholder="e.g., Summer Music Festival"
@@ -148,7 +176,7 @@ const CreateEvent = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
+                  <FieldLabel htmlFor="category" required>Category</FieldLabel>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => handleChange('category', value)}
@@ -166,7 +194,7 @@ const CreateEvent = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Currency *</Label>
+                  <FieldLabel htmlFor="currency" required>Currency</FieldLabel>
                   <Select
                     value={formData.currency}
                     onValueChange={(value) => handleChange('currency', value)}
@@ -204,7 +232,7 @@ const CreateEvent = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="event_date">Event Date & Time *</Label>
+                <FieldLabel htmlFor="event_date" required>Event Date & Time</FieldLabel>
                 <Input
                   id="event_date"
                   type="datetime-local"
@@ -227,7 +255,7 @@ const CreateEvent = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="country">Country *</Label>
+                <FieldLabel htmlFor="country" required>Country</FieldLabel>
                 <Select
                   value={formData.country}
                   onValueChange={(value) => handleChange('country', value)}
@@ -246,7 +274,7 @@ const CreateEvent = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="venue">Venue Name *</Label>
+                <FieldLabel htmlFor="venue" required>Venue Name</FieldLabel>
                 <Input
                   id="venue"
                   placeholder="e.g., Eko Convention Center"
