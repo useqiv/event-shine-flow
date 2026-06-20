@@ -118,6 +118,37 @@ const OrganizationDetailsDialog: React.FC<OrganizationDetailsDialogProps> = ({
                     <p className="font-medium capitalize">{organization.settings.preferred_payout_method || 'Bank'}</p>
                   </div>
                 </div>
+                {(organization.settings.bank_name || organization.settings.account_number || organization.settings.usdt_address) && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h5 className="text-sm font-medium mb-3">Banking Details</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                      {organization.settings.bank_name && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Bank</p>
+                          <p className="font-medium">{organization.settings.bank_name}</p>
+                        </div>
+                      )}
+                      {organization.settings.account_number && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Account Number</p>
+                          <p className="font-medium font-mono">{organization.settings.account_number}</p>
+                        </div>
+                      )}
+                      {organization.settings.account_name && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Account Name</p>
+                          <p className="font-medium">{organization.settings.account_name}</p>
+                        </div>
+                      )}
+                      {organization.settings.usdt_address && (
+                        <div className="col-span-2">
+                          <p className="text-sm text-muted-foreground">USDT Address</p>
+                          <p className="font-medium font-mono break-all">{organization.settings.usdt_address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
