@@ -467,7 +467,7 @@ const AdminPayouts: React.FC = () => {
                       <p className="font-medium">
                         {selectedPayout.payment_method === 'bank' 
                           ? selectedPayout.account_number 
-                          : selectedPayout.usdt_address?.slice(0, 20) + '...'}
+                          : selectedPayout.usdt_address}
                       </p>
                     </div>
                   </div>
