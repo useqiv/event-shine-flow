@@ -131,9 +131,9 @@ export const useAllOrganizations = () => {
         .select('*')
         .in('organization_id', orgIds);
 
-      // Get organization settings
+      // Get organization settings (admin-safe view decrypts banking details for admins)
       const { data: settings } = await supabase
-        .from('organization_settings')
+        .from('organization_settings_safe')
         .select('*')
         .in('organization_id', orgIds);
 
@@ -202,7 +202,7 @@ export const useAdminPayouts = () => {
     queryKey: ['admin-all-payouts'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('payouts')
+        .from('payouts_safe')
         .select('*')
         .order('created_at', { ascending: false });
 
