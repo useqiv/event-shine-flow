@@ -1,12 +1,26 @@
-import { CreditCard, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { CreditCard, Loader2, AlertCircle, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import CryptoPaymentSection from '@/components/CryptoPaymentSection';
+import { useCryptoSettings } from '@/hooks/useCryptoSettings';
+import { usePaymentFees } from '@/hooks/usePaymentFees';
+import { useConversionDisplay } from '@/components/ui/currency-selector';
+import { convertToUsd } from '@/lib/cryptoPayment';
+import { CRYPTO_MIN_AMOUNT, isBelowCryptoMinimum } from '@/lib/cryptoPayment';
 
 interface FormPaymentSectionProps {
   amount: number;
   currency: string;
-  onPay: () => void;
+  formId: string;
+  userId: string;
+  email: string;
+  name: string;
+  responseData: Record<string, unknown>;
+  onPayFlutterwave: () => void;
+  onCryptoVerified: () => void;
   isProcessing: boolean;
   paymentError?: string | null;
 }
@@ -14,16 +28,43 @@ interface FormPaymentSectionProps {
 const FormPaymentSection = ({
   amount,
   currency,
-  onPay,
+  formId,
+  userId,
+  email,
+  name,
+  responseData,
+  onPayFlutterwave,
+  onCryptoVerified,
   isProcessing,
   paymentError,
 }: FormPaymentSectionProps) => {
+  const { data: cryptoSettings } = useCryptoSettings();
+  const { calculateFees } = usePaymentFees();
+  const { rates } = useConversionDisplay();
+  const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
+
   const formatCurrency = (value: number, curr: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: curr,
     }).format(value);
   };
+
+  const cryptoAmountUsd = useMemo(() => {
+    const fees = calculateFees(amount, 'crypto');
+    const total = fees.totalWithFees;
+    return convertToUsd(total, currency, rates);
+  }, [amount, currency, rates, calculateFees]);
+
+  const cryptoMinimumMessage = useMemo(() => {
+    if (paymentMethod !== 'crypto') return null;
+    if (isBelowCryptoMinimum(cryptoAmountUsd)) {
+      return `Minimum funding amount is ${CRYPTO_MIN_AMOUNT} USDT or ${CRYPTO_MIN_AMOUNT} USDC on Polygon.`;
+    }
+    return null;
+  }, [paymentMethod, cryptoAmountUsd]);
+
+  const showCryptoTab = cryptoSettings?.enabled ?? false;
 
   return (
     <Card className="border-primary/20 bg-primary/5">
@@ -52,27 +93,70 @@ const FormPaymentSection = ({
           </Alert>
         )}
 
-        <Button 
-          onClick={onPay} 
-          disabled={isProcessing}
-          className="w-full h-12 text-base font-semibold gap-2"
+        <Tabs
+          value={showCryptoTab ? paymentMethod : 'flutterwave'}
+          onValueChange={(v) => setPaymentMethod(v as 'flutterwave' | 'crypto')}
         >
-          {isProcessing ? (
-            <>
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Processing Payment...
-            </>
-          ) : (
-            <>
-              <CreditCard className="h-5 w-5" />
-              Pay {formatCurrency(amount, currency)} & Submit
-            </>
-          )}
-        </Button>
+          <TabsList className={`grid w-full ${showCryptoTab ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <TabsTrigger value="flutterwave" className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Card / Bank
+            </TabsTrigger>
+            {showCryptoTab && (
+              <TabsTrigger value="crypto" className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Pay with Crypto
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-        <p className="text-xs text-center text-muted-foreground">
-          Secure payment powered by Flutterwave
-        </p>
+          <TabsContent value="flutterwave" className="space-y-4 mt-4">
+            <Button
+              onClick={onPayFlutterwave}
+              disabled={isProcessing}
+              className="w-full h-12 text-base font-semibold gap-2"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Processing Payment...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="h-5 w-5" />
+                  Pay {formatCurrency(amount, currency)} & Submit
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Secure payment powered by Flutterwave
+            </p>
+          </TabsContent>
+
+          {showCryptoTab && (
+            <TabsContent value="crypto" className="space-y-4 mt-4">
+              {cryptoMinimumMessage && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{cryptoMinimumMessage}</AlertDescription>
+                </Alert>
+              )}
+              <CryptoPaymentSection
+                params={{
+                  type: 'form',
+                  user_id: userId,
+                  email,
+                  name,
+                  amountUsd: cryptoAmountUsd,
+                  form_id: formId,
+                  response_data: responseData,
+                }}
+                disabled={!!cryptoMinimumMessage}
+                onVerified={onCryptoVerified}
+              />
+            </TabsContent>
+          )}
+        </Tabs>
       </CardContent>
     </Card>
   );

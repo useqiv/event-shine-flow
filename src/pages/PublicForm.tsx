@@ -23,6 +23,7 @@ import FormPaymentSection from '@/components/forms/FormPaymentSection';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getFormUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
+import { getOrCreateGuestUserId } from '@/lib/cryptoPayment';
 
 const PublicForm = () => {
   const { formIdOrSlug } = useParams<{ formIdOrSlug: string }>();
@@ -41,6 +42,7 @@ const PublicForm = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [formGuestUserId] = useState(() => getOrCreateGuestUserId('guest_form'));
   const checkEmail = useCheckEmailSubmission();
   const isLoading = formLoading || fieldsLoading;
 
@@ -170,6 +172,14 @@ const PublicForm = () => {
       setPaymentError(err instanceof Error ? err.message : 'Payment failed');
       setIsProcessingPayment(false);
     }
+  };
+
+  const handleCryptoFormVerified = () => {
+    setIsSubmitted(true);
+    toast({
+      title: 'Payment verified',
+      description: 'Your form has been submitted successfully.',
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -783,11 +793,17 @@ const PublicForm = () => {
                   );
                 })}
 
-                {showPaymentSection && (
+                {showPaymentSection && form && (
                   <FormPaymentSection
                     amount={form.payment_amount}
                     currency={form.payment_currency}
-                    onPay={handleFlutterwavePayment}
+                    formId={form.id}
+                    userId={formGuestUserId}
+                    email={respondentEmail || 'guest@example.com'}
+                    name={respondentName || 'Form Respondent'}
+                    responseData={formData}
+                    onPayFlutterwave={handleFlutterwavePayment}
+                    onCryptoVerified={handleCryptoFormVerified}
                     isProcessing={isProcessingPayment}
                     paymentError={paymentError}
                   />

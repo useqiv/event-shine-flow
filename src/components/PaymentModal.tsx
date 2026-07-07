@@ -3,11 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useFlutterwavePayment, useCryptoPayment, useVerifyCryptoPayment } from '@/hooks/usePayments';
+import { useFlutterwavePayment } from '@/hooks/usePayments';
 import { usePaymentFees } from '@/hooks/usePaymentFees';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -15,14 +14,16 @@ import { usePromoCodeValidation } from '@/hooks/usePromoCode';
 import CurrencySelector, {
   useConversionDisplay,
   formatCurrency,
-  getCurrencySymbol,
   roundPaymentAmount,
   getFlutterwaveInternationalMinMessage,
 } from '@/components/ui/currency-selector';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LiveRatesIndicator from '@/components/ui/live-rates-indicator';
-import { Loader2, CreditCard, Wallet, Copy, Check, Tag, X, ArrowRightLeft, AlertCircle } from 'lucide-react';
+import { Loader2, CreditCard, Wallet, Tag, X, ArrowRightLeft, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCryptoSettings } from '@/hooks/useCryptoSettings';
+import CryptoPaymentSection from '@/components/CryptoPaymentSection';
+import { getOrCreateGuestUserId, isBelowCryptoMinimum, CRYPTO_MIN_AMOUNT, convertToUsd } from '@/lib/cryptoPayment';
 
 const REFERRAL_LINK_ID_KEY = 'influencer_link_id';
 interface PaymentModalProps {
@@ -56,12 +57,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { data: profile } = useProfile();
   const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
   const { calculateFees } = usePaymentFees();
+  const { data: cryptoSettings } = useCryptoSettings();
   const [paymentMethod, setPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
-  const [cryptoCurrency, setCryptoCurrency] = useState<'USDT' | 'USDC'>('USDT');
-  const [network, setNetwork] = useState<'ethereum' | 'bsc' | 'polygon' | 'tron'>('bsc');
-  const [cryptoPaymentData, setCryptoPaymentData] = useState<any>(null);
-  const [txHash, setTxHash] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [guestUserId, setGuestUserId] = useState<string | null>(null);
   const [guestEmail, setGuestEmail] = useState('');
   const [guestName, setGuestName] = useState('');
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -72,8 +70,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (open) {
       setSelectedCurrency(initialCurrency);
+      setPaymentError(null);
+      if (!user) {
+        setGuestUserId(getOrCreateGuestUserId('guest'));
+      }
     }
-  }, [open, initialCurrency]);
+  }, [open, initialCurrency, user]);
 
   // Determine the base currency (original contest/event currency)
   const baseCurrency = originalCurrency || initialCurrency;
@@ -133,8 +135,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     setPaymentError(null);
   }, [effectiveCurrency, finalAmount, paymentMethod]);
-  const cryptoPayment = useCryptoPayment();
-  const verifyCrypto = useVerifyCryptoPayment();
+
+  const cryptoAmountUsd = useMemo(() => {
+    let amountUsd = finalAmount;
+    if (effectiveCurrency !== 'USD' && rates) {
+      amountUsd = convertToUsd(finalAmount, effectiveCurrency, rates);
+    }
+    return Math.round(amountUsd * 100) / 100;
+  }, [finalAmount, effectiveCurrency, rates]);
+
+  const cryptoMinimumMessage = useMemo(() => {
+    if (paymentMethod !== 'crypto') return null;
+    if (isBelowCryptoMinimum(cryptoAmountUsd)) {
+      return `Minimum funding amount is ${CRYPTO_MIN_AMOUNT} USDT or ${CRYPTO_MIN_AMOUNT} USDC on Polygon.`;
+    }
+    return null;
+  }, [paymentMethod, cryptoAmountUsd]);
 
   const isGuest = !user;
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail);
@@ -171,7 +187,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     const name = isGuest
       ? (guestName || 'Guest')
       : (user?.user_metadata?.full_name || profile?.full_name || (email ? email.split('@')[0] : 'Guest'));
-    const userId = user?.id || `guest_${Date.now()}`;
+    const userId = user?.id || guestUserId || getOrCreateGuestUserId('guest');
 
     if (!email) {
       toast.error('Please enter your email address');
@@ -227,64 +243,19 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     );
   };
 
-  const handleCryptoPayment = () => {
-    const userId = user?.id || `guest_${Date.now()}`;
-    
-    if (isGuest && !guestEmail) {
-      toast.error('Please enter your email address');
-      return;
-    }
-
-    // Convert to USD using live exchange rates instead of hardcoded value
-    let amountUsd = finalAmount;
-    if (effectiveCurrency !== 'USD' && rates) {
-      const usdRate = rates['USD'] || 1;
-      const sourceRate = rates[effectiveCurrency] || 1;
-      amountUsd = (finalAmount * usdRate) / sourceRate;
-    }
-    amountUsd = Math.round(amountUsd * 100) / 100;
-
-    cryptoPayment.mutate(
-      {
-        type,
-        crypto_currency: cryptoCurrency,
-        network,
-        amount_usd: amountUsd,
-        user_id: userId,
-        ...itemDetails,
-      },
-      {
-        onSuccess: (data) => {
-          setCryptoPaymentData(data);
-        },
-      }
-    );
+  const handleCryptoVerified = () => {
+    onOpenChange(false);
   };
 
-  const handleVerifyPayment = () => {
-    if (!cryptoPaymentData || !txHash) return;
-    
-    const userId = user?.id || `guest_${Date.now()}`;
+  const cryptoEnabled = cryptoSettings?.enabled ?? false;
+  const showCryptoTab = cryptoEnabled;
 
-    verifyCrypto.mutate({
-      payment_ref: cryptoPaymentData.payment_ref,
-      tx_hash: txHash,
-      user_id: userId,
-    }, {
-      onSuccess: () => {
-        onOpenChange(false);
-        setCryptoPaymentData(null);
-        setTxHash('');
-      }
-    });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success('Copied to clipboard');
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const cryptoUserId = user?.id || guestUserId || getOrCreateGuestUserId('guest');
+  const cryptoEmail = user?.email || guestEmail;
+  const cryptoName = isGuest
+    ? guestName || 'Guest'
+    : user?.user_metadata?.full_name || profile?.full_name || cryptoEmail?.split('@')[0] || 'Guest';
+  const influencerLinkId = localStorage.getItem(REFERRAL_LINK_ID_KEY) || undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -398,18 +369,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
           )}
 
-          {!cryptoPaymentData ? (
-            <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as 'flutterwave' | 'crypto')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="flutterwave" className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Card / Bank
-                </TabsTrigger>
+          <Tabs
+            value={showCryptoTab ? paymentMethod : 'flutterwave'}
+            onValueChange={(v) => setPaymentMethod(v as 'flutterwave' | 'crypto')}
+          >
+            <TabsList className={`grid w-full ${showCryptoTab ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <TabsTrigger value="flutterwave" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Card / Bank
+              </TabsTrigger>
+              {showCryptoTab && (
                 <TabsTrigger value="crypto" className="flex items-center gap-2">
                   <Wallet className="h-4 w-4" />
-                  Crypto
+                  Pay with Crypto
                 </TabsTrigger>
-              </TabsList>
+              )}
+            </TabsList>
 
               <TabsContent value="flutterwave" className="space-y-4 mt-4">
                 <Card>
@@ -472,133 +447,50 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 </Card>
               </TabsContent>
 
-              <TabsContent value="crypto" className="space-y-4 mt-4">
-                <div className="grid gap-4">
-                  {isGuest && (
+              {showCryptoTab && (
+                <TabsContent value="crypto" className="space-y-4 mt-4">
+                  {cryptoMinimumMessage && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{cryptoMinimumMessage}</AlertDescription>
+                    </Alert>
+                  )}
+                  {isGuest && type === 'ticket' && (
                     <div className="space-y-3 pb-3 border-b">
                       <div>
-                        <Label htmlFor="guest-email-crypto">Email Address *</Label>
+                        <Label htmlFor="guest-name-crypto">
+                          Full Name <span className="text-destructive">*</span>
+                        </Label>
                         <Input
-                          id="guest-email-crypto"
-                          type="email"
-                          placeholder="your@email.com"
-                          value={guestEmail}
-                          onChange={(e) => setGuestEmail(e.target.value)}
+                          id="guest-name-crypto"
+                          type="text"
+                          placeholder="John Doe"
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
                           className="mt-1"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          We'll send your receipt to this email
-                        </p>
                       </div>
                     </div>
                   )}
-                  
-                  <div>
-                    <Label>Select Cryptocurrency</Label>
-                    <Select value={cryptoCurrency} onValueChange={(v) => setCryptoCurrency(v as 'USDT' | 'USDC')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USDT">USDT (Tether)</SelectItem>
-                        <SelectItem value="USDC">USDC (USD Coin)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Select Network</Label>
-                    <Select value={network} onValueChange={(v) => setNetwork(v as any)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bsc">BNB Smart Chain (BSC)</SelectItem>
-                        <SelectItem value="ethereum">Ethereum</SelectItem>
-                        <SelectItem value="polygon">Polygon</SelectItem>
-                        <SelectItem value="tron">Tron (TRC20)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button 
-                    onClick={handleCryptoPayment}
-                    disabled={cryptoPayment.isPending || !canProceed}
-                  >
-                    {cryptoPayment.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating Address...
-                      </>
-                    ) : (
-                      'Get Payment Address'
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
+                  <CryptoPaymentSection
+                    params={{
+                      type,
+                      user_id: cryptoUserId,
+                      email: cryptoEmail,
+                      name: cryptoName,
+                      amountUsd: cryptoAmountUsd,
+                      influencer_link_id: influencerLinkId,
+                      ...itemDetails,
+                    }}
+                    disabled={!canProceed || !!cryptoMinimumMessage}
+                    onVerified={handleCryptoVerified}
+                    showGuestEmail={isGuest}
+                    guestEmail={guestEmail}
+                    onGuestEmailChange={setGuestEmail}
+                  />
+                </TabsContent>
+              )}
             </Tabs>
-          ) : (
-            <div className="space-y-4">
-              <Card>
-                <CardContent className="pt-4 space-y-4">
-                  <div>
-                    <Label className="text-muted-foreground">Send exactly</Label>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xl font-bold">{cryptoPaymentData.amount} {cryptoPaymentData.crypto_currency}</p>
-                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(String(cryptoPaymentData.amount))}>
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-muted-foreground">To this address ({cryptoPaymentData.network})</Label>
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs bg-muted p-2 rounded break-all flex-1">
-                        {cryptoPaymentData.wallet_address}
-                      </code>
-                      <Button variant="ghost" size="sm" onClick={() => copyToClipboard(cryptoPaymentData.wallet_address)}>
-                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <Label>After sending, enter your transaction hash</Label>
-                    <Input
-                      placeholder="0x..."
-                      value={txHash}
-                      onChange={(e) => setTxHash(e.target.value)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <Button 
-                    onClick={handleVerifyPayment}
-                    disabled={!txHash || verifyCrypto.isPending}
-                    className="w-full"
-                  >
-                    {verifyCrypto.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify Payment'
-                    )}
-                  </Button>
-
-                  <Button 
-                    variant="ghost" 
-                    onClick={() => setCryptoPaymentData(null)}
-                    className="w-full"
-                  >
-                    Back to payment options
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

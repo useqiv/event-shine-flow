@@ -540,7 +540,9 @@ const AdminSettings: React.FC = () => {
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
                     <p className="font-medium">Cryptocurrency Payments</p>
-                    <p className="text-sm text-muted-foreground">Enable crypto payments (USDT, USDC)</p>
+                    <p className="text-sm text-muted-foreground">
+                      Enable Pay with Crypto on Polygon (USDT & USDC wallets). Minimum 5 USDT/USDC per payment.
+                    </p>
                   </div>
                   <Switch checked={getSetting('crypto_payment_enabled') === 'true'} onCheckedChange={(checked) => handleUpdate('crypto_payment_enabled', String(checked))} />
                 </div>
@@ -1158,75 +1160,20 @@ const AdminSettings: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="crypto" className="space-y-6 mt-6">
-            {/* Crypto Payment Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Bitcoin className="h-5 w-5" /> Cryptocurrency Wallet Addresses</CardTitle>
-                <CardDescription>Configure wallet addresses to receive crypto payments</CardDescription>
+                <CardDescription>
+                  Customer crypto payments use <strong>Polygon only</strong> with USDT or USDC wallets.
+                  Minimum funding amount is <strong>5 USDT</strong> or <strong>5 USDC</strong> for votes, tickets, crowdfunding, and smart forms.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium">BNB Smart Chain (BSC)</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label>USDT Wallet (BEP20)</Label>
-                      <Input 
-                        placeholder="0x..." 
-                        value={cryptoForm.crypto_wallet_bsc_usdt}
-                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdt', e.target.value)}
-                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdt && "border-destructive")}
-                      />
-                      {cryptoErrors.crypto_wallet_bsc_usdt && (
-                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdt}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label>USDC Wallet (BEP20)</Label>
-                      <Input 
-                        placeholder="0x..." 
-                        value={cryptoForm.crypto_wallet_bsc_usdc}
-                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdc', e.target.value)}
-                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdc && "border-destructive")}
-                      />
-                      {cryptoErrors.crypto_wallet_bsc_usdc && (
-                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdc}</p>
-                      )}
-                    </div>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">Polygon (Active Network)</h4>
+                    <Badge>Customer payments</Badge>
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Ethereum</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label>USDT Wallet (ERC20)</Label>
-                      <Input 
-                        placeholder="0x..." 
-                        value={cryptoForm.crypto_wallet_ethereum_usdt}
-                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdt', e.target.value)}
-                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdt && "border-destructive")}
-                      />
-                      {cryptoErrors.crypto_wallet_ethereum_usdt && (
-                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdt}</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label>USDC Wallet (ERC20)</Label>
-                      <Input 
-                        placeholder="0x..." 
-                        value={cryptoForm.crypto_wallet_ethereum_usdc}
-                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdc', e.target.value)}
-                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdc && "border-destructive")}
-                      />
-                      {cryptoErrors.crypto_wallet_ethereum_usdc && (
-                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdc}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Polygon</h4>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <Label>USDT Wallet</Label>
@@ -1255,8 +1202,72 @@ const AdminSettings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">Tron (TRC20)</h4>
+                <p className="text-sm text-muted-foreground">
+                  Other network wallets below are stored for reference but are not used for customer checkout.
+                </p>
+
+                <div className="space-y-4 opacity-60">
+                  <h4 className="font-medium">BNB Smart Chain (BSC) — not active</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>USDT Wallet (BEP20)</Label>
+                      <Input 
+                        placeholder="0x..." 
+                        value={cryptoForm.crypto_wallet_bsc_usdt}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdt', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdt && "border-destructive")}
+                      />
+                      {cryptoErrors.crypto_wallet_bsc_usdt && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdt}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>USDC Wallet (BEP20)</Label>
+                      <Input 
+                        placeholder="0x..." 
+                        value={cryptoForm.crypto_wallet_bsc_usdc}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_bsc_usdc', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_bsc_usdc && "border-destructive")}
+                      />
+                      {cryptoErrors.crypto_wallet_bsc_usdc && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_bsc_usdc}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 opacity-60">
+                  <h4 className="font-medium">Ethereum — not active</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label>USDT Wallet (ERC20)</Label>
+                      <Input 
+                        placeholder="0x..." 
+                        value={cryptoForm.crypto_wallet_ethereum_usdt}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdt', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdt && "border-destructive")}
+                      />
+                      {cryptoErrors.crypto_wallet_ethereum_usdt && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdt}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>USDC Wallet (ERC20)</Label>
+                      <Input 
+                        placeholder="0x..." 
+                        value={cryptoForm.crypto_wallet_ethereum_usdc}
+                        onChange={(e) => handleCryptoFormChange('crypto_wallet_ethereum_usdc', e.target.value)}
+                        className={cn("mt-2 font-mono text-sm", cryptoErrors.crypto_wallet_ethereum_usdc && "border-destructive")}
+                      />
+                      {cryptoErrors.crypto_wallet_ethereum_usdc && (
+                        <p className="text-xs text-destructive mt-1">{cryptoErrors.crypto_wallet_ethereum_usdc}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 opacity-60">
+                  <h4 className="font-medium">Tron (TRC20) — not active</h4>
                   <div>
                     <Label>USDT Wallet (TRC20)</Label>
                     <Input 
@@ -1297,7 +1308,10 @@ const AdminSettings: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm">Crypto payments require manual verification by admins. When a user submits a transaction hash, it will appear in the Fraud Alerts section for review.</p>
+                  <p className="text-sm">
+                    Polygon USDT/USDC payments are auto-verified on-chain when users submit a transaction hash.
+                    Failed verifications are sent to Fraud Alerts for manual review.
+                  </p>
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>

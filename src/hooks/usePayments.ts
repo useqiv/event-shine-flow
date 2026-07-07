@@ -26,17 +26,27 @@ interface FlutterwavePaymentParams {
 }
 
 interface CryptoPaymentParams {
-  type: 'vote' | 'ticket';
-  crypto_currency: 'USDT' | 'USDC' | 'BTC' | 'ETH';
-  network: 'ethereum' | 'bsc' | 'polygon' | 'tron';
+  type: 'vote' | 'ticket' | 'donation' | 'form';
+  crypto_currency: 'USDT' | 'USDC';
+  network: 'polygon';
   amount_usd: number;
+  amount?: number;
+  currency?: string;
   user_id: string;
+  email?: string;
+  name?: string;
   contest_id?: string;
   contestant_id?: string;
   vote_quantity?: number;
   event_id?: string;
   ticket_type_id?: string;
   ticket_quantity?: number;
+  campaign_id?: string;
+  is_anonymous?: boolean;
+  donor_message?: string;
+  form_id?: string;
+  response_data?: Record<string, unknown>;
+  influencer_link_id?: string;
 }
 
 interface VerifyCryptoParams {
@@ -130,8 +140,27 @@ export const useCryptoPayment = () => {
         body: params,
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (error) {
+        let message = error.message;
+        const response = (error as { context?: Response })?.context;
+        if (response && typeof response.text === 'function') {
+          try {
+            const bodyText = await response.text();
+            if (bodyText) {
+              try {
+                const parsed = JSON.parse(bodyText);
+                message = parsed?.error || parsed?.message || bodyText || message;
+              } catch {
+                message = bodyText;
+              }
+            }
+          } catch {
+            // keep original message
+          }
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
       return data;
     },
     onError: (error: Error) => {
@@ -147,12 +176,33 @@ export const useVerifyCryptoPayment = () => {
         body: params,
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (error) {
+        let message = error.message;
+        const response = (error as { context?: Response })?.context;
+        if (response && typeof response.text === 'function') {
+          try {
+            const bodyText = await response.text();
+            if (bodyText) {
+              try {
+                const parsed = JSON.parse(bodyText);
+                message = parsed?.error || parsed?.message || bodyText || message;
+              } catch {
+                message = bodyText;
+              }
+            }
+          } catch {
+            // keep original message
+          }
+        }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
       return data;
     },
-    onSuccess: () => {
-      toast.success('Payment submitted for verification');
+    onSuccess: (data) => {
+      if (data?.status === 'pending_verification') {
+        toast.info(data?.message || 'Payment submitted for manual review');
+      }
     },
     onError: (error: Error) => {
       toast.error('Verification failed: ' + error.message);

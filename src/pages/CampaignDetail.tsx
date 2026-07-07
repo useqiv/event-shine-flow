@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useCampaign, useCampaignDonations } from '@/hooks/useCampaigns';
@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, CreditCard } from 'lucide-react';
+import { Heart, Users, Target, Clock, Share2, ArrowLeft, User, MessageSquare, CreditCard, Wallet, AlertCircle } from 'lucide-react';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import DonorLeaderboard from '@/components/DonorLeaderboard';
 import Navbar from '@/components/landing/Navbar';
@@ -27,6 +27,13 @@ import { toast } from 'sonner';
 import { trackCampaignView } from '@/hooks/useCampaignAnalytics';
 import { getCampaignShareUrl, getCampaignUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { canAcceptDonations } from '@/lib/campaignConstants';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import CryptoPaymentSection from '@/components/CryptoPaymentSection';
+import { useCryptoSettings } from '@/hooks/useCryptoSettings';
+import { usePaymentFees } from '@/hooks/usePaymentFees';
+import { useConversionDisplay } from '@/components/ui/currency-selector';
+import { convertToUsd, CRYPTO_MIN_AMOUNT, isBelowCryptoMinimum } from '@/lib/cryptoPayment';
 
 const DONATION_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
@@ -37,6 +44,9 @@ const CampaignDetail: React.FC = () => {
   const { data: campaign, isLoading } = useCampaign(id!);
   const { data: donations } = useCampaignDonations(id!);
   const flutterwavePayment = useFlutterwavePayment();
+  const { data: cryptoSettings } = useCryptoSettings();
+  const { calculateFees } = usePaymentFees();
+  const { rates } = useConversionDisplay();
   
   const isOwner = user && campaign?.creator_id === user.id;
 
@@ -53,6 +63,28 @@ const CampaignDetail: React.FC = () => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [message, setMessage] = useState('');
   const [showDonateDialog, setShowDonateDialog] = useState(false);
+  const [donationPaymentMethod, setDonationPaymentMethod] = useState<'flutterwave' | 'crypto'>('flutterwave');
+
+  const selectedDonationAmount = useMemo(() => {
+    if (customAmount) return parseFloat(customAmount) || 0;
+    return donationAmount;
+  }, [customAmount, donationAmount]);
+
+  const cryptoDonationUsd = useMemo(() => {
+    if (!campaign) return 0;
+    const fees = calculateFees(selectedDonationAmount, 'crypto');
+    return convertToUsd(fees.totalWithFees, campaign.currency, rates);
+  }, [campaign, selectedDonationAmount, calculateFees, rates]);
+
+  const cryptoDonationMinimumMessage = useMemo(() => {
+    if (donationPaymentMethod !== 'crypto') return null;
+    if (isBelowCryptoMinimum(cryptoDonationUsd)) {
+      return `Minimum funding amount is ${CRYPTO_MIN_AMOUNT} USDT or ${CRYPTO_MIN_AMOUNT} USDC on Polygon.`;
+    }
+    return null;
+  }, [donationPaymentMethod, cryptoDonationUsd]);
+
+  const showCryptoDonation = cryptoSettings?.enabled ?? false;
 
   if (isLoading) {
     return (
@@ -153,6 +185,11 @@ const CampaignDetail: React.FC = () => {
     } catch (error) {
       // Error handled by mutation
     }
+  };
+
+  const handleCryptoDonationVerified = () => {
+    setShowDonateDialog(false);
+    toast.success('Donation verified successfully! Thank you for your support.');
   };
 
   const handleShare = () => {
@@ -437,15 +474,62 @@ const CampaignDetail: React.FC = () => {
                           <Switch checked={isAnonymous} onCheckedChange={setIsAnonymous} />
                         </div>
 
-                        <Button 
-                          className="w-full" 
-                          size="lg"
-                          onClick={handleDonate}
-                          disabled={flutterwavePayment.isPending}
+                        <Tabs
+                          value={showCryptoDonation ? donationPaymentMethod : 'flutterwave'}
+                          onValueChange={(v) => setDonationPaymentMethod(v as 'flutterwave' | 'crypto')}
                         >
-                          <CreditCard className="h-5 w-5 mr-2" />
-                          {flutterwavePayment.isPending ? 'Redirecting to Payment...' : `Donate ${campaign.currency} ${customAmount || donationAmount}`}
-                        </Button>
+                          <TabsList className={`grid w-full ${showCryptoDonation ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                            <TabsTrigger value="flutterwave" className="flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              Card / Bank
+                            </TabsTrigger>
+                            {showCryptoDonation && (
+                              <TabsTrigger value="crypto" className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4" />
+                                Pay with Crypto
+                              </TabsTrigger>
+                            )}
+                          </TabsList>
+
+                          <TabsContent value="flutterwave" className="mt-4">
+                            <Button 
+                              className="w-full" 
+                              size="lg"
+                              onClick={handleDonate}
+                              disabled={flutterwavePayment.isPending}
+                            >
+                              <CreditCard className="h-5 w-5 mr-2" />
+                              {flutterwavePayment.isPending ? 'Redirecting to Payment...' : `Donate ${campaign.currency} ${customAmount || donationAmount}`}
+                            </Button>
+                          </TabsContent>
+
+                          {showCryptoDonation && user && (
+                            <TabsContent value="crypto" className="mt-4 space-y-4">
+                              {cryptoDonationMinimumMessage && (
+                                <Alert variant="destructive">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <AlertDescription>{cryptoDonationMinimumMessage}</AlertDescription>
+                                </Alert>
+                              )}
+                              <CryptoPaymentSection
+                                params={{
+                                  type: 'donation',
+                                  user_id: user.id,
+                                  email: profile?.email,
+                                  name: profile?.full_name || 'Donor',
+                                  amountUsd: cryptoDonationUsd,
+                                  amount: selectedDonationAmount,
+                                  currency: campaign.currency,
+                                  campaign_id: campaign.id,
+                                  is_anonymous: isAnonymous,
+                                  donor_message: message || undefined,
+                                }}
+                                disabled={!selectedDonationAmount || selectedDonationAmount <= 0 || !!cryptoDonationMinimumMessage}
+                                onVerified={handleCryptoDonationVerified}
+                              />
+                            </TabsContent>
+                          )}
+                        </Tabs>
 
                         {!user && (
                           <p className="text-sm text-center text-muted-foreground">
