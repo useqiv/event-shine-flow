@@ -5,7 +5,8 @@ import {
   ArrowLeft, Plus, Trash2, GripVertical, Eye, Save, Settings, Copy,
   Type, AlignLeft, Hash, Mail, Calendar, ListFilter, CheckSquare, 
   CircleDot, Star, Upload, Phone, Link2, Clock, MapPin, ToggleLeft,
-  Heading, SeparatorHorizontal, Image, User, CreditCard, CalendarClock
+  Heading, SeparatorHorizontal, Image, User, CreditCard, CalendarClock,
+  AlertCircle, Send
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -20,9 +21,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useForm, useFormFields, useUpdateForm, useCreateFormField, useUpdateFormField, useDeleteFormField, FormField } from '@/hooks/useForms';
+import { useForm, useFormFields, useUpdateForm, useCreateFormField, useUpdateFormField, useDeleteFormField, useSubmitPollForApproval, FormField } from '@/hooks/useForms';
 import { useToast } from '@/hooks/use-toast';
 import { getFormShareUrl } from '@/lib/urlHelpers';
+import { isPollForm } from '@/lib/formHelpers';
 import ConditionalLogicEditor, { ConditionalLogic } from '@/components/forms/ConditionalLogicEditor';
 
 const FIELD_TYPES = [
@@ -70,6 +72,7 @@ const FormBuilder = () => {
   const { data: form, isLoading: formLoading } = useForm(formId || '');
   const { data: fields, isLoading: fieldsLoading } = useFormFields(formId || '');
   const updateForm = useUpdateForm();
+  const submitPollForApproval = useSubmitPollForApproval();
   const createField = useCreateFormField();
   const updateField = useUpdateFormField();
   const deleteField = useDeleteFormField();
@@ -117,14 +120,26 @@ const FormBuilder = () => {
   }, [form]);
 
   const handleSaveSettings = async () => {
-    if (!formId) return;
+    if (!formId || !form) return;
+
+    const canActivatePoll = !isPollForm(form) || form.approval_status === 'approved';
+
     await updateForm.mutateAsync({
       id: formId,
       ...formSettings,
       custom_slug: formSettings.custom_slug || null,
       start_date: formSettings.start_date ? new Date(formSettings.start_date).toISOString() : null,
       end_date: formSettings.end_date ? new Date(formSettings.end_date).toISOString() : null,
+      is_active: canActivatePoll ? formSettings.is_active : false,
+      is_accepting_responses: canActivatePoll
+        ? formSettings.is_accepting_responses
+        : false,
     });
+  };
+
+  const handleSubmitPollForApproval = async () => {
+    if (!formId) return;
+    await submitPollForApproval.mutateAsync(formId);
   };
 
   const handleCopyShareLink = () => {
@@ -236,6 +251,53 @@ const FormBuilder = () => {
             </Button>
           </div>
         </div>
+
+        {isPollForm(form) && (
+          <Card className={
+            form.approval_status === 'approved'
+              ? 'border-green-500/30 bg-green-500/5'
+              : form.approval_status === 'rejected'
+                ? 'border-destructive/30 bg-destructive/5'
+                : 'border-yellow-500/30 bg-yellow-500/5'
+          }>
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className={`h-5 w-5 mt-0.5 shrink-0 ${
+                  form.approval_status === 'approved'
+                    ? 'text-green-600'
+                    : form.approval_status === 'rejected'
+                      ? 'text-destructive'
+                      : 'text-yellow-600'
+                }`} />
+                <div>
+                  <p className="font-medium">
+                    {form.approval_status === 'approved' && 'Poll is live'}
+                    {form.approval_status === 'pending' && 'Awaiting admin approval'}
+                    {form.approval_status === 'rejected' && 'Poll was rejected'}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {form.approval_status === 'approved' &&
+                      'Your poll has been approved and is publicly accessible when active.'}
+                    {form.approval_status === 'pending' &&
+                      'Polls must be reviewed by an admin before they can go live. Submit when you are ready.'}
+                    {form.approval_status === 'rejected' &&
+                      (form.rejection_reason || 'Please update your poll and resubmit for approval.')}
+                  </p>
+                </div>
+              </div>
+              {(form.approval_status === 'pending' || form.approval_status === 'rejected') && (
+                <Button
+                  onClick={handleSubmitPollForApproval}
+                  disabled={submitPollForApproval.isPending}
+                  className="shrink-0"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {form.approval_status === 'rejected' ? 'Resubmit for Approval' : 'Submit for Approval'}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
@@ -591,6 +653,11 @@ const FormBuilder = () => {
                 {/* Form Status */}
                 <div className="space-y-4 pt-6 border-t">
                   <h4 className="text-sm font-medium">Form Status</h4>
+                  {isPollForm(form) && form.approval_status !== 'approved' && (
+                    <p className="text-sm text-muted-foreground bg-muted/40 rounded-lg p-3">
+                      Poll visibility is controlled by admin approval. Once approved, you can activate the poll here.
+                    </p>
+                  )}
                   <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                     <div>
                       <Label className="text-sm">Form Active</Label>
@@ -599,6 +666,7 @@ const FormBuilder = () => {
                     <Switch
                       checked={formSettings.is_active}
                       onCheckedChange={(checked) => setFormSettings({ ...formSettings, is_active: checked })}
+                      disabled={isPollForm(form) && form.approval_status !== 'approved'}
                     />
                   </div>
 
@@ -610,6 +678,7 @@ const FormBuilder = () => {
                     <Switch
                       checked={formSettings.is_accepting_responses}
                       onCheckedChange={(checked) => setFormSettings({ ...formSettings, is_accepting_responses: checked })}
+                      disabled={isPollForm(form) && form.approval_status !== 'approved'}
                     />
                   </div>
 

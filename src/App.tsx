@@ -109,6 +109,7 @@ import AdminPayouts from "./pages/admin/AdminPayouts";
 import AdminFinance from "./pages/admin/AdminFinance";
 import AdminFraud from "./pages/admin/AdminFraud";
 import AdminModeration from "./pages/admin/AdminModeration";
+import AdminPolls from "./pages/admin/AdminPolls";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminPaymentHistory from "./pages/admin/AdminPaymentHistory";
 import AdminPaymentAnalytics from "./pages/admin/AdminPaymentAnalytics";
@@ -350,6 +351,7 @@ const AppRoutes = () => (
     <Route path="/admin/refunds" element={<ProtectedRoute><AdminRefunds /></ProtectedRoute>} />
     <Route path="/admin/fraud" element={<ProtectedRoute><AdminFraud /></ProtectedRoute>} />
         <Route path="/admin/moderation" element={<ProtectedRoute><AdminModeration /></ProtectedRoute>} />
+        <Route path="/admin/polls" element={<ProtectedRoute><AdminPolls /></ProtectedRoute>} />
         <Route path="/admin/vote-reconciliation" element={<ProtectedRoute><AdminVoteReconciliation /></ProtectedRoute>} />
         <Route path="/admin/activity-log" element={<ProtectedRoute><AdminActivityLog /></ProtectedRoute>} />
         <Route path="/admin/system-health" element={<ProtectedRoute><AdminSystemHealth /></ProtectedRoute>} />

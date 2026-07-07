@@ -13,6 +13,7 @@ export interface FormTemplate {
     description?: string;
     confirmation_message?: string;
     total_pages?: number;
+    form_type?: 'standard' | 'poll';
   };
   fields_data: Array<{
     field_type: string;
@@ -70,6 +71,8 @@ export const useCreateFormFromTemplate = () => {
 
       const templateData = template.template_data as FormTemplate['template_data'];
       const fieldsData = template.fields_data as FormTemplate['fields_data'];
+      const isPoll =
+        templateData.form_type === 'poll' || template.name === 'Poll / Quick Vote';
 
       // Create the form
       const { data: form, error: formError } = await supabase
@@ -80,6 +83,11 @@ export const useCreateFormFromTemplate = () => {
           description: templateData.description || null,
           confirmation_message: templateData.confirmation_message || 'Thank you for your response!',
           total_pages: templateData.total_pages || 1,
+          form_type: isPoll ? 'poll' : 'standard',
+          approval_status: isPoll ? 'pending' : 'approved',
+          is_active: !isPoll,
+          is_accepting_responses: !isPoll,
+          allow_multiple_submissions: !isPoll,
         })
         .select()
         .single();

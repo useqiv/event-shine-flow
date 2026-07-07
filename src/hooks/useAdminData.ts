@@ -827,6 +827,77 @@ export const useModerateContent = () => {
   });
 };
 
+export const useAdminPolls = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['admin-polls'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('form_type', 'poll')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const ownerIds = [...new Set(data?.map((form) => form.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', ownerIds);
+
+      return (data || []).map((form) => ({
+        ...form,
+        owner: profiles?.find((profile) => profile.id === form.user_id),
+      }));
+    },
+    enabled: !!user,
+  });
+};
+
+export const useModeratePoll = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      formId,
+      status,
+      reason,
+    }: {
+      formId: string;
+      status: 'approved' | 'rejected';
+      reason?: string;
+    }) => {
+      const { error } = await supabase
+        .from('forms')
+        .update({
+          approval_status: status,
+          rejection_reason: status === 'rejected' ? reason || 'Poll did not meet guidelines' : null,
+          reviewed_by: user?.id,
+          reviewed_at: new Date().toISOString(),
+          is_active: status === 'approved',
+          is_accepting_responses: status === 'approved',
+        })
+        .eq('id', formId)
+        .eq('form_type', 'poll');
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['user-forms'] });
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      toast.success('Poll reviewed');
+    },
+    onError: () => {
+      toast.error('Failed to review poll');
+    },
+  });
+};
+
 export const useSendOrgBroadcastEmail = () => {
   const queryClient = useQueryClient();
 

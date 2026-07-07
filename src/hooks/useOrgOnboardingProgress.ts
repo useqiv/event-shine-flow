@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
 import type { OrganizationSettings } from '@/hooks/useOrganization';
-import type { SocialAccount } from '@/hooks/useOrganizationSocialAccounts';
-import type { SocialPostLog } from '@/hooks/useSocialPostLogs';
-import type { Campaign } from '@/hooks/useCampaigns';
 
 export interface OnboardingStep {
   id: string;
@@ -14,11 +11,6 @@ export interface OnboardingStep {
 
 interface OnboardingInput {
   orgSettings: OrganizationSettings | null | undefined;
-  contests: { id: string }[] | undefined;
-  events: { id: string }[] | undefined;
-  campaigns: Campaign[] | undefined;
-  socialAccounts: SocialAccount[] | undefined;
-  postLogs: SocialPostLog[] | undefined;
 }
 
 export function resolveMarketingHref(
@@ -34,17 +26,8 @@ export function resolveMarketingHref(
   return '/org/contests/create';
 }
 
-export function useOrgOnboardingProgress({
-  orgSettings,
-  contests,
-  events,
-  campaigns,
-  socialAccounts,
-  postLogs,
-}: OnboardingInput) {
+export function useOrgOnboardingProgress({ orgSettings }: OnboardingInput) {
   return useMemo(() => {
-    const marketingHref = resolveMarketingHref(contests, events);
-
     const hasCompanyProfile = Boolean(orgSettings?.company_name?.trim());
     const hasPayoutDetails = Boolean(
       (orgSettings?.bank_name &&
@@ -52,10 +35,6 @@ export function useOrgOnboardingProgress({
         orgSettings?.account_name) ||
         orgSettings?.usdt_address?.trim(),
     );
-    const hasListing =
-      (contests?.length || 0) + (events?.length || 0) + (campaigns?.length || 0) > 0;
-    const hasSocialAccount = socialAccounts?.some((a) => a.is_connected) ?? false;
-    const hasSharedPost = postLogs?.some((p) => p.status === 'success') ?? false;
 
     const steps: OnboardingStep[] = [
       {
@@ -72,27 +51,6 @@ export function useOrgOnboardingProgress({
         href: '/org/settings',
         completed: hasPayoutDetails,
       },
-      {
-        id: 'listing',
-        title: 'Create your first listing',
-        description: 'Launch a contest, event, or fundraising campaign',
-        href: '/org/contests/create',
-        completed: hasListing,
-      },
-      {
-        id: 'social',
-        title: 'Connect social accounts',
-        description: 'Link Facebook, X, or other platforms for auto-posting',
-        href: marketingHref,
-        completed: hasSocialAccount,
-      },
-      {
-        id: 'share',
-        title: 'Share your first post',
-        description: 'Publish to social media from a contest or event',
-        href: marketingHref,
-        completed: hasSharedPost,
-      },
     ];
 
     const completedCount = steps.filter((s) => s.completed).length;
@@ -105,7 +63,6 @@ export function useOrgOnboardingProgress({
       totalCount,
       progressPercent,
       isComplete: completedCount === totalCount,
-      marketingHref,
     };
-  }, [orgSettings, contests, events, campaigns, socialAccounts, postLogs]);
+  }, [orgSettings]);
 }

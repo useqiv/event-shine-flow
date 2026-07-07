@@ -5,12 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOrganizationSettings, useOrganizationContests, useOrganizationEvents } from '@/hooks/useOrganization';
-import { useOrganizationCampaigns } from '@/hooks/useCampaigns';
-import { useOrganizationSocialAccounts } from '@/hooks/useOrganizationSocialAccounts';
-import { useSocialPostLogs } from '@/hooks/useSocialPostLogs';
-import { useOrgPermissions } from '@/hooks/useOrgPermissions';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useOrganizationSettings } from '@/hooks/useOrganization';
 import { useOrgOnboardingProgress } from '@/hooks/useOrgOnboardingProgress';
 import {
   CheckCircle2,
@@ -25,26 +20,10 @@ const dismissKey = (userId: string) => `org-onboarding-dismissed-${userId}`;
 
 const OrgOnboardingChecklist = () => {
   const { user } = useAuth();
-  const { data: role } = useUserRole();
-  const { data: permissions } = useOrgPermissions();
-  const orgId = permissions?.organizationId ?? (role === 'organization' ? user?.id : undefined);
-
   const { data: orgSettings } = useOrganizationSettings();
-  const { data: contests } = useOrganizationContests();
-  const { data: events } = useOrganizationEvents();
-  const { data: campaigns } = useOrganizationCampaigns(orgId);
-  const { data: socialAccounts } = useOrganizationSocialAccounts();
-  const { data: postLogs } = useSocialPostLogs(50);
 
   const { steps, completedCount, totalCount, progressPercent, isComplete } =
-    useOrgOnboardingProgress({
-      orgSettings,
-      contests,
-      events,
-      campaigns,
-      socialAccounts,
-      postLogs,
-    });
+    useOrgOnboardingProgress({ orgSettings });
 
   const [dismissed, setDismissed] = useState(false);
 

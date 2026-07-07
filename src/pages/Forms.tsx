@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserForms, useCreateForm, useDeleteForm, useDuplicateForm } from '@/hooks/useForms';
 import FormTemplateSelector from '@/components/forms/FormTemplateSelector';
+import { isPollForm } from '@/lib/formHelpers';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { getFormShareUrl } from '@/lib/urlHelpers';
@@ -203,10 +204,34 @@ const Forms = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={form.is_active ? 'default' : 'secondary'}>
-                      {form.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isPollForm(form) && (
+                      <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-200">
+                        Poll
+                      </Badge>
+                    )}
+                    {isPollForm(form) ? (
+                      <Badge
+                        variant="outline"
+                        className={
+                          form.approval_status === 'approved'
+                            ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                            : form.approval_status === 'rejected'
+                              ? 'bg-destructive/10 text-destructive border-destructive/20'
+                              : 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+                        }
+                      >
+                        {form.approval_status === 'approved'
+                          ? 'Approved'
+                          : form.approval_status === 'rejected'
+                            ? 'Rejected'
+                            : 'Pending Approval'}
+                      </Badge>
+                    ) : (
+                      <Badge variant={form.is_active ? 'default' : 'secondary'}>
+                        {form.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    )}
                     <Badge variant={form.is_accepting_responses ? 'outline' : 'secondary'}>
                       {form.is_accepting_responses ? 'Accepting Responses' : 'Closed'}
                     </Badge>

@@ -14,6 +14,11 @@ export interface Form {
   is_accepting_responses: boolean;
   confirmation_message: string | null;
   allow_multiple_submissions: boolean;
+  form_type?: 'standard' | 'poll';
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
   // Scheduling
   start_date: string | null;
   end_date: string | null;
@@ -108,11 +113,14 @@ export const usePublicForm = (idOrSlug: string) => {
     queryKey: ['public-form', idOrSlug],
     queryFn: async () => {
       // Try by ID first
+      const isPubliclyVisible = (form: Form) =>
+        form.is_active &&
+        ((form.form_type ?? 'standard') !== 'poll' || form.approval_status === 'approved');
+
       let { data, error } = await supabase
         .from('forms')
         .select('*')
         .eq('id', idOrSlug)
-        .eq('is_active', true)
         .maybeSingle();
 
       // If not found, try by custom slug
@@ -121,7 +129,6 @@ export const usePublicForm = (idOrSlug: string) => {
           .from('forms')
           .select('*')
           .eq('custom_slug', idOrSlug)
-          .eq('is_active', true)
           .maybeSingle();
         
         data = result.data;
@@ -129,7 +136,10 @@ export const usePublicForm = (idOrSlug: string) => {
       }
 
       if (error) throw error;
-      return data as Form | null;
+      if (!data) return null;
+
+      const form = data as Form;
+      return isPubliclyVisible(form) ? form : null;
     },
     enabled: !!idOrSlug,
   });
@@ -223,6 +233,7 @@ export const useUpdateForm = () => {
       queryClient.invalidateQueries({ queryKey: ['form', data.id] });
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       queryClient.invalidateQueries({ queryKey: ['admin-forms'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
       queryClient.invalidateQueries({ queryKey: ['public-form', data.custom_slug || data.id] });
       toast({ title: 'Form updated successfully' });
     },
@@ -419,6 +430,39 @@ export const useUpdateFormResponse = () => {
   });
 };
 
+export const useSubmitPollForApproval = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (formId: string) => {
+      const { data, error } = await supabase
+        .from('forms')
+        .update({
+          approval_status: 'pending',
+          rejection_reason: null,
+          is_active: false,
+        })
+        .eq('id', formId)
+        .eq('form_type', 'poll')
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Form;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['user-forms'] });
+      queryClient.invalidateQueries({ queryKey: ['form', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
+      toast({ title: 'Poll submitted for admin approval' });
+    },
+    onError: (error) => {
+      toast({ title: 'Failed to submit poll', description: error.message, variant: 'destructive' });
+    },
+  });
+};
+
 export const useDuplicateForm = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -437,6 +481,8 @@ export const useDuplicateForm = () => {
 
       if (formError) throw formError;
 
+      const isPoll = originalForm.form_type === 'poll';
+
       // Create new form
       const { data: newForm, error: newFormError } = await supabase
         .from('forms')
@@ -446,6 +492,10 @@ export const useDuplicateForm = () => {
           description: originalForm.description,
           confirmation_message: originalForm.confirmation_message,
           allow_multiple_submissions: originalForm.allow_multiple_submissions,
+          form_type: originalForm.form_type || 'standard',
+          approval_status: isPoll ? 'pending' : 'approved',
+          is_active: !isPoll,
+          is_accepting_responses: !isPoll,
         })
         .select()
         .single();

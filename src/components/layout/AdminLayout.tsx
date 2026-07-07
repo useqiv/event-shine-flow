@@ -33,7 +33,8 @@ import {
   RotateCcw,
   GitCompare,
   History,
-  BookOpen
+  BookOpen,
+  Vote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
@@ -71,6 +72,7 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
+    { path: '/admin/polls', label: 'Poll Approval', icon: Vote },
     { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
     { path: '/admin/activity-log', label: 'Activity Log', icon: History },
     { path: '/admin/system-health', label: 'System Health', icon: Bell },

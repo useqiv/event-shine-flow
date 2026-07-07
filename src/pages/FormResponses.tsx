@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, Download, Trash2, Eye, FileText, BarChart3, CheckCircle, Clock, Archive } from 'lucide-react';
+import { ArrowLeft, Download, Trash2, Eye, FileText, BarChart3, CheckCircle, Clock, Archive, Vote } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm, useFormFields, useFormResponses, useDeleteFormResponse, useUpdateFormResponse, useFormAnalytics, FormResponse } from '@/hooks/useForms';
+import { aggregateChoiceResponses, isPollForm } from '@/lib/formHelpers';
 import { format } from 'date-fns';
 import { exportToCsv } from '@/lib/exportCsv';
+import { Progress } from '@/components/ui/progress';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const STATUS_CONFIG = {
@@ -36,6 +38,12 @@ const FormResponses = () => {
   const [selectedResponse, setSelectedResponse] = useState<FormResponse | null>(null);
   const [activeTab, setActiveTab] = useState('responses');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  useEffect(() => {
+    if (form && isPollForm(form)) {
+      setActiveTab('results');
+    }
+  }, [form?.id, form?.form_type]);
 
   const handleExport = () => {
     if (!responses || !fields || !form) return;
@@ -77,6 +85,11 @@ const FormResponses = () => {
   const filteredResponses = responses?.filter(r => 
     statusFilter === 'all' || r.status === statusFilter
   );
+
+  const choiceAggregates = fields && responses
+    ? aggregateChoiceResponses(fields, responses)
+    : [];
+  const showPollResults = isPollForm(form) || choiceAggregates.length > 0;
 
   if (isLoading) {
     return (
@@ -144,9 +157,47 @@ const FormResponses = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
+            {showPollResults && (
+              <TabsTrigger value="results">
+                <Vote className="h-4 w-4 mr-2" />
+                {isPollForm(form) ? 'Poll Results' : 'Choice Results'}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="responses">Responses</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
+
+          {showPollResults && (
+            <TabsContent value="results" className="space-y-6 mt-4">
+              {choiceAggregates.map((aggregate) => (
+                <Card key={aggregate.fieldId}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{aggregate.fieldLabel}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      {aggregate.totalResponses} total response{aggregate.totalResponses !== 1 ? 's' : ''}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {aggregate.options.length > 0 ? (
+                      aggregate.options.map((option) => (
+                        <div key={option.label} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{option.label}</span>
+                            <span className="text-muted-foreground">
+                              {option.count} ({option.percentage}%)
+                            </span>
+                          </div>
+                          <Progress value={option.percentage} className="h-2" />
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No responses for this question yet.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+          )}
 
           <TabsContent value="responses" className="space-y-4 mt-4">
             {/* Filters */}
