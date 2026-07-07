@@ -24,6 +24,7 @@ export const useAdminStatistics = () => {
         pending_fraud_alerts: number;
         pending_content_reviews: number;
         pending_org_approvals: number;
+        pending_poll_approvals: number;
       };
     },
     enabled: !!user,

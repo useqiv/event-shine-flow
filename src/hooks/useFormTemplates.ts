@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Json } from '@/integrations/supabase/types';
-
+import { POLL_TEMPLATE_NAME } from '@/lib/formHelpers';
 export interface FormTemplate {
   id: string;
   name: string;
@@ -72,7 +71,7 @@ export const useCreateFormFromTemplate = () => {
       const templateData = template.template_data as FormTemplate['template_data'];
       const fieldsData = template.fields_data as FormTemplate['fields_data'];
       const isPoll =
-        templateData.form_type === 'poll' || template.name === 'Poll / Quick Vote';
+        templateData.form_type === 'poll' || template.name === POLL_TEMPLATE_NAME;
 
       // Create the form
       const { data: form, error: formError } = await supabase

@@ -12,7 +12,6 @@ import {
 } from '@/lib/baseAmount';
 import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 import { normalizeRevenueByCurrency } from '@/lib/revenueByCurrency';
-
 // Types
 export interface OrganizationSettings {
   id: string;

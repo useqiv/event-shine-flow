@@ -9,10 +9,34 @@ const corsHeaders = {
 };
 
 interface AdminNotificationRequest {
-  type: "fraud_alert" | "payout_request" | "payout_approved" | "payout_rejected" | "new_organization" | "content_moderation";
+  type: "fraud_alert" | "payout_request" | "payout_approved" | "payout_rejected" | "new_organization" | "content_moderation" | "poll_pending";
   data: Record<string, any>;
   adminEmails?: string[];
 }
+
+const NOTIFICATION_SETTING_BY_TYPE: Record<string, string> = {
+  payout_request: "notify_payout_requests",
+  poll_pending: "notify_poll_requests",
+  new_organization: "notify_new_organizations",
+  content_moderation: "notify_content_moderation",
+  fraud_alert: "notify_fraud_alerts",
+};
+
+const isNotificationEnabled = async (
+  supabase: ReturnType<typeof createClient>,
+  type: string,
+): Promise<boolean> => {
+  const settingKey = NOTIFICATION_SETTING_BY_TYPE[type];
+  if (!settingKey) return true;
+
+  const { data } = await supabase
+    .from("platform_settings")
+    .select("setting_value")
+    .eq("setting_key", settingKey)
+    .maybeSingle();
+
+  return data?.setting_value !== "false";
+};
 
 const sendZeptoEmail = async (recipients: string[], subject: string, html: string) => {
   const toList = recipients.map(email => ({
@@ -151,6 +175,16 @@ const getEmailTemplate = (type: string, data: Record<string, any>) => {
         data.dashboard_url, 'Review Content'
       ),
     },
+    poll_pending: {
+      subject: `Poll Approval Required — ${data.poll_title || "Quick Vote"}`,
+      html: wrapEmail('Poll / Quick Vote Pending Approval',
+        buildRow('Poll Title', data.poll_title || 'N/A') +
+        buildRow('Organization', data.organization_name || 'N/A') +
+        buildRow('Contact Email', data.organization_email || 'N/A') +
+        buildRow('Submitted', data.submitted_at || new Date().toISOString()),
+        data.dashboard_url || 'https://useqiv.com/admin/polls', 'Review Poll'
+      ),
+    },
   };
 
   return templates[type] || { subject: "Admin Notification", html: wrapEmail('Notification', `<tr><td style="padding: 8px 0; color: #374151; font-size: 14px;">${JSON.stringify(data)}</td></tr>`) };
@@ -168,9 +202,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { type, data, adminEmails }: AdminNotificationRequest = await req.json();
 
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    const enabled = await isNotificationEnabled(supabase, type);
+    if (!enabled) {
+      return new Response(JSON.stringify({ success: true, message: "Notification disabled in settings" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let recipients = adminEmails;
     if (!recipients || recipients.length === 0) {
-      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data: adminUsers } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
       if (adminUsers && adminUsers.length > 0) {
         const { data: profiles } = await supabase.from("profiles").select("email").in("id", adminUsers.map(u => u.user_id));

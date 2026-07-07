@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, AlertTriangle, Users, Wallet, Shield, CheckCircle, ArrowRight } from 'lucide-react';
+import { Bell, AlertTriangle, Users, Wallet, Shield, CheckCircle, ArrowRight, Vote } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 
 interface AdminNotification {
   id: string;
-  type: 'fraud' | 'payout' | 'org_approval' | 'content' | 'system';
+  type: 'fraud' | 'payout' | 'org_approval' | 'content' | 'poll' | 'system';
   title: string;
   message: string;
   link: string;
@@ -85,6 +85,27 @@ const AdminNotificationCenter: React.FC = () => {
         });
       });
 
+      // Get pending poll approvals
+      const { data: polls } = await supabase
+        .from('forms')
+        .select('id, title, created_at')
+        .eq('form_type', 'poll')
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      polls?.forEach((poll) => {
+        items.push({
+          id: `poll-${poll.id}`,
+          type: 'poll',
+          title: 'Poll Approval',
+          message: `"${poll.title}" needs approval before going live`,
+          link: '/admin/polls',
+          created_at: poll.created_at,
+          severity: 'medium',
+        });
+      });
+
       // Get pending content moderation
       const { data: content } = await supabase
         .from('content_moderation')
@@ -118,6 +139,7 @@ const AdminNotificationCenter: React.FC = () => {
       case 'fraud': return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'payout': return <Wallet className="h-4 w-4 text-primary" />;
       case 'org_approval': return <Users className="h-4 w-4 text-blue-500" />;
+      case 'poll': return <Vote className="h-4 w-4 text-orange-500" />;
       case 'content': return <Shield className="h-4 w-4 text-orange-500" />;
       default: return <Bell className="h-4 w-4 text-muted-foreground" />;
     }

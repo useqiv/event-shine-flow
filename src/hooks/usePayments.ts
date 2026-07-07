@@ -163,7 +163,7 @@ export const useVerifyCryptoPayment = () => {
 export const useSendAdminNotification = () => {
   return useMutation({
     mutationFn: async (params: {
-      type: 'fraud_alert' | 'payout_request' | 'payout_approved' | 'payout_rejected' | 'new_organization' | 'content_moderation';
+      type: 'fraud_alert' | 'payout_request' | 'payout_approved' | 'payout_rejected' | 'new_organization' | 'content_moderation' | 'poll_pending';
       data: Record<string, any>;
       adminEmails?: string[];
     }) => {

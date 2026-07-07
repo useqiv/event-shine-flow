@@ -39,7 +39,16 @@ import {
 import { cn } from '@/lib/utils';
 import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 import AdminMfaGate, { resetAdminVerification } from '@/components/admin/AdminMfaGate';
+import { useAdminStatistics } from '@/hooks/useAdminData';
 import appLogo from "@/assets/logo.png";
+
+type AdminNavItem = {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  highlight?: boolean;
+  badge?: number;
+};
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { signOut } = useAuth();
@@ -51,28 +60,31 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Enable real-time notifications for admins
   useAdminRealtime();
 
+  const { data: stats } = useAdminStatistics();
+  const pendingPollCount = stats?.pending_poll_approvals || 0;
+
   const handleSignOut = async () => {
     resetAdminVerification();
     await signOut();
     navigate('/');
   };
 
-  const mainNavItems = [
+  const mainNavItems: AdminNavItem[] = [
     { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+    { path: '/admin/polls', label: 'Poll / Quick Vote', icon: Vote, highlight: true, badge: pendingPollCount },
+    { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
     { path: '/admin/users', label: 'User Management', icon: Users },
     { path: '/admin/organizations', label: 'Organizations', icon: Building2 },
     { path: '/admin/org-reports', label: 'Org Revenue Reports', icon: BarChart3 },
     { path: '/admin/contests', label: 'Contests', icon: Trophy },
     { path: '/admin/events', label: 'Events', icon: Calendar },
     { path: '/admin/blog', label: 'Blog Posts', icon: BookOpen },
-    { path: '/admin/payouts', label: 'Payouts', icon: CreditCard },
     { path: '/admin/payments', label: 'Payment History', icon: Wallet },
     { path: '/admin/analytics', label: 'Payment Analytics', icon: PieChart },
     { path: '/admin/refunds', label: 'Refund Management', icon: RotateCcw },
     { path: '/admin/finance', label: 'Finance & Revenue', icon: BarChart3 },
     { path: '/admin/fraud', label: 'Fraud Detection', icon: AlertTriangle },
     { path: '/admin/moderation', label: 'Content Moderation', icon: FileCheck },
-    { path: '/admin/polls', label: 'Poll Approval', icon: Vote },
     { path: '/admin/vote-reconciliation', label: 'Vote Reconciliation', icon: GitCompare },
     { path: '/admin/activity-log', label: 'Activity Log', icon: History },
     { path: '/admin/system-health', label: 'System Health', icon: Bell },
@@ -106,14 +118,23 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start gap-3 h-11 px-3 font-medium",
-                    isActive(item.path) 
-                      ? "bg-destructive/10 text-destructive border-l-4 border-destructive rounded-l-none" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    "w-full justify-between gap-3 h-11 px-3 font-medium",
+                    isActive(item.path)
+                      ? "bg-destructive/10 text-destructive border-l-4 border-destructive rounded-l-none"
+                      : item.highlight && (item.badge ?? 0) > 0
+                        ? "bg-orange-500/10 text-orange-700 hover:bg-orange-500/15 border border-orange-500/20"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
+                  <span className="flex items-center gap-3 min-w-0">
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  {(item.badge ?? 0) > 0 && (
+                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white shrink-0">
+                      {item.badge}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
             ))}
@@ -204,6 +225,15 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
+                      <Link to="/admin/polls" className="cursor-pointer">
+                        <Vote className="mr-2 h-4 w-4" />
+                        Poll / Quick Vote
+                        {pendingPollCount > 0 && (
+                          <Badge className="ml-auto bg-orange-500 text-white">{pendingPollCount}</Badge>
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/admin/blog" className="cursor-pointer">
                         <BookOpen className="mr-2 h-4 w-4" />
                         Blog Posts
@@ -254,14 +284,23 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-full justify-start gap-3 h-11 px-3 font-medium",
-                          isActive(item.path) 
-                            ? "bg-destructive/10 text-destructive border-l-4 border-destructive rounded-l-none" 
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          "w-full justify-between gap-3 h-11 px-3 font-medium",
+                          isActive(item.path)
+                            ? "bg-destructive/10 text-destructive border-l-4 border-destructive rounded-l-none"
+                            : item.highlight && (item.badge ?? 0) > 0
+                              ? "bg-orange-500/10 text-orange-700 hover:bg-orange-500/15 border border-orange-500/20"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         )}
                       >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
+                        <span className="flex items-center gap-3 min-w-0">
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </span>
+                        {(item.badge ?? 0) > 0 && (
+                          <Badge className="bg-orange-500 hover:bg-orange-500 text-white shrink-0">
+                            {item.badge}
+                          </Badge>
+                        )}
                       </Button>
                     </Link>
                   ))}

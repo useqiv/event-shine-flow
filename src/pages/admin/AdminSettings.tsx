@@ -1334,6 +1334,13 @@ const AdminSettings: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
+                    <p className="font-medium">Poll / Quick Vote</p>
+                    <p className="text-sm text-muted-foreground">Notify when a poll is created or submitted for approval</p>
+                  </div>
+                  <Switch checked={getSetting('notify_poll_requests') === 'true'} onCheckedChange={(checked) => handleUpdate('notify_poll_requests', String(checked))} />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
                     <p className="font-medium">New Organizations</p>
                     <p className="text-sm text-muted-foreground">Notify when new organizations register</p>
                   </div>
@@ -1356,7 +1363,7 @@ const AdminSettings: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm">Email notifications are sent via Resend.</p>
+                  <p className="text-sm">Email notifications are sent via ZeptoMail to all admin accounts.</p>
                   <p className="text-xs text-muted-foreground mt-2">Configured secret: RESEND_API_KEY</p>
                   <div className="mt-4 flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-green-500"></div>

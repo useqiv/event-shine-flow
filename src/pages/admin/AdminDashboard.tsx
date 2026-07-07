@@ -329,7 +329,13 @@ const AdminDashboard: React.FC = () => {
         {/* Alerts Section */}
         <div>
           <h2 className="text-lg font-semibold mb-4">Pending Actions</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <AlertCard
+              title="Poll / Vote Approval"
+              count={stats?.pending_poll_approvals || 0}
+              variant="warning"
+              href="/admin/polls"
+            />
             <AlertCard
               title="Fraud Alerts"
               count={stats?.pending_fraud_alerts || 0}
@@ -378,6 +384,17 @@ const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Link to="/admin/polls">
+                <Button variant="outline" className="w-full justify-start gap-2 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10">
+                  <Vote className="h-4 w-4 text-orange-600" />
+                  Approve Polls
+                  {(stats?.pending_poll_approvals || 0) > 0 && (
+                    <Badge className="ml-auto bg-orange-500 text-white">
+                      {stats?.pending_poll_approvals}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
               <Link to="/admin/users">
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <Users className="h-4 w-4" />
