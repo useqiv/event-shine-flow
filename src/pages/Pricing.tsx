@@ -58,6 +58,7 @@ const PRODUCTS: Record<ProductKey, {
     icon: Ticket,
     tagline: "Sell tickets, scan QR codes, manage check-ins.",
     unit: "per transation",
+    includeFlatFee: false,
     freeTier: "Free events are 100% free — forever.",
     features: [
       "Unlimited free & paid events",
