@@ -7,23 +7,14 @@ export const useCryptoSettings = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('platform_settings')
-        .select('setting_key, setting_value')
-        .in('setting_key', [
-          'crypto_payment_enabled',
-          'crypto_wallet_polygon_usdt',
-          'crypto_wallet_polygon_usdc',
-        ]);
+        .select('setting_value')
+        .eq('setting_key', 'crypto_payment_enabled')
+        .maybeSingle();
 
       if (error) throw error;
 
-      const settings = Object.fromEntries(
-        (data || []).map((s) => [s.setting_key, s.setting_value || '']),
-      );
-
       return {
-        enabled: settings.crypto_payment_enabled === 'true',
-        polygonUsdtWallet: settings.crypto_wallet_polygon_usdt || '',
-        polygonUsdcWallet: settings.crypto_wallet_polygon_usdc || '',
+        enabled: data?.setting_value === 'true',
       };
     },
     staleTime: 2 * 60 * 1000,

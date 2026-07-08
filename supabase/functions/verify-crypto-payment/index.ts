@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +12,7 @@ const TOKEN_CONTRACTS: Record<string, string> = {
 };
 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const POLYGON_CHAIN_ID = "137";
 
 interface VerifyPaymentRequest {
   payment_ref: string;
@@ -44,6 +45,71 @@ interface PaymentMetadata {
   influencer_link_id?: string;
 }
 
+interface TxReceipt {
+  status?: string;
+  logs?: Array<{ address: string; topics: string[]; data: string }>;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const record = error as Record<string, unknown>;
+    if (typeof record.message === "string") return record.message;
+    if (typeof record.details === "string") return record.details;
+    if (typeof record.hint === "string") return record.hint;
+  }
+  return "Unknown error";
+}
+
+function normalizeTxHash(txHash: string): string {
+  const trimmed = txHash.trim();
+  if (!/^0x[a-fA-F0-9]{64}$/.test(trimmed)) {
+    throw new Error("Invalid transaction hash format. Expected a 0x-prefixed 66-character hash.");
+  }
+  return trimmed;
+}
+
+async function fetchReceiptFromEtherscanV2(txHash: string, apiKey: string): Promise<TxReceipt | null> {
+  const url =
+    `https://api.etherscan.io/v2/api?chainid=${POLYGON_CHAIN_ID}&module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}&apikey=${apiKey}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  if (data?.result && typeof data.result === "object") {
+    return data.result as TxReceipt;
+  }
+  return null;
+}
+
+async function fetchReceiptFromPolygonRpc(txHash: string): Promise<TxReceipt | null> {
+  const response = await fetch("https://polygon-rpc.com/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "eth_getTransactionReceipt",
+      params: [txHash],
+      id: 1,
+    }),
+  });
+
+  const data = await response.json();
+  if (data?.result && typeof data.result === "object") {
+    return data.result as TxReceipt;
+  }
+  return null;
+}
+
+async function getPolygonTransactionReceipt(txHash: string): Promise<TxReceipt | null> {
+  const apiKey = Deno.env.get("ETHERSCAN_API_KEY") || Deno.env.get("POLYGONSCAN_API_KEY") || "";
+
+  if (apiKey) {
+    const fromEtherscan = await fetchReceiptFromEtherscanV2(txHash, apiKey);
+    if (fromEtherscan) return fromEtherscan;
+  }
+
+  return await fetchReceiptFromPolygonRpc(txHash);
+}
+
 async function verifyPolygonTransaction(
   txHash: string,
   currency: string,
@@ -51,20 +117,11 @@ async function verifyPolygonTransaction(
   walletAddress: string,
 ): Promise<{ verified: boolean; amount?: number; error?: string }> {
   try {
-    const apiKey = Deno.env.get("POLYGONSCAN_API_KEY") || "";
-    const apiUrl = "https://api.polygonscan.com/api";
-    const keyParam = apiKey ? `&apikey=${apiKey}` : "";
-
-    const txResponse = await fetch(
-      `${apiUrl}?module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}${keyParam}`,
-    );
-    const txData = await txResponse.json();
-
-    if (txData.error || !txData.result) {
-      return { verified: false, error: "Transaction not found on Polygon" };
+    const receipt = await getPolygonTransactionReceipt(txHash);
+    if (!receipt) {
+      return { verified: false, error: "Transaction not found on Polygon. Confirm the hash and try again." };
     }
 
-    const receipt = txData.result;
     if (receipt.status !== "0x1") {
       return { verified: false, error: "Transaction failed on Polygon" };
     }
@@ -75,16 +132,19 @@ async function verifyPolygonTransaction(
     }
 
     const transferLog = receipt.logs?.find(
-      (log: { address: string; topics: string[]; data: string }) =>
-        log.address.toLowerCase() === tokenContract && log.topics[0] === TRANSFER_TOPIC,
+      (log) => log.address.toLowerCase() === tokenContract && log.topics[0] === TRANSFER_TOPIC,
     );
 
     if (!transferLog) {
-      return { verified: false, error: "No token transfer found in transaction" };
+      return { verified: false, error: "No USDT/USDC transfer found in this transaction" };
+    }
+
+    if (!transferLog.topics[2]) {
+      return { verified: false, error: "Could not decode transfer recipient from transaction logs" };
     }
 
     const amountWei = BigInt(transferLog.data);
-    const amount = Number(amountWei) / 1_000_000; // 6 decimals on Polygon
+    const amount = Number(amountWei) / 1_000_000;
 
     const recipient = "0x" + transferLog.topics[2].slice(26).toLowerCase();
     const expectedWallet = walletAddress.toLowerCase();
@@ -99,8 +159,7 @@ async function verifyPolygonTransaction(
     }
     return { verified: false, error: `Amount mismatch: expected ${expectedAmount}, got ${amount}` };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Verification error";
-    return { verified: false, error: message };
+    return { verified: false, error: getErrorMessage(error) || "Verification error" };
   }
 }
 
@@ -118,7 +177,7 @@ function calculateCommission(amount: number, rate: number) {
 }
 
 async function fulfillPayment(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   transaction: { id: string; amount: number; payment_metadata: PaymentMetadata | null },
   txHash: string,
 ) {
@@ -184,7 +243,10 @@ async function fulfillPayment(
         reference_id: meta.contest_id,
       });
     }
-  } else if (type === "ticket" && meta.event_id && meta.ticket_type_id) {
+    return;
+  }
+
+  if (type === "ticket" && meta.event_id && meta.ticket_type_id) {
     const { data: existingTicket } = await supabase
       .from("tickets")
       .select("id")
@@ -226,7 +288,10 @@ async function fulfillPayment(
         reference_id: meta.event_id,
       });
     }
-  } else if (type === "donation" && meta.campaign_id) {
+    return;
+  }
+
+  if (type === "donation" && meta.campaign_id) {
     const { data: existingDonation } = await supabase
       .from("donations")
       .select("id")
@@ -280,7 +345,10 @@ async function fulfillPayment(
         reference_id: meta.campaign_id,
       });
     }
-  } else if (type === "form" && meta.form_id) {
+    return;
+  }
+
+  if (type === "form" && meta.form_id) {
     const { data: existingResponse } = await supabase
       .from("form_responses")
       .select("id")
@@ -296,10 +364,13 @@ async function fulfillPayment(
       payment_status: "completed",
       payment_reference: txHash,
       payment_amount: Number(meta.base_amount ?? transaction.amount),
-      status: "submitted",
+      status: "pending",
     });
     if (error) throw error;
+    return;
   }
+
+  throw new Error(`Unsupported or incomplete crypto payment type: ${type || "unknown"}`);
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -314,8 +385,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Payment reference and transaction hash are required");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const normalizedTxHash = normalizeTxHash(tx_hash);
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Payment verification service is not configured");
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data: transaction, error: txError } = await supabase
@@ -325,7 +402,11 @@ const handler = async (req: Request): Promise<Response> => {
       .in("status", ["pending", "pending_verification"])
       .maybeSingle();
 
-    if (txError || !transaction) {
+    if (txError) {
+      console.error("Transaction lookup failed:", txError.message);
+      throw new Error("Unable to look up payment. Please try again.");
+    }
+    if (!transaction) {
       throw new Error("Payment not found or already processed");
     }
 
@@ -342,15 +423,19 @@ const handler = async (req: Request): Promise<Response> => {
     if (network !== "polygon") {
       throw new Error("Only Polygon network payments can be verified");
     }
-    if (!expectedAmount || expectedAmount < 5) {
+    if (!Number.isFinite(expectedAmount) || expectedAmount < 5) {
       throw new Error("Invalid payment amount");
     }
 
-    const { data: walletSetting } = await supabase
+    const { data: walletSetting, error: walletError } = await supabase
       .from("platform_settings")
       .select("setting_value")
       .eq("setting_key", `crypto_wallet_polygon_${currency.toLowerCase()}`)
-      .single();
+      .maybeSingle();
+
+    if (walletError) {
+      console.error("Wallet lookup failed:", walletError.message);
+    }
 
     const walletAddress = walletSetting?.setting_value || "";
     if (!walletAddress) {
@@ -358,7 +443,7 @@ const handler = async (req: Request): Promise<Response> => {
         .from("wallet_transactions")
         .update({
           status: "pending_verification",
-          description: `${transaction.description} | TX: ${tx_hash} | Awaiting manual verification`,
+          description: `${transaction.description} | TX: ${normalizedTxHash} | Awaiting manual verification`,
         })
         .eq("id", transaction.id);
 
@@ -373,24 +458,45 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const verificationResult = await verifyPolygonTransaction(
-      tx_hash,
+      normalizedTxHash,
       currency,
       expectedAmount,
       walletAddress,
     );
 
     if (verificationResult.verified) {
-      await fulfillPayment(supabase, transaction, tx_hash);
+      try {
+        await fulfillPayment(supabase, transaction, normalizedTxHash);
+      } catch (fulfillError) {
+        console.error("Crypto fulfillment failed:", fulfillError);
+        await supabase
+          .from("wallet_transactions")
+          .update({
+            status: "pending_verification",
+            description: `${transaction.description} | TX: ${normalizedTxHash} | Fulfillment failed: ${getErrorMessage(fulfillError)}`,
+            payment_metadata: { ...meta, tx_hash: normalizedTxHash, fulfillment_error: getErrorMessage(fulfillError) },
+          })
+          .eq("id", transaction.id);
 
-      await supabase
+        throw new Error(
+          `Payment was detected on Polygon but could not be completed: ${getErrorMessage(fulfillError)}. Support has been notified.`,
+        );
+      }
+
+      const { error: updateError } = await supabase
         .from("wallet_transactions")
         .update({
           status: "completed",
-          gateway_transaction_id: tx_hash,
-          description: `${transaction.description} | TX: ${tx_hash} | Verified on Polygon`,
-          payment_metadata: { ...meta, tx_hash, verified_amount: verificationResult.amount },
+          gateway_transaction_id: normalizedTxHash,
+          description: `${transaction.description} | TX: ${normalizedTxHash} | Verified on Polygon`,
+          payment_metadata: { ...meta, tx_hash: normalizedTxHash, verified_amount: verificationResult.amount },
         })
         .eq("id", transaction.id);
+
+      if (updateError) {
+        console.error("Failed to mark transaction completed:", updateError.message);
+        throw new Error("Payment verified but final update failed. Contact support with your payment reference.");
+      }
 
       const notifyUserId = meta.user_id && !String(meta.user_id).startsWith("guest_") ? meta.user_id : null;
       if (notifyUserId) {
@@ -418,8 +524,8 @@ const handler = async (req: Request): Promise<Response> => {
       .from("wallet_transactions")
       .update({
         status: "pending_verification",
-        description: `${transaction.description} | TX: ${tx_hash} | Auto-verify failed: ${verificationResult.error}`,
-        payment_metadata: { ...meta, tx_hash, verification_error: verificationResult.error },
+        description: `${transaction.description} | TX: ${normalizedTxHash} | Auto-verify failed: ${verificationResult.error}`,
+        payment_metadata: { ...meta, tx_hash: normalizedTxHash, verification_error: verificationResult.error },
       })
       .eq("id", transaction.id);
 
@@ -431,7 +537,7 @@ const handler = async (req: Request): Promise<Response> => {
       description: `Auto-verification failed: ${verificationResult.error}`,
       metadata: {
         payment_ref,
-        tx_hash,
+        tx_hash: normalizedTxHash,
         user_id: meta.user_id,
         expected_amount: expectedAmount,
         currency,
@@ -450,8 +556,8 @@ const handler = async (req: Request): Promise<Response> => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error verifying crypto payment:", message);
+    const message = getErrorMessage(error);
+    console.error("Error verifying crypto payment:", message, error);
     return new Response(
       JSON.stringify({ error: message }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
