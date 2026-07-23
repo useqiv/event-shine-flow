@@ -33,6 +33,7 @@ import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib
 import { getEventShareUrl } from '@/lib/urlHelpers';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchPlatformCommissionSettings } from '@/lib/platformCommission';
 import { useAuth } from '@/contexts/AuthContext';
 const categories = [
   'Music', 'Party', 'Conference', 'Workshop', 'Sports',
@@ -68,18 +69,7 @@ const EventManagement = () => {
 
   const { data: platformSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      if (error) throw error;
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   const platformTicketCommission = platformSettings?.ticket_commission_percentage || platformSettings?.platform_commission_percentage || 10;

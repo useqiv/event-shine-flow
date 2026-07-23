@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import { fetchPlatformCommissionSettings } from '@/lib/platformCommission';
 import { generateContestReportPdf } from '@/lib/exportPdf';
 
 const AdminContests: React.FC = () => {
@@ -143,15 +144,11 @@ const AdminContests: React.FC = () => {
       }
 
       if (!Number.isFinite(commissionRate)) {
-        const { data: commissionSettings } = await supabase
-          .from('platform_settings')
-          .select('setting_key, setting_value')
-          .eq('category', 'commission');
+        const platformSettings = await fetchPlatformCommissionSettings();
         commissionRate =
-          Number(
-            commissionSettings?.find((s: any) => s.setting_key === 'platform_commission_percentage')
-              ?.setting_value
-          ) || 10;
+          platformSettings.vote_commission_percentage ||
+          platformSettings.platform_commission_percentage ||
+          10;
       }
 
       const commissionAmount = totalRevenue * (commissionRate / 100);

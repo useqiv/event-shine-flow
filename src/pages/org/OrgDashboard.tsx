@@ -17,6 +17,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOrgRealtimeStats } from '@/hooks/useOrgRealtimeStats';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchPlatformCommissionSettings,
+  resolveOrgCommissionRates,
+} from '@/lib/platformCommission';
 import AdvancedRevenueChart from '@/components/org/AdvancedRevenueChart';
 import TopPerformersWidget from '@/components/org/TopPerformersWidget';
 import EventCountdownWidget from '@/components/org/EventCountdownWidget';
@@ -83,24 +87,10 @@ const OrgDashboard = () => {
     [campaignsInCurrency],
   );
 
-  // Fetch platform commission settings
+  // Fetch platform commission settings (rates live in category=public)
   const { data: commissionSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      
-      if (error) throw error;
-      
-      // Parse into a convenient object
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   // Fetch organization-specific commission rates
@@ -124,12 +114,8 @@ const OrgDashboard = () => {
   const pendingPayouts = payouts?.filter(p => p.status === 'pending') || [];
 
   // Calculate commission rates - org-specific rates take priority over platform defaults
-  const platformVoteCommission = commissionSettings?.vote_commission_percentage || commissionSettings?.platform_commission_percentage || 10;
-  const platformTicketCommission = commissionSettings?.ticket_commission_percentage || commissionSettings?.platform_commission_percentage || 10;
-  
-  // Use org-specific rates if available, otherwise fall back to platform defaults
-  const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
-  const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
+  const { voteCommissionRate: voteCommission, ticketCommissionRate: ticketCommission } =
+    resolveOrgCommissionRates(commissionSettings || {}, orgApproval);
   const hasCustomRate = orgApproval?.vote_commission_rate != null || orgApproval?.ticket_commission_rate != null || orgApproval?.special_commission_rate != null;
   
   // Filter revenue by selected currency - only show revenue from contests/events natively set in that currency

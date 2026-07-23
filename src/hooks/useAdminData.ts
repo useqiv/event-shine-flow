@@ -754,6 +754,8 @@ export const useUpdatePlatformSetting = () => {
             setting_value: value,
             category: key.startsWith('flutterwave') ? 'payment' : 
                       key.startsWith('crypto') ? 'crypto' : 
+                      // Commission % rates must stay public so orgs can read them under RLS
+                      key.includes('commission') && key !== 'influencer_commission_percentage' ? 'public' :
                       key.includes('commission') ? 'commission' : 'general',
             setting_type: 'string'
           });

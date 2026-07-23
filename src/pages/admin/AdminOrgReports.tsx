@@ -18,6 +18,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateRevenueReportPdf } from '@/lib/exportPdf';
 import { exportToCsv, formatDateForExport, formatCurrencyForExport } from '@/lib/exportCsv';
 import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import {
+  fetchPlatformCommissionSettings,
+  resolveOrgCommissionRates,
+} from '@/lib/platformCommission';
 import { 
   Search, 
   FileText, 
@@ -140,14 +144,7 @@ const AdminOrgReports: React.FC = () => {
         .in('organization_id', orgIds);
 
       // Get commission settings (platform default)
-      const { data: commissionSettings } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-
-      const defaultCommissionRate = Number(
-        commissionSettings?.find(s => s.setting_key === 'platform_commission_percentage')?.setting_value
-      ) || 10;
+      const commissionSettings = await fetchPlatformCommissionSettings();
 
       // Get org-specific commission rates
       const { data: orgApprovals } = await supabase
@@ -190,8 +187,10 @@ const AdminOrgReports: React.FC = () => {
         
         // Get org-specific commission rate or use platform default
         const orgApproval = orgApprovals?.find(a => a.organization_id === profile.id);
-        const voteCommissionRate = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? defaultCommissionRate;
-        const ticketCommissionRate = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? defaultCommissionRate;
+        const { voteCommissionRate, ticketCommissionRate } = resolveOrgCommissionRates(
+          commissionSettings,
+          orgApproval,
+        );
         
         const voteCommission = voteRevenue * (voteCommissionRate / 100);
         const ticketCommission = ticketRevenue * (ticketCommissionRate / 100);

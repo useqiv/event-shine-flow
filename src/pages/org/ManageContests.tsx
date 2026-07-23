@@ -24,6 +24,7 @@ import { Trophy, PlusCircle, Calendar, Vote, Eye, Settings, Copy, Trash2 } from 
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContestsRevenueByCurrency } from '@/hooks/useContestRevenueByCurrency';
+import { fetchPlatformCommissionSettings } from '@/lib/platformCommission';
 
 const ManageContests = () => {
   const { data: contests, isLoading } = useOrganizationContests();
@@ -41,20 +42,7 @@ const ManageContests = () => {
   // Fetch commission settings
   const { data: commissionSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      
-      if (error) throw error;
-      
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   // Fetch organization-specific commission rates

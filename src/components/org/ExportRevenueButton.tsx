@@ -13,6 +13,10 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateRevenueReportPdf, exportRevenuePdf } from '@/lib/exportPdf';
 import { exportToExcel } from '@/lib/exportExcel';
+import {
+  fetchPlatformCommissionSettings,
+  resolveOrgCommissionRates,
+} from '@/lib/platformCommission';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -27,23 +31,10 @@ const ExportRevenueButton = ({ currency = 'USD' }: ExportRevenueButtonProps) => 
   const { data: orgSettings } = useOrganizationSettings();
   const { data: revenueTrends } = useRevenueTrends(30, currency);
 
-  // Fetch commission settings
+  // Fetch commission settings (setting_key query — rates live in category=public)
   const { data: commissionSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      
-      if (error) throw error;
-      
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   // Fetch organization-specific commission rates
@@ -67,11 +58,10 @@ const ExportRevenueButton = ({ currency = 'USD' }: ExportRevenueButtonProps) => 
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
-      const platformVoteCommission = commissionSettings?.vote_commission_percentage || 10;
-      const platformTicketCommission = commissionSettings?.ticket_commission_percentage || 10;
-      
-      const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
-      const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
+      const { voteCommissionRate, ticketCommissionRate } = resolveOrgCommissionRates(
+        commissionSettings || {},
+        orgApproval,
+      );
 
       const getRevenueForCurrency = (revenueByCurrency: Record<string, number> | undefined) => {
         if (!revenueByCurrency) return 0;
@@ -82,8 +72,8 @@ const ExportRevenueButton = ({ currency = 'USD' }: ExportRevenueButtonProps) => 
       const ticketRevenue = getRevenueForCurrency(stats?.ticketRevenueByCurrency);
       const totalRevenue = voteRevenue + ticketRevenue;
       
-      const netVoteRevenue = voteRevenue * (1 - voteCommission / 100);
-      const netTicketRevenue = ticketRevenue * (1 - ticketCommission / 100);
+      const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
+      const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
       const netRevenue = netVoteRevenue + netTicketRevenue;
       const commission = totalRevenue - netRevenue;
 
@@ -125,12 +115,11 @@ const ExportRevenueButton = ({ currency = 'USD' }: ExportRevenueButtonProps) => 
         return;
       }
 
-      const platformVoteCommission = commissionSettings?.vote_commission_percentage || 10;
-      const platformTicketCommission = commissionSettings?.ticket_commission_percentage || 10;
-      
-      const voteCommission = orgApproval?.vote_commission_rate ?? orgApproval?.special_commission_rate ?? platformVoteCommission;
-      const ticketCommission = orgApproval?.ticket_commission_rate ?? orgApproval?.special_commission_rate ?? platformTicketCommission;
-      const avgCommission = (voteCommission + ticketCommission) / 2;
+      const { voteCommissionRate, ticketCommissionRate } = resolveOrgCommissionRates(
+        commissionSettings || {},
+        orgApproval,
+      );
+      const avgCommission = (voteCommissionRate + ticketCommissionRate) / 2;
 
       const getRevenueForCurrency = (revenueByCurrency: Record<string, number> | undefined) => {
         if (!revenueByCurrency) return 0;

@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import CurrencyDisplay from '@/components/ui/currency-display';
 import { getBaseAmountsByTransactionId } from '@/lib/baseAmount';
+import { fetchPlatformCommissionSettings } from '@/lib/platformCommission';
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizationEvents();
@@ -85,20 +86,7 @@ const ManageEvents = () => {
   // Fetch commission settings
   const { data: commissionSettings } = useQuery({
     queryKey: ['platform-commission-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      
-      if (error) throw error;
-      
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   // Fetch organization-specific commission rates

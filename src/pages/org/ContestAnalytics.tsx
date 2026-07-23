@@ -12,6 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/components/ui/currency-selector';
 import MultiCurrencyRevenueSummary from '@/components/org/MultiCurrencyRevenueSummary';
 import { getActiveRevenueCurrencies } from '@/lib/revenueByCurrency';
+import {
+  fetchPlatformCommissionSettings,
+  resolveOrgCommissionRates,
+} from '@/lib/platformCommission';
 import { useContestAnalyticsData, useChartMaxValues } from '@/hooks/useContestAnalyticsData';
 import { useContestRevenueByCurrency } from '@/hooks/useContestRevenueByCurrency';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,29 +57,19 @@ const ContestAnalytics = () => {
     queryFn: async () => {
       if (!user) return { voteCommission: 10 };
 
-      const [{ data: orgApproval }, { data: platformSettings }] = await Promise.all([
+      const [{ data: orgApproval }, platformSettings] = await Promise.all([
         supabase
           .from('organization_approvals')
           .select('vote_commission_rate, special_commission_rate')
           .eq('organization_id', user.id)
           .maybeSingle(),
-        supabase
-          .from('platform_settings')
-          .select('setting_key, setting_value')
-          .eq('category', 'commission'),
+        fetchPlatformCommissionSettings(),
       ]);
 
-      const settings: Record<string, number> = {};
-      platformSettings?.forEach((s) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-
-      const platformVoteCommission =
-        settings.vote_commission_percentage || settings.platform_commission_percentage || 10;
-      const voteCommission =
-        orgApproval?.vote_commission_rate ??
-        orgApproval?.special_commission_rate ??
-        platformVoteCommission;
+      const { voteCommissionRate: voteCommission } = resolveOrgCommissionRates(
+        platformSettings,
+        orgApproval,
+      );
 
       return { voteCommission };
     },

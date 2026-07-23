@@ -2,6 +2,8 @@
  * Platform commission math — keep in sync with supabase/functions/flutterwave-webhook calculateCommission.
  */
 
+import { supabase } from '@/integrations/supabase/client';
+
 export type PlatformCommissionResult = {
   quantity: number;
   gross: number;
@@ -11,6 +13,71 @@ export type PlatformCommissionResult = {
   net: number;
   feePerUnit: number;
 };
+
+/** Keys readable under RLS (category=public). Do not filter by category='commission'. */
+export const PLATFORM_COMMISSION_SETTING_KEYS = [
+  'vote_commission_percentage',
+  'ticket_commission_percentage',
+  'campaign_commission_percentage',
+  'platform_commission_percentage',
+] as const;
+
+export type OrgCommissionApproval = {
+  vote_commission_rate?: number | null;
+  ticket_commission_rate?: number | null;
+  special_commission_rate?: number | null;
+} | null | undefined;
+
+export function parsePlatformCommissionSettings(
+  rows: { setting_key: string; setting_value: string | null }[] | null | undefined,
+): Record<string, number> {
+  const settings: Record<string, number> = {};
+  rows?.forEach((s) => {
+    settings[s.setting_key] = Number(s.setting_value) || 0;
+  });
+  return settings;
+}
+
+export async function fetchPlatformCommissionSettings(): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('platform_settings')
+    .select('setting_key, setting_value')
+    .in('setting_key', [...PLATFORM_COMMISSION_SETTING_KEYS]);
+
+  if (error) throw error;
+  return parsePlatformCommissionSettings(data);
+}
+
+export function resolveOrgCommissionRates(
+  platformSettings: Record<string, number>,
+  orgApproval?: OrgCommissionApproval,
+) {
+  const platformVote =
+    platformSettings.vote_commission_percentage ||
+    platformSettings.platform_commission_percentage ||
+    10;
+  const platformTicket =
+    platformSettings.ticket_commission_percentage ||
+    platformSettings.platform_commission_percentage ||
+    10;
+  const platformCampaign =
+    platformSettings.campaign_commission_percentage ||
+    platformSettings.platform_commission_percentage ||
+    10;
+
+  return {
+    voteCommissionRate:
+      orgApproval?.vote_commission_rate ??
+      orgApproval?.special_commission_rate ??
+      platformVote,
+    ticketCommissionRate:
+      orgApproval?.ticket_commission_rate ??
+      orgApproval?.special_commission_rate ??
+      platformTicket,
+    campaignCommissionRate:
+      orgApproval?.special_commission_rate ?? platformCampaign,
+  };
+}
 
 export function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;

@@ -12,6 +12,10 @@ import {
 } from '@/lib/baseAmount';
 import { getPaidTransactionCurrency } from '@/components/ui/currency-selector';
 import { normalizeRevenueByCurrency } from '@/lib/revenueByCurrency';
+import {
+  fetchPlatformCommissionSettings,
+  resolveOrgCommissionRates,
+} from '@/lib/platformCommission';
 // Types
 export interface OrganizationSettings {
   id: string;
@@ -638,16 +642,21 @@ export const useOrganizationStats = () => {
       const pendingPayouts = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       const completedPayouts = payouts?.filter(p => p.status === 'completed').reduce((sum, p) => sum + Number(p.amount), 0) || 0;
       
-      // Get organization commission rates
-      const { data: approval } = await supabase
-        .from('organization_approvals')
-        .select('ticket_commission_rate, vote_commission_rate')
-        .eq('organization_id', user!.id)
-        .maybeSingle();
-      
-      // Default commission rates (10% if not set)
-      const ticketCommissionRate = approval?.ticket_commission_rate ?? 10;
-      const voteCommissionRate = approval?.vote_commission_rate ?? 10;
+      // Org-specific rates override platform defaults set by admin
+      const [{ data: approval }, platformCommissionSettings] = await Promise.all([
+        supabase
+          .from('organization_approvals')
+          .select('ticket_commission_rate, vote_commission_rate, special_commission_rate')
+          .eq('organization_id', user!.id)
+          .maybeSingle(),
+        fetchPlatformCommissionSettings(),
+      ]);
+
+      const {
+        ticketCommissionRate,
+        voteCommissionRate,
+        campaignCommissionRate,
+      } = resolveOrgCommissionRates(platformCommissionSettings, approval);
       
       // Sum up raw totals (for backwards compatibility - these are mixed currencies)
       const ticketRevenue = Object.values(ticketRevenueByCurrency).reduce((a, b) => a + b, 0);
@@ -676,7 +685,7 @@ export const useOrganizationStats = () => {
         
         const netTicket = ticketRev * (1 - ticketCommissionRate / 100);
         const netVote = voteRev * (1 - voteCommissionRate / 100);
-        const netCampaign = campaignRev * (1 - ticketCommissionRate / 100);
+        const netCampaign = campaignRev * (1 - campaignCommissionRate / 100);
         
         const netRev = netTicket + netVote + netCampaign;
         netRevenueByCurrency[currency] = netRev;
@@ -695,7 +704,7 @@ export const useOrganizationStats = () => {
       // Calculate total net revenue (mixed currencies - for backwards compatibility)
       const netTicketRevenue = ticketRevenue * (1 - ticketCommissionRate / 100);
       const netVoteRevenue = voteRevenue * (1 - voteCommissionRate / 100);
-      const netCampaignRevenue = campaignRevenue * (1 - ticketCommissionRate / 100);
+      const netCampaignRevenue = campaignRevenue * (1 - campaignCommissionRate / 100);
       const netRevenue = netTicketRevenue + netVoteRevenue + netCampaignRevenue;
       const availableBalance = netRevenue - completedPayouts;
       const requestableBalance = netRevenue - completedPayouts - pendingPayouts;
@@ -726,6 +735,7 @@ export const useOrganizationStats = () => {
         requestableBalance,
         ticketCommissionRate,
         voteCommissionRate,
+        campaignCommissionRate,
       };
     },
     enabled: !!user,

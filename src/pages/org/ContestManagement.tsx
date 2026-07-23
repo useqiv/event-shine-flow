@@ -41,6 +41,7 @@ import { useRealtimeContestants, useRealtimeContest } from '@/hooks/useRealtimeC
 import CurrencySelector, { formatCurrency, getCurrencySymbol } from '@/components/ui/currency-selector';
 import EventPayoutRequest from '@/components/org/EventPayoutRequest';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchPlatformCommissionSettings } from '@/lib/platformCommission';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { 
@@ -111,18 +112,7 @@ const ContestManagement = () => {
 
   const { data: platformSettings } = useQuery({
     queryKey: ['platform-commission-settings-contest'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value')
-        .eq('category', 'commission');
-      if (error) throw error;
-      const settings: Record<string, number> = {};
-      data?.forEach((s: any) => {
-        settings[s.setting_key] = Number(s.setting_value) || 0;
-      });
-      return settings;
-    },
+    queryFn: fetchPlatformCommissionSettings,
   });
 
   const platformVoteCommission = platformSettings?.vote_commission_percentage || platformSettings?.platform_commission_percentage || 10;
