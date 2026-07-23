@@ -40,10 +40,11 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  SELECT full_name, email, company_name
+  SELECT p.full_name, p.email, os.company_name
   INTO v_profile
-  FROM public.profiles
-  WHERE id = NEW.organization_id;
+  FROM public.profiles p
+  LEFT JOIN public.organization_settings os ON os.organization_id = p.id
+  WHERE p.id = NEW.organization_id;
 
   PERFORM public.queue_admin_email_notification(
     'payout_request',
@@ -118,10 +119,11 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  SELECT full_name, email, company_name
+  SELECT p.full_name, p.email, os.company_name
   INTO v_profile
-  FROM public.profiles
-  WHERE id = NEW.user_id;
+  FROM public.profiles p
+  LEFT JOIN public.organization_settings os ON os.organization_id = p.id
+  WHERE p.id = NEW.user_id;
 
   PERFORM public.queue_admin_email_notification(
     'poll_pending',
