@@ -163,8 +163,8 @@ const PublicContest = () => {
       return;
     }
     setSelectedContestant(contestant);
-    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
-    setVoteQuantityDraft('');
+    setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
+    setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setPaymentCurrency(''); // Reset to contest currency
     setIsVoteSelectionOpen(true);
   };
@@ -198,20 +198,11 @@ const PublicContest = () => {
       });
       return;
     }
-    if (voteQuantity < minimumVoteQuantity) {
-      toast({
-        title: 'Invalid vote quantity',
-        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       await vote.mutateAsync({
         contestantId: selectedContestant.id,
         contestId: contest.id,
-        quantity: voteQuantity,
+        quantity: 1,
         amountPaid: 0,
         paymentMethod: 'free',
         currency: contestCurrency,
@@ -219,7 +210,7 @@ const PublicContest = () => {
 
       toast({
         title: 'Vote Successful!',
-        description: `You have cast ${voteQuantity} vote(s) for ${selectedContestant.name}.`,
+        description: `You have cast 1 vote for ${selectedContestant.name}.`,
       });
       setIsVoteSelectionOpen(false);
     } catch (error: any) {
@@ -575,11 +566,19 @@ const PublicContest = () => {
           <DialogHeader>
             <DialogTitle>Vote for {selectedContestant?.name}</DialogTitle>
             <DialogDescription>
-              Select the number of votes you want to cast
+              {isFreeVoting
+                ? 'Cast your free vote for this contestant'
+                : 'Select the number of votes you want to cast'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {isFreeVoting ? (
+              <p className="text-sm text-muted-foreground">
+                You can cast 1 free vote for this contestant.
+              </p>
+            ) : (
+            <>
             <div className="grid grid-cols-3 gap-2">
               {normalizedVoteOptions.map((option) => (
                 <Button
@@ -620,6 +619,8 @@ const PublicContest = () => {
                 }}
               />
             </div>
+            </>
+            )}
             
             {/* Currency Selection - paid contests only */}
             {!isFreeVoting && (
@@ -683,7 +684,7 @@ const PublicContest = () => {
             <Button 
               className="w-full" 
               onClick={isFreeVoting ? handleFreeVote : handleProceedToPayment}
-              disabled={voteQuantity < minimumVoteQuantity || (isFreeVoting && (!user || vote.isPending))}
+              disabled={isFreeVoting ? (!user || vote.isPending) : voteQuantity < minimumVoteQuantity}
               style={{ backgroundColor: primaryColor }}
             >
               {isFreeVoting

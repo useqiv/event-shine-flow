@@ -241,7 +241,7 @@ export const useVote = () => {
       // Enforce contest start_date — voting is locked until contest starts
       const { data: contestWindow, error: contestWindowError } = await supabase
         .from('contests')
-        .select('start_date, end_date, is_active, title, vote_currency')
+        .select('start_date, end_date, is_active, title, vote_currency, is_free_voting')
         .eq('id', contestId)
         .maybeSingle();
 
@@ -262,6 +262,12 @@ export const useVote = () => {
         throw new Error('Voting is currently closed for this contest.');
       }
 
+      if (paymentMethod === 'free' && !contestWindow.is_free_voting) {
+        throw new Error('This contest requires payment to vote.');
+      }
+
+      const voteQuantity = paymentMethod === 'free' ? 1 : quantity;
+
       const resolvedCurrency = currency || contestWindow.vote_currency || 'NGN';
 
       // If paying with wallet, atomically debit balance (server-side, race-safe)
@@ -273,7 +279,7 @@ export const useVote = () => {
             p_amount: amountPaid,
             p_currency: resolvedCurrency,
             p_type: 'vote',
-            p_description: `Vote for contestant (${quantity})`,
+            p_description: `Vote for contestant (${voteQuantity})`,
             p_reference_id: contestantId,
           }
         );
@@ -292,7 +298,7 @@ export const useVote = () => {
           user_id: user.id,
           contestant_id: contestantId,
           contest_id: contestId,
-          quantity,
+          quantity: voteQuantity,
           amount_paid: amountPaid,
           currency: resolvedCurrency,
           payment_method: paymentMethod
@@ -329,7 +335,7 @@ export const useVote = () => {
               organization_id: contest.organization_id,
               amount: amountPaid,
               currency: resolvedCurrency,
-              quantity,
+              quantity: voteQuantity,
               contest_title: contest.title || 'Contest',
               contestant_name: contestant?.name || 'Contestant',
               voter_name: profile?.full_name || 'Anonymous',

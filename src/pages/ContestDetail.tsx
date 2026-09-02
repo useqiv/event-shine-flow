@@ -245,8 +245,8 @@ const ContestDetail = () => {
       return;
     }
     setSelectedContestant(contestant);
-    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
-    setVoteQuantityDraft('');
+    setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
+    setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setIsVoteSelectionOpen(true);
   };
 
@@ -279,20 +279,11 @@ const ContestDetail = () => {
       });
       return;
     }
-    if (voteQuantity < minimumVoteQuantity) {
-      toast({
-        title: 'Invalid vote quantity',
-        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       await vote.mutateAsync({
         contestantId: selectedContestant.id,
         contestId: contest.id,
-        quantity: voteQuantity,
+        quantity: 1,
         amountPaid: 0,
         currency: contest.vote_currency || 'NGN',
         paymentMethod: 'free',
@@ -300,7 +291,7 @@ const ContestDetail = () => {
 
       toast({
         title: 'Vote Successful!',
-        description: `You have cast ${voteQuantity} vote(s) for ${selectedContestant.name}.`,
+        description: `You have cast 1 vote for ${selectedContestant.name}.`,
       });
 
       setIsVoteSelectionOpen(false);
@@ -1005,6 +996,12 @@ const ContestDetail = () => {
             <CardContent className="space-y-6">
               {/* Vote Quantity */}
               <div>
+                {isFreeVoting ? (
+                  <p className="text-sm text-muted-foreground">
+                    You can cast 1 free vote for this contestant.
+                  </p>
+                ) : (
+                <>
                 <p className="text-sm font-medium mb-2">Number of Votes</p>
                 <div className="grid grid-cols-3 gap-2">
                   {normalizedVoteOptions.map((option) => (
@@ -1046,6 +1043,8 @@ const ContestDetail = () => {
                     }}
                   />
                 </div>
+                </>
+                )}
               </div>
 
               {/* Total */}
@@ -1084,7 +1083,7 @@ const ContestDetail = () => {
                     <Button variant="outline" onClick={() => setIsVoteSelectionOpen(false)} className="flex-1">
                       Cancel
                     </Button>
-                    <Button onClick={handleFreeVote} disabled={vote.isPending || voteQuantity < minimumVoteQuantity || !user} className="flex-1">
+                    <Button onClick={handleFreeVote} disabled={vote.isPending || !user} className="flex-1">
                       {vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote'}
                     </Button>
                   </div>

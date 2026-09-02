@@ -229,8 +229,8 @@ const ContestantDetail = () => {
       });
       return;
     }
-    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
-    setVoteQuantityDraft('');
+    setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
+    setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setIsVoteSelectionOpen(true);
   };
 
@@ -264,20 +264,11 @@ const ContestantDetail = () => {
       }
       return;
     }
-    if (voteQuantity < minimumVoteQuantity) {
-      toast({
-        title: 'Invalid vote quantity',
-        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     try {
       await vote.mutateAsync({
         contestantId: contestant.id,
         contestId: contestId!,
-        quantity: voteQuantity,
+        quantity: 1,
         amountPaid: 0,
         paymentMethod: 'free',
         currency: contestCurrency,
@@ -285,7 +276,7 @@ const ContestantDetail = () => {
 
       toast({
         title: 'Vote Successful!',
-        description: `You voted ${voteQuantity} time(s) for ${contestant.name}!`,
+        description: `You cast 1 vote for ${contestant.name}!`,
       });
       setIsVoteSelectionOpen(false);
     } catch (error: any) {
@@ -994,10 +985,18 @@ const ContestantDetail = () => {
           <DialogHeader>
             <DialogTitle className="capitalize text-base sm:text-lg">Vote for {contestant.name}</DialogTitle>
             <DialogDescription className="text-sm">
-              Select the number of votes you want to cast
+              {isFreeVoting
+                ? 'Cast your free vote for this contestant'
+                : 'Select the number of votes you want to cast'}
             </DialogDescription>
           </DialogHeader>
           
+          {isFreeVoting ? (
+            <p className="py-3 sm:py-4 text-sm text-muted-foreground">
+              You can cast 1 free vote for this contestant.
+            </p>
+          ) : (
+          <>
           <div className="grid grid-cols-3 gap-2 py-3 sm:py-4">
             {normalizedVoteOptions.map((option) => (
               <Button
@@ -1039,6 +1038,8 @@ const ContestantDetail = () => {
               }}
             />
           </div>
+          </>
+          )}
           
           <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center">
@@ -1068,7 +1069,7 @@ const ContestantDetail = () => {
                     onClick={handleFreeVote}
                     className="flex-1 h-10 sm:h-11 text-sm"
                     style={{ backgroundColor: primaryColor, color: 'white' }}
-                    disabled={vote.isPending || voteQuantity < minimumVoteQuantity || !user}
+                    disabled={vote.isPending || !user}
                   >
                     {vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote'}
                   </Button>
