@@ -131,6 +131,7 @@ const PublicContest = () => {
     ? selectedOption.price
     : voteQuantity * fallbackUnitPrice;
   const isFreeVoting = Boolean(contest?.is_free_voting);
+  const isCategoryBased = contest?.contest_type === 'category';
   
   // Calculate converted amount for payment
   const effectivePaymentCurrency = paymentCurrency || contestCurrency;
@@ -371,11 +372,13 @@ const PublicContest = () => {
             </div>
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-                <div className="grid grid-cols-2 gap-4 flex-1">
+                <div className={`grid gap-4 flex-1 ${isFreeVoting ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {!isFreeVoting && (
                   <div>
                     <p className="text-sm text-muted-foreground">Vote Price</p>
                     <p className="text-xl font-bold">₦{Number(contest.vote_price).toLocaleString()}</p>
                   </div>
+                  )}
                   <div>
                     <CountdownTimer 
                       endDate={contest.end_date} 
@@ -429,6 +432,7 @@ const PublicContest = () => {
               totalVotes={contest.total_votes}
               votePrice={Number(contest.vote_price)}
               voteCurrency={contest.vote_currency || 'NGN'}
+              isFreeVoting={isFreeVoting}
               isVotingLocked={isVotingLocked}
               primaryColor={primaryColor}
               voteDisplayMode={voteDisplayMode}
@@ -438,7 +442,9 @@ const PublicContest = () => {
           /* Contestants - Standard View */
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-              <h2 className="text-xl font-bold">Contestants</h2>
+              {!isCategoryBased && (
+                <h2 className="text-xl font-bold">Contestants</h2>
+              )}
               {contestants && contestants.length > 0 && (
                 <ContestantFilter
                   searchTerm={searchTerm}

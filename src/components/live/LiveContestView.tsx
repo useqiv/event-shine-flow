@@ -31,6 +31,7 @@ interface LiveContestViewProps {
   totalVotes: number;
   votePrice: number;
   voteCurrency: string;
+  isFreeVoting?: boolean;
   isVotingLocked: boolean;
   primaryColor: string;
   voteDisplayMode?: VoteDisplayMode;
@@ -47,6 +48,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
   totalVotes,
   votePrice,
   voteCurrency,
+  isFreeVoting = false,
   isVotingLocked,
   primaryColor,
   voteDisplayMode: voteDisplayModeProp,
@@ -122,6 +124,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-sm">Quick Vote</h3>
+                  {!isFreeVoting && (
                   <span className="text-xs text-muted-foreground">
                     <CurrencyDisplay 
                       amount={votePrice} 
@@ -130,6 +133,7 @@ export const LiveContestView: React.FC<LiveContestViewProps> = ({
                     />
                     /vote
                   </span>
+                  )}
                 </div>
                 <div className="max-h-[420px] overflow-y-auto pr-1">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

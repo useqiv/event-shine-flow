@@ -758,6 +758,7 @@ const ContestManagement = () => {
               </div>
             </CardContent>
           </Card>
+          {(contest as any)?.contest_type !== 'category' && (
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -769,21 +770,22 @@ const ContestManagement = () => {
               </div>
             </CardContent>
           </Card>
+          )}
+          {!((contest as any)?.is_free_voting) && (
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">Vote Price</p>
                   <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">
-                    {(contest as any).is_free_voting
-                      ? 'Free'
-                      : formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}
+                    {formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}
                   </p>
                 </div>
                 <Trophy className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
+          )}
           <Card className="col-span-2 sm:col-span-1 lg:col-span-2">
             <CardContent className="pt-6">
               <div className="flex items-start justify-between gap-2">

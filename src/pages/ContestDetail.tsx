@@ -179,6 +179,7 @@ const ContestDetail = () => {
 
   const hasCategories = contestCategories && contestCategories.length > 0 && 
     Object.keys(contestantsByCategory).some(key => key !== 'uncategorized' && contestantsByCategory[key].length > 0);
+  const isCategoryBased = (contest as any)?.contest_type === 'category' || hasCategories;
 
   // Get the selected category object
   const selectedCategory = selectedCategoryId 
@@ -486,23 +487,21 @@ const ContestDetail = () => {
           </div>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-              <div className="grid grid-cols-2 gap-4 flex-1">
+              <div className={`grid gap-4 flex-1 ${isFreeVoting ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {!isFreeVoting && (
                 <div>
                   <p className="text-sm text-muted-foreground">Vote Price</p>
                   <p className="text-xl font-bold">
-                    {isFreeVoting ? (
-                      <Badge variant="secondary" className="text-base px-3 py-1">Free</Badge>
-                    ) : (
-                      <CurrencyDisplay 
-                        amount={Number(contest.vote_price)} 
-                        currency={contest.vote_currency || 'NGN'} 
-                        size="md"
-                        showBadge
-                        showToggle
-                      />
-                    )}
+                    <CurrencyDisplay 
+                      amount={Number(contest.vote_price)} 
+                      currency={contest.vote_currency || 'NGN'} 
+                      size="md"
+                      showBadge
+                      showToggle
+                    />
                   </p>
                 </div>
+                )}
                 <div>
                   <CountdownTimer 
                     endDate={contest.end_date} 
@@ -556,6 +555,7 @@ const ContestDetail = () => {
             totalVotes={contest.total_votes}
             votePrice={Number(contest.vote_price)}
             voteCurrency={contest.vote_currency || 'NGN'}
+            isFreeVoting={isFreeVoting}
             isVotingLocked={isVotingLocked}
             primaryColor={primaryColor}
             voteDisplayMode={voteDisplayMode}
@@ -788,7 +788,9 @@ const ContestDetail = () => {
               // No categories - show all contestants directly
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <h2 className="text-xl font-bold">Contestants</h2>
+                  {!isCategoryBased && (
+                    <h2 className="text-xl font-bold">Contestants</h2>
+                  )}
                   {contestants && contestants.length > 0 && (
                     <ContestantFilter
                       searchTerm={searchTerm}

@@ -810,7 +810,8 @@ const ContestantDetail = () => {
 
                 {/* Vote Price & Action */}
                 <div className="p-4 sm:p-6 border-t border-border/50 bg-background">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className={`flex items-center mb-3 sm:mb-4 ${isFreeVoting ? 'justify-end' : 'justify-between'}`}>
+                    {!isFreeVoting && (
                     <div>
                       <p className="text-xs sm:text-sm text-muted-foreground">Vote Price</p>
                       <CurrencyDisplay 
@@ -819,6 +820,7 @@ const ContestantDetail = () => {
                         className="text-xl sm:text-2xl font-bold"
                       />
                     </div>
+                    )}
                     {!isEnded && (
                       <div className="text-right">
                         <p className="text-xs sm:text-sm text-muted-foreground flex items-center justify-end">
@@ -960,6 +962,7 @@ const ContestantDetail = () => {
       {/* Sticky Mobile Vote CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 bg-background/95 backdrop-blur-sm border-t lg:hidden z-50 safe-area-inset-bottom">
         <div className="container mx-auto flex items-center gap-3">
+          {!isFreeVoting && (
           <div className="flex-1 min-w-0">
             <p className="text-[10px] sm:text-xs text-muted-foreground">Vote Price</p>
             <CurrencyDisplay 
@@ -968,9 +971,10 @@ const ContestantDetail = () => {
               className="text-sm sm:text-base font-bold"
             />
           </div>
+          )}
           <Button 
             size="default"
-            className="px-6 sm:px-8 font-semibold h-10 sm:h-11 text-sm sm:text-base"
+            className={`font-semibold h-10 sm:h-11 text-sm sm:text-base ${isFreeVoting ? 'w-full' : 'px-6 sm:px-8'}`}
             onClick={handleVoteClick}
             disabled={isVotingLocked}
             style={{ 
