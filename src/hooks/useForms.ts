@@ -364,14 +364,14 @@ export const useSubmitFormResponse = () => {
       respondent_name?: string;
       response_data: Json;
     }) => {
-      const { data, error } = await supabase
+      // Public voters are anon; they can INSERT but not SELECT form_responses.
+      // .select() triggers RETURNING, which fails RLS without a matching SELECT policy.
+      const { error } = await supabase
         .from('form_responses')
-        .insert(responseData)
-        .select()
-        .single();
+        .insert(responseData, { returning: 'minimal' });
 
       if (error) throw error;
-      return data as FormResponse;
+      return responseData as unknown as FormResponse;
     },
     onError: (error) => {
       toast({ title: 'Failed to submit response', description: error.message, variant: 'destructive' });
@@ -546,15 +546,13 @@ export const useDuplicateForm = () => {
 export const useCheckEmailSubmission = () => {
   return useMutation({
     mutationFn: async ({ form_id, email }: { form_id: string; email: string }) => {
-      const { data, error } = await supabase
-        .from('form_responses')
-        .select('id')
-        .eq('form_id', form_id)
-        .eq('respondent_email', email)
-        .limit(1);
+      const { data, error } = await supabase.rpc('check_form_email_submitted', {
+        p_form_id: form_id,
+        p_email: email.trim().toLowerCase(),
+      });
 
       if (error) throw error;
-      return data && data.length > 0;
+      return !!data;
     },
   });
 };

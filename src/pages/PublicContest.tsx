@@ -23,7 +23,7 @@ import { Trophy, User, Vote, ExternalLink, Radio, LayoutGrid, ArrowRightLeft } f
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 import { createSlug, getContestShareUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
-import { useContestVoteOptions } from '@/hooks/useContests';
+import { useContestVoteOptions, useVote } from '@/hooks/useContests';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
@@ -32,6 +32,7 @@ const PublicContest = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { convert, isLive, rates, lastUpdated } = useConversionDisplay();
+  const vote = useVote();
   
   // Voting state
   const [selectedContestant, setSelectedContestant] = useState<any>(null);
@@ -129,6 +130,7 @@ const PublicContest = () => {
   const totalAmount = selectedOption?.vote_quantity === voteQuantity
     ? selectedOption.price
     : voteQuantity * fallbackUnitPrice;
+  const isFreeVoting = Boolean(contest?.is_free_voting);
   
   // Calculate converted amount for payment
   const effectivePaymentCurrency = paymentCurrency || contestCurrency;
@@ -176,8 +178,56 @@ const PublicContest = () => {
       return;
     }
 
+    if (isFreeVoting) {
+      handleFreeVote();
+      return;
+    }
+
     setIsVoteSelectionOpen(false);
     setIsPaymentModalOpen(true);
+  };
+
+  const handleFreeVote = async () => {
+    if (!selectedContestant || !contest) return;
+    if (!user) {
+      toast({
+        title: 'Sign in required',
+        description: 'Please sign in to cast your free vote.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await vote.mutateAsync({
+        contestantId: selectedContestant.id,
+        contestId: contest.id,
+        quantity: voteQuantity,
+        amountPaid: 0,
+        paymentMethod: 'free',
+        currency: contestCurrency,
+      });
+
+      toast({
+        title: 'Vote Successful!',
+        description: `You have cast ${voteQuantity} vote(s) for ${selectedContestant.name}.`,
+      });
+      setIsVoteSelectionOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Vote Failed',
+        description: error.message || 'An error occurred while voting.',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (contestLoading) {
@@ -565,7 +615,8 @@ const PublicContest = () => {
               />
             </div>
             
-            {/* Currency Selection */}
+            {/* Currency Selection - paid contests only */}
+            {!isFreeVoting && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium flex items-center gap-2">
@@ -584,8 +635,16 @@ const PublicContest = () => {
                 </p>
               )}
             </div>
+            )}
             
             <div className="p-4 bg-muted rounded-lg space-y-2">
+              {isFreeVoting ? (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <Badge variant="secondary" className="text-base">Free</Badge>
+                </div>
+              ) : (
+                <>
               {effectivePaymentCurrency !== contestCurrency && (
                 <div className="flex justify-between items-center text-sm text-muted-foreground">
                   <span>Original ({contestCurrency})</span>
@@ -605,9 +664,11 @@ const PublicContest = () => {
                   Converted rate (includes fees)
                 </p>
               )}
+                </>
+              )}
             </div>
 
-            {!user && (
+            {!isFreeVoting && !user && (
               <p className="text-sm text-muted-foreground text-center">
                 You'll need to provide your email address on the next step
               </p>
@@ -615,11 +676,13 @@ const PublicContest = () => {
             
             <Button 
               className="w-full" 
-              onClick={handleProceedToPayment}
-              disabled={voteQuantity < minimumVoteQuantity}
+              onClick={isFreeVoting ? handleFreeVote : handleProceedToPayment}
+              disabled={voteQuantity < minimumVoteQuantity || (isFreeVoting && (!user || vote.isPending))}
               style={{ backgroundColor: primaryColor }}
             >
-              Proceed to Payment
+              {isFreeVoting
+                ? (vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote')
+                : 'Proceed to Payment'}
             </Button>
           </div>
         </DialogContent>

@@ -655,6 +655,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           is_featured: boolean
+          is_free_voting: boolean
           is_live_voting: boolean
           organization_id: string | null
           start_date: string
@@ -683,6 +684,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_free_voting?: boolean
           is_live_voting?: boolean
           organization_id?: string | null
           start_date: string
@@ -711,6 +713,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           is_featured?: boolean
+          is_free_voting?: boolean
           is_live_voting?: boolean
           organization_id?: string | null
           start_date?: string

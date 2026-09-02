@@ -769,17 +769,25 @@ export const useCreateContest = () => {
       contest_type?: 'single' | 'category';
       is_live_voting?: boolean;
       vote_display_mode?: 'count' | 'progress_bar';
+      is_free_voting?: boolean;
     }) => {
-      const { vote_options, ...contestPayload } = contestData;
+      const { vote_options, is_free_voting, ...contestPayload } = contestData;
+      const payload = {
+        ...contestPayload,
+        organization_id: user!.id,
+        is_free_voting: is_free_voting ?? false,
+        vote_price: is_free_voting ? 0 : contestPayload.vote_price,
+        vote_amount: is_free_voting ? 1 : contestPayload.vote_amount,
+      };
       const { data, error } = await supabase
         .from('contests')
-        .insert({ ...contestPayload, organization_id: user!.id })
+        .insert(payload)
         .select()
         .single();
-      
+
       if (error) throw error;
 
-      if (vote_options && vote_options.length > 0) {
+      if (!is_free_voting && vote_options && vote_options.length > 0) {
         const sanitizedOptions = vote_options
           .map((option, index) => ({
             contest_id: data.id,
@@ -841,6 +849,7 @@ export const useDuplicateContest = () => {
           end_date: original.end_date,
           vote_price: original.vote_price,
           vote_currency: original.vote_currency,
+          is_free_voting: original.is_free_voting ?? false,
           custom_slug: null, // Reset slug to avoid conflicts
           brand_primary_color: original.brand_primary_color,
           brand_secondary_color: original.brand_secondary_color,

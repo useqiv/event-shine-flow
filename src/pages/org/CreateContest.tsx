@@ -57,6 +57,7 @@ const CreateContest = () => {
     brand_logo_url: '',
     is_live_voting: false,
     vote_display_mode: 'count' as VoteDisplayMode,
+    is_free_voting: false,
   });
   const [voteOptions, setVoteOptions] = useState<Array<{ vote_quantity: number; price: number }>>([
     { vote_quantity: 1, price: 1 },
@@ -99,28 +100,39 @@ const CreateContest = () => {
       toast.error('End date must be after start date');
       return;
     }
-    if (!formData.vote_currency) {
+    if (!formData.is_free_voting && !formData.vote_currency) {
       toast.error('Currency is required');
       return;
     }
     
     try {
-      const sanitizedVoteOptions = voteOptions
-        .map((option) => ({
-          vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
-          price: Number(option.price) || 0,
-        }))
-        .filter((option) => option.price > 0);
+      let sanitizedVoteOptions: Array<{ vote_quantity: number; price: number }> = [];
+      let votePrice = 0;
+      let voteAmount = 1;
 
-      if (sanitizedVoteOptions.length === 0) {
-        toast.error('Add at least one valid voting option');
-        return;
-      }
+      if (formData.is_free_voting) {
+        sanitizedVoteOptions = [];
+        votePrice = 0;
+        voteAmount = 1;
+      } else {
+        sanitizedVoteOptions = voteOptions
+          .map((option) => ({
+            vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
+            price: Number(option.price) || 0,
+          }))
+          .filter((option) => option.price > 0);
 
-      const votePrice = Number(formData.vote_price) || 0;
-      if (votePrice <= 0) {
-        toast.error('Vote price must be greater than zero');
-        return;
+        if (sanitizedVoteOptions.length === 0) {
+          toast.error('Add at least one valid voting option');
+          return;
+        }
+
+        votePrice = Number(formData.vote_price) || 0;
+        if (votePrice <= 0) {
+          toast.error('Vote price must be greater than zero');
+          return;
+        }
+        voteAmount = Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity));
       }
 
       const result = await createContest.mutateAsync({
@@ -131,7 +143,7 @@ const CreateContest = () => {
         start_date: formData.start_date,
         end_date: formData.end_date,
         vote_price: votePrice,
-        vote_amount: Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity)),
+        vote_amount: voteAmount,
         vote_options: sanitizedVoteOptions,
         vote_currency: formData.vote_currency,
         custom_slug: formData.custom_slug || undefined,
@@ -141,6 +153,7 @@ const CreateContest = () => {
         contest_type: contestType as 'single' | 'category',
         is_live_voting: formData.is_live_voting,
         vote_display_mode: formData.vote_display_mode,
+        is_free_voting: formData.is_free_voting,
       });
       
       // If category-based, navigate to contest management to add categories
@@ -395,10 +408,29 @@ const CreateContest = () => {
                 Vote Pricing
               </CardTitle>
               <CardDescription>
-                Set the per-vote price and bundles voters can buy at checkout
+                Choose whether voting is free or paid for this contest
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg mb-4">
+                <div>
+                  <Label htmlFor="is_free_voting" className="text-sm font-medium">Free Voting</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow voters to cast votes at no cost
+                  </p>
+                </div>
+                <Switch
+                  id="is_free_voting"
+                  checked={formData.is_free_voting}
+                  onCheckedChange={(checked) => handleChange('is_free_voting', checked)}
+                />
+              </div>
+
+              {formData.is_free_voting ? (
+                <p className="text-sm text-muted-foreground">
+                  This contest will be completely free for voters. No payment or wallet balance is required.
+                </p>
+              ) : (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <FieldLabel htmlFor="vote_currency" required>Currency</FieldLabel>
@@ -461,10 +493,11 @@ const CreateContest = () => {
                     Add Voting Option
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Voters will choose from these vote bundles when paying.
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Voters will choose from these vote bundles when paying.
-              </p>
+              )}
             </CardContent>
           </Card>
 

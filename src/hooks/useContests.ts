@@ -14,6 +14,7 @@ export interface Contest {
   vote_amount: number;
   vote_price: number;
   vote_currency: string;
+  is_free_voting: boolean;
   is_active: boolean;
   is_featured: boolean;
   total_votes: number;
@@ -233,7 +234,7 @@ export const useVote = () => {
       quantity: number;
       amountPaid: number;
       currency?: string;
-      paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt';
+      paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt' | 'free';
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 

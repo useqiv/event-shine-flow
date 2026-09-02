@@ -171,6 +171,7 @@ const ContestantDetail = () => {
   const totalAmount = selectedOption?.vote_quantity === voteQuantity
     ? selectedOption.price
     : voteQuantity * fallbackUnitPrice;
+  const isFreeVoting = Boolean((contest as any)?.is_free_voting);
   const contestCurrency = contest?.vote_currency || 'NGN';
   const voteDisplayMode = normalizeVoteDisplayMode((contest as any)?.vote_display_mode);
   const contestantVotesPublic = contestant?.is_public_votes !== false;
@@ -243,8 +244,57 @@ const ContestantDetail = () => {
       return;
     }
 
+    if (isFreeVoting) {
+      handleFreeVote();
+      return;
+    }
+
     setIsVoteSelectionOpen(false);
     setIsPaymentModalOpen(true);
+  };
+
+  const handleFreeVote = async () => {
+    if (!contestant || !contest || !user) {
+      if (!user) {
+        toast({
+          title: 'Sign in required',
+          description: 'Please sign in to cast your free vote.',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+    if (voteQuantity < minimumVoteQuantity) {
+      toast({
+        title: 'Invalid vote quantity',
+        description: `Minimum votes allowed is ${minimumVoteQuantity}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await vote.mutateAsync({
+        contestantId: contestant.id,
+        contestId: contestId!,
+        quantity: voteQuantity,
+        amountPaid: 0,
+        paymentMethod: 'free',
+        currency: contestCurrency,
+      });
+
+      toast({
+        title: 'Vote Successful!',
+        description: `You voted ${voteQuantity} time(s) for ${contestant.name}!`,
+      });
+      setIsVoteSelectionOpen(false);
+    } catch (error: any) {
+      toast({
+        title: 'Vote Failed',
+        description: error.message || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleWalletPayment = async () => {
@@ -989,14 +1039,38 @@ const ContestantDetail = () => {
           <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Total Amount:</span>
-              <CurrencyDisplay 
-                amount={totalAmount} 
-                currency={contestCurrency}
-                className="text-xl sm:text-2xl font-bold"
-              />
+              {isFreeVoting ? (
+                <Badge variant="secondary" className="text-base">Free</Badge>
+              ) : (
+                <CurrencyDisplay 
+                  amount={totalAmount} 
+                  currency={contestCurrency}
+                  className="text-xl sm:text-2xl font-bold"
+                />
+              )}
             </div>
             
             <div className="flex gap-2">
+              {isFreeVoting ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsVoteSelectionOpen(false)}
+                    className="flex-1 h-10 sm:h-11 text-sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleFreeVote}
+                    className="flex-1 h-10 sm:h-11 text-sm"
+                    style={{ backgroundColor: primaryColor, color: 'white' }}
+                    disabled={vote.isPending || voteQuantity < minimumVoteQuantity || !user}
+                  >
+                    {vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote'}
+                  </Button>
+                </>
+              ) : (
+                <>
               {user && (
                 <Button 
                   onClick={handleWalletPayment} 
@@ -1016,6 +1090,8 @@ const ContestantDetail = () => {
               >
                 {user ? 'Pay with Card' : 'Proceed to Pay'}
               </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogContent>

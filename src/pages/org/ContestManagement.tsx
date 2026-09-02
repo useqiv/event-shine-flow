@@ -265,6 +265,7 @@ const ContestManagement = () => {
     vote_display_mode: 'count' as VoteDisplayMode,
     stream_url: '',
     stream_platform: 'youtube' as 'youtube' | 'twitch' | 'custom',
+    is_free_voting: false,
   });
   const [voteOptions, setVoteOptions] = useState<Array<{ id?: string; vote_quantity: number; price: number }>>([]);
 
@@ -306,6 +307,7 @@ const ContestManagement = () => {
         vote_display_mode: normalizeVoteDisplayMode((contest as any).vote_display_mode),
         stream_url: (contest as any).stream_url || '',
         stream_platform: (contest as any).stream_platform || 'youtube',
+        is_free_voting: Boolean((contest as any).is_free_voting),
       });
     }
   }, [contest]);
@@ -517,21 +519,23 @@ const ContestManagement = () => {
       return;
     }
     
-    const sanitizedVoteOptions = voteOptions
-      .map((option) => ({
-        id: option.id,
-        vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
-        price: Number(option.price) || 0,
-      }))
-      .filter((option) => option.price > 0);
+    const sanitizedVoteOptions = editForm.is_free_voting
+      ? []
+      : voteOptions
+          .map((option) => ({
+            id: option.id,
+            vote_quantity: Math.max(1, Math.floor(Number(option.vote_quantity) || 0)),
+            price: Number(option.price) || 0,
+          }))
+          .filter((option) => option.price > 0);
 
-    if (sanitizedVoteOptions.length === 0) {
+    if (!editForm.is_free_voting && sanitizedVoteOptions.length === 0) {
       toast.error('Add at least one valid voting option');
       return;
     }
 
-    const votePrice = Number(editForm.vote_price) || 0;
-    if (votePrice <= 0) {
+    const votePrice = editForm.is_free_voting ? 0 : (Number(editForm.vote_price) || 0);
+    if (!editForm.is_free_voting && votePrice <= 0) {
       toast.error('Vote price must be greater than zero');
       return;
     }
@@ -546,7 +550,9 @@ const ContestManagement = () => {
         start_date: editForm.start_date ? new Date(editForm.start_date).toISOString() : contest.start_date,
         end_date: editForm.end_date ? new Date(editForm.end_date).toISOString() : contest.end_date,
         vote_price: votePrice,
-        vote_amount: Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity)),
+        vote_amount: editForm.is_free_voting
+          ? 1
+          : Math.min(...sanitizedVoteOptions.map((option) => option.vote_quantity)),
         vote_currency: editForm.vote_currency || 'NGN',
         custom_slug: editForm.custom_slug?.trim() || null,
         brand_primary_color: editForm.brand_primary_color || '#7c3aed',
@@ -556,6 +562,7 @@ const ContestManagement = () => {
         vote_display_mode: editForm.vote_display_mode,
         stream_url: editForm.stream_url || null,
         stream_platform: editForm.stream_platform || 'youtube',
+        is_free_voting: editForm.is_free_voting,
       });
 
       const { error: deleteOptionsError } = await supabase
@@ -565,19 +572,21 @@ const ContestManagement = () => {
 
       if (deleteOptionsError) throw deleteOptionsError;
 
-      const { error: insertOptionsError } = await supabase
-        .from('contest_vote_options')
-        .insert(
-          sanitizedVoteOptions.map((option, index) => ({
-            contest_id: contest.id,
-            vote_quantity: option.vote_quantity,
-            price: option.price,
-            sort_order: index,
-            is_active: true,
-          }))
-        );
+      if (!editForm.is_free_voting && sanitizedVoteOptions.length > 0) {
+        const { error: insertOptionsError } = await supabase
+          .from('contest_vote_options')
+          .insert(
+            sanitizedVoteOptions.map((option, index) => ({
+              contest_id: contest.id,
+              vote_quantity: option.vote_quantity,
+              price: option.price,
+              sort_order: index,
+              is_active: true,
+            }))
+          );
 
-      if (insertOptionsError) throw insertOptionsError;
+        if (insertOptionsError) throw insertOptionsError;
+      }
     } catch (error: any) {
       console.error('Failed to update contest:', error);
       toast.error(error?.message || 'Failed to update contest');
@@ -765,7 +774,11 @@ const ContestManagement = () => {
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm text-muted-foreground">Vote Price</p>
-                  <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">{formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}</p>
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums break-words">
+                    {(contest as any).is_free_voting
+                      ? 'Free'
+                      : formatCurrency(Number(contest.vote_price), contest.vote_currency || 'NGN')}
+                  </p>
                 </div>
                 <Trophy className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -1342,31 +1355,47 @@ const ContestManagement = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-category">Category *</Label>
-                    <Select
-                      value={editForm.category}
-                      onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">Category *</Label>
+                  <Select
+                    value={editForm.category}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger id="edit-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Currency *</Label>
-                    <CurrencySelector
-                      value={editForm.vote_currency}
-                      onValueChange={(value) => setEditForm(prev => ({ ...prev, vote_currency: value }))}
-                    />
+                <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                  <div>
+                    <Label htmlFor="edit-is-free-voting" className="text-sm font-medium">Free Voting</Label>
+                    <p className="text-xs text-muted-foreground">Allow voters to cast votes at no cost</p>
                   </div>
+                  <Switch
+                    id="edit-is-free-voting"
+                    checked={editForm.is_free_voting}
+                    onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, is_free_voting: checked }))}
+                  />
+                </div>
+
+                {editForm.is_free_voting ? (
+                  <p className="text-sm text-muted-foreground">
+                    This contest is free for voters. No payment or wallet balance is required.
+                  </p>
+                ) : (
+                <>
+                <div className="space-y-2">
+                  <Label>Currency *</Label>
+                  <CurrencySelector
+                    value={editForm.vote_currency}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, vote_currency: value }))}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -1421,6 +1450,8 @@ const ContestManagement = () => {
                     Add Voting Option
                   </Button>
                 </div>
+                </>
+                )}
 
                 <ImageUpload
                   bucket="contest-images"

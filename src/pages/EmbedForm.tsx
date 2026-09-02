@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { usePublicForm, useFormFields, useSubmitFormResponse, useCheckEmailSubmission, FormField } from '@/hooks/useForms';
 import { Json } from '@/integrations/supabase/types';
 import { FileUploadField } from '@/components/forms/FileUploadField';
+import { isPollForm } from '@/lib/formHelpers';
 
 const EmbedForm = () => {
   const { formIdOrSlug } = useParams<{ formIdOrSlug: string }>();
@@ -29,6 +30,7 @@ const EmbedForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicateError, setDuplicateError] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   const isLoading = formLoading || fieldsLoading;
 
@@ -56,17 +58,39 @@ const EmbedForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validatePollEmail = (): boolean => {
+    if (!form || !isPollForm(form)) return true;
+
+    const email = respondentEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      setEmailError('Email address is required to vote');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+
+    setEmailError('');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setDuplicateError(false);
     
     if (!form || !validateForm()) return;
+    if (!validatePollEmail()) return;
+
+    const normalizedEmail = respondentEmail.trim().toLowerCase();
 
     // Check for duplicate submission if not allowing multiple
-    if (!form.allow_multiple_submissions && respondentEmail) {
+    if (!form.allow_multiple_submissions && normalizedEmail) {
       const hasPreviousSubmission = await checkEmail.mutateAsync({
         form_id: form.id,
-        email: respondentEmail,
+        email: normalizedEmail,
       });
 
       if (hasPreviousSubmission) {
@@ -79,7 +103,7 @@ const EmbedForm = () => {
       await submitResponse.mutateAsync({
         form_id: form.id,
         respondent_name: respondentName || null,
-        respondent_email: respondentEmail || null,
+        respondent_email: normalizedEmail || null,
         response_data: formData as Json,
       });
 
@@ -456,30 +480,47 @@ const EmbedForm = () => {
         {duplicateError && (
           <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            You have already submitted a response with this email.
+            {isPollForm(form)
+              ? 'You have already voted with this email address.'
+              : 'You have already submitted a response with this email.'}
           </div>
         )}
 
         {/* Respondent Info */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className={isPollForm(form) ? 'space-y-1' : 'grid grid-cols-2 gap-3'}>
+          {!isPollForm(form) && (
+            <div className="space-y-1">
+              <Label className="text-xs">Your Name</Label>
+              <Input
+                value={respondentName}
+                onChange={(e) => setRespondentName(e.target.value)}
+                placeholder="Optional"
+                className="h-9"
+              />
+            </div>
+          )}
           <div className="space-y-1">
-            <Label className="text-xs">Your Name</Label>
-            <Input
-              value={respondentName}
-              onChange={(e) => setRespondentName(e.target.value)}
-              placeholder="Optional"
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Your Email</Label>
+            <Label className="text-xs">
+              {isPollForm(form) ? 'Email Address' : 'Your Email'}
+              {isPollForm(form) && <span className="text-destructive ml-1">*</span>}
+            </Label>
             <Input
               type="email"
               value={respondentEmail}
-              onChange={(e) => setRespondentEmail(e.target.value)}
-              placeholder="Optional"
-              className="h-9"
+              onChange={(e) => {
+                setRespondentEmail(e.target.value);
+                if (emailError) setEmailError('');
+              }}
+              placeholder={isPollForm(form) ? 'you@example.com' : 'Optional'}
+              className={`h-9 ${emailError ? 'border-destructive' : ''}`}
+              autoComplete="email"
             />
+            {emailError && (
+              <p className="text-xs text-destructive">{emailError}</p>
+            )}
+            {isPollForm(form) && (
+              <p className="text-xs text-muted-foreground">One vote per email address.</p>
+            )}
           </div>
         </div>
 
@@ -514,7 +555,7 @@ const EmbedForm = () => {
               Submitting...
             </>
           ) : (
-            'Submit'
+            isPollForm(form) ? 'Submit Vote' : 'Submit'
           )}
         </Button>
       </form>

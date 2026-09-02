@@ -24,6 +24,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getFormUrl, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { getOrCreateGuestUserId } from '@/lib/cryptoPayment';
+import { isPollForm } from '@/lib/formHelpers';
 
 const PublicForm = () => {
   const { formIdOrSlug } = useParams<{ formIdOrSlug: string }>();
@@ -39,6 +40,7 @@ const PublicForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicateError, setDuplicateError] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -119,6 +121,25 @@ const PublicForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validatePollEmail = (): boolean => {
+    if (!form || !isPollForm(form) || currentPage !== totalPages) return true;
+
+    const email = respondentEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      setEmailError('Email address is required to vote');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+
+    setEmailError('');
+    return true;
+  };
+
   const handlePageChange = (page: number) => {
     if (page > currentPage && !validateCurrentPage()) {
       return; // Don't proceed if validation fails
@@ -187,6 +208,7 @@ const PublicForm = () => {
     setDuplicateError(false);
     
     if (!form || !validateCurrentPage()) return;
+    if (!validatePollEmail()) return;
 
     // If on last page and requires payment, handle payment flow
     if (currentPage === totalPages && form.requires_payment && form.payment_amount > 0) {
@@ -195,10 +217,11 @@ const PublicForm = () => {
     }
 
     // Check for duplicate submission if not allowing multiple
-    if (!form.allow_multiple_submissions && respondentEmail) {
+    const normalizedEmail = respondentEmail.trim().toLowerCase();
+    if (!form.allow_multiple_submissions && normalizedEmail) {
       const hasPreviousSubmission = await checkEmail.mutateAsync({
         form_id: form.id,
-        email: respondentEmail,
+        email: normalizedEmail,
       });
 
       if (hasPreviousSubmission) {
@@ -211,7 +234,7 @@ const PublicForm = () => {
       await submitResponse.mutateAsync({
         form_id: form.id,
         respondent_name: respondentName || null,
-        respondent_email: respondentEmail || null,
+        respondent_email: normalizedEmail || null,
         response_data: formData as Json,
       });
 
@@ -694,6 +717,7 @@ const PublicForm = () => {
                     setFormData({});
                     setRespondentName('');
                     setRespondentEmail('');
+                    setEmailError('');
                     setCurrentPage(1);
                   }}
                 >
@@ -762,7 +786,35 @@ const PublicForm = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {duplicateError && (
                   <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-                    You have already submitted a response to this form.
+                    {isPollForm(form)
+                      ? 'You have already voted with this email address.'
+                      : 'You have already submitted a response to this form.'}
+                  </div>
+                )}
+
+                {isPollForm(form) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="poll-email" className="text-sm font-medium">
+                      Email Address <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="poll-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={respondentEmail}
+                      onChange={(e) => {
+                        setRespondentEmail(e.target.value);
+                        if (emailError) setEmailError('');
+                      }}
+                      className={`h-11 ${emailError ? 'border-destructive' : ''}`}
+                      autoComplete="email"
+                    />
+                    {emailError && (
+                      <p className="text-xs text-destructive">{emailError}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      One vote per email address.
+                    </p>
                   </div>
                 )}
 
@@ -841,7 +893,7 @@ const PublicForm = () => {
                           Submitting...
                         </>
                       ) : (
-                        'Submit'
+                        isPollForm(form) ? 'Submit Vote' : 'Submit'
                       )}
                     </Button>
                   )}

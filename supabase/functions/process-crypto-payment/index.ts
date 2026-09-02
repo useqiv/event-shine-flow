@@ -82,14 +82,26 @@ function convertToUsd(amount: number, currency: string, rates: Record<string, nu
   return Math.round(((amount * usdRate) / sourceRate) * 100) / 100;
 }
 
-function isAmountWithinTolerance(expected: number, actual: number, tolerance = 0.02): boolean {
-  if (!Number.isFinite(expected) || expected <= 0) return false;
-  return Math.abs(actual - expected) / expected <= tolerance;
+function computeConvenienceFee(
+  baseAmount: number,
+  convFeeType: string,
+  convFeeValue: number,
+  convFeeCap: number,
+): number {
+  let convenienceFee = 0;
+  if (convFeeType === "percentage") {
+    convenienceFee = (baseAmount * convFeeValue) / 100;
+  } else if (convFeeType === "fixed") {
+    convenienceFee = convFeeValue;
+  }
+  if (convFeeCap > 0 && convenienceFee > convFeeCap) {
+    convenienceFee = convFeeCap;
+  }
+  return Math.round(convenienceFee * 100) / 100;
 }
 
-function computeCryptoFees(baseUsd: number, feePct: number, surcharge: number): number {
-  const methodFee = Math.round(((baseUsd * feePct) / 100 + surcharge) * 100) / 100;
-  return methodFee;
+function computeCryptoFees(baseAmount: number, feePct: number, surcharge: number): number {
+  return Math.round(((baseAmount * feePct) / 100 + surcharge) * 100) / 100;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -122,6 +134,10 @@ const handler = async (req: Request): Promise<Response> => {
         "crypto_payment_enabled",
         "crypto_fee_percentage",
         "crypto_network_surcharge",
+        "crypto_fee_pass_to_customer",
+        "convenience_fee_type",
+        "convenience_fee_value",
+        "convenience_fee_cap",
         "crypto_wallet_polygon_usdt",
         "crypto_wallet_polygon_usdc",
         "flutterwave_default_currency",
@@ -143,6 +159,10 @@ const handler = async (req: Request): Promise<Response> => {
     const defaultCurrency = getSetting("flutterwave_default_currency") || "NGN";
     const cryptoFeePct = parseFloat(getSetting("crypto_fee_percentage")) || 0;
     const cryptoSurcharge = parseFloat(getSetting("crypto_network_surcharge")) || 0;
+    const passCryptoFeeToCustomer = getSetting("crypto_fee_pass_to_customer") !== "false";
+    const convFeeType = getSetting("convenience_fee_type") || "none";
+    const convFeeValue = parseFloat(getSetting("convenience_fee_value")) || 0;
+    const convFeeCap = parseFloat(getSetting("convenience_fee_cap")) || 0;
     const rates = await getExchangeRates();
 
     let baseAmount = 0;
@@ -248,16 +268,16 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Invalid payment type or missing required fields");
     }
 
+    const convenienceFee = computeConvenienceFee(baseAmount, convFeeType, convFeeValue, convFeeCap);
+    const cryptoFees = passCryptoFeeToCustomer
+      ? computeCryptoFees(baseAmount, cryptoFeePct, cryptoSurcharge)
+      : 0;
+    const totalChargeInBaseCurrency = Math.round((baseAmount + convenienceFee + cryptoFees) * 100) / 100;
     const baseAmountUsd = convertToUsd(baseAmount, baseCurrency, rates);
-    const cryptoFees = computeCryptoFees(baseAmountUsd, cryptoFeePct, cryptoSurcharge);
-    const crypto_amount = Math.round((baseAmountUsd + cryptoFees) * 100) / 100;
+    const crypto_amount = convertToUsd(totalChargeInBaseCurrency, baseCurrency, rates);
 
     if (crypto_amount < CRYPTO_MIN_USD) {
       throw new Error(`Minimum funding amount is ${CRYPTO_MIN_USD} ${crypto_currency} on Polygon`);
-    }
-
-    if (!isAmountWithinTolerance(crypto_amount, payload.amount_usd)) {
-      throw new Error("Price verification failed. Please refresh and try again.");
     }
 
     paymentMetadata.base_amount = baseAmount;
@@ -265,6 +285,8 @@ const handler = async (req: Request): Promise<Response> => {
     paymentMetadata.base_amount_usd = baseAmountUsd;
     paymentMetadata.crypto_amount = crypto_amount;
     paymentMetadata.crypto_fees = cryptoFees;
+    paymentMetadata.convenience_fee = convenienceFee;
+    paymentMetadata.total_charge = totalChargeInBaseCurrency;
     paymentMetadata.payment_currency = "USD";
     paymentMetadata.payment_amount = baseAmountUsd;
 

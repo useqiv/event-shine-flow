@@ -81,7 +81,9 @@ const ContestCard = ({ contest }: { contest: any }) => {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm font-medium text-primary">
-              {formatCurrency(contest.vote_price, contest.vote_currency || 'NGN')} per vote
+              {(contest as any).is_free_voting
+                ? 'Free to vote'
+                : `${formatCurrency(contest.vote_price, contest.vote_currency || 'NGN')} per vote`}
             </span>
             <Button size="sm">Vote Now</Button>
           </div>
