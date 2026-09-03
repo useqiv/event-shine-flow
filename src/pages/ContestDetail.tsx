@@ -46,6 +46,7 @@ import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVo
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
+import { GuestVoteEmailField } from '@/components/contest/GuestVoteEmailField';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const ContestDetail = () => {
@@ -76,6 +77,7 @@ const ContestDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
   // View mode for live voting contests
@@ -248,6 +250,7 @@ const ContestDetail = () => {
     }
     setSelectedContestant(contestant);
     setFreeVoteSuccess(false);
+    setGuestEmail('');
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setIsVoteSelectionOpen(true);
@@ -275,12 +278,31 @@ const ContestDetail = () => {
   const closeVoteDialog = () => {
     setIsVoteSelectionOpen(false);
     setFreeVoteSuccess(false);
+    setGuestEmail('');
     setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
     setVoteQuantityDraft('');
   };
 
   const handleFreeVote = async () => {
     if (!selectedContestant || !contest) return;
+
+    if (!user && !guestEmail.trim()) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email to cast your vote.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       await vote.mutateAsync({
@@ -290,6 +312,7 @@ const ContestDetail = () => {
         amountPaid: 0,
         currency: contest.vote_currency || 'NGN',
         paymentMethod: 'free',
+        guestEmail: user ? undefined : guestEmail,
       });
 
       setFreeVoteSuccess(true);
@@ -1052,6 +1075,14 @@ const ContestDetail = () => {
                 </>
                 )}
               </div>
+
+              {isFreeVoting && !user && (
+                <GuestVoteEmailField
+                  id="guest-vote-email-detail"
+                  value={guestEmail}
+                  onChange={setGuestEmail}
+                />
+              )}
 
               {/* Total */}
               <div className="p-4 rounded-lg bg-secondary">

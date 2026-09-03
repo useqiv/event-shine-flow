@@ -45,6 +45,7 @@ import { getContestUrl, getContestantUrl, createContestantSlug, getContestantSha
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
+import { GuestVoteEmailField } from '@/components/contest/GuestVoteEmailField';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
@@ -99,6 +100,7 @@ const ContestantDetail = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
   const [showVotePulse, setShowVotePulse] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
@@ -234,6 +236,7 @@ const ContestantDetail = () => {
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setFreeVoteSuccess(false);
+    setGuestEmail('');
     setIsVoteSelectionOpen(true);
   };
 
@@ -241,6 +244,7 @@ const ContestantDetail = () => {
     setIsVoteSelectionOpen(open);
     if (!open) {
       setFreeVoteSuccess(false);
+      setGuestEmail('');
       setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
       setVoteQuantityDraft('');
     }
@@ -268,6 +272,24 @@ const ContestantDetail = () => {
   const handleFreeVote = async () => {
     if (!contestant || !contest) return;
 
+    if (!user && !guestEmail.trim()) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email to cast your vote.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await vote.mutateAsync({
         contestantId: contestant.id,
@@ -276,6 +298,7 @@ const ContestantDetail = () => {
         amountPaid: 0,
         paymentMethod: 'free',
         currency: contestCurrency,
+        guestEmail: user ? undefined : guestEmail,
       });
 
       setFreeVoteSuccess(true);
@@ -1051,6 +1074,14 @@ const ContestantDetail = () => {
                 />
               </div>
             </>
+            )}
+
+            {isFreeVoting && !user && (
+              <GuestVoteEmailField
+                id="guest-vote-email-contestant"
+                value={guestEmail}
+                onChange={setGuestEmail}
+              />
             )}
 
             <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">

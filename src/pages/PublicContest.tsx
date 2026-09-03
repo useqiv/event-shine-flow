@@ -26,6 +26,7 @@ import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVo
 import { useContestVoteOptions, useVote } from '@/hooks/useContests';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
 import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
+import { GuestVoteEmailField } from '@/components/contest/GuestVoteEmailField';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const PublicContest = () => {
@@ -41,6 +42,7 @@ const PublicContest = () => {
   const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
   const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
+  const [guestEmail, setGuestEmail] = useState('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('standard');
@@ -166,6 +168,7 @@ const PublicContest = () => {
     }
     setSelectedContestant(contestant);
     setFreeVoteSuccess(false);
+    setGuestEmail('');
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setPaymentCurrency(''); // Reset to contest currency
@@ -195,6 +198,7 @@ const PublicContest = () => {
     setIsVoteSelectionOpen(open);
     if (!open) {
       setFreeVoteSuccess(false);
+      setGuestEmail('');
       setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
       setVoteQuantityDraft('');
     }
@@ -202,6 +206,24 @@ const PublicContest = () => {
 
   const handleFreeVote = async () => {
     if (!selectedContestant || !contest) return;
+
+    if (!user && !guestEmail.trim()) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your email to cast your vote.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail.trim())) {
+      toast({
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       await vote.mutateAsync({
@@ -211,6 +233,7 @@ const PublicContest = () => {
         amountPaid: 0,
         paymentMethod: 'free',
         currency: contestCurrency,
+        guestEmail: user ? undefined : guestEmail,
       });
 
       setFreeVoteSuccess(true);
@@ -686,6 +709,14 @@ const PublicContest = () => {
                 </>
               )}
             </div>
+
+            {isFreeVoting && !user && (
+              <GuestVoteEmailField
+                id="guest-vote-email-public"
+                value={guestEmail}
+                onChange={setGuestEmail}
+              />
+            )}
 
             {!isFreeVoting && !user && (
               <p className="text-sm text-muted-foreground text-center">

@@ -227,7 +227,8 @@ export const useVote = () => {
       quantity,
       amountPaid,
       currency,
-      paymentMethod
+      paymentMethod,
+      guestEmail,
     }: {
       contestantId: string;
       contestId: string;
@@ -235,11 +236,23 @@ export const useVote = () => {
       amountPaid: number;
       currency?: string;
       paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt' | 'free';
+      guestEmail?: string;
     }) => {
       const isFreeVote = paymentMethod === 'free';
 
       if (!isFreeVote && !user?.id) {
         throw new Error('Not authenticated');
+      }
+
+      let normalizedGuestEmail: string | undefined;
+      if (isFreeVote && !user?.id) {
+        normalizedGuestEmail = guestEmail?.trim().toLowerCase();
+        if (!normalizedGuestEmail) {
+          throw new Error('Email is required to vote.');
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedGuestEmail)) {
+          throw new Error('Please enter a valid email address.');
+        }
       }
 
       // Enforce contest start_date — voting is locked until contest starts
@@ -298,17 +311,20 @@ export const useVote = () => {
       }
 
       // Create vote record
+      const voteRecord = {
+        user_id: user?.id ?? null,
+        contestant_id: contestantId,
+        contest_id: contestId,
+        quantity: voteQuantity,
+        amount_paid: amountPaid,
+        currency: resolvedCurrency,
+        payment_method: paymentMethod,
+        ...(normalizedGuestEmail ? { guest_email: normalizedGuestEmail } : {}),
+      };
+
       const { data, error } = await supabase
         .from('votes')
-        .insert({
-          user_id: user?.id ?? null,
-          contestant_id: contestantId,
-          contest_id: contestId,
-          quantity: voteQuantity,
-          amount_paid: amountPaid,
-          currency: resolvedCurrency,
-          payment_method: paymentMethod
-        })
+        .insert(voteRecord)
         .select()
         .single();
 
@@ -341,6 +357,8 @@ export const useVote = () => {
 
             voterName = profile?.full_name || 'Anonymous';
             voterEmail = profile?.email || user.email || '';
+          } else if (normalizedGuestEmail) {
+            voterEmail = normalizedGuestEmail;
           }
 
           await supabase.functions.invoke('send-org-transaction-notification', {
