@@ -25,6 +25,7 @@ import { createSlug, getContestShareUrl, getSocialOgImageUrl } from '@/lib/urlHe
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { useContestVoteOptions, useVote } from '@/hooks/useContests';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const PublicContest = () => {
@@ -39,6 +40,7 @@ const PublicContest = () => {
   const [voteQuantity, setVoteQuantity] = useState(1);
   const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'live' | 'standard'>('standard');
@@ -163,6 +165,7 @@ const PublicContest = () => {
       return;
     }
     setSelectedContestant(contestant);
+    setFreeVoteSuccess(false);
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setPaymentCurrency(''); // Reset to contest currency
@@ -188,16 +191,18 @@ const PublicContest = () => {
     setIsPaymentModalOpen(true);
   };
 
+  const closeVoteDialog = (open: boolean) => {
+    setIsVoteSelectionOpen(open);
+    if (!open) {
+      setFreeVoteSuccess(false);
+      setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+      setVoteQuantityDraft('');
+    }
+  };
+
   const handleFreeVote = async () => {
     if (!selectedContestant || !contest) return;
-    if (!user) {
-      toast({
-        title: 'Sign in required',
-        description: 'Please sign in to cast your free vote.',
-        variant: 'destructive',
-      });
-      return;
-    }
+
     try {
       await vote.mutateAsync({
         contestantId: selectedContestant.id,
@@ -208,11 +213,7 @@ const PublicContest = () => {
         currency: contestCurrency,
       });
 
-      toast({
-        title: 'Vote Successful!',
-        description: `You have cast 1 vote for ${selectedContestant.name}.`,
-      });
-      setIsVoteSelectionOpen(false);
+      setFreeVoteSuccess(true);
     } catch (error: any) {
       toast({
         title: 'Vote Failed',
@@ -561,17 +562,28 @@ const PublicContest = () => {
       </div>
 
       {/* Vote Selection Dialog */}
-      <Dialog open={isVoteSelectionOpen} onOpenChange={setIsVoteSelectionOpen}>
+      <Dialog open={isVoteSelectionOpen} onOpenChange={closeVoteDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Vote for {selectedContestant?.name}</DialogTitle>
+            <DialogTitle>
+              {freeVoteSuccess ? 'Vote confirmed' : `Vote for ${selectedContestant?.name}`}
+            </DialogTitle>
+            {!freeVoteSuccess && (
             <DialogDescription>
               {isFreeVoting
                 ? 'Cast your free vote for this contestant'
                 : 'Select the number of votes you want to cast'}
             </DialogDescription>
+            )}
           </DialogHeader>
           
+          {freeVoteSuccess && selectedContestant ? (
+            <VoteSuccessContent
+              contestantName={selectedContestant.name}
+              onDone={() => closeVoteDialog(false)}
+              primaryColor={primaryColor}
+            />
+          ) : (
           <div className="space-y-4 py-4">
             {isFreeVoting ? (
               <p className="text-sm text-muted-foreground">
@@ -684,14 +696,15 @@ const PublicContest = () => {
             <Button 
               className="w-full" 
               onClick={isFreeVoting ? handleFreeVote : handleProceedToPayment}
-              disabled={isFreeVoting ? (!user || vote.isPending) : voteQuantity < minimumVoteQuantity}
+              disabled={isFreeVoting ? vote.isPending : voteQuantity < minimumVoteQuantity}
               style={{ backgroundColor: primaryColor }}
             >
               {isFreeVoting
-                ? (vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote')
+                ? (vote.isPending ? 'Processing...' : 'Cast Vote')
                 : 'Proceed to Payment'}
             </Button>
           </div>
+          )}
         </DialogContent>
       </Dialog>
 

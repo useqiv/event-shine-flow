@@ -236,7 +236,11 @@ export const useVote = () => {
       currency?: string;
       paymentMethod: 'wallet' | 'card' | 'bank_transfer' | 'usdt' | 'free';
     }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      const isFreeVote = paymentMethod === 'free';
+
+      if (!isFreeVote && !user?.id) {
+        throw new Error('Not authenticated');
+      }
 
       // Enforce contest start_date — voting is locked until contest starts
       const { data: contestWindow, error: contestWindowError } = await supabase
@@ -272,6 +276,8 @@ export const useVote = () => {
 
       // If paying with wallet, atomically debit balance (server-side, race-safe)
       if (paymentMethod === 'wallet') {
+        if (!user?.id) throw new Error('Not authenticated');
+
         const { data: debitResult, error: debitError } = await supabase.rpc(
           'debit_wallet_safely',
           {
@@ -295,7 +301,7 @@ export const useVote = () => {
       const { data, error } = await supabase
         .from('votes')
         .insert({
-          user_id: user.id,
+          user_id: user?.id ?? null,
           contestant_id: contestantId,
           contest_id: contestId,
           quantity: voteQuantity,
@@ -323,11 +329,19 @@ export const useVote = () => {
           .single();
 
         if (contest?.organization_id) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', user.id)
-            .single();
+          let voterName = 'Guest Voter';
+          let voterEmail = '';
+
+          if (user?.id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('full_name, email')
+              .eq('id', user.id)
+              .single();
+
+            voterName = profile?.full_name || 'Anonymous';
+            voterEmail = profile?.email || user.email || '';
+          }
 
           await supabase.functions.invoke('send-org-transaction-notification', {
             body: {
@@ -338,8 +352,8 @@ export const useVote = () => {
               quantity: voteQuantity,
               contest_title: contest.title || 'Contest',
               contestant_name: contestant?.name || 'Contestant',
-              voter_name: profile?.full_name || 'Anonymous',
-              voter_email: profile?.email || user.email || '',
+              voter_name: voterName,
+              voter_email: voterEmail,
             }
           });
         }
@@ -347,15 +361,16 @@ export const useVote = () => {
         console.error('Failed to send org transaction notification:', notifError);
       }
 
-      // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          title: 'Vote Successful!',
-          message: `You have successfully cast ${quantity} vote(s).`,
-          type: 'vote'
-        });
+      if (user?.id) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            title: 'Vote Successful!',
+            message: `You have successfully cast ${voteQuantity} vote(s).`,
+            type: 'vote'
+          });
+      }
 
       return data;
     },

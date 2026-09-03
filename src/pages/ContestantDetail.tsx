@@ -44,6 +44,7 @@ import { format } from 'date-fns';
 import { getContestUrl, getContestantUrl, createContestantSlug, getContestantShareUrl, isValidUUID, getSocialOgImageUrl } from '@/lib/urlHelpers';
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 // Note: createContestantSlug is imported from @/lib/urlHelpers
@@ -97,6 +98,7 @@ const ContestantDetail = () => {
   const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
   const [showVotePulse, setShowVotePulse] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
@@ -231,7 +233,17 @@ const ContestantDetail = () => {
     }
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
+    setFreeVoteSuccess(false);
     setIsVoteSelectionOpen(true);
+  };
+
+  const closeVoteDialog = (open: boolean) => {
+    setIsVoteSelectionOpen(open);
+    if (!open) {
+      setFreeVoteSuccess(false);
+      setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+      setVoteQuantityDraft('');
+    }
   };
 
   const handleProceedToPayment = () => {
@@ -254,16 +266,8 @@ const ContestantDetail = () => {
   };
 
   const handleFreeVote = async () => {
-    if (!contestant || !contest || !user) {
-      if (!user) {
-        toast({
-          title: 'Sign in required',
-          description: 'Please sign in to cast your free vote.',
-          variant: 'destructive',
-        });
-      }
-      return;
-    }
+    if (!contestant || !contest) return;
+
     try {
       await vote.mutateAsync({
         contestantId: contestant.id,
@@ -274,11 +278,7 @@ const ContestantDetail = () => {
         currency: contestCurrency,
       });
 
-      toast({
-        title: 'Vote Successful!',
-        description: `You cast 1 vote for ${contestant.name}!`,
-      });
-      setIsVoteSelectionOpen(false);
+      setFreeVoteSuccess(true);
     } catch (error: any) {
       toast({
         title: 'Vote Failed',
@@ -980,125 +980,139 @@ const ContestantDetail = () => {
       </div>
 
       {/* Vote Selection Dialog */}
-      <Dialog open={isVoteSelectionOpen} onOpenChange={setIsVoteSelectionOpen}>
+      <Dialog open={isVoteSelectionOpen} onOpenChange={closeVoteDialog}>
         <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle className="capitalize text-base sm:text-lg">Vote for {contestant.name}</DialogTitle>
+            <DialogTitle className="capitalize text-base sm:text-lg">
+              {freeVoteSuccess ? 'Vote confirmed' : `Vote for ${contestant.name}`}
+            </DialogTitle>
+            {!freeVoteSuccess && (
             <DialogDescription className="text-sm">
               {isFreeVoting
                 ? 'Cast your free vote for this contestant'
                 : 'Select the number of votes you want to cast'}
             </DialogDescription>
+            )}
           </DialogHeader>
           
-          {isFreeVoting ? (
-            <p className="py-3 sm:py-4 text-sm text-muted-foreground">
-              You can cast 1 free vote for this contestant.
-            </p>
+          {freeVoteSuccess ? (
+            <VoteSuccessContent
+              contestantName={contestant.name}
+              onDone={() => closeVoteDialog(false)}
+              primaryColor={primaryColor}
+            />
           ) : (
           <>
-          <div className="grid grid-cols-3 gap-2 py-3 sm:py-4">
-            {normalizedVoteOptions.map((option) => (
-              <Button
-                key={option.vote_quantity}
-                variant={voteQuantity === option.vote_quantity ? "default" : "outline"}
-                onClick={() => {
-                  setVoteQuantity(option.vote_quantity);
-                  setVoteQuantityDraft(String(option.vote_quantity));
-                }}
-                className="h-12 sm:h-16 text-base sm:text-lg font-semibold"
-                style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
-              >
-                {option.vote_quantity}
-              </Button>
-            ))}
-          </div>
-          <div className="space-y-2 pb-3 sm:pb-4">
-            <label className="text-sm font-medium" htmlFor="custom-vote-quantity-contestant">
-              Custom votes (minimum {minimumVoteQuantity})
-            </label>
-            <p className="text-xs text-muted-foreground">
-              You can enter any number of votes, but it must be at least {minimumVoteQuantity}.
-            </p>
-            <Input
-              id="custom-vote-quantity-contestant"
-              type="number"
-              min={1}
-              step={1}
-              value={voteQuantityDraft}
-              placeholder={String(minimumVoteQuantity)}
-              onChange={(event) => {
-                const next = event.target.value;
-                setVoteQuantityDraft(next);
+            {isFreeVoting ? (
+              <p className="py-3 sm:py-4 text-sm text-muted-foreground">
+                You can cast 1 free vote for this contestant.
+              </p>
+            ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2 py-3 sm:py-4">
+                {normalizedVoteOptions.map((option) => (
+                  <Button
+                    key={option.vote_quantity}
+                    variant={voteQuantity === option.vote_quantity ? "default" : "outline"}
+                    onClick={() => {
+                      setVoteQuantity(option.vote_quantity);
+                      setVoteQuantityDraft(String(option.vote_quantity));
+                    }}
+                    className="h-12 sm:h-16 text-base sm:text-lg font-semibold"
+                    style={voteQuantity === option.vote_quantity ? { backgroundColor: primaryColor } : undefined}
+                  >
+                    {option.vote_quantity}
+                  </Button>
+                ))}
+              </div>
+              <div className="space-y-2 pb-3 sm:pb-4">
+                <label className="text-sm font-medium" htmlFor="custom-vote-quantity-contestant">
+                  Custom votes (minimum {minimumVoteQuantity})
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  You can enter any number of votes, but it must be at least {minimumVoteQuantity}.
+                </p>
+                <Input
+                  id="custom-vote-quantity-contestant"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={voteQuantityDraft}
+                  placeholder={String(minimumVoteQuantity)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setVoteQuantityDraft(next);
 
-                if (!next) return;
-                const parsed = Math.floor(Number(next));
-                if (!Number.isFinite(parsed) || parsed <= 0) return;
-                setVoteQuantity(parsed);
-              }}
-            />
-          </div>
+                    if (!next) return;
+                    const parsed = Math.floor(Number(next));
+                    if (!Number.isFinite(parsed) || parsed <= 0) return;
+                    setVoteQuantity(parsed);
+                  }}
+                />
+              </div>
+            </>
+            )}
+
+            <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Total Amount:</span>
+                {isFreeVoting ? (
+                  <Badge variant="secondary" className="text-base">Free</Badge>
+                ) : (
+                  <CurrencyDisplay 
+                    amount={totalAmount} 
+                    currency={contestCurrency}
+                    className="text-xl sm:text-2xl font-bold"
+                  />
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                {isFreeVoting ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => closeVoteDialog(false)}
+                      className="flex-1 h-10 sm:h-11 text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleFreeVote}
+                      className="flex-1 h-10 sm:h-11 text-sm"
+                      style={{ backgroundColor: primaryColor, color: 'white' }}
+                      disabled={vote.isPending}
+                    >
+                      {vote.isPending ? 'Processing...' : 'Cast Vote'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                {user && (
+                  <Button 
+                    onClick={handleWalletPayment} 
+                    className="flex-1 h-10 sm:h-11 text-sm"
+                    variant="outline"
+                    disabled={vote.isPending || voteQuantity < minimumVoteQuantity}
+                  >
+                    <Wallet className="mr-1.5 sm:mr-2 h-4 w-4" />
+                    Wallet
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleProceedToPayment} 
+                  className="flex-1 h-10 sm:h-11 text-sm"
+                  style={{ backgroundColor: primaryColor, color: 'white' }}
+                  disabled={voteQuantity < minimumVoteQuantity}
+                >
+                  {user ? 'Pay with Card' : 'Proceed to Pay'}
+                </Button>
+                  </>
+                )}
+              </div>
+            </div>
           </>
           )}
-          
-          <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Total Amount:</span>
-              {isFreeVoting ? (
-                <Badge variant="secondary" className="text-base">Free</Badge>
-              ) : (
-                <CurrencyDisplay 
-                  amount={totalAmount} 
-                  currency={contestCurrency}
-                  className="text-xl sm:text-2xl font-bold"
-                />
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              {isFreeVoting ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsVoteSelectionOpen(false)}
-                    className="flex-1 h-10 sm:h-11 text-sm"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleFreeVote}
-                    className="flex-1 h-10 sm:h-11 text-sm"
-                    style={{ backgroundColor: primaryColor, color: 'white' }}
-                    disabled={vote.isPending || !user}
-                  >
-                    {vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote'}
-                  </Button>
-                </>
-              ) : (
-                <>
-              {user && (
-                <Button 
-                  onClick={handleWalletPayment} 
-                  className="flex-1 h-10 sm:h-11 text-sm"
-                  variant="outline"
-                  disabled={vote.isPending || voteQuantity < minimumVoteQuantity}
-                >
-                  <Wallet className="mr-1.5 sm:mr-2 h-4 w-4" />
-                  Wallet
-                </Button>
-              )}
-              <Button 
-                onClick={handleProceedToPayment} 
-                className="flex-1 h-10 sm:h-11 text-sm"
-                style={{ backgroundColor: primaryColor, color: 'white' }}
-                disabled={voteQuantity < minimumVoteQuantity}
-              >
-                {user ? 'Pay with Card' : 'Proceed to Pay'}
-              </Button>
-                </>
-              )}
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

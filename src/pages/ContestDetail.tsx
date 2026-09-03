@@ -45,6 +45,7 @@ import { getContestUrl, getContestantUrl, getContestShareUrl } from '@/lib/urlHe
 import { getContestVotingStatus, getVotingNotOpenMessage } from '@/lib/contestVoting';
 import ContestantFilter, { filterContestants } from '@/components/ContestantFilter';
 import { ContestantVoteDisplay } from '@/components/contest/ContestantVoteDisplay';
+import { VoteSuccessContent } from '@/components/contest/VoteSuccessContent';
 import { normalizeVoteDisplayMode } from '@/lib/voteDisplay';
 
 const ContestDetail = () => {
@@ -74,6 +75,7 @@ const ContestDetail = () => {
   const [voteQuantityDraft, setVoteQuantityDraft] = useState<string>('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isVoteSelectionOpen, setIsVoteSelectionOpen] = useState(false);
+  const [freeVoteSuccess, setFreeVoteSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   // View mode for live voting contests
@@ -245,6 +247,7 @@ const ContestDetail = () => {
       return;
     }
     setSelectedContestant(contestant);
+    setFreeVoteSuccess(false);
     setVoteQuantity(isFreeVoting ? 1 : (normalizedVoteOptions[0]?.vote_quantity || 1));
     setVoteQuantityDraft(isFreeVoting ? '1' : '');
     setIsVoteSelectionOpen(true);
@@ -269,16 +272,16 @@ const ContestDetail = () => {
     setIsPaymentModalOpen(true);
   };
 
+  const closeVoteDialog = () => {
+    setIsVoteSelectionOpen(false);
+    setFreeVoteSuccess(false);
+    setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+    setVoteQuantityDraft('');
+  };
+
   const handleFreeVote = async () => {
     if (!selectedContestant || !contest) return;
-    if (!user) {
-      toast({
-        title: 'Sign in required',
-        description: 'Please sign in to cast your free vote.',
-        variant: 'destructive',
-      });
-      return;
-    }
+
     try {
       await vote.mutateAsync({
         contestantId: selectedContestant.id,
@@ -289,13 +292,7 @@ const ContestDetail = () => {
         paymentMethod: 'free',
       });
 
-      toast({
-        title: 'Vote Successful!',
-        description: `You have cast 1 vote for ${selectedContestant.name}.`,
-      });
-
-      setIsVoteSelectionOpen(false);
-      setVoteQuantity(normalizedVoteOptions[0]?.vote_quantity || 1);
+      setFreeVoteSuccess(true);
     } catch (error: any) {
       toast({
         title: 'Vote Failed',
@@ -991,9 +988,18 @@ const ContestDetail = () => {
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Vote for {selectedContestant.name}</CardTitle>
+              <CardTitle>
+                {freeVoteSuccess ? 'Vote confirmed' : `Vote for ${selectedContestant.name}`}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {freeVoteSuccess ? (
+                <VoteSuccessContent
+                  contestantName={selectedContestant.name}
+                  onDone={closeVoteDialog}
+                />
+              ) : (
+              <>
               {/* Vote Quantity */}
               <div>
                 {isFreeVoting ? (
@@ -1080,11 +1086,11 @@ const ContestDetail = () => {
               <div className="space-y-3">
                 {isFreeVoting ? (
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setIsVoteSelectionOpen(false)} className="flex-1">
+                    <Button variant="outline" onClick={closeVoteDialog} className="flex-1">
                       Cancel
                     </Button>
-                    <Button onClick={handleFreeVote} disabled={vote.isPending || !user} className="flex-1">
-                      {vote.isPending ? 'Processing...' : user ? 'Cast Vote' : 'Sign in to Vote'}
+                    <Button onClick={handleFreeVote} disabled={vote.isPending} className="flex-1">
+                      {vote.isPending ? 'Processing...' : 'Cast Vote'}
                     </Button>
                   </div>
                 ) : (
@@ -1118,6 +1124,8 @@ const ContestDetail = () => {
                 </>
                 )}
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
         </div>
